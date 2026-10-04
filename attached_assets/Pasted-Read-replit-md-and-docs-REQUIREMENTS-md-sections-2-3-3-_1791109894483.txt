@@ -1,0 +1,53 @@
+Read replit.md and docs/REQUIREMENTS.md (sections 2.3, 3.5 and 4.1).
+
+Build Phase 1a only: database schema, row-level security, and store lookup.
+No R2, no SSO, no builder UI, no Supabase Storage/Auth/supabase-js/PostgREST.
+
+A. MIGRATIONS
+1. Add the "postgres" (postgres.js) npm package.
+2. Create db/migrations/0001_init.sql with the tables from REQUIREMENTS section 4.1:
+   brands, stores, users, store_members, themes, pages, page_versions, media,
+   policy_pages, products, product_options, product_media, collections,
+   collection_products, customers, customer_addresses, orders, order_items,
+   payments, shipments, refunds, invoices, invoice_sequences, domains,
+   integrations, otp_verifications, email_log, webhook_events, audit_log.
+   Rules: uuid primary keys (gen_random_uuid()); store_id (FK to stores) on every
+   tenant table; money as bigint paise; created_at/updated_at timestamptz;
+   products include hsn_code and gst_rate; stores include subdomain (unique),
+   status (draft/live/paused), country (default 'IN'), currency (default 'INR'),
+   timezone (default 'Asia/Kolkata'); brands include legal_name and gstin;
+   domains include hostname (unique), status, is_primary; invoices unique per
+   (store_id, invoice_number); sensible indexes on store_id and lookups.
+3. Create db/migrations/0002_rls.sql:
+   - Create role lebrands_app (LOGIN, NOBYPASSRLS, no password set in the file).
+     Grant it only SELECT/INSERT/UPDATE/DELETE on app tables and USAGE on sequences.
+   - ENABLE and FORCE row level security on every tenant table.
+   - Policy on each tenant table: store_id = current_setting('app.store_id', true)::uuid.
+   - A SECURITY DEFINER function resolve_store(p_hostname text) that returns
+     (store_id, subdomain, store name, status) for a live store, matching either
+     stores.subdomain (for *.lebrands.store) or domains.hostname with active status.
+     Grant EXECUTE to lebrands_app. Set a safe search_path on the function.
+4. Create db/migrate.js: applies migration files in order using DATABASE_URL from
+   the environment, recording applied files in a schema_migrations table.
+5. Create db/seed.js: inserts one brand and one LIVE store with subdomain
+   "testbrand" and name "Test Brand" (idempotent).
+6. package.json scripts: "db:migrate": "node db/migrate.js", "db:seed": "node db/seed.js".
+
+B. WORKER
+1. wrangler.jsonc: add "compatibility_flags": ["nodejs_compat"] and a hyperdrive
+   binding { "binding": "HYPERDRIVE", "id": "REPLACE_WITH_HYPERDRIVE_ID" }.
+2. src/db.js: helper that creates a postgres.js client from
+   env.HYPERDRIVE.connectionString (fetch_types: false, small max), plus a
+   withStore(storeId, fn) helper that runs fn inside a transaction after
+   SELECT set_config('app.store_id', storeId, true).
+3. src/index.js routing:
+   - lebrands.store / www → platform page (unchanged)
+   - reserved subdomains → 404 (unchanged)
+   - {sub}.lebrands.store and any other hostname → call resolve_store(hostname).
+     If found and live: page showing the store's name from the database and
+     "This store is coming soon". If not found: 404 "Store not found".
+   - On database errors: return a simple 503 "Store temporarily unavailable"
+     page and log the error (never show error details to visitors).
+   Keep HTML escaping.
+4. Do NOT deploy and do NOT run migrations. Stop and list every file created or
+   changed, and tell me the exact commands I need to run.

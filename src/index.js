@@ -1,4 +1,5 @@
 import { RESERVED_SUBDOMAINS } from "./reserved.js";
+import { createDb } from "./db.js";
 
 const ROOT_DOMAIN = ".lebrands.store";
 const PLATFORM_HOSTS = new Set(["lebrands.store", "www.lebrands.store"]);
@@ -56,7 +57,7 @@ function notFound() {
 }
 
 export default {
-  fetch(request) {
+  async fetch(request, env, ctx) {
     const hostname = new URL(request.url).hostname;
 
     if (PLATFORM_HOSTS.has(hostname)) {
@@ -69,22 +70,43 @@ export default {
       );
     }
 
-    if (!hostname.endsWith(ROOT_DOMAIN)) {
-      return notFound();
+    if (hostname.endsWith(ROOT_DOMAIN)) {
+      const subdomain = hostname.slice(0, -ROOT_DOMAIN.length);
+      if (
+        !STORE_NAME_PATTERN.test(subdomain) ||
+        RESERVED_SUBDOMAINS.includes(subdomain)
+      ) {
+        return notFound();
+      }
     }
 
-    const subdomain = hostname.slice(0, -ROOT_DOMAIN.length);
-    if (
-      !STORE_NAME_PATTERN.test(subdomain) ||
-      RESERVED_SUBDOMAINS.includes(subdomain)
-    ) {
-      return notFound();
+    let db;
+    try {
+      db = createDb(env);
+      const store = await db.resolveStore(hostname);
+      if (!store || store.status !== "live") return notFound();
+      return page(
+        `${store.name} | LeBrands.Store`,
+        store.name,
+        "This store is coming soon.",
+      );
+    } catch (error) {
+      // Log a diagnostic code, never raw errors (which may contain credentials).
+      console.error("Store lookup failed", { hostname, code: error?.code ?? "UNKNOWN_DATABASE_ERROR" });
+      return page(
+        "Store temporarily unavailable | LeBrands.Store",
+        "Store temporarily unavailable",
+        "Please try again later.",
+        503,
+      );
+    } finally {
+      if (db) {
+        const cleanup = db.close().catch(() => {
+          console.error("Database connection cleanup failed");
+        });
+        if (ctx?.waitUntil) ctx.waitUntil(cleanup);
+        else await cleanup;
+      }
     }
-
-    return page(
-      `${subdomain} | LeBrands.Store`,
-      subdomain,
-      "This store is coming soon.",
-    );
   },
 };

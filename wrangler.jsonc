@@ -2,7 +2,11 @@
   "name": "lebrands-store",
   "main": "src/index.js",
   "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
+  "hyperdrive": [
+    { "binding": "HYPERDRIVE", "id": "REPLACE_WITH_HYPERDRIVE_ID" }
+  ],
   "routes": [
     { "pattern": "lebrands.store/*", "zone_name": "lebrands.store" },
     { "pattern": "*.lebrands.store/*", "zone_name": "lebrands.store" }
