@@ -11,7 +11,8 @@
     "deploy": "wrangler deploy",
     "whoami": "wrangler whoami",
     "db:migrate": "node db/migrate.js",
-    "db:seed": "node db/seed.js"
+    "db:seed": "node db/seed.js",
+    "db:test-isolation": "node db/test-isolation.js"
   },
   "private": true,
   "dependencies": {

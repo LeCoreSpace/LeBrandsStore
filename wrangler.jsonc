@@ -5,7 +5,7 @@
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": false,
   "hyperdrive": [
-    { "binding": "HYPERDRIVE", "id": "REPLACE_WITH_HYPERDRIVE_ID" }
+    { "binding": "HYPERDRIVE", "id": "cffdd9035815454cb35aa46def7b52a4" }
   ],
   "routes": [
     { "pattern": "lebrands.store/*", "zone_name": "lebrands.store" },

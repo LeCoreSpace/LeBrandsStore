@@ -1,0 +1,52 @@
+Read replit.md and docs/REQUIREMENTS.md section 4.1.
+
+Task: build an automated tenant-isolation test for row-level security.
+Do NOT change existing migrations 0001/0002. Do NOT deploy. Do NOT run the test.
+
+1. Create db/test-isolation.js and add the script
+   "db:test-isolation": "node db/test-isolation.js".
+
+2. Connections (same rules as db/connection.js):
+   - ADMIN = SUPABASE_DB_URL  → only for setup and cleanup
+   - APP   = SUPABASE_APP_DB_URL → for every check (role lebrands_app)
+   Both must be Supabase hosts; ssl 'require'; print only user/host/port;
+   never print URLs or passwords; ignore PG* env vars.
+
+3. Setup (ADMIN), idempotent, using only test data:
+   - Two brands and two LIVE stores with subdomains "rls-test-a" and "rls-test-b",
+     plus one DRAFT store "rls-test-draft".
+   - In store A: 2 products, 1 customer, 1 order with 1 order item.
+   - In store B: 2 products, 1 customer, 1 order with 1 order item.
+   - Never touch the existing "testbrand" store or any non-test data.
+
+4. Checks (APP connection, each inside its own transaction using the same
+   set_config('app.store_id', id, true) approach as src/db.js):
+   a. No store set → selecting products, customers, orders returns 0 rows
+      (or a permission error), never other stores' data.
+   b. Store A set → sees exactly A's 2 products, 1 customer, 1 order; none of B's.
+   c. Store B set → sees exactly B's data; none of A's.
+   d. Store A set → INSERT a product with store_id = B is rejected.
+   e. Store A set → UPDATE and DELETE targeting B's product affect 0 rows,
+      and B's product is unchanged afterwards (verify via ADMIN).
+   f. Store A set → UPDATE A's own product to store_id = B is rejected.
+   g. After a transaction ends, app.store_id is no longer set in a new
+      transaction (setting is transaction-scoped).
+   h. resolve_store('rls-test-a.lebrands.store') returns store A;
+      resolve_store('rls-test-draft.lebrands.store') returns nothing;
+      resolve_store('nope.lebrands.store') returns nothing.
+   i. As lebrands_app: ALTER TABLE products, DROP TABLE products,
+      ALTER TABLE products DISABLE ROW LEVEL SECURITY, SET ROLE postgres,
+      and CREATE TABLE all fail.
+
+5. Cleanup (ADMIN): delete all rls-test-* data in the correct order, always,
+   even if checks fail (try/finally).
+
+6. Output: one line per check with PASS/FAIL and a short reason; a final
+   summary; exit code 1 if any check fails.
+
+7. If reading the current policies shows a check would fail (for example,
+   policies missing WITH CHECK, so cross-store inserts would be allowed),
+   write the fix as a NEW migration db/migrations/0003_rls_hardening.sql
+   and explain it. Do not edit 0001 or 0002.
+
+When done, list files created/changed and the exact commands for me to run.

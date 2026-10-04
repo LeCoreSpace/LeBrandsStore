@@ -101,6 +101,44 @@ and routing are not configured in this phase.
   the supplied transaction client. The store ID is context, not authorization;
   future authenticated handlers must separately validate membership.
 
+## Manual tenant-isolation test
+
+After applying migrations yourself, set `SUPABASE_DB_URL` (ADMIN) and
+`SUPABASE_APP_DB_URL` (`lebrands_app`) for the same **development/test**
+Supabase session-pooler project, host, port and database. Then run:
+
+```sh
+pnpm run db:test-isolation
+```
+
+This is a real database test, not an offline mock. It temporarily commits
+two marked test brands, live stores `rls-test-a`/`rls-test-b`, and draft store
+`rls-test-draft`. Each live store gets two products, one customer, one order
+and one order item. It never uses or cleans up `testbrand` or unmarked data.
+Reserved subdomain/brand collisions abort rather than overwrite data.
+A session advisory lock prevents concurrent runs, and marked leftovers from
+an interrupted run are cleaned before setup.
+
+All APP checks use their own transactions. Mutation and DDL probes always roll
+back, including unexpected successes; the read-only context-reset probe commits
+to verify the normal request path. Checks cover missing context, each store's
+exact fixture visibility, cross-store inserts/updates/deletes, context reset,
+hostname resolution and forbidden DDL/role changes. ADMIN is used only for
+fixture setup/cleanup and the requested independent product verification.
+Output is one PASS/FAIL line per check, a summary, and exit status 1 on failure.
+Passwords and URLs are redacted from failures.
+
+**Cleanup prerequisite:** orders/invoices normally cannot be deleted. ADMIN must
+be allowed to `SET LOCAL session_replication_role = replica`. The script checks
+this before creating fixtures, then uses it only inside its cleanup transaction
+to delete verified, marked fixtures in dependency order. It does not disable
+global triggers or change existing migrations. Cleanup is attempted in `finally`
+even after check failures. If cleanup itself fails, the script reports FAIL;
+rerunning with the prerequisite fixed cleans the marked leftovers. An abrupt
+process termination may also leave fixtures for the next run.
+
+No migration, deployment or isolation test runs automatically.
+
 ## Offline checks
 
 ```sh
