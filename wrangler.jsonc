@@ -1,0 +1,10 @@
+{
+  "name": "lebrands-store",
+  "main": "src/index.js",
+  "compatibility_date": "2025-09-01",
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "lebrands.store/*", "zone_name": "lebrands.store" },
+    { "pattern": "*.lebrands.store/*", "zone_name": "lebrands.store" }
+  ]
+}

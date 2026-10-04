@@ -1,45 +1,26 @@
-# [Project name]
+# LeBrands.Store
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+LeBrands.Store is a multi-tenant store builder for Indian D2C brands. One codebase serves stores at `{brand}.lebrands.store`; brands own their payment and delivery accounts. LeBrands.Space is a separate project and must not be changed.
 
-## Run & Operate
+## Fixed stack
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Runtime: Cloudflare Workers, JavaScript ES modules, and Wrangler CLI.
+- Domain: `lebrands.store`, with wildcard subdomains on Cloudflare DNS.
+- Later phases: one shared Neon Postgres database with `store_id` and row-level security; one Cloudflare R2 bucket with keys under `stores/{storeId}/`; Resend for transactional order email from `notify.lebrands.store`.
+- Development is in Replit; hosting and production are on Cloudflare.
 
-## Stack
+## Rules
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Do not use Replit Deployments, Replit DB, or Replit Postgres.
+- Do not create an Express, Next.js, or other Node server. The app is a Cloudflare Worker.
+- Do not create a project, folder, database, or bucket per brand. All brands share one codebase, database, and bucket.
+- Never put secrets in code. Wrangler reads `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from Replit Secrets.
+- Store money as integer paise. Every database table must have `created_at` and `updated_at`.
+- Escape user-supplied values before inserting them into HTML.
+- Build only the requested phase; do not start later phases without instruction.
 
-## Where things live
+## Reserved subdomains
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+These names cannot be used as store names:
 
-## Architecture decisions
-
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
-
-## Product
-
-_Describe the high-level user-facing capabilities of this app once they exist._
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+`www`, `app`, `admin`, `api`, `brands`, `customers`, `mail`, `notify`, `news`, `help`, `support`, `status`, `shop`, `store`, `checkout`, `cart`, `pay`, `payments`, `login`, `account`, `dashboard`, `blog`, `docs`, `cdn`, `static`, `assets`, `media`, `lebrands`, `lebrandsspace`.

@@ -1,0 +1,77 @@
+Create a new project called "lebrands-store".
+
+=== WHAT THIS PROJECT IS ===
+LeBrands.Store is a multi-tenant store builder for Indian D2C brands that onboard
+through LeBrands.Space (a separate, existing project — do not touch it). A brand
+fills a guided form and gets a complete online store (home, collection, product,
+cart, checkout, policy pages) at brandname.lebrands.store, optionally on its own
+domain. ONE codebase serves EVERY brand's store, chosen by the request hostname.
+Brands own their own Razorpay (payments) and Shiprocket (delivery) accounts.
+
+=== FIXED TECH STACK (do not substitute anything) ===
+- Runtime: Cloudflare Workers (JavaScript, ES modules), deployed with Wrangler CLI.
+- Domain: lebrands.store, already on Cloudflare DNS with a wildcard *.lebrands.store
+  and SSL active.
+- Database (later phases): Neon Postgres — ONE shared database for all stores.
+  Every tenant table has a store_id column; Postgres row-level security enabled.
+- Media (later phases): Cloudflare R2 — ONE bucket, object keys prefixed
+  stores/{storeId}/.
+- Email (later phases): Resend, transactional order emails only,
+  sent from notify.lebrands.store.
+- Development happens in Replit; hosting and production run on Cloudflare only.
+
+=== STRICT RULES ===
+- Do NOT use Replit Deployments, Replit DB, or Replit Postgres.
+- Do NOT create an Express, Next.js or any Node server. The app is a Cloudflare Worker.
+- Do NOT create a project, folder, database or bucket per brand. All brands share
+  one codebase, one database and one bucket.
+- NEVER put secrets in code. Locally, Wrangler reads CLOUDFLARE_API_TOKEN and
+  CLOUDFLARE_ACCOUNT_ID from Replit Secrets.
+- Money is always stored as integer paise. Every table has created_at and updated_at.
+- Escape any user-supplied value inserted into HTML.
+- Build ONLY what this prompt asks for. Do not start later phases.
+
+=== RESERVED SUBDOMAINS (never usable as store names) ===
+www, app, admin, api, brands, customers, mail, notify, news, help, support, status,
+shop, store, checkout, cart, pay, payments, login, account, dashboard, blog, docs,
+cdn, static, assets, media, lebrands, lebrandsspace
+
+=== HOSTNAME ROUTING (target design) ===
+- lebrands.store, www.lebrands.store → platform home page
+- app.lebrands.store → builder/admin (later phase)
+- {sub}.lebrands.store → that brand's store (later: looked up in the database)
+- reserved subdomains → "Store not found" (except platform ones built later)
+- any other hostname → brand custom domain (later: looked up in a domains table);
+  for now → "Store not found"
+
+=== TASK FOR THIS PROJECT CREATION: PHASE 0 ONLY ===
+1. Set up a Node.js project. Install wrangler as a devDependency.
+2. Create wrangler.jsonc:
+   - name: "lebrands-store"
+   - main: "src/index.js"
+   - compatibility_date: "2025-09-01"
+   - workers_dev: false
+   - routes: [
+       { "pattern": "lebrands.store/*",   "zone_name": "lebrands.store" },
+       { "pattern": "*.lebrands.store/*", "zone_name": "lebrands.store" }
+     ]
+3. Create src/index.js implementing the hostname routing above for Phase 0:
+   - lebrands.store / www.lebrands.store → simple branded page:
+     "LeBrands.Store — Stores for India's D2C brands. Coming soon."
+   - {sub}.lebrands.store → if sub matches ^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])$
+     and is not reserved: page showing "{sub}" and "This store is coming soon".
+     Otherwise: 404 page "Store not found".
+   - any other hostname → 404 page "Store not found".
+   Pages: minimal, mobile-friendly HTML with inline CSS, no external assets.
+4. Create a constants file src/reserved.js exporting the reserved subdomain list,
+   and import it in src/index.js.
+5. package.json scripts: "deploy": "wrangler deploy", "whoami": "wrangler whoami".
+6. Create replit.md containing a concise version of: what this project is,
+   the fixed tech stack, the strict rules, and the reserved list — so these
+   rules apply to every future task in this project.
+7. Create docs/REQUIREMENTS.md containing only the line:
+   "Full requirements document — to be pasted here."
+8. Create a short README.md: how to set Replit Secrets (CLOUDFLARE_API_TOKEN,
+   CLOUDFLARE_ACCOUNT_ID), run `npm run whoami`, and deploy with `npm run deploy`.
+9. Do NOT deploy. Do NOT run a Replit web server or preview. When finished,
+   stop and list every file you created.
