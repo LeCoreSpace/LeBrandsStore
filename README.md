@@ -13,9 +13,22 @@ Open the Replit Secrets tool and add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCO
 
 No migrations, seed, Cloudflare configuration changes, or deployments are run automatically.
 
-1. Set `DATABASE_URL` in Replit Secrets to the administrative connection string
-   for this project's Supabase Postgres database in Mumbai. Use a direct or
-   session-pooler connection, not the transaction pooler. This role must have
+**Supabase Postgres is the only database. Never use Replit's built-in database,
+Replit DB, or Replit Postgres.**
+
+The two database secrets are:
+
+- `SUPABASE_DB_URL`: administrative role, for migrations and seeding only.
+- `SUPABASE_APP_DB_URL`: restricted `lebrands_app` role, for Hyperdrive only.
+
+The scripts read only `SUPABASE_DB_URL`. They reject missing/invalid URLs and
+hostnames outside `supabase.com`, with no fallback to `DATABASE_URL` or `PG*`
+variables. Before connecting, they print only username, hostname and port.
+
+1. Set `SUPABASE_DB_URL` in Replit Secrets to the administrative connection string
+   for this project's Supabase Postgres database in Mumbai. Use a session-pooler
+   hostname ending in `.supabase.com`, not the transaction pooler. URLs ending
+   in `.supabase.co` are intentionally rejected by the hostname guard. This role must have
    `BYPASSRLS` (or be a superuser) and permission to create `lebrands_app`.
 2. Run:
 
@@ -32,7 +45,7 @@ No migrations, seed, Cloudflare configuration changes, or deployments are run au
    client, run the following and enter the password at the hidden prompt:
 
    ```sh
-   psql "$DATABASE_URL"
+    psql "$SUPABASE_DB_URL"
    ```
 
    Inside psql:
@@ -43,16 +56,16 @@ No migrations, seed, Cloudflare configuration changes, or deployments are run au
    ```
 
    No password is set in the migration. Do not save it in SQL or source files.
-4. Add `HYPERDRIVE_DATABASE_URL` to Replit Secrets, using the dedicated
+4. Add `SUPABASE_APP_DB_URL` to Replit Secrets, using the dedicated
    `lebrands_app` credentials for the same database. For Supabase's session
    pooler, the username is `lebrands_app.<project-ref>`; for a direct
    connection it is `lebrands_app`. Never configure Hyperdrive with the
-   administrative `DATABASE_URL`.
+    administrative `SUPABASE_DB_URL`. Use the same Supabase session-pooler host.
 5. Create the Hyperdrive configuration manually:
 
    ```sh
    npm run whoami
-   npx wrangler hyperdrive create lebrands-store --connection-string "$HYPERDRIVE_DATABASE_URL" --caching-disabled
+    npx wrangler hyperdrive create lebrands-store --connection-string "$SUPABASE_APP_DB_URL" --caching-disabled
    ```
 
    Keep caching disabled for tenant-context isolation and fresh store-status
@@ -87,8 +100,10 @@ and routing are not configured in this phase.
 ## Offline checks
 
 ```sh
+node --test tests/db-connection.test.js
 node --experimental-test-module-mocks --test tests/db.test.js
 ```
 
 These tests use an in-memory driver mock. They do not connect to Supabase,
 execute migrations, start a web server, or verify database-enforced RLS.
+The connection guard tests use synthetic credentials only.

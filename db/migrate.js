@@ -1,18 +1,22 @@
 import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import postgres from "postgres";
+import { printConnectionTarget, supabaseConnectionOptions } from "./connection.js";
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  console.error("DATABASE_URL must be set in Replit Secrets before running migrations.");
+let connectionOptions;
+try {
+  connectionOptions = supabaseConnectionOptions(process.env.SUPABASE_DB_URL);
+} catch (error) {
+  console.error(error.message);
   process.exit(1);
 }
+printConnectionTarget(connectionOptions);
 
 class MigrationConfigurationError extends Error {}
 let sql;
 
 try {
-  sql = postgres(databaseUrl, { max: 1, fetch_types: false, prepare: false, connect_timeout: 10 });
+  sql = postgres(connectionOptions);
   const directory = new URL("./migrations/", import.meta.url);
   const filenames = (await readdir(directory))
     .filter((filename) => /^\d{4}_[a-z0-9_]+\.sql$/.test(filename))
@@ -26,7 +30,7 @@ try {
       SELECT rolsuper, rolbypassrls FROM pg_catalog.pg_roles WHERE rolname = current_user
     `;
     if (!role || (!role.rolsuper && !role.rolbypassrls)) {
-      throw new MigrationConfigurationError("DATABASE_URL must use an administrative role with BYPASSRLS, not lebrands_app.");
+      throw new MigrationConfigurationError("SUPABASE_DB_URL must use an administrative role with BYPASSRLS, not lebrands_app.");
     }
     await tx`
       CREATE TABLE IF NOT EXISTS public.schema_migrations (

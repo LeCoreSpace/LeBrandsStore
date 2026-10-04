@@ -1,22 +1,26 @@
 import postgres from "postgres";
+import { printConnectionTarget, supabaseConnectionOptions } from "./connection.js";
 
-const databaseUrl = process.env.DATABASE_URL;
-if (!databaseUrl) {
-  console.error("DATABASE_URL must be set in Replit Secrets before running the seed.");
+let connectionOptions;
+try {
+  connectionOptions = supabaseConnectionOptions(process.env.SUPABASE_DB_URL);
+} catch (error) {
+  console.error(error.message);
   process.exit(1);
 }
+printConnectionTarget(connectionOptions);
 
 let sql;
 
 try {
-  sql = postgres(databaseUrl, { max: 1, fetch_types: false, prepare: false, connect_timeout: 10 });
+  sql = postgres(connectionOptions);
   await sql.begin(async (tx) => {
     await tx`SELECT pg_advisory_xact_lock(714097281002::bigint)`;
     const [role] = await tx`
       SELECT rolsuper, rolbypassrls FROM pg_catalog.pg_roles WHERE rolname = current_user
     `;
     if (!role || (!role.rolsuper && !role.rolbypassrls)) {
-      throw Object.assign(new Error("Seed using the administrative DATABASE_URL, not lebrands_app."), {
+      throw Object.assign(new Error("Seed using the administrative SUPABASE_DB_URL, not lebrands_app."), {
         code: "INVALID_ADMINISTRATIVE_ROLE",
       });
     }

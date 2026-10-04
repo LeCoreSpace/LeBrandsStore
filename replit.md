@@ -6,12 +6,17 @@ LeBrands.Store is a multi-tenant store builder for Indian D2C brands. One codeba
 
 - Runtime: Cloudflare Workers, JavaScript ES modules, and Wrangler CLI.
 - Domain: `lebrands.store`, with wildcard subdomains on Cloudflare DNS.
-- Later phases: one shared Supabase Postgres database in the Mumbai region, used only as Postgres and connected from the Worker via Cloudflare Hyperdrive, with `store_id` and row-level security; one Cloudflare R2 bucket with keys under `stores/{storeId}/`; Resend for transactional order email from `notify.lebrands.store`.
+- Database: Supabase Postgres only, one shared database in the Mumbai region, used only as Postgres and connected from the Worker via Cloudflare Hyperdrive, with `store_id` and row-level security.
+- Later phases: one Cloudflare R2 bucket with keys under `stores/{storeId}/`; Resend for transactional order email from `notify.lebrands.store`.
 - Development is in Replit; hosting and production are on Cloudflare.
 
 ## Rules
 
 - Do not use Replit Deployments, Replit DB, or Replit Postgres.
+- Replit's built-in database must not be used. `SUPABASE_DB_URL` is the administrative secret for migrations and seeding; `SUPABASE_APP_DB_URL` uses the restricted `lebrands_app` role for Hyperdrive.
+- Database scripts read only `SUPABASE_DB_URL`, require a hostname ending in `supabase.com`, and never fall back to `DATABASE_URL` or `PG*` variables. Print only username, hostname and port before connecting; never print passwords or full connection URLs.
+- Migrations and seeds are manual only. Never run database pushes or migrations automatically after a merge or dependency installation.
+- Phase 1a migrations were previously run against Replit's built-in Postgres accidentally. Removing its template configuration does not authorize deleting that database or its contents.
 - Do not use Supabase Storage, Supabase Auth, supabase-js data calls, or PostgREST.
 - Do not create an Express, Next.js, or other Node server. The app is a Cloudflare Worker.
 - Do not create a project, folder, database, or bucket per brand. All brands share one codebase, database, and bucket.
