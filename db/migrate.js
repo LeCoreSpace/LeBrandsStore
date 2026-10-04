@@ -1,22 +1,21 @@
 import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import postgres from "postgres";
-import { printConnectionTarget, supabaseConnectionOptions } from "./connection.js";
+import { clearPgEnvironment, logDatabaseFailure, printConnectionTarget, validateSupabaseUrl } from "./connection.js";
 
-let connectionOptions;
+clearPgEnvironment();
 try {
-  connectionOptions = supabaseConnectionOptions(process.env.SUPABASE_DB_URL);
+  printConnectionTarget(validateSupabaseUrl(process.env.SUPABASE_DB_URL));
 } catch (error) {
-  console.error(error.message);
+  logDatabaseFailure("Migration configuration failed", error, process.env.SUPABASE_DB_URL);
   process.exit(1);
 }
-printConnectionTarget(connectionOptions);
 
 class MigrationConfigurationError extends Error {}
 let sql;
 
 try {
-  sql = postgres(connectionOptions);
+  sql = postgres(process.env.SUPABASE_DB_URL, { ssl: "require", max: 1 });
   const directory = new URL("./migrations/", import.meta.url);
   const filenames = (await readdir(directory))
     .filter((filename) => /^\d{4}_[a-z0-9_]+\.sql$/.test(filename))
@@ -66,16 +65,12 @@ try {
   });
   console.info("Migrations committed successfully.");
 } catch (error) {
-  // Never print connection strings, SQL parameters, or raw database errors.
-  const message = error instanceof MigrationConfigurationError
-    ? error.message
-    : `Database operation failed (${error.code ?? "unknown"}).`;
-  console.error(`Migration failed; transaction rolled back. ${message}`);
+  logDatabaseFailure("Migration failed", error, process.env.SUPABASE_DB_URL);
   process.exitCode = 1;
 } finally {
   if (sql) {
-    await sql.end({ timeout: 5 }).catch(() => {
-      console.error("Database connection cleanup failed.");
+    await sql.end({ timeout: 5 }).catch((error) => {
+      logDatabaseFailure("Database connection cleanup failed", error, process.env.SUPABASE_DB_URL);
       process.exitCode = 1;
     });
   }

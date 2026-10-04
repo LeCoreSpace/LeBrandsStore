@@ -24,6 +24,10 @@ The two database secrets are:
 The scripts read only `SUPABASE_DB_URL`. They reject missing/invalid URLs and
 hostnames outside `supabase.com`, with no fallback to `DATABASE_URL` or `PG*`
 variables. Before connecting, they print only username, hostname and port.
+Each script clears `PG*` variables in its own process and creates one client
+with `postgres(process.env.SUPABASE_DB_URL, { ssl: 'require', max: 1 })`.
+The original URL is passed unchanged; no helper reconstructs credentials.
+Failures report the error code and message with URLs and passwords redacted.
 
 1. Set `SUPABASE_DB_URL` in Replit Secrets to the administrative connection string
    for this project's Supabase Postgres database in Mumbai. Use a session-pooler

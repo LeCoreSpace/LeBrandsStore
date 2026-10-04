@@ -15,6 +15,7 @@ LeBrands.Store is a multi-tenant store builder for Indian D2C brands. One codeba
 - Do not use Replit Deployments, Replit DB, or Replit Postgres.
 - Replit's built-in database must not be used. `SUPABASE_DB_URL` is the administrative secret for migrations and seeding; `SUPABASE_APP_DB_URL` uses the restricted `lebrands_app` role for Hyperdrive.
 - Database scripts read only `SUPABASE_DB_URL`, require a hostname ending in `supabase.com`, and never fall back to `DATABASE_URL` or `PG*` variables. Print only username, hostname and port before connecting; never print passwords or full connection URLs.
+- Migrations and seed must each use one client: `postgres(process.env.SUPABASE_DB_URL, { ssl: 'require', max: 1 })`. Clear `PG*` variables in the script process. Helpers must not reconstruct or override credentials, use `SUPABASE_APP_DB_URL`, create another client, or execute `SET ROLE`. Report failure codes and messages with URLs/passwords redacted.
 - Migrations and seeds are manual only. Never run database pushes or migrations automatically after a merge or dependency installation.
 - Phase 1a migrations were previously run against Replit's built-in Postgres accidentally. Removing its template configuration does not authorize deleting that database or its contents.
 - Do not use Supabase Storage, Supabase Auth, supabase-js data calls, or PostgREST.

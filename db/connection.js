@@ -1,18 +1,14 @@
 // Pure validation: callers supply SUPABASE_DB_URL. Never consult other secrets.
-export function supabaseConnectionOptions(rawUrl) {
+export function validateSupabaseUrl(rawUrl) {
   if (!rawUrl) {
     throw new Error("SUPABASE_DB_URL must be set in Replit Secrets. No other database variable is used.");
   }
 
   let url;
   let username;
-  let password;
-  let database;
   try {
     url = new URL(rawUrl);
     username = decodeURIComponent(url.username);
-    password = decodeURIComponent(url.password);
-    database = decodeURIComponent(url.pathname.slice(1));
   } catch {
     // URL parser errors can contain the original secret. Never forward them.
     throw new Error("SUPABASE_DB_URL must be a valid PostgreSQL connection URL.");
@@ -24,49 +20,49 @@ export function supabaseConnectionOptions(rawUrl) {
   if (hostname !== "supabase.com" && !hostname.endsWith(".supabase.com")) {
     throw new Error("SUPABASE_DB_URL hostname must end with supabase.com. Replit's built-in database is forbidden.");
   }
-  if (!username || !database) {
+  if (!username || !url.pathname.slice(1)) {
     throw new Error("SUPABASE_DB_URL must include a username and database name; PG* variables are never used.");
   }
   const port = Number(url.port || 5432);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error("SUPABASE_DB_URL must specify a valid PostgreSQL port.");
   }
-  const sslmode = url.searchParams.get("sslmode") ?? "require";
-  if (!["require", "verify-full", "verify-ca", "disable"].includes(sslmode)) {
-    throw new Error("SUPABASE_DB_URL has an unsupported sslmode.");
-  }
-
-  // Pass an options object, not a URL. Explicit fields/defaults prevent
-  // postgres.js from filling connection settings from PG* environment variables.
-  return {
-    host: hostname,
-    port,
-    username,
-    password: () => password,
-    database,
-    ssl: sslmode === "disable" ? false : sslmode,
-    sslnegotiation: null,
-    max: 1,
-    fetch_types: false,
-    prepare: false,
-    connect_timeout: 10,
-    idle_timeout: null,
-    max_lifetime: 1800,
-    max_pipeline: 100,
-    backoff: (retries) => Math.min(3 ** retries / 100, 20),
-    keep_alive: 60,
-    debug: false,
-    publications: "alltables",
-    target_session_attrs: "read-write",
-    connection: { application_name: "lebrands-db-admin" },
-  };
+  // Metadata is for validation/logging ONLY. Never pass it to postgres().
+  return { username, hostname, port };
 }
 
-export function printConnectionTarget(options) {
+export function clearPgEnvironment(env = process.env) {
+  // Delete by name without inspecting or printing any environment values.
+  for (const key of Object.keys(env)) {
+    if (/^PG/i.test(key)) delete env[key];
+  }
+}
+
+export function printConnectionTarget(target) {
   // JSON escapes control characters. Never print a password, database or URL.
   console.info(JSON.stringify({
-    username: options.username,
-    hostname: options.host,
-    port: options.port,
+    username: target.username,
+    hostname: target.hostname,
+    port: target.port,
   }));
+}
+
+export function logDatabaseFailure(label, error, rawUrl) {
+  const sensitive = [rawUrl];
+  try {
+    const password = new URL(rawUrl).password;
+    if (password) {
+      sensitive.push(password);
+      try { sensitive.push(decodeURIComponent(password)); } catch { /* Keep encoded redaction. */ }
+    }
+  } catch { /* Invalid URL errors still need full-input redaction. */ }
+  const redact = (value) => {
+    let text = String(value);
+    for (const secret of sensitive.filter(Boolean).sort((a, b) => b.length - a.length)) {
+      text = text.split(secret).join("[REDACTED]");
+    }
+    return text.replace(/\bpostgres(?:ql)?:\/\/[^\s"'<>]+/gi, "[REDACTED URL]")
+      .replace(/[\r\n]/g, " ");
+  };
+  console.error(`${label} (${redact(error?.code ?? "unknown")}): ${redact(error?.message ?? "Unknown failure")}`);
 }

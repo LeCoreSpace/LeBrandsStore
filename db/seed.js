@@ -1,19 +1,18 @@
 import postgres from "postgres";
-import { printConnectionTarget, supabaseConnectionOptions } from "./connection.js";
+import { clearPgEnvironment, logDatabaseFailure, printConnectionTarget, validateSupabaseUrl } from "./connection.js";
 
-let connectionOptions;
+clearPgEnvironment();
 try {
-  connectionOptions = supabaseConnectionOptions(process.env.SUPABASE_DB_URL);
+  printConnectionTarget(validateSupabaseUrl(process.env.SUPABASE_DB_URL));
 } catch (error) {
-  console.error(error.message);
+  logDatabaseFailure("Seed configuration failed", error, process.env.SUPABASE_DB_URL);
   process.exit(1);
 }
-printConnectionTarget(connectionOptions);
 
 let sql;
 
 try {
-  sql = postgres(connectionOptions);
+  sql = postgres(process.env.SUPABASE_DB_URL, { ssl: "require", max: 1 });
   await sql.begin(async (tx) => {
     await tx`SELECT pg_advisory_xact_lock(714097281002::bigint)`;
     const [role] = await tx`
@@ -47,12 +46,12 @@ try {
   });
   console.info("Seed committed successfully.");
 } catch (error) {
-  console.error(`Seed failed; transaction rolled back (${error.code ?? "unknown"}).`);
+  logDatabaseFailure("Seed failed", error, process.env.SUPABASE_DB_URL);
   process.exitCode = 1;
 } finally {
   if (sql) {
-    await sql.end({ timeout: 5 }).catch(() => {
-      console.error("Database connection cleanup failed.");
+    await sql.end({ timeout: 5 }).catch((error) => {
+      logDatabaseFailure("Database connection cleanup failed", error, process.env.SUPABASE_DB_URL);
       process.exitCode = 1;
     });
   }
