@@ -1,5 +1,13 @@
 # LeBrands.Store
 
+## Step 2: store setup, Aura and publishing
+
+See [docs/STEP2.md](docs/STEP2.md) for the four-step wizard, shared live-preview
+templates, member-only R2 uploads, publish snapshots, file list and exact manual
+commands. Migration `0005_store_wizard.sql` is supplied but not run.
+No checkout, deployment, remote bucket creation or database migration was performed.
+Step 2 adds no secrets.
+
 ## Step 1: homepage and brand accounts
 
 See [docs/STEP1.md](docs/STEP1.md) for the changed-file list, exact manual
@@ -112,9 +120,9 @@ and routing are not configured in this phase.
   read and write checks against transaction-local `app.store_id`.
 - `brands`, `users`, and `themes` are shared registries, not tenant-owned copies.
   The Worker role has no direct access to brands/users and read-only access to
-  themes. Administrative scripts manage those records for now; no SSO or
-  account-management API is built.
-- `resolve_store` is the only bootstrap function exposed to the app role.
+  themes. Custom account and wizard handlers use narrowly scoped database functions;
+  no external SSO or Supabase Auth is used.
+- `resolve_store` is the public tenant bootstrap function exposed to the app role.
   Its privileged owner can read through RLS, but it returns only the ID,
   subdomain, name and status of a live store for one hostname.
 - Instantiate `createDb(env)` inside a request. Use

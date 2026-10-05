@@ -219,7 +219,9 @@ function memoryRepository() {
     async availability(name) { return name !== "taken"; },
     async createStore(id, name, subdomain, hash) {
       assert.equal(sessions.get(hash).user_id, id);
-      sessions.get(hash).stores.push({ store_id: "store-1", name, subdomain, status: "draft", role: "owner" });
+      const storeId = "44444444-4444-4444-8444-444444444444";
+      sessions.get(hash).stores.push({ store_id: storeId, name, subdomain, status: "draft", role: "owner" });
+      return storeId;
     },
     async changePassword(hash, record) {
       const user = sessions.get(hash);
@@ -259,7 +261,9 @@ test("offline account journey: generic signup, login, draft creation, forced res
   assert.deepEqual(await (await call("/api/subdomain-check?name=app")).json(), {
     available: false, error: "Use 3 to 30 lowercase letters, numbers or hyphens. Reserved names are unavailable.",
   });
-  assert.equal((await call("/stores/new", { brand_name: "My Brand", subdomain: "my-brand" })).status, 303);
+  const created = await call("/stores/new", { brand_name: "My Brand", subdomain: "my-brand" });
+  assert.equal(created.status, 303);
+  assert.equal(created.headers.get("location"), "/stores/44444444-4444-4444-8444-444444444444/setup");
   assert.match(await (await call("/")).text(), /My Brand/);
   repo.users.get("owner@example.com").must_change_password = true;
   assert.equal((await call("/")).headers.get("location"), "/account");

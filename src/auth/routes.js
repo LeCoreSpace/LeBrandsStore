@@ -1,6 +1,7 @@
 import { createDb } from "../db.js";
 import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
+import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
 import { assertPasswordPepper, hashPassword, needsPasswordRehash, randomToken, sha256, validatePassword, verifyPassword } from "./passwords.js";
 import {
   GENERIC_LOGIN_ERROR, SECURITY_HEADERS, ipHash, isValidOrigin, normalizeEmail,
@@ -23,8 +24,8 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
   const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password" };
-  if (!["GET", "POST", "HEAD"].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
-  if (request.method === "POST" && !isValidOrigin(request)) {
+  if (!["GET", "POST", "HEAD", ...(isStoreRoute(path) ? ["PATCH", "PUT", "DELETE"] : [])].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
+  if (!["GET", "HEAD"].includes(request.method) && !isValidOrigin(request)) {
     return html("error", { error: "This request did not come from the account website." }, 403);
   }
   const token = readSessionToken(request);
@@ -37,7 +38,10 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   if (!token && ["/", "/account", "/stores/new", "/api/subdomain-check", "/logout"].includes(path)) {
     return path.startsWith("/api/") ? json({ available: false, error: "Sign in to check an address." }, 401) : redirect("/login");
   }
-  if (!["/", "/account", "/stores/new", "/api/subdomain-check", "/logout", ...Object.keys(publicViews)].includes(path)) {
+  if (!token && isStoreRoute(path)) {
+    return path.startsWith("/api/") ? json({ error: "Sign in to manage your store." }, 401) : redirect("/login");
+  }
+  if (!isStoreRoute(path) && !["/", "/account", "/stores/new", "/api/subdomain-check", "/logout", ...Object.keys(publicViews)].includes(path)) {
     return html("error", { error: "Page not found." }, 404);
   }
 
@@ -55,10 +59,18 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     if (user?.must_change_password && path !== "/account" && path !== "/logout") {
       return path.startsWith("/api/") ? json({ available: false, error: "Change your password first." }, 403) : redirect("/account");
     }
+    if (isStoreRoute(path)) return await handleStoreRoutes(request, env, db, user, tokenHash);
     if (request.method !== "POST") {
       if (path === "/api/subdomain-check") {
         const name = url.searchParams.get("name") ?? "";
         if (!validateSubdomain(name)) return json({ available: false, error: "Use 3 to 30 lowercase letters, numbers or hyphens. Reserved names are unavailable." });
+        const storeId = url.searchParams.get("store_id");
+        if (storeId) {
+          return json({ available: await db.withMemberStore(storeId, tokenHash, async (tx) => {
+            const [row] = await tx`SELECT public.store_address_available(${name}, ${storeId}) AS available`;
+            return row.available;
+          }) });
+        }
         return json({ available: await repo.availability(name) });
       }
       if (publicViews[path]) return user ? redirect("/") : html(publicViews[path]);
@@ -116,11 +128,12 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       const brandName = nameValue(form.get("brand_name"));
       const subdomain = form.get("subdomain") ?? "";
       const values = { brand_name: form.get("brand_name"), subdomain };
-      if (!brandName || !validateSubdomain(subdomain)) {
-        return html("new-store", { user, values, error: "Enter a brand name and a valid, non-reserved store address." }, 400);
+      if (!brandName || [...brandName].length < 2 || [...brandName].length > 40 || !validateSubdomain(subdomain)) {
+        return html("new-store", { user, values, error: "Use a brand name of 2 to 40 characters and a valid, non-reserved store address." }, 400);
       }
       try {
-        await repo.createStore(user.id, brandName, subdomain, tokenHash);
+        const storeId = await repo.createStore(user.id, brandName, subdomain, tokenHash);
+        if (storeId) return redirect(`/stores/${storeId}/setup`);
       } catch (error) {
         if (["23505", "22023"].includes(error.code)) {
           return html("new-store", { user, values, error: "That store address is not available. Choose another." }, 409);

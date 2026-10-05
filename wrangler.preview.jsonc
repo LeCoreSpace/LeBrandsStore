@@ -3,5 +3,7 @@
   "main": "src/preview.js",
   "compatibility_date": "2025-09-01",
   "compatibility_flags": ["nodejs_compat"],
-  "workers_dev": false
+  "workers_dev": false,
+  "assets": { "directory": "./src/public", "binding": "ASSETS", "run_worker_first": true },
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "lebrands-store-media" }]
 }

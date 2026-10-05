@@ -6,6 +6,7 @@ import {
 } from "./connection.js";
 import { assertCleanupPermission, cleanupFixtures, setupFixtures } from "./isolation-fixtures.js";
 import { accountIsolationChecks } from "./account-isolation.js";
+import { wizardIsolationChecks } from "./wizard-isolation.js";
 
 clearPgEnvironment();
 let admin;
@@ -84,6 +85,7 @@ async function snapshotBProduct() {
 
 const checks = [
   ...accountIsolationChecks(() => fixtures, appTransaction, denied),
+  ...wizardIsolationChecks(() => fixtures, appTransaction, denied),
   ...["products", "customers", "orders"].map((table) => ({
     name: `a.${table}`,
     reason: "No context exposes zero rows or a permission denial.",

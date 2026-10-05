@@ -50,6 +50,21 @@ export function createDb(env) {
         return fn(tx);
       });
     },
+    async withMemberStore(storeId, tokenHash, fn) {
+      if (!UUID_PATTERN.test(storeId) || !/^[0-9a-f]{64}$/.test(tokenHash ?? "")) {
+        throw Object.assign(new Error("Store not found."), { status: 404 });
+      }
+      return sql.begin(async (tx) => {
+        await assertAppRole(tx);
+        const [access] = await tx`SELECT public.authorize_store_session(${tokenHash}, ${storeId}) AS allowed`;
+        if (!access?.allowed) throw Object.assign(new Error("You do not have access to this store."), { status: 403 });
+        await tx`SELECT set_config('app.store_id', ${storeId}, true)`;
+        // Every wizard mutation and publication serializes on the store row.
+        const [store] = await tx`SELECT store_id FROM public.stores WHERE store_id = ${storeId} FOR UPDATE`;
+        if (!store) throw Object.assign(new Error("Store not found."), { status: 404 });
+        return fn(tx);
+      });
+    },
     close() {
       return sql.end({ timeout: 5 });
     },

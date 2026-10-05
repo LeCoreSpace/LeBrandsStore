@@ -25,8 +25,8 @@ function alertBlock(error, notice) {
   return `${error ? `<div class="form-alert" role="alert">${escapeHtml(error)}</div>` : ""}${notice ? `<div class="form-notice" role="status">${escapeHtml(notice)}</div>` : ""}`;
 }
 
-function authFrame({ eyebrow, heading, intro, title, description, form, after }) {
-  return accountDoc(title, `${accountHeader()}<main class="wrap auth-shell">
+function authFrame({ eyebrow, heading, intro, title, description, form, after, user }) {
+  return accountDoc(title, `${accountHeader(user)}<main class="wrap auth-shell">
     <section class="auth-intro"><div class="eyebrow">${escapeHtml(eyebrow)}</div><h1>${escapeHtml(heading)}</h1><p>${escapeHtml(intro)}</p>
       <div class="auth-stamp"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#e4e9d4"/><path d="M12 20h16M20 12v16" stroke="#214a3d" stroke-width="1.5"/></svg><span>Built for independent Indian brands</span></div>
     </section>
@@ -98,9 +98,9 @@ function dashboard(data) {
     const subdomain = escapeHtml(store.subdomain || "");
     const host = `${subdomain}.lebrands.store`;
     return `<article class="store-row"><div><div class="store-name">${escapeHtml(store.name || "Untitled store")}</div><div class="store-url">${subdomain ? `<a href="https://${subdomain}.lebrands.store">${host}</a>` : "Store address unavailable"}</div></div>
-      <span class="status-pill">${escapeHtml(store.status || "unknown")}</span><div class="store-role">${escapeHtml(store.role || "member")}</div></article>`;
+      <span class="status-pill">${escapeHtml(store.status || "unknown")}</span><div class="store-role">${escapeHtml(store.role || "member")}<br><a class="inline-link" href="/stores/${escapeHtml(store.store_id)}/setup">Continue setup</a>${store.status === "live" ? `<br><a class="inline-link" href="https://${subdomain}.lebrands.store" target="_blank" rel="noopener">View store</a>` : ""}</div></article>`;
   }).join("");
-  return accountDoc("Your stores", `${accountHeader()}<main class="wrap dashboard-main">
+  return accountDoc("Your stores", `${accountHeader(user)}<main class="wrap dashboard-main">
     ${forcedNotice(data)}
     <div class="dashboard-title"><div><div class="eyebrow">Your LeBrands account</div><h1>Good to see you, ${escapeHtml(name)}.</h1><p>Your stores, gathered in one place.</p></div>
       <div class="dashboard-actions">${!user.must_change_password ? '<a class="button" href="/stores/new">Create a store <span aria-hidden="true">+</span></a>' : ""}<form method="post" action="/logout"><button class="quiet-button" type="submit">Sign out</button></form></div>
@@ -117,12 +117,13 @@ function newStore(data) {
   const values = data.values || {};
   return authFrame({
     eyebrow: "A home for your brand",
+    user: data.user,
     heading: "Claim your place on the internet.",
     intro: "Choose a brand name and a short store address. You can begin with this address and connect your own domain later.",
     title: "Create a store",
     description: "Choose the name customers will see and the address they'll remember.",
     form: `${alertBlock(data.error, data.notice)}<form method="post" action="/stores/new" id="new-store-form" autocomplete="on">
-      <div class="form-control"><label for="brand_name">Brand name</label><input id="brand_name" name="brand_name" type="text" maxlength="120" required value="${escapeHtml(values.brand_name || "")}" placeholder="Moru Studio"></div>
+      <div class="form-control"><label for="brand_name">Brand name</label><input id="brand_name" name="brand_name" type="text" minlength="2" maxlength="40" required value="${escapeHtml(values.brand_name || "")}" placeholder="Moru Studio"></div>
       <div class="form-control"><label for="subdomain">Store address</label><div class="subdomain-wrap"><input id="subdomain" name="subdomain" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" required value="${escapeHtml(values.subdomain || "")}" placeholder="moru"><span class="subdomain-suffix">.lebrands.store</span></div><span class="form-help">Lowercase letters, numbers and hyphens. 3 to 30 characters.</span><span class="availability" id="subdomain-availability" aria-live="polite" role="status">Enter an address to check availability.</span></div>
       <button class="button" id="create-store-submit" type="submit" disabled>Create store <span aria-hidden="true">↗</span></button>
     </form>
@@ -176,6 +177,7 @@ function account(data) {
   const mustChange = Boolean(data.user?.must_change_password);
   return authFrame({
     eyebrow: "Your account",
+    user: data.user,
     heading: mustChange ? "One important step before you continue." : "Keep your account yours.",
     intro: mustChange ? "A temporary password was used to give you access. Reset it now to protect your account and unlock your stores." : "Choose a new password whenever you need to refresh your account security.",
     title: "Change password",

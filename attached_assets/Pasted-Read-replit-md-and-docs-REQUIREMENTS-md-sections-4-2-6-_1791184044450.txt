@@ -1,0 +1,72 @@
+Read replit.md and docs/REQUIREMENTS.md (sections 4.2, 6, 7, 8, 11, 12).
+Build Step 2 only: store creation wizard (steps 1–4), the "Aura" theme,
+live preview, media uploads to R2, and publishing. No checkout/cart yet
+(Step 3), no Razorpay/Shiprocket/domains, no AI writing helpers, no email.
+Do NOT deploy or run migrations.
+
+A. SMALL FIXES FIRST
+- Header on app pages: when signed in, show the user's name + "Sign out"
+  instead of "Sign in".
+- Logo mark: use "L" (for LeBrands), not "F".
+
+B. MEDIA (R2)
+- wrangler.jsonc: R2 binding "MEDIA" → bucket "lebrands-store-media".
+- Upload through the Worker (no S3 credentials): POST /api/stores/:id/media
+  (multipart), only for store members. Validate type by magic bytes, not just
+  extension: logo PNG/JPG/SVG/WebP ≤5 MB (sanitise SVG or reject scripts);
+  images JPG/PNG/WebP ≤10 MB. Key: stores/{storeId}/{uuid}.{ext}. Insert a
+  row in `media` (store_id, key, type, size, width, height, alt).
+- Serve media at https://media.lebrands.store/{key} via the Worker with long
+  cache headers (immutable keys). "media" is already a reserved subdomain.
+
+C. DATA (new migration 0005, don't edit earlier ones)
+- Whatever is needed for: store settings (tagline, description, logo media,
+  contact email/phone, legal name, GSTIN, address, category, theme, accent
+  colour, font preset, button style), wizard progress, products with images,
+  generated policy pages, publish status. Keep store_id + RLS on everything.
+- Store categories: a static list in code for now (beauty, fashion,
+  jewellery, home & décor, food & beverages, wellness, kids, pets, gifting,
+  other).
+
+D. THEME "AURA" (minimal, premium, calm; see REQUIREMENTS 8.1)
+- Write theme templates as plain JS functions that take store data and
+  return HTML, in a shared module used by BOTH the Worker (live store) and
+  the browser (preview), so preview and live store are identical.
+- Pages: home (hero with logo/tagline/description, featured products,
+  brand story, small-catalogue spotlight when ≤2 products), collection
+  (all products), product (gallery, title, price + struck compare-at price,
+  description; "Add to cart" button shown but disabled with "Checkout
+  opening soon"), about, contact, policy pages, branded 404.
+- Settings applied: accent colour (with contrast check), 3 font presets,
+  button style. Mobile-first. Alt text on images. SEO titles/meta.
+- Show a disabled "Bazaar" theme card marked "Coming soon".
+
+E. WIZARD at app.lebrands.store/stores/:id/setup
+- Layout: form left (~40%), live preview right (~60%) with tabs Home ·
+  Collection · Product and a Mobile/Desktop toggle (mobile default). On
+  mobile: full-width form + "Preview" button opening a full-screen preview.
+- Preview renders in the browser from the shared templates with the current
+  draft data, updating as the user types; tasteful placeholders for empty
+  fields; banner "Preview — not yet live". It auto-switches to the page
+  relevant to the step being edited.
+- Autosave every field (debounced ~1 s) with a "Saved" indicator; resume at
+  the last unfinished step; back navigation never loses data.
+- Step 1 Brand basics, Step 2 Theme, Step 3 Products (min 1: title, price,
+  compare-at, description, 1–8 images with reorder, tags, SKU, stock,
+  HSN code, GST rate), Step 4 Review & publish: checklist + review/edit the
+  generated policy pages (Privacy, Terms, Shipping, Cancellation & Refund,
+  Contact, Pricing — templates filled from store details, marked as drafts
+  the brand must review) + Publish button.
+- Validation inline in plain language, per REQUIREMENTS 6.3 and 6.5.
+
+F. PUBLISH
+- Publish sets the store live so {subdomain}.lebrands.store renders it with
+  the Aura theme from the database. Unpublish returns it to draft.
+- Dashboard shows each store's status, "Continue setup" / "View store" links.
+
+G. TESTS
+- Offline: template rendering (escaping, placeholders, small-catalogue mode),
+  upload validation (magic bytes, size, SVG scripts), wizard validation.
+- Extend db/test-isolation.js for the new tables and for media rows.
+
+When done: list files changed, any new secrets, and exact commands for me.

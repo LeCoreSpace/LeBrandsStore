@@ -4,6 +4,8 @@ import { handleAccounts } from "./auth/routes.js";
 import { SECURITY_HEADERS } from "./auth/security.js";
 import { renderHome, renderLegal } from "./ui/home.js";
 import { FAVICON_SVG } from "./ui/favicon.js";
+import { serveMedia } from "./store/media.js";
+import { serveStorefront } from "./store/live.js";
 
 const ROOT_DOMAIN = ".lebrands.store";
 const STORE_NAME_PATTERN = /^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])$/;
@@ -63,6 +65,19 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const hostname = url.hostname;
+    if (hostname === "media.lebrands.store") return serveMedia(request, env);
+    if (["lebrands.store", "app.lebrands.store"].includes(hostname) && url.pathname.startsWith("/assets/")) {
+      if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
+      const filename = url.pathname.slice("/assets/".length);
+      if (!["aura.js", "validation.js", "wizard.js", "wizard.css"].includes(filename)) return new Response("Not found", { status: 404 });
+      if (!env.ASSETS) return new Response("Assets unavailable", { status: 503 });
+      url.pathname = `/${filename}`;
+      const asset = await env.ASSETS.fetch(new Request(url, request));
+      const headers = new Headers(asset.headers);
+      headers.set("cache-control", "no-cache");
+      headers.set("x-content-type-options", "nosniff");
+      return new Response(asset.body, { status: asset.status, headers });
+    }
     if (["GET", "HEAD"].includes(request.method) && url.pathname === "/favicon.svg" && ["lebrands.store", "app.lebrands.store"].includes(hostname)) {
       return new Response(FAVICON_SVG, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
     }
@@ -97,6 +112,10 @@ export default {
       db = createDb(env);
       const store = await db.resolveStore(hostname);
       if (!store || store.status !== "live") return notFound();
+      const storefront = await serveStorefront(request, db, store);
+      if (storefront) return storefront;
+      // Legacy live stores without a wizard publication retain their landing.
+      // Draft content is never used as a public fallback.
       return page(
         `${store.name} | LeBrands.Store`,
         store.name,

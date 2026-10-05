@@ -46,7 +46,7 @@ export function layout({ title, description, canonical, body, noindex = false, e
 
 export function brandMark() {
   return `<a class="brandmark" href="https://lebrands.store" aria-label="LeBrands.Store home">
-    <svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="14" fill="#214a3d"/><path d="M13 34V14h23v5H19v4h14v5H19v6z" fill="#f0ca79"/><circle cx="35" cy="33" r="2.5" fill="#df876c"/></svg>
+    <svg viewBox="0 0 48 48" aria-hidden="true"><rect width="48" height="48" rx="14" fill="#214a3d"/><path d="M14 14h6v15h15v6H14z" fill="#f0ca79"/><circle cx="35" cy="16" r="2.5" fill="#df876c"/></svg>
     <span>LeBrands<small>store</small></span>
   </a>`;
 }
@@ -61,9 +61,9 @@ export function footer() {
   </div></footer>`;
 }
 
-export function accountHeader() {
+export function accountHeader(user) {
   return `<header class="account-header"><div class="wrap site-header">${brandMark()}<nav class="nav" aria-label="Account navigation">
-    <a href="https://lebrands.store">About LeBrands</a><a class="nav-login" href="/login">Sign in</a>
+    <a href="https://lebrands.store">About LeBrands</a>${user ? `<span>${escapeHtml(user.name || user.email)}</span><form method="post" action="/logout"><button class="quiet-button" type="submit">Sign out</button></form>` : '<a class="nav-login" href="/login">Sign in</a>'}
   </nav></div></header>`;
 }
 

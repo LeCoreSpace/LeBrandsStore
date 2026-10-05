@@ -21,8 +21,9 @@ const STORES = [
 const CLEANUP_TABLES = [
   "refunds", "invoices", "order_items", "shipments", "payments", "orders",
   "customer_addresses", "customers", "product_media", "collection_products",
-  "product_options", "products", "collections", "media", "page_versions",
-  "pages", "policy_pages", "invoice_sequences", "domains", "integrations",
+  "product_options", "products", "collections", "store_setup", "media", "page_versions",
+  "pages", "policy_pages", "store_publications", "store_address_history",
+  "invoice_sequences", "domains", "integrations",
   "otp_verifications", "email_log", "webhook_events", "audit_log", "store_members",
 ];
 
@@ -153,6 +154,17 @@ export async function setupFixtures(admin) {
       stores.push({ storeId: row.store_id, subdomain: store.subdomain });
     }
     for (const store of stores.slice(0, 2)) {
+      const [media] = await tx`INSERT INTO public.media
+        (store_id, object_key, kind, upload_type, content_type, size_bytes, width, height, alt_text)
+        VALUES (${store.storeId}, ${`stores/${store.storeId}/00000000-0000-4000-8000-000000000001.png`},
+          'image', 'logo', 'image/png', 32, 1, 1, 'RLS fixture logo') RETURNING id`;
+      store.mediaId = media.id;
+      await tx`INSERT INTO public.store_setup (store_id, logo_media_id, settings)
+        VALUES (${store.storeId}, ${media.id}, ${tx.json({ fixture: MARKER })})`;
+      await tx`INSERT INTO public.store_publications (store_id, snapshot)
+        VALUES (${store.storeId}, ${tx.json({ fixture: MARKER })})`;
+      await tx`INSERT INTO public.store_address_history (store_id, subdomain)
+        VALUES (${store.storeId}, ${`${store.subdomain}-old`})`;
       store.productIds = [];
       for (let index = 1; index <= 2; index++) {
         const [product] = await tx`

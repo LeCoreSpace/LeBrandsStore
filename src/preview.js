@@ -1,12 +1,30 @@
 // Development-only adapter. Production always uses src/index.js.
 // No database binding, credential, simulated account, or persistent data.
 import worker from "./index.js";
+import { renderWizard } from "./ui/wizard.js";
+import { renderAura } from "./public/aura.js";
+import { DEFAULT_SETTINGS } from "./store/repository.js";
+import { SECURITY_HEADERS } from "./auth/security.js";
 
 export default {
   async fetch(request, env, ctx) {
     const original = new URL(request.url);
+    // Development-only visual previews. No users, fake saves, sessions or DB.
+    if (["GET", "HEAD"].includes(request.method) && ["/__step2-preview", "/__aura-preview"].includes(original.pathname)) {
+      const data = {
+        store: { store_id: "00000000-0000-4000-8000-000000000000", name: "", subdomain: "", status: "draft" },
+        settings: { ...DEFAULT_SETTINGS, brand_name: "", subdomain: "", logo_media_id: null, logo_url: "" },
+        products: [], policies: [], progress: { step: 1, completed: [] },
+      };
+      const body = original.pathname === "/__aura-preview" ? renderAura(data, { preview: true }) :
+        renderWizard(data, {}).replace('id="wizard"', 'data-visual-only="true" id="wizard"')
+          .replace('<main class="wizard-main">', '<main class="wizard-main"><p role="status">Visual preview only. Sign in on the account website to save and publish. No database is attached here.</p>');
+      return new Response(body, { headers: { ...SECURITY_HEADERS, "x-frame-options": "SAMEORIGIN",
+        "content-security-policy": SECURITY_HEADERS["content-security-policy"].replace("frame-ancestors 'none'", "frame-ancestors *"),
+        "content-type": "text/html; charset=utf-8" } });
+    }
     const account = ["/signup", "/login", "/forgot-password", "/account", "/logout", "/dashboard", "/stores/new", "/api/subdomain-check"]
-      .includes(original.pathname);
+      .includes(original.pathname) || original.pathname.startsWith("/api/stores/") || /^\/stores\/[^/]+\/setup$/.test(original.pathname);
     const target = new URL(original);
     target.protocol = "https:";
     target.hostname = account ? "app.lebrands.store" : "lebrands.store";

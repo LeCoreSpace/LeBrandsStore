@@ -23,6 +23,8 @@ function fakePostgres(connectionString, options) {
         transactionContext.storeId = values[0];
         return [];
       }
+      if (query.includes("store_publications")) return state.publication ? [{ snapshot: state.publication }] : [];
+      if (query.includes("authorize_store_session")) return [{ allowed: state.allowed !== false }];
       return [{ store_id: transactionContext?.storeId ?? null }];
     };
   }
@@ -77,7 +79,7 @@ test("homepage renders without a database and www permanently redirects preservi
 });
 
 test("reserved and malformed platform subdomains are 404 without database lookup", async () => {
-  const hosts = RESERVED_SUBDOMAINS.filter((sub) => !["www", "app"].includes(sub)).map((sub) => `${sub}.lebrands.store`);
+  const hosts = RESERVED_SUBDOMAINS.filter((sub) => !["www", "app", "media"].includes(sub)).map((sub) => `${sub}.lebrands.store`);
   hosts.push("ab.lebrands.store", "-bad.lebrands.store", "bad-.lebrands.store",
     "bad_name.lebrands.store", "a.b.lebrands.store", `${"a".repeat(31)}.lebrands.store`);
   for (const host of hosts) {
@@ -111,12 +113,38 @@ test("unknown stores and inactive stores are 404", async () => {
 });
 
 test("store names are escaped in titles and headings", async () => {
-  state.stores.set("unsafe.lebrands.store", { name: '<script>alert("x")</script>&', status: "live" });
+  state.stores.set("unsafe.lebrands.store", { store_id: STORE_ID, subdomain: "unsafe", name: '<script>alert("x")</script>&', status: "live" });
   const response = await worker.fetch(new Request("https://unsafe.lebrands.store/"), env);
   const body = await response.text();
   assert.equal(response.status, 200);
   assert.ok(!body.includes("<script>"));
   assert.ok(body.includes("&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;&amp;"));
+});
+
+test("published stores use the shared Aura snapshot and unknown products are branded 404", async () => {
+  state.publication = {
+    store: { store_id: STORE_ID, subdomain: "testbrand", name: "Test Brand", status: "live" },
+    settings: { brand_name: "Test Brand", description: "A considered collection of everyday essentials.", tagline: "Made with care.", subdomain: "testbrand" },
+    products: [], policies: [],
+  };
+  const home = await worker.fetch(new Request("https://testbrand.lebrands.store/"), env);
+  assert.equal(home.status, 200); assert.match(await home.text(), /aura-hero/);
+  const missing = await worker.fetch(new Request(`https://testbrand.lebrands.store/products/${SECOND_STORE_ID}`), env);
+  assert.equal(missing.status, 404); assert.match(await missing.text(), /This page isn/);
+});
+
+test("member transactions authorize the session before setting tenant context and deny outsiders", async () => {
+  const db = createDb(env);
+  await db.withMemberStore(STORE_ID, "a".repeat(64), async () => {});
+  const authorize = state.queries.findIndex((q) => q.query.includes("authorize_store_session"));
+  const context = state.queries.findIndex((q) => q.query.includes("set_config"));
+  assert.ok(authorize >= 0 && context > authorize);
+  assert.deepEqual(state.queries[authorize].values, ["a".repeat(64), STORE_ID]);
+  state.queries = []; state.allowed = false;
+  await assert.rejects(db.withMemberStore(SECOND_STORE_ID, "a".repeat(64), () => assert.fail("Unauthorized callback")), { status: 403 });
+  assert.ok(!state.queries.some((q) => q.query.includes("set_config")));
+  assert.equal(state.rollbacks, 1);
+  await db.close();
 });
 
 test("database failures return 503 and log only a diagnostic code", async () => {
