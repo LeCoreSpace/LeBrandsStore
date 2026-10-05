@@ -27,6 +27,12 @@ export function createDb(env) {
   });
 
   return {
+    async account(fn) {
+      return sql.begin(async (tx) => {
+        await assertAppRole(tx);
+        return fn(tx);
+      });
+    },
     async resolveStore(hostname) {
       await assertAppRole(sql);
       const [store] = await sql`

@@ -1,5 +1,13 @@
 # LeBrands.Store
 
+## Step 1: homepage and brand accounts
+
+See [docs/STEP1.md](docs/STEP1.md) for the changed-file list, exact manual
+commands, account behavior and the production PBKDF2 compatibility release gate.
+The Replit preview now runs the local Cloudflare Worker without a database
+binding. The account migration and database isolation checks remain manual;
+no deployment or email sending is part of this step.
+
 ## Cloudflare credentials
 
 Open the Replit Secrets tool and add `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` with values from your Cloudflare account. Keep both values out of source files.

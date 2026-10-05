@@ -1,8 +1,11 @@
 import { RESERVED_SUBDOMAINS } from "./reserved.js";
 import { createDb } from "./db.js";
+import { handleAccounts } from "./auth/routes.js";
+import { SECURITY_HEADERS } from "./auth/security.js";
+import { renderHome, renderLegal } from "./ui/home.js";
+import { FAVICON_SVG } from "./ui/favicon.js";
 
 const ROOT_DOMAIN = ".lebrands.store";
-const PLATFORM_HOSTS = new Set(["lebrands.store", "www.lebrands.store"]);
 const STORE_NAME_PATTERN = /^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])$/;
 
 function escapeHtml(value) {
@@ -58,16 +61,25 @@ function notFound() {
 
 export default {
   async fetch(request, env, ctx) {
-    const hostname = new URL(request.url).hostname;
-
-    if (PLATFORM_HOSTS.has(hostname)) {
-      return page(
-        "LeBrands.Store",
-        "LeBrands.Store",
-        "— Stores for India's D2C brands. Coming soon.",
-        200,
-        false,
-      );
+    const url = new URL(request.url);
+    const hostname = url.hostname;
+    if (["GET", "HEAD"].includes(request.method) && url.pathname === "/favicon.svg" && ["lebrands.store", "app.lebrands.store"].includes(hostname)) {
+      return new Response(FAVICON_SVG, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
+    }
+    if (hostname === "www.lebrands.store") {
+      url.hostname = "lebrands.store";
+      url.protocol = "https:";
+      url.port = "";
+      return new Response(null, { status: 308, headers: { location: url.href } });
+    }
+    if (hostname === "app.lebrands.store") return handleAccounts(request, env, ctx);
+    if (hostname === "lebrands.store") {
+      if (!["GET", "HEAD"].includes(request.method)) return page("Method not allowed", "Method not allowed", "", 405);
+      const legal = { "/terms": "terms", "/privacy": "privacy", "/contact": "contact" };
+      if (url.pathname !== "/" && !legal[url.pathname]) return notFound();
+      return new Response(url.pathname === "/" ? renderHome() : renderLegal(legal[url.pathname]), {
+        headers: { ...SECURITY_HEADERS, "cache-control": "public, max-age=300", "content-type": "text/html; charset=utf-8" },
+      });
     }
 
     if (hostname.endsWith(ROOT_DOMAIN)) {

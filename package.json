@@ -12,7 +12,9 @@
     "whoami": "wrangler whoami",
     "db:migrate": "node db/migrate.js",
     "db:seed": "node db/seed.js",
-    "db:test-isolation": "node db/test-isolation.js"
+    "db:test-isolation": "node db/test-isolation.js",
+    "db:admin-reset-password": "node db/admin-reset-password.js",
+    "test:offline": "node --experimental-test-module-mocks --test tests/*.test.js"
   },
   "private": true,
   "dependencies": {

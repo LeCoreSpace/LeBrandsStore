@@ -66,17 +66,18 @@ beforeEach(() => {
 });
 afterEach(() => mock.restoreAll());
 
-test("platform hosts retain their Phase 0 page without a database connection", async () => {
-  for (const host of ["lebrands.store", "www.lebrands.store"]) {
-    const response = await worker.fetch(new Request(`https://${host}/`), {});
-    assert.equal(response.status, 200);
-    assert.match(await response.text(), /Stores for India&#39;s D2C brands\. Coming soon\./);
-  }
+test("homepage renders without a database and www permanently redirects preserving the path", async () => {
+  const response = await worker.fetch(new Request("https://lebrands.store/"), {});
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /Make your online brand/);
+  const www = await worker.fetch(new Request("https://www.lebrands.store/terms?from=footer"), {});
+  assert.equal(www.status, 308);
+  assert.equal(www.headers.get("location"), "https://lebrands.store/terms?from=footer");
   assert.equal(state.clients.length, 0);
 });
 
 test("reserved and malformed platform subdomains are 404 without database lookup", async () => {
-  const hosts = RESERVED_SUBDOMAINS.filter((sub) => sub !== "www").map((sub) => `${sub}.lebrands.store`);
+  const hosts = RESERVED_SUBDOMAINS.filter((sub) => !["www", "app"].includes(sub)).map((sub) => `${sub}.lebrands.store`);
   hosts.push("ab.lebrands.store", "-bad.lebrands.store", "bad-.lebrands.store",
     "bad_name.lebrands.store", "a.b.lebrands.store", `${"a".repeat(31)}.lebrands.store`);
   for (const host of hosts) {

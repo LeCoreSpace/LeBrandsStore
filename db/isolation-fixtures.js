@@ -1,6 +1,12 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 
 const MARKER = "lebrands-rls-isolation-test";
+const ACCOUNT_USERS = [
+  { key: `${MARKER}-user-a`, name: "RLS Test Account A", email: "rls-test-account-a@isolation.invalid" },
+  { key: `${MARKER}-user-b`, name: "RLS Test Account B", email: "rls-test-account-b@isolation.invalid" },
+];
+const fixtureHash = (value) => createHash("sha256").update(`${MARKER}:${value}`).digest("hex");
 const BRANDS = [
   { key: `${MARKER}-a`, name: "RLS Isolation Test A" },
   { key: `${MARKER}-b`, name: "RLS Isolation Test B" },
@@ -28,7 +34,7 @@ export async function assertCleanupPermission(admin) {
     assert.ok(role && (role.rolsuper || role.rolbypassrls),
       "ADMIN must have BYPASSRLS or superuser privileges.");
     const missing = await tx`
-      SELECT table_name FROM unnest(${["brands", "stores", ...CLEANUP_TABLES]}::text[]) AS t(table_name)
+      SELECT table_name FROM unnest(${["brands", "stores", "users", "sessions", "login_attempts", ...CLEANUP_TABLES]}::text[]) AS t(table_name)
       WHERE NOT has_table_privilege(current_user, 'public.' || table_name, 'SELECT')
          OR NOT has_table_privilege(current_user, 'public.' || table_name, 'DELETE')
     `;
@@ -76,6 +82,24 @@ async function ownedFixtures(tx) {
 export async function cleanupFixtures(admin) {
   await admin.begin(async (tx) => {
     const { brands, stores } = await ownedFixtures(tx);
+    const users = await tx`
+      SELECT id, external_user_id, email, name FROM public.users
+      WHERE external_user_id = ANY(${ACCOUNT_USERS.map((user) => user.key)}::text[])
+         OR email = ANY(${ACCOUNT_USERS.map((user) => user.email)}::text[]) FOR UPDATE
+    `;
+    for (const user of users) {
+      const expected = ACCOUNT_USERS.find((entry) => entry.key === user.external_user_id);
+      assert.ok(expected && user.email === expected.email && user.name === expected.name,
+        "Account fixture marker collides with non-test data; refusing cleanup.");
+    }
+    if (users.length) {
+      const [outside] = await tx`
+        SELECT count(*)::integer AS count FROM public.store_members
+        WHERE user_id = ANY(${users.map((user) => user.id)}::uuid[])
+          AND NOT (store_id = ANY(${stores.map((store) => store.store_id)}::uuid[]))
+      `;
+      assert.equal(outside.count, 0, "A test account belongs to an unmarked store; refusing cleanup.");
+    }
     if (stores.length) {
       const ids = stores.map((store) => store.store_id);
       // Orders/invoices intentionally reject DELETE in normal operation.
@@ -89,6 +113,11 @@ export async function cleanupFixtures(admin) {
     }
     if (brands.length) {
       await tx`DELETE FROM public.brands WHERE id = ANY(${brands.map((brand) => brand.id)}::uuid[])`;
+    }
+    if (users.length) {
+      await tx`DELETE FROM public.sessions WHERE user_id = ANY(${users.map((user) => user.id)}::uuid[])`;
+      await tx`DELETE FROM public.login_attempts WHERE email = ANY(${users.map((user) => user.email)}::text[])`;
+      await tx`DELETE FROM public.users WHERE id = ANY(${users.map((user) => user.id)}::uuid[])`;
     }
     const [remaining] = await tx`
       SELECT count(*)::integer AS count FROM public.stores
@@ -153,6 +182,32 @@ export async function setupFixtures(admin) {
       `;
       store.itemId = item.id;
     }
-    return { a: stores[0], b: stores[1], draft: stores[2] };
+    const accountUsers = [];
+    for (const [index, user] of ACCOUNT_USERS.entries()) {
+      const [row] = await tx`
+        INSERT INTO public.users
+          (external_user_id, name, email, password_hash, password_algo, password_iterations, password_salt)
+        VALUES (${user.key}, ${user.name}, ${user.email}, ${"0".repeat(64)},
+          'pbkdf2-sha256', 600000, ${"0".repeat(32)}) RETURNING id
+      `;
+      const tokenHash = fixtureHash(user.key);
+      await tx`SELECT public.create_session(${row.id}, ${tokenHash}, 'rls-test-agent')`;
+      for (const store of index === 0 ? [stores[0], stores[2]] : [stores[1]]) {
+        await tx`INSERT INTO public.store_members (store_id, user_id, role)
+          VALUES (${store.storeId}, ${row.id}, 'owner')`;
+      }
+      accountUsers.push({ ...user, id: row.id, tokenHash });
+    }
+    const expiredTokenHash = fixtureHash("expired");
+    // An old failure must not contribute to the current 15-minute lock window.
+    await tx`
+      INSERT INTO public.login_attempts (email, ip_hash, success, created_at)
+      VALUES (${accountUsers[0].email}, ${"a".repeat(64)}, false, now() - interval '16 minutes')
+    `;
+    await tx`
+      INSERT INTO public.sessions (user_id, token_hash, created_at, expires_at)
+      VALUES (${accountUsers[0].id}, ${expiredTokenHash}, now() - interval '31 days', now() - interval '1 second')
+    `;
+    return { a: stores[0], b: stores[1], draft: stores[2], accountUsers, expiredTokenHash };
   });
 }

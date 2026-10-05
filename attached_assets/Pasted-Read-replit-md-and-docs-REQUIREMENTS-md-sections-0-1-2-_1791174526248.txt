@@ -1,0 +1,73 @@
+Read replit.md and docs/REQUIREMENTS.md (sections 0, 1, 2.3, 4.1, 14).
+Build Step 1 only: the LeBrands.Store homepage and brand accounts with email +
+password. Do NOT deploy or run migrations. No Supabase Auth, no supabase-js,
+no email sending yet (Resend is deferred).
+
+A. HOMEPAGE at lebrands.store (and www → redirect to lebrands.store)
+Server-rendered, mobile-first, fast, no external assets except Google Fonts.
+Warm, premium look. Sections:
+1. Hero: headline "Make your online brand dream come true."
+   Subline: "Your store, already connected. From your brand name to a live
+   store in 10 minutes." Buttons: "Create your store" (→ app.lebrands.store/signup)
+   and "See how it works".
+2. How it works: 3 steps — Tell us about your brand · Pick a theme and add
+   products · Go live with Cash on Delivery.
+3. What's included: complete store (home, collections, products, cart,
+   checkout), Cash on Delivery from day one, your own Razorpay for online
+   payments, Shiprocket delivery, GST invoices, orders and customers dashboard,
+   your own domain with SSL, your data exportable anytime.
+4. Why LeBrands.Store: "Zero commission on your sales" · "Your domain, your
+   payments, your data. We run the store." · "Built-in discovery, so you're not
+   paying for every visitor." · "Stop building websites. Start selling."
+5. Pricing: read plans from one config file src/config/pricing.js so I can
+   edit them. Initial values: 1 shop ₹3,999 (founding ₹2,999), 2 shops ₹5,499
+   (₹4,499), 3 shops ₹6,999 (₹5,999), per month + GST; setup fee ₹4,999,
+   waived on annual billing. Show founding price as a limited offer.
+6. FAQ (6–8 questions: domains, payments, COD, GST invoices, data ownership,
+   moving away, what "zero commission" means).
+7. Footer: links to /terms, /privacy, /contact (simple placeholder pages
+   marked "draft — to be reviewed"), © LeBrandsSpace Digital Private Limited.
+SEO: title, meta description, Open Graph tags, favicon (simple SVG).
+
+B. ACCOUNTS at app.lebrands.store
+Database — new migration db/migrations/0003_accounts.sql (don't edit 0001/0002):
+- users: email (unique, lowercased), name, phone (optional), password_hash,
+  password_algo, created_at, last_login_at, must_change_password (bool).
+- sessions: user_id, token_hash (SHA-256 only), expires_at (30 days),
+  last_seen_at, user_agent, revoked_at.
+- login_attempts: email, ip_hash, success, created_at.
+- lebrands_app gets NO direct access to these tables. Use SECURITY DEFINER
+  functions (safe search_path, EXECUTE to lebrands_app): register_user,
+  get_password_record(email), record_login_attempt, is_login_locked(email, ip_hash)
+  (lock after 10 failures in 15 minutes), create_session, get_session(token_hash)
+  (returns user + their stores via store_members), revoke_session,
+  change_password, check_subdomain, create_brand_and_store(user_id, brand_name,
+  subdomain) → creates brand, DRAFT store, store_members row role 'owner'.
+Passwords:
+- PBKDF2-SHA256 via WebCrypto, 600,000 iterations, 16-byte random salt;
+  store algorithm, iterations, salt and hash so it can be upgraded later.
+- Minimum 10 characters; reject very common passwords (small built-in list).
+- Constant-time comparison. Generic error "Email or password is incorrect".
+Pages (server-rendered, same look as homepage):
+- /signup (name, email, password, confirm, accept terms checkbox)
+- /login, /logout
+- / dashboard: the user's stores, or "Create your store" if none
+- /stores/new: brand name + store address with live availability check
+  (JSON endpoint /api/subdomain-check?name=)
+- /account: change password
+- /forgot-password: message "Contact support@lebrands.store to reset your
+  password" (email reset comes later)
+Security: session cookie "__Host-lbs_session" (Secure, HttpOnly, SameSite=Lax,
+Path=/, 30 days); reject POSTs whose Origin isn't https://app.lebrands.store;
+escape all output; validate all input; never reveal whether an email exists.
+Admin script: db/admin-reset-password.js (uses SUPABASE_DB_URL) that sets a
+random temporary password for an email, prints it once, and sets
+must_change_password = true; user is forced to /account on next login.
+
+C. TESTS
+- Offline tests: password hashing/verification, common-password rejection,
+  cookie flags, origin check, subdomain validation, pricing config rendering.
+- Extend db/test-isolation.js: users can only see stores they are members of;
+  revoked/expired sessions rejected; lockout after repeated failures.
+
+D. When done: list files created/changed and the exact commands for me to run.
