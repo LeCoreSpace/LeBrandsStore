@@ -187,8 +187,9 @@ export async function setupFixtures(admin) {
       const [row] = await tx`
         INSERT INTO public.users
           (external_user_id, name, email, password_hash, password_algo, password_iterations, password_salt)
-        VALUES (${user.key}, ${user.name}, ${user.email}, ${"0".repeat(64)},
-          'pbkdf2-sha256', 600000, ${"0".repeat(32)}) RETURNING id
+        VALUES (${user.key}, ${user.name}, ${user.email},
+          ${`pbkdf2-sha256$v1$p1$100000$${"0".repeat(32)}$${"0".repeat(64)}`},
+          'pbkdf2-sha256', 100000, ${"0".repeat(32)}) RETURNING id
       `;
       const tokenHash = fixtureHash(user.key);
       await tx`SELECT public.create_session(${row.id}, ${tokenHash}, 'rls-test-agent')`;

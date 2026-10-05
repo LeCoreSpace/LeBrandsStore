@@ -11,7 +11,8 @@ Created:
 - `src/config/pricing.js`: editable monthly INR prices, setup fee, GST and founding limit.
 - `src/ui/layout.js`, `src/ui/home.js`, `src/ui/accounts.js`, `src/ui/favicon.js`: server-rendered pages.
 - `src/auth/passwords.js`, `src/auth/security.js`, `src/auth/repository.js`, `src/auth/routes.js`: custom account security and routes.
-- `db/migrations/0003_accounts.sql`: account columns, private tables and restricted functions.
+- `db/migrations/0003_accounts.sql`: account columns, private tables and restricted functions (original, unchanged).
+- `db/migrations/0004_password_pepper.sql`: current peppered-password constraints and atomic login rehash API.
 - `db/admin-reset-password.js`: one-time temporary-password reset utility.
 - `db/account-isolation.js`: membership, private-table, expiry, revocation and lockout probes.
 - `tests/auth.test.js`: offline crypto, security, rendering and account-flow tests.
@@ -30,8 +31,8 @@ Changed:
 - `README.md`: links to this handoff.
 
 Workspace notes: `.agents/memory/MEMORY.md` and
-`.agents/memory/cloudflare-password-runtime.md` retain the non-obvious runtime
-compatibility warning for future work.
+`.agents/memory/cloudflare-password-runtime.md` record the user-approved change
+from the obsolete 600,000-iteration requirement.
 
 Production `wrangler.jsonc`, its real Hyperdrive ID, existing migration files,
 and existing admin/app database connection conventions are not changed.
@@ -46,7 +47,7 @@ pnpm install --frozen-lockfile
 pnpm run test:offline
 pnpm exec wrangler deploy --dry-run --outdir /tmp/lebrands-step1-build
 
-# YOUR manual database action: applies pending migrations, including 0003.
+# YOUR manual database action: applies pending migrations, including 0003/0004.
 # Existing applied migration checksums must match; take your usual backup first.
 pnpm run db:migrate
 
@@ -78,21 +79,31 @@ against an explicitly in-memory test repository, not advertised as live persiste
 
 ## Before any future publication
 
-### Runtime compatibility is a release gate
+### Password scheme and pepper configuration
 
-Passwords use WebCrypto PBKDF2-SHA256, exactly 600,000 iterations, with fresh
-16-byte salts and stored upgradeable metadata. There is no weaker fallback.
+Production Workers cap PBKDF2 at 100,000 iterations. Passwords first pass through
+HMAC-SHA256 using the base64-decoded `PASSWORD_PEPPER` as the key and the password
+as the message. The raw 32-byte HMAC output is then the WebCrypto PBKDF2-SHA256
+input, at exactly 100,000 iterations with a fresh 16-byte salt.
 
-Cloudflare has historically limited PBKDF2 iterations in production Workers.
-The workerd discussion says its local default limit was removed while production
-limits may remain:
-<https://github.com/cloudflare/workerd/issues/1346>
+Set `PASSWORD_PEPPER` to base64 encoding of **at least 32 cryptographically
+random bytes**, both in Replit Secrets and as the identical Worker secret.
+Do not put it in SQL, source code, logs, or chat. Missing, invalid, or too-short
+peppers fail closed with a generic service error. The reset utility checks the
+pepper before connecting to Postgres.
 
-Passing Node or local workerd tests **does not prove** the production Worker
-supports 600,000 iterations. Confirm support on the intended Cloudflare runtime
-and plan before publishing. If the runtime rejects the work factor, account
-operations fail explicitly with HTTP 503 and a diagnostic
-`PASSWORD_RUNTIME_UNSUPPORTED`; do not lower it silently.
+The stored string is `pbkdf2-sha256$v1$p1$100000$<salt>$<hash>`.
+Algorithm, format version and pepper version are encoded in it; iteration and
+salt columns must agree with the string. `PASSWORD_PEPPER_VERSION` defaults to
+`1`. For future rotation, increment that non-secret version and retain old
+secrets as `PASSWORD_PEPPER_V1`, etc., until all affected records have upgraded.
+Verification uses the recorded version, and a successful login atomically
+replaces outdated supported records with a fresh current hash. Failed logins
+never rehash. Unsupported formats fail rather than being guessed.
+
+Earlier unpeppered 600,000-iteration hashes cannot be verified on Workers and
+cannot be converted without the password. They require a support reset. The
+new manual migration preserves them for that purpose; it does not rewrite data.
 
 ### Production bindings and hostnames
 
@@ -107,6 +118,7 @@ operations fail explicitly with HTTP 503 and a diagnostic
 
   ```sh
   printf '%s' "$SESSION_SECRET" | pnpm exec wrangler secret put SESSION_SECRET
+  printf '%s' "$PASSWORD_PEPPER" | pnpm exec wrangler secret put PASSWORD_PEPPER
   ```
 
 - Use HTTPS at `app.lebrands.store`. Every account POST requires exactly that

@@ -1,5 +1,7 @@
 export const PASSWORD_ALGO = "pbkdf2-sha256";
-export const PASSWORD_ITERATIONS = 600000;
+// Production Cloudflare Workers reject PBKDF2 above 100,000; local workerd does not.
+export const PASSWORD_ITERATIONS = 100000;
+export const PASSWORD_FORMAT_VERSION = "v1";
 const COMMON = new Set([
   "password", "password1", "password123", "password1234", "password12345",
   "1234567890", "12345678901", "123456789012", "qwerty12345", "qwertyuiop",
@@ -24,21 +26,64 @@ export function constantTimeEqual(left, right) {
   return difference === 0;
 }
 
-async function derive(password, salt, iterations) {
-  const key = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveBits"]);
+function pepperVersion(env) {
+  const value = String(env?.PASSWORD_PEPPER_VERSION ?? "1");
+  if (!/^[1-9][0-9]{0,5}$/.test(value)) throw pepperError();
+  return Number(value);
+}
+
+function pepperError() {
+  return Object.assign(new Error("Password service is unavailable."), { code: "PASSWORD_PEPPER_UNAVAILABLE" });
+}
+
+async function pepperKey(env, version = pepperVersion(env)) {
+  const current = pepperVersion(env);
+  const value = version === current ? env?.PASSWORD_PEPPER : env?.[`PASSWORD_PEPPER_V${version}`];
+  if (typeof value !== "string" || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(value)) throw pepperError();
+  let decoded;
+  try { decoded = Uint8Array.from(atob(value), (char) => char.charCodeAt(0)); }
+  catch { throw pepperError(); }
+  if (decoded.length < 32 || decoded.length > 1024) throw pepperError();
+  return crypto.subtle.importKey("raw", decoded, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+}
+
+export async function assertPasswordPepper(env) {
+  await pepperKey(env);
+}
+
+function parseRecord(record) {
+  const parts = record?.password_hash?.split("$") ?? [];
+  const [algo, version, pepper, iterations, salt, hash] = parts;
+  if (parts.length !== 6 || algo !== PASSWORD_ALGO || version !== PASSWORD_FORMAT_VERSION ||
+    !/^p[1-9][0-9]{0,5}$/.test(pepper) || !/^[1-9][0-9]*$/.test(iterations) ||
+    Number(iterations) > PASSWORD_ITERATIONS || !/^[0-9a-f]{32}$/.test(salt) ||
+    !/^[0-9a-f]{64}$/.test(hash) || record.password_algo !== algo ||
+    record.password_iterations !== Number(iterations) || record.password_salt !== salt) return null;
+  return { iterations: Number(iterations), salt, hash, pepperVersion: Number(pepper.slice(1)) };
+}
+
+export function needsPasswordRehash(record, env) {
+  const parsed = parseRecord(record);
+  return !parsed || parsed.iterations !== PASSWORD_ITERATIONS || parsed.pepperVersion !== pepperVersion(env);
+}
+
+async function derive(password, salt, iterations, env, version = pepperVersion(env)) {
+  if (!Number.isInteger(iterations) || iterations < 1 || iterations > PASSWORD_ITERATIONS) throw new Error("Invalid password work factor.");
+  const hmac = await crypto.subtle.sign("HMAC", await pepperKey(env, version), encoder.encode(password));
+  const key = await crypto.subtle.importKey("raw", hmac, "PBKDF2", false, ["deriveBits"]);
   try {
     return new Uint8Array(await crypto.subtle.deriveBits({
       name: "PBKDF2", hash: "SHA-256", salt, iterations,
     }, key, 256));
   } catch {
-    // Never lower the work factor to accommodate a runtime iteration limit.
-    throw Object.assign(new Error("Runtime must support PBKDF2-SHA256 at 600,000 iterations."), {
+    throw Object.assign(new Error("Password service is unavailable."), {
       code: "PASSWORD_RUNTIME_UNSUPPORTED",
     });
   }
 }
 
-export async function hashPassword(password) {
+export async function hashPassword(password, env) {
+  await assertPasswordPepper(env);
   const error = validatePassword(password);
   if (error) throw Object.assign(new Error(error), { code: "INVALID_PASSWORD" });
   const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -46,25 +91,24 @@ export async function hashPassword(password) {
     password_algo: PASSWORD_ALGO,
     password_iterations: PASSWORD_ITERATIONS,
     password_salt: hex(salt),
-    password_hash: hex(await derive(password, salt, PASSWORD_ITERATIONS)),
+    password_hash: `${PASSWORD_ALGO}$${PASSWORD_FORMAT_VERSION}$p${pepperVersion(env)}$${PASSWORD_ITERATIONS}$${hex(salt)}$${hex(await derive(password, salt, PASSWORD_ITERATIONS, env))}`,
   };
 }
 
 export const DUMMY_RECORD = {
   password_algo: PASSWORD_ALGO, password_iterations: PASSWORD_ITERATIONS,
   password_salt: "00000000000000000000000000000000",
-  password_hash: "0000000000000000000000000000000000000000000000000000000000000000",
+  password_hash: `${PASSWORD_ALGO}$v1$p1$100000$${"0".repeat(32)}$${"0".repeat(64)}`,
 };
 
-export async function verifyPassword(password, record) {
+export async function verifyPassword(password, record, env) {
+  // Configuration failure must never become an ordinary password mismatch.
+  await assertPasswordPepper(env);
   if (typeof password !== "string" || encoder.encode(password).length > 1024) return false;
-  const valid = record?.password_algo === PASSWORD_ALGO &&
-    Number.isInteger(record.password_iterations) && record.password_iterations >= 600000 &&
-    record.password_iterations <= 2000000 && /^[0-9a-f]{32}$/.test(record.password_salt ?? "") &&
-    /^[0-9a-f]{64}$/.test(record.password_hash ?? "");
-  const selected = valid ? record : DUMMY_RECORD;
-  const derived = await derive(password, bytes(selected.password_salt), selected.password_iterations);
-  return constantTimeEqual(derived, bytes(selected.password_hash)) && Boolean(valid);
+  const parsed = parseRecord(record);
+  const selected = parsed ?? { iterations: PASSWORD_ITERATIONS, salt: "0".repeat(32), hash: "0".repeat(64), pepperVersion: pepperVersion(env) };
+  const derived = await derive(password, bytes(selected.salt), selected.iterations, env, selected.pepperVersion);
+  return constantTimeEqual(derived, bytes(selected.hash)) && Boolean(parsed);
 }
 
 export async function sha256(value) {

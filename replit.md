@@ -25,6 +25,9 @@ LeBrands.Store is a multi-tenant store builder for Indian D2C brands. One codeba
 - Never put secrets in code. Wrangler reads `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` from Replit Secrets.
 - Store money as integer paise. Every database table must have `created_at` and `updated_at`.
 - Escape user-supplied values before inserting them into HTML.
+- Passwords: HMAC-SHA256(key = base64-decoded `PASSWORD_PEPPER`, message = password), then WebCrypto PBKDF2-SHA256 at exactly 100,000 iterations with a random 16-byte salt. Production Workers reject higher counts; local Wrangler may accept them.
+- `PASSWORD_PEPPER` must be the same secret in Replit Secrets (admin resets) and the Cloudflare Worker, containing 32+ random bytes encoded as base64. Never log, persist in Postgres, or hardcode the pepper. Missing/invalid peppers fail closed with a generic error.
+- Store algorithm/format/pepper versions in the password record; atomically rehash compatible outdated records after successful login. Legacy unpeppered 600,000-iteration records require a support reset.
 - Build only the requested phase; do not start later phases without instruction.
 
 ## Reserved subdomains

@@ -1,1 +1,1 @@
-- [Cloudflare password runtime](cloudflare-password-runtime.md) — local WebCrypto success does not prove production support for the required PBKDF2 work factor.
+- [Cloudflare password runtime](cloudflare-password-runtime.md) — user replaced the obsolete 600k requirement after confirming production Workers cap PBKDF2 at 100k.

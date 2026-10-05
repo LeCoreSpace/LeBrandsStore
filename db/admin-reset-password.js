@@ -1,6 +1,6 @@
 import postgres from "postgres";
 import { clearPgEnvironment, logDatabaseFailure, printConnectionTarget, validateSupabaseUrl } from "./connection.js";
-import { hashPassword, randomToken } from "../src/auth/passwords.js";
+import { assertPasswordPepper, hashPassword, randomToken } from "../src/auth/passwords.js";
 import { normalizeEmail } from "../src/auth/security.js";
 
 clearPgEnvironment();
@@ -12,10 +12,12 @@ if (!email) {
 }
 let sql;
 try {
+  // Same Replit Secret as the Worker secret; never print or persist the pepper.
+  await assertPasswordPepper(process.env);
   printConnectionTarget(validateSupabaseUrl(process.env.SUPABASE_DB_URL));
   sql = postgres(process.env.SUPABASE_DB_URL, { ssl: "require", max: 1 });
   const temporary = randomToken().slice(0, 32);
-  const record = await hashPassword(temporary);
+  const record = await hashPassword(temporary, process.env);
   await sql.begin(async (tx) => {
     const [role] = await tx`SELECT rolsuper, rolbypassrls FROM pg_catalog.pg_roles WHERE rolname = current_user`;
     if (!role || (!role.rolsuper && !role.rolbypassrls)) throw new Error("Administrative BYPASSRLS role required.");

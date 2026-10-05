@@ -3,10 +3,23 @@
 ## Step 1: homepage and brand accounts
 
 See [docs/STEP1.md](docs/STEP1.md) for the changed-file list, exact manual
-commands, account behavior and the production PBKDF2 compatibility release gate.
+commands, account behavior and password-pepper setup.
 The Replit preview now runs the local Cloudflare Worker without a database
 binding. The account migration and database isolation checks remain manual;
 no deployment or email sending is part of this step.
+
+Passwords use HMAC-SHA256 with the secret pepper, followed by PBKDF2-SHA256 at
+exactly **100,000 iterations**. Production Cloudflare Workers reject higher
+counts even when local Wrangler accepts them. Set `PASSWORD_PEPPER` in Replit
+Secrets for the admin reset script and as the same Cloudflare Worker secret
+before enabling accounts. It must be base64 encoding of at least 32 random bytes.
+Missing or invalid peppers fail closed with a generic error.
+
+Stored hashes use `pbkdf2-sha256$v1$p1$100000$<salt>$<hash>`; `p1` records the
+pepper version. Compatible older records are rehashed atomically on successful
+login. Existing unpeppered 600,000-iteration records need a support reset, not
+silent conversion. Manual migration `0004_password_pepper.sql` updates the
+constraints and account functions without changing earlier migrations.
 
 ## Cloudflare credentials
 

@@ -20,6 +20,14 @@ export function accountRepository(db) {
       const result = await attempt(record ?? null);
       await tx`SELECT public.record_login_attempt(${email}, ${ip}, ${Boolean(result)})`;
       if (result) {
+        if (result.upgrade) {
+          const r = result.upgrade;
+          const [updated] = await tx`
+            SELECT public.rehash_password(${result.userId}, ${record.password_hash},
+              ${r.password_hash}, ${r.password_algo}, ${r.password_iterations}, ${r.password_salt}) AS changed
+          `;
+          if (!updated.changed) throw Object.assign(new Error("Account changed during login."), { code: "PASSWORD_REHASH_CONFLICT" });
+        }
         await tx`SELECT public.create_session(${result.userId}, ${result.tokenHash}, ${result.userAgent})`;
       }
       return result;

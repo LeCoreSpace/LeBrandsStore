@@ -1,7 +1,7 @@
 import { createDb } from "../db.js";
 import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
-import { DUMMY_RECORD, hashPassword, randomToken, sha256, validatePassword, verifyPassword } from "./passwords.js";
+import { assertPasswordPepper, hashPassword, needsPasswordRehash, randomToken, sha256, validatePassword, verifyPassword } from "./passwords.js";
 import {
   GENERIC_LOGIN_ERROR, SECURITY_HEADERS, ipHash, isValidOrigin, normalizeEmail,
   readForm, readSessionToken, sessionCookie, validateSubdomain,
@@ -71,6 +71,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
 
     const form = await readForm(request);
     if (path === "/signup") {
+      await assertPasswordPepper(env);
       if (user) return redirect("/");
       const email = normalizeEmail(form.get("email"));
       const name = nameValue(form.get("name"));
@@ -80,11 +81,12 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
         : form.get("terms") !== "yes" ? "Accept the terms to continue."
           : password !== form.get("confirm") ? "Your passwords do not match." : validatePassword(password);
       if (error) return html("signup", { error, values }, 400);
-      await repo.register(email, name, await hashPassword(password));
+      await repo.register(email, name, await hashPassword(password, env));
       // Never disclose whether the email already existed. Both cases are identical.
       return redirect("/login?notice=signup");
     }
     if (path === "/login") {
+      await assertPasswordPepper(env);
       if (user) return redirect("/");
       const email = normalizeEmail(form.get("email"));
       const password = form.get("password") ?? "";
@@ -93,10 +95,12 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       }
       const ip = await ipHash(request, env.SESSION_SECRET);
       const result = await repo.login(email, ip, async (record) => {
-        const valid = await verifyPassword(password, record ?? DUMMY_RECORD);
+        const valid = await verifyPassword(password, record, env);
         if (!valid || !record) return null;
         const raw = randomToken();
-        return { token: raw, tokenHash: await sha256(raw), userId: record.user_id, userAgent: request.headers.get("user-agent") ?? "" };
+        return { token: raw, tokenHash: await sha256(raw), userId: record.user_id,
+          upgrade: needsPasswordRehash(record, env) ? await hashPassword(password, env) : null,
+          userAgent: request.headers.get("user-agent") ?? "" };
       });
       if (!result) return html("login", { error: GENERIC_LOGIN_ERROR, values: { email } }, 400);
       const current = await repo.session(result.tokenHash);
@@ -126,17 +130,18 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       return redirect("/");
     }
     if (path === "/account") {
+      await assertPasswordPepper(env);
       const password = form.get("password");
       const error = password !== form.get("confirm") ? "Your passwords do not match." : validatePassword(password);
       if (error) return html("account", { user, error }, 400);
       const old = await repo.getPassword(user.email);
-      if (!await verifyPassword(form.get("current_password") ?? "", old)) {
+      if (!await verifyPassword(form.get("current_password") ?? "", old, env)) {
         return html("account", { user, error: GENERIC_LOGIN_ERROR }, 400);
       }
-      if (await verifyPassword(password, old)) {
+      if (await verifyPassword(password, old, env)) {
         return html("account", { user, error: "Choose a new password, different from your current password." }, 400);
       }
-      if (!await repo.changePassword(tokenHash, await hashPassword(password))) {
+      if (!await repo.changePassword(tokenHash, await hashPassword(password, env))) {
         return redirect("/login", sessionCookie("", true));
       }
       return html("account", { user: { ...user, must_change_password: false }, notice: "Password changed. Other sessions have been signed out." });
