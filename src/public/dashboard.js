@@ -1,5 +1,6 @@
 import { validateProduct } from "/assets/validation.js";
 import { statusLabel, stateName, indianDate, allowedTransitions } from "/assets/dashboard-rules.js";
+import { businessGSTINErrors } from "/assets/commerce-rules.js";
 
 const root = document.querySelector(".lb-app");
 const storeId = root?.dataset.storeId || "";
@@ -36,7 +37,7 @@ async function request(url, options = {}) {
   });
   const type = response.headers.get("content-type") || "";
   const result = type.includes("json") ? await response.json().catch(() => ({})) : await response.text();
-  if (!response.ok) throw new Error(result?.error || `Request failed (${response.status}).`);
+  if (!response.ok) throw Object.assign(new Error(result?.error || `Request failed (${response.status}).`),{errors:result?.errors || {}});
   return result;
 }
 function busy(button, value, text) {
@@ -59,6 +60,39 @@ function handleError(error, button) {
 async function postJson(url, body, method = "POST") {
   return request(url, { method, body: JSON.stringify(body) });
 }
+const taxForm = document.querySelector("[data-tax-settings-form]");
+function taxPayload(form) {
+  const values = Object.fromEntries(new FormData(form));
+  for (const key of Object.keys(values)) values[key] = String(values[key]).trim();
+  values.gstin = (values.gstin || "").toUpperCase();
+  return values;
+}
+function taxInlineErrors(form,errors) {
+  for (const name of ["gstin","business_state"]) {
+    form.querySelector(`[data-tax-error="${name}"]`).textContent = errors[name] || "";
+    form.querySelector(`[name="${name}"]`).setAttribute("aria-invalid",String(!!errors[name]));
+  }
+}
+taxForm?.addEventListener("input",() => taxInlineErrors(taxForm,businessGSTINErrors(taxPayload(taxForm))));
+taxForm?.addEventListener("submit",async event => {
+  event.preventDefault();
+  if (!["owner","admin"].includes(role)) return;
+  const payload = taxPayload(taxForm), errors = businessGSTINErrors(payload);
+  taxInlineErrors(taxForm,errors);
+  const message = taxForm.querySelector("[data-tax-form-error]");
+  message.textContent = "";
+  if (Object.keys(errors).length) {taxForm.querySelector('[aria-invalid="true"]')?.focus();return;}
+  const button = taxForm.querySelector('button[type="submit"]');
+  busy(button,true);
+  try {
+    await postJson(`${api}/setup`,{settings:payload},"PATCH");
+    taxForm.querySelector('[name="gstin"]').value = payload.gstin;
+    notify("Business details saved. Review policies and publish changes from store setup.");
+  } catch (error) {
+    taxInlineErrors(taxForm,error.errors || {});
+    message.textContent = error.message || "Business details could not be saved.";
+  } finally {busy(button,false);}
+});
 
 document.querySelector("[data-menu-toggle]")?.addEventListener("click", event => {
   const button = event.currentTarget;

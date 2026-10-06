@@ -77,7 +77,7 @@ test("Step 1 PATCH saves realistic Indian fields, multiline address and same-sto
     brand_name: "Test Brand", subdomain: "test-brand", logo_media_id: LOGO,
     tagline: "Made in India", description: "Thoughtfully made everyday products from a small independent Indian brand.",
     legal_name: "Test Products Private Limited", address: "12 Test Road\nChennai, Tamil Nadu 600001",
-    gstin: "33ABCDE1234F1Z5", support_phone: "+91 9000000000",
+    gstin: "33ABCDE1234F1Z7", support_phone: "+91 9000000000",
     support_email: "support@example.invalid", category: "beauty",
   };
   const response = await patch(db, settings, { step: 1, completed: [1] });
@@ -114,7 +114,7 @@ test("invalid GSTIN, email, phone and category produce field errors before any s
     assert.ok(!body.error.includes("temporarily unavailable"));
     assert.equal(db.state.queries.length, 0);
   }
-  assert.equal(settingsPatch({ gstin: "33abcde1234f1z5" }).gstin, "33ABCDE1234F1Z5");
+  assert.equal(settingsPatch({ gstin: "33abcde1234f1z7" }).gstin, "33ABCDE1234F1Z7");
 });
 test("product tag arrays cross the JSON boundary on both reads and writes", async () => {
   const db = database();

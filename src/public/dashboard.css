@@ -197,6 +197,8 @@ button, input, select, textarea { font: inherit; }
 .lb-field { font-size:11px; }
 .lb-field input,.lb-field select { height:42px; }
 .lb-field textarea { resize:vertical; line-height:1.5; }
+.lb-field .field-error, [data-tax-form-error]:not(:empty) { color:#a33529; font-size:11px; font-weight:600; }
+.lb-field [aria-invalid="true"] { border-color:#a33529; }
 .lb-field small { color:var(--lb-muted); font-size:9px; font-weight:400; }
 .lb-image-editor,.lb-side-box { padding:17px; background:var(--lb-surface); border:1px solid var(--lb-line); }
 .lb-image-top { display:flex; justify-content:space-between; align-items:center; gap:15px; }

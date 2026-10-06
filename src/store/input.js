@@ -1,5 +1,5 @@
 import { CATEGORIES, UUID, validateTheme } from "../public/validation.js";
-import { CURRENT_GST_RATES, LEGACY_GST_RATES } from "../public/commerce-rules.js";
+import { CURRENT_GST_RATES, LEGACY_GST_RATES, INDIAN_STATES, gstinError } from "../public/commerce-rules.js";
 
 export const badInput = (message, errors) => Object.assign(new Error(message), { status: 400, errors });
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -12,7 +12,7 @@ export function settingsPatch(value) {
   const result = {}, limits = {
     brand_name: 40, subdomain: 30, tagline: 60, description: 500,
     legal_name: 120, address: 500, support_email: 254, support_phone: 25,
-    gstin: 15, category: 30, theme: 20, accent_color: 7, font_preset: 20, button_style: 20,
+    gstin: 15, business_state: 2, category: 30, theme: 20, accent_color: 7, font_preset: 20, button_style: 20,
   };
   for (const [key, val] of Object.entries(value)) {
     if (key === "logo_media_id") {
@@ -26,9 +26,9 @@ export function settingsPatch(value) {
   if (result.category && !CATEGORIES.some((c) => c.value === result.category)) throw badInput("Choose a store category.", { category: "Choose a store category from the list." });
   if (result.gstin) result.gstin = result.gstin.toUpperCase();
   const formatErrors = {};
-  if (result.gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(result.gstin)) {
-    formatErrors.gstin = "GSTIN should be 15 characters: 2 digits, a 10-character PAN, then 3 characters. Use digits, not the letter O, in the PAN number.";
-  }
+  const gstError = gstinError(result.gstin,false);
+  if (gstError) formatErrors.gstin = gstError;
+  if (result.business_state && !INDIAN_STATES.some(s => s.code === result.business_state)) formatErrors.business_state = "Choose a valid Indian state.";
   if (result.support_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result.support_email)) formatErrors.support_email = "Enter a valid email.";
   if (result.support_phone && !/^\+?[0-9 ()-]{7,25}$/.test(result.support_phone)) formatErrors.support_phone = "Enter a valid phone number, such as +91 followed by your number.";
   if (Object.keys(formatErrors).length) throw badInput("Check the highlighted fields.", formatErrors);

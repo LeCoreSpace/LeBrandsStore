@@ -2,7 +2,7 @@
 // messages: any of those can include submitted values or session tokens.
 const SETTING_FIELDS = new Set([
   "brand_name", "subdomain", "logo_media_id", "tagline", "description",
-  "legal_name", "address", "support_email", "support_phone", "gstin", "category",
+  "legal_name", "address", "support_email", "support_phone", "gstin", "business_state", "category",
   "theme", "accent_color", "font_preset", "button_style",
 ]);
 export function setupFieldNames(body) {

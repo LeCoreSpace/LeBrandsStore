@@ -1,4 +1,4 @@
-import { DEFAULT_CHECKOUT_SETTINGS, checkoutSettings, inferStoreState, quoteCart, commerceError } from "../public/commerce-rules.js";
+import { DEFAULT_CHECKOUT_SETTINGS, checkoutSettings, inferStoreState, registeredBusinessState, quoteCart, commerceError } from "../public/commerce-rules.js";
 
 const denied = () => commerceError("This store is not available for checkout.",undefined,404);
 export async function checkoutContext(tx, id, lock = false) {
@@ -9,8 +9,10 @@ export async function checkoutContext(tx, id, lock = false) {
   const [publication] = await tx`SELECT snapshot FROM public.store_publications WHERE store_id = ${id}`;
   if (!publication?.snapshot) throw denied();
   const [saved] = await tx`SELECT settings FROM public.checkout_settings WHERE store_id = ${id}`;
+  const registered = registeredBusinessState(publication.snapshot.settings);
   const settings = checkoutSettings({...DEFAULT_CHECKOUT_SETTINGS,
-    store_state:inferStoreState(publication.snapshot.settings),...saved?.settings});
+    store_state:inferStoreState(publication.snapshot.settings),...saved?.settings,
+    ...(registered ? {store_state:registered} : {})});
   return {store,snapshot:publication.snapshot,settings};
 }
 export async function inventoryFor(tx,id,items,lock = false) {

@@ -1,5 +1,5 @@
 // Shared by the Worker and wizard. No browser-only or server-only dependencies.
-import { CURRENT_GST_RATES, LEGACY_GST_RATES } from "./commerce-rules.js";
+import { CURRENT_GST_RATES, LEGACY_GST_RATES, businessGSTINErrors } from "./commerce-rules.js";
 export const RESERVED_SUBDOMAINS = [
   "www", "app", "admin", "api", "brands", "customers", "mail", "notify", "news",
   "help", "support", "status", "shop", "store", "checkout", "cart", "pay",
@@ -34,7 +34,7 @@ export function validateBasics(s = {}) {
   if (length(s.address) < 10 || length(s.address) > 500) errors.address = "Enter your full business address (10 to 500 characters).";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.support_email ?? "") || length(s.support_email) > 254) errors.support_email = "Enter a valid support email.";
   if (!/^\+?[0-9 ()-]{7,25}$/.test(s.support_phone ?? "")) errors.support_phone = "Enter a valid support phone or WhatsApp number.";
-  if (s.gstin && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(s.gstin)) errors.gstin = "Enter a valid 15-character GSTIN, or leave it blank.";
+  Object.assign(errors,businessGSTINErrors(s));
   if (!CATEGORIES.some((c) => c.value === s.category)) errors.category = "Choose a store category.";
   return errors;
 }

@@ -16,7 +16,47 @@ export const DEFAULT_CHECKOUT_SETTINGS = {
   cod_enabled: true, cod_max_paise: 300000, store_state: "",
 };
 export const commerceError = (message, errors, status = 400) => Object.assign(new Error(message), {status,errors});
+export const GSTIN_PATTERN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
+export function gstinChecksum(value) {
+  const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  if (!/^[0-9A-Z]{14}$/.test(value)) return null;
+  let sum = 0, factor = 2;
+  for (let i = 13; i >= 0; i--) {
+    const product = alphabet.indexOf(value[i]) * factor;
+    sum += Math.floor(product / 36) + product % 36;
+    factor = 3 - factor;
+  }
+  return alphabet[(36 - sum % 36) % 36];
+}
+export function gstinError(value, required = true) {
+  if (!value) return required ? "GSTIN is required to publish your store." : "";
+  if (!GSTIN_PATTERN.test(value)) return "Enter a 15-character GSTIN with 2 state digits, a valid PAN, an entity code, Z and a check character.";
+  if (gstinChecksum(value.slice(0,14)) !== value[14]) return "The GSTIN checksum is invalid. Check it against your GST registration certificate.";
+  return "";
+}
+const addressStates = (address) => INDIAN_STATES.filter(s =>
+  new RegExp(`(?:^|[\\s,;.()/-])${s.name}(?:$|[\\s,;.()/-])`,"i").test(String(address || "")));
+export function registeredBusinessState(settings = {}) {
+  if (settings.business_state) return INDIAN_STATES.find(s => s.code === settings.business_state)?.code || "";
+  const states = addressStates(settings.address);
+  return states.length === 1 ? states[0].code : "";
+}
+export function businessGSTINErrors(settings = {}) {
+  const errors = {}, error = gstinError(settings.gstin), state = registeredBusinessState(settings);
+  if (error) errors.gstin = error;
+  if (!state) errors.business_state = "Select the state of your registered business address.";
+  const writtenStates = addressStates(settings.address);
+  if (state && writtenStates.length === 1 && writtenStates[0].code !== state) {
+    errors.business_state = "The selected state does not match the state written in your business address.";
+  }
+  if (!error && state && settings.gstin.slice(0,2) !== state) {
+    errors.gstin = "The first two GSTIN digits must match the registered business address state.";
+  }
+  return errors;
+}
 export function inferStoreState(settings = {}) {
+  const registered = registeredBusinessState(settings);
+  if (registered) return registered;
   const prefix = typeof settings.gstin === "string" ? settings.gstin.slice(0,2) : "";
   if (INDIAN_STATES.some((s) => s.code === prefix)) return prefix;
   const address = String(settings.address ?? "").toLowerCase();

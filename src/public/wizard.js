@@ -1,5 +1,6 @@
 import { renderAura } from "/assets/aura.js";
 import { CATEGORIES, validateBasics, validateTheme, validateProduct, publishChecklist, resumeStep } from "/assets/validation.js";
+import { INDIAN_STATES, registeredBusinessState, businessGSTINErrors } from "/assets/commerce-rules.js";
 
 const root = document.getElementById("wizard");
 const panel = document.getElementById("wizard-panel");
@@ -46,7 +47,7 @@ const policyRequests = new Map();
 let policyQueue = Promise.resolve();
 const SETTING_FIELDS = new Set([
   "brand_name", "subdomain", "description", "tagline", "logo_media_id",
-  "legal_name", "address", "support_email", "support_phone", "gstin",
+  "legal_name", "address", "support_email", "support_phone", "gstin", "business_state",
   "category", "theme", "accent_color", "font_preset", "button_style",
 ]);
 
@@ -76,7 +77,7 @@ function showReadOnly(action="save changes"){
 }
 function refreshPublishButton(){
   const button=document.getElementById("publish-button");
-  if(button)button.disabled=!publishReady()||busy||uploadBusy||data.store?.status==="live";
+  if(button)button.disabled=!publishReady()||busy||uploadBusy;
 }
 function currentSettings(){return data.settings||(data.settings={})}
 function currentProduct(){return data.products?.find((p)=>String(p.id)===String(activeProductId))||null}
@@ -199,7 +200,7 @@ function field(name,label,value="",opts={}){
   const type=opts.type||"text";
   let control;
   if(opts.select){
-    control=`<select id="${esc(name)}" name="${esc(name)}" data-${opts.scope||"settings"}="${esc(name)}"><option value="">Choose a category</option>${opts.options.map(o=>`<option value="${esc(o.value)}" ${String(value)===String(o.value)?"selected":""}>${esc(o.label)}</option>`).join("")}</select>`;
+    control=`<select id="${esc(name)}" name="${esc(name)}" data-${opts.scope||"settings"}="${esc(name)}"><option value="">${esc(opts.placeholder||"Choose a category")}</option>${opts.options.map(o=>`<option value="${esc(o.value)}" ${String(value)===String(o.value)?"selected":""}>${esc(o.label)}</option>`).join("")}</select>`;
   }else if(opts.textarea){
     control=`<textarea id="${esc(name)}" name="${esc(name)}" data-${opts.scope||"settings"}="${esc(name)}" maxlength="${opts.max||""}" rows="${opts.rows||4}" placeholder="${esc(opts.placeholder||"")}">${esc(value)}</textarea>`;
   }else{
@@ -212,7 +213,7 @@ function field(name,label,value="",opts={}){
 }
 function progressBar(){return `<nav class="step-progress" aria-label="Setup steps">${["Brand basics","Choose a theme","Your products","Review & publish"].map((label,i)=>`<button type="button" data-step="${i+1}" aria-current="${step===i+1?"step":"false"}" data-complete="${(data.progress?.completed||[]).includes(i+1)}"><span class="step-number">0${i+1}</span>${label}</button>`).join("")}</nav>`}
 function footerNav(){
-  return `<div class="bottom-nav"><button class="btn btn-secondary" type="button" data-action="back" ${step===1?"disabled":""}>Back</button><span class="field-error-summary" id="step-error" role="status">${esc(formErrors._step||"")}</span>${step<4?`<button class="btn" type="button" data-action="next">Continue <span aria-hidden="true">→</span></button>`:`<button class="btn" id="publish-button" type="button" data-action="publish" ${!publishReady()||busy||uploadBusy||data.store?.status==="live"?"disabled":""}>${data.store?.status==="live"?"Published":busy?"Publishing…":"Publish store"}</button>`}</div>`;
+  return `<div class="bottom-nav"><button class="btn btn-secondary" type="button" data-action="back" ${step===1?"disabled":""}>Back</button><span class="field-error-summary" id="step-error" role="status">${esc(formErrors._step||"")}</span>${step<4?`<button class="btn" type="button" data-action="next">Continue <span aria-hidden="true">→</span></button>`:`<button class="btn" id="publish-button" type="button" data-action="publish" ${!publishReady()||busy||uploadBusy?"disabled":""}>${busy?"Publishing…":data.store?.status==="live"?"Publish changes":"Publish store"}</button>`}</div>`;
 }
 function shellStep(kicker,title,intro,content){return `${progressBar()}<div class="step-card"><div class="step-kicker">${esc(kicker)}</div><h2>${esc(title)}</h2><p class="step-intro">${esc(intro)}</p>${formErrors._general?`<div class="form-error" role="alert">${esc(formErrors._general)}</div>`:""}${content}${footerNav()}</div>`}
 function renderBasics(){
@@ -225,8 +226,9 @@ function renderBasics(){
     <div class="field"><span class="field-label">Brand logo</span><div class="upload-zone">${safeMediaUrl(logo)?`<img class="upload-thumb" src="${esc(safeMediaUrl(logo))}" alt="Brand logo preview">`:`<span class="upload-thumb" aria-hidden="true"></span>`}<div class="upload-actions"><label for="logo-file">${logo?"Replace logo":"Upload a logo"}</label><small>PNG, JPG, SVG or WebP · up to 5 MB</small><input class="file-input" id="logo-file" type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" data-upload="logo"></div></div>${fields(formErrors.logo_media_id?{logo_media_id:formErrors.logo_media_id}:null)}</div>
    ${field("description","A little about your brand",s.description||"",{textarea:true,max:500,rows:3,placeholder:"What do you make, and what makes it yours?",help:"50 to 500 characters."})}
    ${field("tagline","Short tagline (optional)",s.tagline||"",{max:60,placeholder:"Made for the everyday."})}
-   <div class="field-grid">${field("legal_name","Legal business name",s.legal_name||"",{max:180})}${field("gstin","GSTIN (optional)",s.gstin||"",{max:15,placeholder:"15-character GSTIN"})}</div>
+   <div class="field-grid">${field("legal_name","Legal business name",s.legal_name||"",{max:120})}${field("gstin","GSTIN (required to publish)",s.gstin||"",{max:15,placeholder:"15-character GSTIN"})}</div>
    ${field("address","Business address",s.address||"",{textarea:true,max:500,rows:2})}
+   ${field("business_state","Registered business state",registeredBusinessState(s),{select:true,placeholder:"Choose the registered address state",options:INDIAN_STATES.map(s=>({value:s.code,label:s.name}))})}
    <div class="field-grid">${field("support_email","Support email",s.support_email||"",{type:"email",max:254,autocomplete:"email"})}${field("support_phone","Support phone / WhatsApp",s.support_phone||"",{type:"tel",max:20,autocomplete:"tel"})}</div>
    ${field("category","What best describes your brand?",s.category||"",{select:true,options:cats})}`);
 }
@@ -269,8 +271,13 @@ function publishReady(){
 function renderReview(){
  const policies=data.policies||[];
  const checks=checklistItems();
+ const s=currentSettings(),gstErrors=businessGSTINErrors(s);
+ delete formErrors.gstin;delete formErrors.business_state;
+ formErrors={...formErrors,...gstErrors};
  return shellStep("Step 04 · Nearly there","A final look before launch.","Review the essentials, read each policy draft, and publish when everything feels right.",`
   <div class="review-note">Policy drafts are starting points for your own review. LeBrands.Store does not provide legal advice.</div>
+  <p class="field-help">Registered business address: ${esc(s.address||"Complete your address in Brand basics.")}</p>
+  <div class="field-grid">${field("gstin","GSTIN (required)",s.gstin||"",{max:15})}${field("business_state","Registered business state",registeredBusinessState(s),{select:true,placeholder:"Choose the registered address state",options:INDIAN_STATES.map(s=>({value:s.code,label:s.name}))})}</div>
    <ul class="checklist">${checks.map(c=>`<li><span class="check-indicator ${c.complete?"complete":""}" aria-hidden="true">${c.complete?"✓":""}</span><span>${esc(c.label)}</span></li>`).join("")}</ul>
    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:19px 0 6px"><strong style="font:500 22px var(--serif)">Store policies</strong><button class="btn btn-secondary" type="button" data-action="generate-policies" ${busy||uploadBusy?"disabled":""}>Generate drafts</button></div>
   <p class="field-help">Generating again replaces the current drafts. You'll be asked first.</p>
@@ -532,7 +539,7 @@ async function submitPublish(){
     data.store={...data.store,...responseEnvelope(result).store,status:responseEnvelope(result).store?.status||"live"};
     setStatus("saved","Saved");renderPanel();schedulePreview();
   }
-  catch(error){formErrors={_publish:error.message};renderPanel();setStatus("error",error.message,null)}
+  catch(error){formErrors={...(error.errors||{}),_publish:error.message};renderPanel();setStatus("error",error.message,null)}
   finally{busy=false;renderPanel();if(!formErrors._publish)setStatus("saved","Saved")}
 }
 async function unpublish(){
@@ -565,6 +572,7 @@ function onInput(event){
   if((busy||uploadBusy)&&(el.matches("[data-settings],[data-product],[data-image-alt],[data-policy],[data-policy-reviewed]")))return;
  if(el.matches("[data-settings]")){
    const name=el.dataset.settings;let value=el.value;
+   if(name==="gstin"){value=value.trim().toUpperCase();el.value=value}
    if(name==="subdomain"){value=value.toLowerCase().trim();if(value!==el.value)el.value=value;checkSubdomain(false)}
    changedSetting(name,value);
    if(name==="accent_color"){const other=[...document.querySelectorAll('[data-settings="accent_color"]')].find(x=>x!==el);if(other)other.value=value}

@@ -9,7 +9,7 @@ async function shippedInvoiceFixture(tx,store) {
   await tx`INSERT INTO public.orders(id,store_id,customer_id,order_number,status,payment_method,subtotal_paise,total_paise,shipping_address,supplier_snapshot)
     VALUES (${id},${store.storeId},${store.customerId},${`rls-test-invoice-${id}`},'shipped','cod',10000,10000,
       ${tx.json({name:"RLS Fixture",line1:"RLS Fixture Address",city:"Mumbai",state:"27",pincode:"400001"})},
-      ${tx.json({legal_name:"RLS Fixture Supplier",address:"RLS Fixture Supplier Address",gstin:"27ABCDE1234F1Z5",state:"27"})})`;
+      ${tx.json({legal_name:"RLS Fixture Supplier",address:"RLS Fixture Supplier Address",gstin:"27ABCDE1234F1Z0",state:"27"})})`;
   await tx`INSERT INTO public.order_items(store_id,order_id,product_id,title,hsn_code,quantity,unit_price_paise,total_paise,taxable_paise)
     VALUES (${store.storeId},${id},${store.productIds[0]},'RLS Invoice Item','1234',1,10000,10000,10000)`;
   return id;

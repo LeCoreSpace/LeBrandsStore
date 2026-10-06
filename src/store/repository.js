@@ -3,11 +3,11 @@ import { generatePolicies } from "./policies.js";
 import { validateBasics, validateTheme, validateProduct, publishChecklist, POLICY_KINDS } from "../public/validation.js";
 import { badInput } from "./input.js";
 import { validateSubdomain } from "../auth/security.js";
-import { CURRENT_GST_RATES } from "../public/commerce-rules.js";
+import { CURRENT_GST_RATES, businessGSTINErrors } from "../public/commerce-rules.js";
 
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
-  support_email: "", support_phone: "", gstin: "", category: "",
+  support_email: "", support_phone: "", gstin: "", business_state: "", category: "",
   theme: "aura", accent_color: "#214a3d", font_preset: "serif", button_style: "rounded",
 };
 const missing = () => Object.assign(new Error("Store or product not found."), { status: 404 });
@@ -69,6 +69,11 @@ function completion(data, progress) {
 export async function saveSetup(tx, id, settings, progress) {
   await ensureSetup(tx, id);
   const data = await loadDraft(tx, id);
+  if (data.store.status === "live" && settings &&
+      ["gstin","business_state","address"].some(key => Object.hasOwn(settings,key))) {
+    const errors = businessGSTINErrors({...data.settings,...settings});
+    if (Object.keys(errors).length) throw badInput("Check your registered business GST details.",errors);
+  }
   // An already-autosaved address still needs confirmation on Continue, even
   // when that request contains progress only and no dirty settings.
   const requestedAddress = settings?.subdomain ?? data.settings.subdomain;
@@ -191,6 +196,8 @@ export async function publish(tx, id, live) {
   await ensureSetup(tx, id);
   if (live) {
     const data = await loadDraft(tx, id), checklist = publishChecklist(data);
+    const gstErrors = businessGSTINErrors(data.settings);
+    if (Object.keys(gstErrors).length) throw badInput("A valid GSTIN and registered business state are required to publish.",gstErrors);
     if (!validateSubdomain(data.settings.subdomain) || data.settings.subdomain !== data.store.subdomain) {
       throw badInput("Confirm your store address in Brand basics before publishing.");
     }

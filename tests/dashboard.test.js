@@ -120,12 +120,15 @@ test("Indian financial year boundary and document numbering do not collide acros
   assert.notEqual(invoiceNumber("shop","2025-26",1),invoiceNumber("shop","2026-27",1));
   assert.equal(invoiceNumber("shop","2026-27",10000),"SHOP/2026-27/10000");
 });
-test("no-GSTIN receipt has no GST tax lines while preserving gross order total", async () => {
+test("missing GSTIN blocks new issuance rather than creating a Bill of Supply", async () => {
   const db = dashboardDb();db.state.orders[0].supplier_snapshot.gstin = "";
-  await change(db,{status:"packed"});await change(db,shipping);
-  const invoice = db.state.invoices[0], html = renderInvoice(invoice);
-  assert.equal(invoice.document_type,"receipt");assert.equal(invoice.tax_paise,0);assert.equal(invoice.total_paise,11800);
-  assert.match(html,/Bill of Supply \/ Order receipt/);assert.ok(!html.includes("<th>CGST</th>"));assert.ok(!html.includes("<th>GST %</th>"));
+  await change(db,{status:"packed"});
+  await assert.rejects(change(db,shipping),{status:409});
+  assert.equal(db.state.invoices.length,0);assert.deepEqual(db.state.sequences,{});
+  assert.equal(db.state.orders[0].status,"packed");
+  // Existing historical receipt rendering remains available, not a new flow.
+  const html=renderInvoice({document_type:"receipt",snapshot:{supplier:{},items:[],totals:{subtotal_paise:11800}},total_paise:11800});
+  assert.match(html,/Bill of Supply \/ Order receipt/);assert.ok(!html.includes("<th>CGST</th>"));
 });
 test("GST split, invoice contents, Indian state/date formatting and escaping", async () => {
   assert.equal(inclusiveTax(11800,18,true).cgst_paise,900);

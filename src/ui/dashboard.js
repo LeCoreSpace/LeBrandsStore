@@ -1,6 +1,6 @@
 import { escapeHtml, layout } from "./layout.js";
 import { validateProduct } from "../public/validation.js";
-import { CURRENT_GST_RATES } from "../public/commerce-rules.js";
+import { CURRENT_GST_RATES, INDIAN_STATES, registeredBusinessState, businessGSTINErrors } from "../public/commerce-rules.js";
 import { statusLabel, stateName, indianDate, allowedTransitions } from "../public/dashboard-rules.js";
 
 const esc = escapeHtml;
@@ -275,8 +275,18 @@ function settingsPage(data) {
   const exports = data.role === "owner"
     ? `<div class="lb-export-buttons"><button type="button" data-export="customers">Customers CSV</button><button type="button" data-export="orders">Orders CSV</button><button type="button" data-export="products">Products CSV</button></div><small>Exports are available to the store owner.</small>`
     : `<p class="lb-muted">Exports are available to the store owner.</p>`;
+  const taxErrors = businessGSTINErrors(settings);
+  const taxError = name => `<span id="tax-error-${name}" data-tax-error="${name}" class="field-error" role="alert">${esc(taxErrors[name] || "")}</span>`;
+  const taxForm = `<form data-tax-settings-form novalidate><fieldset ${["owner","admin"].includes(data.role) ? "" : "disabled"}>
+    <label class="lb-field">Legal business name<input name="legal_name" maxlength="120" value="${esc(settings.legal_name || "")}"></label>
+    <label class="lb-field">Registered business address<textarea name="address" maxlength="500" rows="3">${esc(settings.address || "")}</textarea></label>
+    <label class="lb-field">Registered business state<select name="business_state" aria-describedby="tax-error-business_state" aria-invalid="${!!taxErrors.business_state}"><option value="">Choose the registered address state</option>${INDIAN_STATES.map(s=>`<option value="${s.code}" ${registeredBusinessState(settings)===s.code?"selected":""}>${esc(s.name)}</option>`).join("")}</select>${taxError("business_state")}</label>
+    <label class="lb-field">GSTIN (required to publish)<input name="gstin" maxlength="15" autocapitalize="characters" spellcheck="false" aria-describedby="tax-error-gstin" aria-invalid="${!!taxErrors.gstin}" value="${esc(settings.gstin || "")}">${taxError("gstin")}</label>
+    <p class="lb-muted">GSTIN must match your registration certificate and registered address state. Changes are saved to your setup draft. Review policies and publish changes to apply them to your live store.</p>
+    <p data-tax-form-error role="alert"></p><button class="lb-button" type="submit">Save business details</button>
+    </fieldset></form>`;
   return `${pageHeading("Store controls", "Settings.", "The details behind your storefront and checkout.", "")}${actionError(data)}
-    <div class="lb-settings-layout"><div>${card("Store setup", checklist)}${card("Policies", policyMarkup)}</div><aside>${card("Store identity", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status || "Setup in progress")}</dd></div><div><dt>GST state</dt><dd>${esc(checkoutSettings.store_state ? stateName(checkoutSettings.store_state) : "Not set")}</dd></div></dl>`)}${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}${card("Store availability", ownerActions)}</aside></div>`;
+    <div class="lb-settings-layout"><div>${card("Registered business & GST",taxForm)}${card("Store setup", checklist)}${card("Policies", policyMarkup)}</div><aside>${card("Store identity", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status || "Setup in progress")}</dd></div><div><dt>Registered business state</dt><dd>${esc(registeredBusinessState(settings) ? stateName(registeredBusinessState(settings)) : "Not set")}</dd></div></dl>`)}${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}${card("Store availability", ownerActions)}</aside></div>`;
 }
 
 function normalizeView(view) {

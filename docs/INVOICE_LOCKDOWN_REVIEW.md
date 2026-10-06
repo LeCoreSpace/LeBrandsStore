@@ -1,5 +1,10 @@
 # Invoice lockdown: migration 0008 review
 
+Subsequent GST registration requirements are implemented in a separate,
+unapplied migration, `0009_required_gstin.sql`. That migration rejects new
+receipts/invalid GSTINs and nonzero tax on exempt lines via an INSERT-only
+guard. Historical invoices and the protections in 0008 remain unchanged.
+
 This migration is **not applied**. Migration 0007 is already applied and is
 unchanged. No migrations, live isolation tests, deployments, secrets, Wrangler
 configurations or UI changes were executed as part of this fix.

@@ -23,6 +23,7 @@ function fixture() {
       logo_media_id: MEDIA_ID, logo_url: mediaUrl(KEY),
       description: "Handmade essentials for everyday living, thoughtfully made in small batches.",
       legal_name: "Thoughtful Products Private Limited", address: "10 Sample Street, Mumbai, Maharashtra, 400001",
+      gstin:"27AAPFU0939F1ZV",business_state:"27",
       support_email: "support@example.invalid", support_phone: "+91 90000 00000", category: "home-decor" },
     products: [{ id: PRODUCT_ID, title: "Handmade cotton tote", description: "A thoughtfully handmade everyday cotton tote for carrying your essentials.",
       price_paise: 129900, compare_at_paise: 149900, tags: ["cotton"], sku: "TEST-1", stock: null,

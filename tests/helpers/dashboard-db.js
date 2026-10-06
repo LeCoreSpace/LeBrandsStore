@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { financialYear,invoiceNumber } from "../../src/public/dashboard-rules.js";
-import { inferStoreState } from "../../src/public/commerce-rules.js";
+import { inferStoreState,gstinError } from "../../src/public/commerce-rules.js";
 export const STORE = "10000000-0000-4000-8000-000000000001";
 export const USER = "10000000-0000-4000-8000-000000000002";
 export const ORDER = "10000000-0000-4000-8000-000000000003";
@@ -9,7 +9,7 @@ export function dashboardDb() {
   let state = {role:"owner",orders:[{id:ORDER,store_id:STORE,order_number:"STO-1001",status:"confirmed_cod",payment_method:"cod",
     created_at:"2026-01-01T00:00:00Z",customer_name:"Buyer",phone:"+919000000000",subtotal_paise:11800,total_paise:11800,
     tax_paise:1800,shipping_paise:0,shipping_address:{name:"Buyer",line1:"Street",city:"Chennai",state:"33",pincode:"600001"},
-    supplier_snapshot:{legal_name:"Legal Store",address:"Supplier Street, Chennai",gstin:"33ABCDE1234F1Z5",state:"33"}}],
+    supplier_snapshot:{legal_name:"Legal Store",address:"Supplier Street, Chennai",gstin:"33ABCDE1234F1Z7",state:"33"}}],
     items:[{store_id:STORE,order_id:ORDER,product_id:PRODUCT,title:"Product",quantity:2,unit_price_paise:5900,
       total_paise:11800,taxable_paise:10000,tax_paise:1800,cgst_paise:900,sgst_paise:900,igst_paise:0,gst_rate:18,inventory_deducted:true}],
     stock:3,invoices:[],shipments:[],audit:[],sequences:{},queries:[],contextStore:STORE,clock:"2026-10-06T08:00:00Z"};
@@ -45,10 +45,11 @@ export function dashboardDb() {
       }
       if (invoice) return [{id:invoice.id,invoice_number:invoice.invoice_number}];
       if (!["shipped","delivered","returned","rto"].includes(order.status)) fail("Invoices are issued when an order is shipped","23514");
-      const settings = state.publicationSettings ?? {legal_name:"Legal Store",address:"Supplier Street, Chennai",gstin:"33ABCDE1234F1Z5"};
+      const settings = state.publicationSettings ?? {legal_name:"Legal Store",address:"Supplier Street, Chennai",gstin:"33ABCDE1234F1Z7"};
       const supplier = order.supplier_snapshot ?? {legal_name:settings.legal_name || "Store",address:settings.address,gstin:settings.gstin || "",state:inferStoreState(settings)};
       if (!supplier.legal_name || !supplier.address) fail("Complete supplier details","23514");
-      const document_type = supplier.gstin ? "tax_invoice" : "receipt";
+      if (gstinError(supplier.gstin)) fail("A valid GSTIN is required for new invoices","23514");
+      const document_type = "tax_invoice";
       const items = state.items.filter((i) => i.store_id === state.contextStore && i.order_id === order.id);
       if (document_type === "tax_invoice") {
         if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(supplier.gstin) || supplier.gstin.slice(0,2) !== supplier.state) fail("GST state mismatch","23514");
