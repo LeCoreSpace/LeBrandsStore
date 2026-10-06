@@ -3,6 +3,7 @@ import { generatePolicies } from "./policies.js";
 import { validateBasics, validateTheme, validateProduct, publishChecklist, POLICY_KINDS } from "../public/validation.js";
 import { badInput } from "./input.js";
 import { validateSubdomain } from "../auth/security.js";
+import { CURRENT_GST_RATES } from "../public/commerce-rules.js";
 
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
@@ -110,6 +111,10 @@ export async function saveProduct(tx, id, productId, patch) {
   const [existing] = productId ? await tx`SELECT *, to_json(tags) AS tags FROM public.products
     WHERE store_id = ${id} AND id = ${productId}` : [];
   if (productId && !existing) throw missing();
+  if (patch.gst_rate != null && !CURRENT_GST_RATES.includes(patch.gst_rate) &&
+    (!existing || Number(existing.gst_rate) !== patch.gst_rate)) {
+    throw badInput("Choose a current GST rate.",{gst_rate:"Choose 0%, 5%, 18% or 40%. A previously saved rate can be retained, but should be confirmed."});
+  }
   const p = {
     title: existing?.title ?? "", description: existing?.description ?? "",
     price_paise: Number(existing?.price_paise ?? 0),

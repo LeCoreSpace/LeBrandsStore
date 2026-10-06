@@ -7,6 +7,9 @@ For the initial store-setup phase, the user explicitly requires Worker multipart
 uploads into Cloudflare R2, despite REQUIREMENTS.md describing signed upload URLs.
 Only Aura and wizard steps 1–4 are in scope; Bazaar is a disabled Coming soon card.
 Checkout/cart, integrations, AI helpers and email are out of scope.
+This was the initial setup phase only. The user later explicitly authorized
+cart, guest COD checkout, customer records and orders as a separate phase.
+Razorpay, Shiprocket, email/SMS and invoice PDFs were still excluded.
 
 **Why:** The user's phase-specific instructions override the broader MVP roadmap.
 The full requirements are not permission to build every described capability.

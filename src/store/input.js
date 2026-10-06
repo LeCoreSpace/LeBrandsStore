@@ -1,4 +1,5 @@
 import { CATEGORIES, UUID, validateTheme } from "../public/validation.js";
+import { CURRENT_GST_RATES, LEGACY_GST_RATES } from "../public/commerce-rules.js";
 
 export const badInput = (message, errors) => Object.assign(new Error(message), { status: 400, errors });
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -53,7 +54,7 @@ export function productPatch(value) {
       throw badInput("Enter a valid whole amount.", { [key]: "Use a valid amount. Prices must have no more than two decimal places." });
     }
     if (key === "gst_rate") {
-      if (val === null || [0, .25, 3, 5, 12, 18, 28].includes(val)) { result[key] = val; continue; }
+      if (val === null || [...CURRENT_GST_RATES,...LEGACY_GST_RATES].includes(val)) { result[key] = val; continue; }
       throw badInput("Choose a GST rate.");
     }
     if (key === "tags") {

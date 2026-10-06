@@ -1,4 +1,5 @@
 import { contrastColor } from "./validation.js";
+import { renderCommerceBody } from "./commerce-view.js";
 
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
   "&": "&amp;",
@@ -117,6 +118,10 @@ export function renderAura(data = {}, options = {}) {
           : page === "policy" ? `${policyTitle(options.policyKind)} · ${brand}`
             : page === "404" ? `Page not found · ${brand}`
               : page === "product" ? `${product?.title || "Product"} · ${brand}`
+                  : options.commerce && options.page === "cart" ? `Your bag · ${brand}`
+                    : options.commerce && options.page === "checkout" ? `Checkout · ${brand}`
+                      : options.commerce && options.page === "track" ? `Track your order · ${brand}`
+                        : options.commerce && options.page === "confirmation" ? `Order confirmed · ${brand}`
                 : brand;
   const descriptionText = String(description).replace(/\s+/g, " ").slice(0, 155);
   const canonicalPath = page === "collection" ? "/collections/all"
@@ -125,7 +130,8 @@ export function renderAura(data = {}, options = {}) {
         : page === "contact" ? "/pages/contact"
           : page === "policy" ? `/policies/${slug(options.policyKind)}`
             : "/";
-  const canonicalUrl = subdomain ? `https://${subdomain}.lebrands.store${canonicalPath}` : "";
+  const canonicalUrl = subdomain && !(options.commerce && ["cart", "checkout", "track", "confirmation"].includes(page))
+    ? `https://${subdomain}.lebrands.store${canonicalPath}` : "";
   const logoUrl = safeImage(settings.logo_url);
   const navigation = `<a href="${pageUrl("home")}">Home</a>
     <a href="${pageUrl("collection")}">Collection</a>
@@ -134,13 +140,15 @@ export function renderAura(data = {}, options = {}) {
   const footerLinks = `<a href="${pageUrl("collection")}">Collection</a>
     <a href="${pageUrl("about")}">About</a>
     <a href="${pageUrl("contact")}">Contact</a>
-    ${policyKinds.map((kind) => `<a href="/policies/${kind}">${policyTitle(kind)}</a>`).join("")}`;
+    ${policyKinds.filter((kind) => kind !== "contact").map((kind) => `<a href="/policies/${kind}">${policyTitle(kind)}</a>`).join("")}`;
+  const commercePage = options.commerce && ["cart", "checkout", "track", "confirmation"].includes(options.page);
+  const commerceHeader = options.commerce ? `<button type="button" class="aura-cart-trigger" data-cart-open aria-label="${options.readOnly ? "Cart preview, shopping disabled" : "Open cart"}" ${options.readOnly ? "disabled aria-disabled=\"true\"" : ""}>Bag <span data-cart-count>0</span></button>` : "";
   const header = `<header class="aura-header">
     <a class="aura-brand" href="/" aria-label="${esc(brand)} home">
       ${logoUrl ? `<img src="${esc(logoUrl)}" alt="${esc(brand)}">` : `<span class="aura-wordmark">${esc(brand)}</span>`}
     </a>
     <nav aria-label="Main navigation">${navigation}</nav>
-    <a class="aura-shop-link" href="/collections/all">Shop</a>
+    <div class="aura-header-actions"><a class="aura-shop-link" href="/collections/all">Shop</a>${commerceHeader}</div>
   </header>`;
   const footer = `<footer class="aura-footer">
     <div class="aura-footer-brand">
@@ -152,6 +160,9 @@ export function renderAura(data = {}, options = {}) {
   </footer>`;
 
   let content = "";
+  if (commercePage) {
+    content = renderCommerceBody(data, options);
+  } else
   if (page === "home") {
     const spotlight = products.length <= 2;
     const featured = products.slice(0, spotlight ? 1 : 3);
@@ -168,8 +179,8 @@ export function renderAura(data = {}, options = {}) {
           <a class="aura-button" href="/collections/all">Explore the collection</a>
         </div>
         <div class="aura-hero-art">
-          ${product?.images?.[0]
-            ? imageMarkup(product.images[0], product.title || brand)
+          ${products[0]?.images?.[0]
+            ? imageMarkup(products[0].images[0], products[0].title || brand)
             : `<div class="aura-art-shape"><span>${esc(brand.slice(0, 1))}</span></div>`}
           ${spotlight && product ? `<div class="aura-spotlight-label">
             <small>The edit</small>
@@ -218,7 +229,7 @@ export function renderAura(data = {}, options = {}) {
           ${product.compare_at_paise ? `<del>${money(product.compare_at_paise)}</del>` : ""}
         </div>
         <div class="aura-description">${renderDescription(product.description || "Details coming soon.")}</div>
-        <button class="aura-button" disabled aria-disabled="true">Add to cart · Checkout opening soon</button>
+        ${options.commerce && !options.readOnly ? `<div class="aura-product-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="99" value="1" inputmode="numeric" aria-label="Quantity"><button class="aura-button" type="button" data-add-product="${esc(product.id)}">Add to cart</button></div><p class="aura-buy-feedback" data-commerce-feedback role="status"></p>` : options.commerce ? `<div class="aura-product-buy"><button class="aura-button" type="button" disabled aria-disabled="true">Add to cart on the live store</button></div><p class="aura-buy-feedback" role="status">Read-only preview. Sign in to configure your store; shopping is available on the live store.</p>` : `<button class="aura-button" disabled aria-disabled="true">Add to cart · Checkout opening soon</button>`}
         <small>Thoughtfully made, ready to be yours.</small>
       </section>
     </main>` : `<main class="aura-page">
@@ -274,7 +285,7 @@ export function renderAura(data = {}, options = {}) {
       <title>${esc(title)}</title>
       <meta name="description" content="${esc(descriptionText)}">
       <meta name="theme-color" content="${esc(accent)}">
-      ${page === "404" || options.preview ? '<meta name="robots" content="noindex, nofollow">' : ""}
+      ${page === "404" || options.preview || (options.commerce && ["cart", "checkout", "track", "confirmation"].includes(options.page)) ? '<meta name="robots" content="noindex, nofollow">' : ""}
       <meta property="og:type" content="website">
       <meta property="og:site_name" content="${esc(brand)}">
       <meta property="og:title" content="${esc(title)}">
@@ -435,7 +446,8 @@ export function renderAura(data = {}, options = {}) {
           .aura-story { padding: 67px 22px; }
         }
       </style>
+      ${options.commerce ? `<link rel="stylesheet" href="/assets/commerce.css">` : ""}
     </head>
-    <body>${header}${content}${footer}</body>
+    <body>${header}${content}${footer}${options.commerce && !commercePage ? `<template data-commerce-config data-store-key="${esc(store.store_id || options.storeKey || "")}" data-site-key="${esc(options.siteKey || "")}" data-page="${esc(page)}" data-read-only="${options.readOnly === true ? "true" : "false"}"></template>` : ""}${options.commerce ? '<div id="commerce-mount"></div><script type="module" src="/assets/commerce.js"></script>' : ""}</body>
   </html>`;
 }

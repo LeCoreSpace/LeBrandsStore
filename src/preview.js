@@ -9,6 +9,17 @@ import { SECURITY_HEADERS } from "./auth/security.js";
 export default {
   async fetch(request, env, ctx) {
     const original = new URL(request.url);
+    if (["GET","HEAD"].includes(request.method) && original.pathname === "/__step3-preview") {
+      const requested = original.searchParams.get("view") ?? "checkout";
+      const page = ["home","cart","checkout","track"].includes(requested) ? requested : "checkout";
+      const data = {store:{store_id:"00000000-0000-4000-8000-000000000000",name:"",subdomain:"",status:"draft"},
+        settings:{...DEFAULT_SETTINGS},products:[],policies:[]};
+      const html = renderAura(data,{page,commerce:true,readOnly:true,preview:true})
+        .replace("<body>","<body><p role=\"status\" style=\"padding:14px;text-align:center\">Read-only visual preview. No database, real catalogue or order placement is attached.</p>");
+      return new Response(request.method === "HEAD"?null:html,{headers:{...SECURITY_HEADERS,
+        "content-security-policy":SECURITY_HEADERS["content-security-policy"].replace("frame-ancestors 'none'","frame-ancestors *"),
+        "x-frame-options":"SAMEORIGIN","content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
+    }
     // Development-only visual previews. No users, fake saves, sessions or DB.
     if (["GET", "HEAD"].includes(request.method) && ["/__step2-preview", "/__aura-preview"].includes(original.pathname)) {
       const data = {

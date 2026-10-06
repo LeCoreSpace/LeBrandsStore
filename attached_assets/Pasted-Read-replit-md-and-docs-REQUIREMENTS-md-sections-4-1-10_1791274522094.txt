@@ -1,0 +1,72 @@
+Read replit.md and docs/REQUIREMENTS.md (sections 4.1, 10, 11, 12, 15).
+Build Step 3: cart, Cash on Delivery checkout, customers and orders on
+published stores. No Razorpay, Shiprocket, email/SMS or invoices PDF yet.
+Do NOT deploy or run migrations. New migration only (don't edit earlier ones).
+
+A. FIXES FROM TESTING FIRST
+1. Store address hint: for the store's own current address, show
+   "This is your store's address" instead of "… is available".
+2. Wizard preview defaults to Mobile.
+3. Aura home hero: use the first product's main image instead of the
+   letter placeholder when a product image exists.
+4. Footer shows "Contact" twice (Contact page + Contact policy); show once.
+5. GST rate options: current slabs only — 0%, 5%, 18%, 40% (remove 12% and
+   28%). Existing products with 12%/28% keep their value but show a notice
+   asking the brand to confirm the rate.
+
+B. STORE SETTINGS (app.lebrands.store/stores/:id/settings/checkout)
+- Delivery charge: free / flat ₹X / free above ₹Y (default free).
+- Cash on Delivery: on/off (default on), maximum COD order value
+  (default ₹3,000).
+- Store state for GST (prefill from GSTIN's first 2 digits or address).
+
+C. CART (on {subdomain}.lebrands.store, Aura theme)
+- Enable "Add to cart" on product pages. Quantity selector.
+- Slide-out cart drawer + /cart page: line items, quantity change, remove,
+  subtotal, delivery charge, total. Mobile-first.
+- Cart kept in the browser (localStorage per store, try/catch guarded),
+  re-validated against the server (prices, stock, product still live)
+  every time the cart or checkout loads.
+
+D. CHECKOUT (/checkout, single page, guest only)
+- Contact: mobile number (required, Indian 10-digit, +91), name, email
+  (optional).
+- Address: pincode (6 digits), address line 1, line 2, landmark, city,
+  state (dropdown of Indian states/UTs).
+- Payment: Cash on Delivery only for now (show "Online payment coming soon").
+- Order summary. "Place order" button.
+- Server recalculates EVERYTHING (prices, delivery, totals, tax); never
+  trust client totals. Reject if over max COD value, out of stock, or
+  product unavailable, with clear messages.
+- Anti-abuse: Cloudflare Turnstile on Place order (site key + secret via
+  config/secret TURNSTILE_SECRET_KEY; skip gracefully in tests), max 3 COD
+  orders per phone per 24 h, rate limit per IP.
+- Idempotency: a double click must not create two orders.
+
+E. ON ORDER PLACEMENT (one database transaction)
+- Find or create customer by phone within that store; save address.
+- Create order (status "confirmed_cod"), order_items with unit price,
+  quantity, HSN, GST rate, taxable value and tax amounts.
+- GST split stored per item: if customer state = store state → CGST+SGST,
+  else IGST. Prices are GST-inclusive; compute taxable value = price ÷
+  (1 + rate). Integer paise, documented rounding.
+- Reduce stock atomically (if stock is tracked); never go negative.
+- Human-friendly order number per store (e.g. STN-1001).
+- Record source (mall / direct / unknown via referrer/utm).
+
+F. AFTER ORDER
+- Order confirmation page: order number, items, total, COD note,
+  delivery address.
+- /track: enter order number + phone → status.
+- Minimal read-only "Orders" list in the app for the store owner
+  (full dashboard comes in Step 4).
+
+G. TESTS
+- Offline: cart validation, totals, delivery rules, GST split (intra/inter
+  state, rounding), COD limits, idempotency.
+- Extend db/test-isolation.js: orders/customers created through checkout
+  stay in their store; one store's checkout can't read or affect another
+  store's products, stock or customers.
+
+When done: list files changed, new secrets (e.g. Turnstile), and exact
+commands for me.

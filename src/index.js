@@ -66,10 +66,10 @@ export default {
     const url = new URL(request.url);
     const hostname = url.hostname;
     if (hostname === "media.lebrands.store") return serveMedia(request, env);
-    if (["lebrands.store", "app.lebrands.store"].includes(hostname) && url.pathname.startsWith("/assets/")) {
+    if (url.pathname.startsWith("/assets/")) {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
       const filename = url.pathname.slice("/assets/".length);
-      if (!["aura.js", "validation.js", "wizard.js", "wizard.css"].includes(filename)) return new Response("Not found", { status: 404 });
+      if (!["aura.js", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js"].includes(filename)) return new Response("Not found", { status: 404 });
       if (!env.ASSETS) return new Response("Assets unavailable", { status: 503 });
       url.pathname = `/${filename}`;
       const asset = await env.ASSETS.fetch(new Request(url, request));
@@ -112,7 +112,7 @@ export default {
       db = createDb(env);
       const store = await db.resolveStore(hostname);
       if (!store || store.status !== "live") return notFound();
-      const storefront = await serveStorefront(request, db, store);
+      const storefront = await serveStorefront(request, db, store, env);
       if (storefront) return storefront;
       // Legacy live stores without a wizard publication retain their landing.
       // Draft content is never used as a public fallback.

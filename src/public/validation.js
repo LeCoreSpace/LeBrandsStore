@@ -1,4 +1,5 @@
 // Shared by the Worker and wizard. No browser-only or server-only dependencies.
+import { CURRENT_GST_RATES, LEGACY_GST_RATES } from "./commerce-rules.js";
 export const RESERVED_SUBDOMAINS = [
   "www", "app", "admin", "api", "brands", "customers", "mail", "notify", "news",
   "help", "support", "status", "shop", "store", "checkout", "cart", "pay",
@@ -56,7 +57,7 @@ export function validateProduct(p = {}) {
   if (p.sku && (length(p.sku) > 80 || typeof p.sku !== "string")) errors.sku = "Keep the SKU within 80 characters.";
   if (p.stock != null && (!Number.isInteger(p.stock) || p.stock < 0 || p.stock > 2147483647)) errors.stock = "Enter a whole stock quantity, or leave it blank for always in stock.";
   if (!/^(?:[0-9]{4}|[0-9]{6}|[0-9]{8})$/.test(p.hsn_code ?? "")) errors.hsn_code = "Enter a 4, 6 or 8-digit HSN code.";
-  if (![0, .25, 3, 5, 12, 18, 28].includes(p.gst_rate)) errors.gst_rate = "Choose a GST rate.";
+   if (![...CURRENT_GST_RATES,...LEGACY_GST_RATES].includes(p.gst_rate)) errors.gst_rate = "Choose a GST rate.";
   return errors;
 }
 export function publishChecklist(data) {

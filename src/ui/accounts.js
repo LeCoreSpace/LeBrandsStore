@@ -98,7 +98,7 @@ function dashboard(data) {
     const subdomain = escapeHtml(store.subdomain || "");
     const host = `${subdomain}.lebrands.store`;
     return `<article class="store-row"><div><div class="store-name">${escapeHtml(store.name || "Untitled store")}</div><div class="store-url">${subdomain ? `<a href="https://${subdomain}.lebrands.store">${host}</a>` : "Store address unavailable"}</div></div>
-      <span class="status-pill">${escapeHtml(store.status || "unknown")}</span><div class="store-role">${escapeHtml(store.role || "member")}<br><a class="inline-link" href="/stores/${escapeHtml(store.store_id)}/setup">Continue setup</a>${store.status === "live" ? `<br><a class="inline-link" href="https://${subdomain}.lebrands.store" target="_blank" rel="noopener">View store</a>` : ""}</div></article>`;
+      <span class="status-pill">${escapeHtml(store.status || "unknown")}</span><div class="store-role">${escapeHtml(store.role || "member")}<br><a class="inline-link" href="/stores/${escapeHtml(store.store_id)}/setup">Continue setup</a>${store.role === "owner" ? `<br><a class="inline-link" href="/stores/${escapeHtml(store.store_id)}/settings/checkout">Checkout settings</a><br><a class="inline-link" href="/stores/${escapeHtml(store.store_id)}/orders">Orders</a>` : ""}${store.status === "live" ? `<br><a class="inline-link" href="https://${subdomain}.lebrands.store" target="_blank" rel="noopener">View store</a>` : ""}</div></article>`;
   }).join("");
   return accountDoc("Your stores", `${accountHeader(user)}<main class="wrap dashboard-main">
     ${forcedNotice(data)}

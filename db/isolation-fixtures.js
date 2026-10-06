@@ -22,7 +22,7 @@ const CLEANUP_TABLES = [
   "refunds", "invoices", "order_items", "shipments", "payments", "orders",
   "customer_addresses", "customers", "product_media", "collection_products",
   "product_options", "products", "collections", "store_setup", "media", "page_versions",
-  "pages", "policy_pages", "store_publications", "store_address_history",
+  "pages", "policy_pages", "store_publications", "store_address_history", "checkout_attempts", "checkout_settings",
   "invoice_sequences", "domains", "integrations",
   "otp_verifications", "email_log", "webhook_events", "audit_log", "store_members",
 ];
@@ -166,6 +166,10 @@ export async function setupFixtures(admin) {
       await tx`INSERT INTO public.store_address_history (store_id, subdomain)
         VALUES (${store.storeId}, ${`${store.subdomain}-old`})`;
       store.productIds = [];
+      await tx`INSERT INTO public.checkout_settings (store_id,settings)
+        VALUES (${store.storeId},${tx.json({store_state:"27"})})`;
+      await tx`INSERT INTO public.checkout_attempts (store_id,ip_hash,purpose)
+        VALUES (${store.storeId},${"c".repeat(64)},'checkout')`;
       for (let index = 1; index <= 2; index++) {
         const [product] = await tx`
           INSERT INTO public.products (store_id, title, slug, price_paise, status)
