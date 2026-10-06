@@ -1,0 +1,37 @@
+Saving the wizard (PATCH /api/stores/:id/setup) fails on EVERY save with
+STORE_SERVICE_ERROR. Logo upload works. The log only shows
+{ code: 'STORE_SERVICE_ERROR' }, so the cause is hidden.
+
+What we've ruled out / observed:
+- Reverting the store address from "stonescence1" back to "stonescence"
+  did not help, so it's not only the address-change flow.
+- Support email and support phone were still empty when saving.
+- The GSTIN entered may contain a letter "O" where the format needs
+  digits (e.g. "33ABLCSO39OL1Z1").
+- Business address contains line breaks.
+
+Please:
+1. Improve server-side logging for store setup failures: log the Postgres
+   SQLSTATE, constraint name, table/function name and error message, plus
+   the NAMES of the fields in the request. Never log field values, emails,
+   phones, GSTIN, addresses or tokens.
+2. Find and fix the cause. Check especially:
+   - autosave sending partial or empty fields that hit NOT NULL or CHECK
+     constraints (drafts must be allowed to be incomplete; completeness is
+     only required at Publish)
+   - GSTIN, phone, email, address (multi-line), category, tagline and
+     description constraints in migration 0005
+   - store context / RLS not set for this request, or a SECURITY DEFINER
+     function missing a grant to lebrands_app
+   - the logo media row being linked to store settings
+3. Invalid input must never cause STORE_SERVICE_ERROR. Validate in the
+   Worker first and return field-level errors the wizard shows next to the
+   right field in plain language, e.g. "GSTIN should be 15 characters:
+   2 digits, 10-character PAN, then 3 characters" or "Enter a valid email".
+4. Add a test that reproduces a Step 1 save with realistic Indian values
+   (multi-line address, valid GSTIN, +91 phone), a save with empty optional
+   and not-yet-filled fields, and a save with an invalid GSTIN (expects a
+   field error, not a service error).
+5. If a schema change is needed, add a NEW migration (don't edit 0005).
+Do not run migrations or deploy. Tell me exactly what was wrong and the
+commands to run.
