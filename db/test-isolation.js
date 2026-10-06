@@ -8,6 +8,7 @@ import { assertCleanupPermission, cleanupFixtures, setupFixtures } from "./isola
 import { accountIsolationChecks } from "./account-isolation.js";
 import { wizardIsolationChecks } from "./wizard-isolation.js";
 import { checkoutIsolationChecks } from "./checkout-isolation.js";
+import { dashboardIsolationChecks } from "./dashboard-isolation.js";
 
 clearPgEnvironment();
 let admin;
@@ -88,6 +89,7 @@ const checks = [
   ...accountIsolationChecks(() => fixtures, appTransaction, denied),
   ...wizardIsolationChecks(() => fixtures, appTransaction, denied),
   ...checkoutIsolationChecks(() => fixtures, appTransaction, denied),
+  ...dashboardIsolationChecks(() => fixtures, appTransaction, denied),
   ...["products", "customers", "orders"].map((table) => ({
     name: `a.${table}`,
     reason: "No context exposes zero rows or a permission denial.",

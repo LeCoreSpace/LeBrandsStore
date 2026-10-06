@@ -16,7 +16,7 @@ const mediaRecord = (m) => ({
   id: m.id, key: m.object_key, url: mediaUrl(m.object_key), type: m.upload_type,
   size: Number(m.size_bytes), width: m.width, height: m.height, alt: m.alt_text,
 });
-export async function loadDraft(tx, storeId) {
+export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
   const [store] = await tx`SELECT store_id, name, subdomain, status, subdomain_changed_at
     FROM public.stores WHERE store_id = ${storeId}`;
   if (!store) throw missing();
@@ -26,7 +26,7 @@ export async function loadDraft(tx, storeId) {
   const [logo] = setup?.logo_media_id ? await tx`SELECT * FROM public.media
     WHERE store_id = ${storeId} AND id = ${setup.logo_media_id} AND upload_type = 'logo'` : [];
   const products = await tx`SELECT *, to_json(tags) AS tags FROM public.products WHERE store_id = ${storeId}
-    AND status <> 'archived' ORDER BY created_at, id`;
+    AND (${includeArchived} OR status <> 'archived') ORDER BY created_at, id`;
   const images = await tx`SELECT pm.product_id, m.* FROM public.product_media pm
     JOIN public.media m ON m.store_id = pm.store_id AND m.id = pm.media_id
     WHERE pm.store_id = ${storeId} ORDER BY pm.sort_order, pm.id`;
@@ -37,7 +37,7 @@ export async function loadDraft(tx, storeId) {
     settings: { ...DEFAULT_SETTINGS, brand_name: store.name, subdomain: store.subdomain,
       ...setup?.settings, logo_media_id: logo?.id ?? null, logo_url: logo ? mediaUrl(logo.object_key) : "" },
     products: products.map((p) => ({
-      id: p.id, title: p.title, description: p.description, price_paise: Number(p.price_paise),
+      id: p.id, status: p.status, title: p.title, description: p.description, price_paise: Number(p.price_paise),
       compare_at_paise: p.compare_at_price_paise == null ? null : Number(p.compare_at_price_paise),
       tags: p.tags, sku: p.sku ?? "", stock: p.track_inventory ? p.stock : null,
       hsn_code: p.hsn_code ?? "", gst_rate: p.gst_rate == null ? null : Number(p.gst_rate),
@@ -147,11 +147,13 @@ export async function saveProduct(tx, id, productId, patch) {
       VALUES (${id}, ${uuid}, ${image.id}, ${order})`;
   }
   await invalidatePolicies(tx, id);
-  return loadDraft(tx, id);
+  return { ...await loadDraft(tx, id), saved_product_id: uuid };
 }
 export async function deleteProduct(tx, id, productId) {
   const [product] = await tx`SELECT id FROM public.products WHERE store_id = ${id} AND id = ${productId}`;
   if (!product) throw missing();
+  const [used] = await tx`SELECT id FROM public.order_items WHERE store_id = ${id} AND product_id = ${productId} LIMIT 1`;
+  if (used) throw badInput("This product has orders. Archive it instead of deleting it.");
   await tx`DELETE FROM public.product_media WHERE store_id = ${id} AND product_id = ${productId}`;
   await tx`DELETE FROM public.product_options WHERE store_id = ${id} AND product_id = ${productId}`;
   await tx`DELETE FROM public.collection_products WHERE store_id = ${id} AND product_id = ${productId}`;

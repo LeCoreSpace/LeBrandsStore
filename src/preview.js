@@ -5,10 +5,28 @@ import { renderWizard } from "./ui/wizard.js";
 import { renderAura } from "./public/aura.js";
 import { DEFAULT_SETTINGS } from "./store/repository.js";
 import { SECURITY_HEADERS } from "./auth/security.js";
+import { renderDashboard } from "./ui/dashboard.js";
 
 export default {
   async fetch(request, env, ctx) {
     const original = new URL(request.url);
+    if (["GET","HEAD"].includes(request.method) && original.pathname === "/__step4-preview") {
+      const requested = original.searchParams.get("view") || "overview";
+      const view = ["overview","orders","products","customers","invoices","settings"].includes(requested) ? requested : "overview";
+      const store = {store_id:"00000000-0000-4000-8000-000000000000",name:"Your store",subdomain:"",status:"draft"};
+      const data = {store,role:"viewer",draft:{store,settings:{...DEFAULT_SETTINGS},products:[],policies:[]},
+        filters:{period:7},overview:{today_orders:0,orders:0,revenue_paise:0,aov_paise:0,top_products:[],sources:[],needing_action:[]},
+        orders:[],customers:[],invoices:[]};
+      let body = renderDashboard(view,data,{}).replace("<body>",'<body><p role="status" style="padding:14px;text-align:center">Read-only dashboard preview. No account or database is attached; no real dashboard totals are available.</p>');
+      body = body.replace(/<script type="module" src="\/assets\/dashboard.js"><\/script>/g,"")
+        .replace(/href="\/stores\/[^"]*"/g,(href) => {
+          const path = href.slice(6,-1).split("/").slice(3).join("/");
+          return `href="/__step4-preview?view=${["orders","products","customers","invoices","settings"].includes(path) ? path : "overview"}"`;
+        }).replace(/<button\b/g,"<button disabled").replace(/<input\b/g,"<input disabled").replace(/<select\b/g,"<select disabled");
+      return new Response(request.method === "HEAD" ? null : body,{headers:{...SECURITY_HEADERS,
+        "content-security-policy":SECURITY_HEADERS["content-security-policy"].replace("frame-ancestors 'none'","frame-ancestors *"),
+        "content-type":"text/html; charset=utf-8","cache-control":"no-store","x-frame-options":"SAMEORIGIN"}});
+    }
     if (["GET","HEAD"].includes(request.method) && original.pathname === "/__step3-preview") {
       const requested = original.searchParams.get("view") ?? "checkout";
       const page = ["home","cart","checkout","track"].includes(requested) ? requested : "checkout";
@@ -35,7 +53,7 @@ export default {
         "content-type": "text/html; charset=utf-8" } });
     }
     const account = ["/signup", "/login", "/forgot-password", "/account", "/logout", "/dashboard", "/stores/new", "/api/subdomain-check"]
-      .includes(original.pathname) || original.pathname.startsWith("/api/stores/") || /^\/stores\/[^/]+\/setup$/.test(original.pathname);
+      .includes(original.pathname) || original.pathname.startsWith("/api/stores/") || /^\/stores\/[^/]+(?:\/|$)/.test(original.pathname);
     const target = new URL(original);
     target.protocol = "https:";
     target.hostname = account ? "app.lebrands.store" : "lebrands.store";

@@ -4,6 +4,7 @@ import { readJson } from "../store/input.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import { UUID } from "../public/validation.js";
 import { storeFailureDetails } from "../store/diagnostics.js";
+import { audit } from "../dashboard/repository.js";
 export const isMerchantCheckoutPath = (path) => /^\/(?:api\/)?stores\/[^/]+\/(?:settings\/checkout|checkout-settings|orders)$/.test(path);
 export async function merchantCheckout(request,db,user,tokenHash) {
   const url = new URL(request.url), api = url.pathname.startsWith("/api/");
@@ -35,6 +36,7 @@ export async function merchantCheckout(request,db,user,tokenHash) {
         settings = checkoutSettings({...settings,...checkoutSettings(body,true)});
         await tx`INSERT INTO public.checkout_settings (store_id,settings) VALUES (${id},${tx.json(settings)})
           ON CONFLICT (store_id) DO UPDATE SET settings = EXCLUDED.settings`;
+        await audit(tx,id,user.id,"store.checkout_settings_changed","store",id,{fields:Object.keys(body)});
       }
       return {store,settings};
     });

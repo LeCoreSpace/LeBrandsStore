@@ -1,0 +1,69 @@
+Read replit.md and docs/REQUIREMENTS.md (sections 4.1, 4.3, 6.10, 10, 11, 14).
+Build Step 4: the brand dashboard. No Razorpay, Shiprocket, email/SMS,
+custom domains or drag-and-drop editor yet. Do NOT deploy or run migrations.
+New migration only.
+
+A. FIXES FROM TESTING
+1. Orders list "Items" shows 0 for an order with 1 item.
+2. Addresses show the GST state code ("33"); show the state name
+   ("Tamil Nadu") everywhere customers or brands see it.
+3. Status labels in plain language, e.g. "Confirmed · Cash on Delivery".
+4. Turnstile widget theme: "auto" (or light) to match the store.
+5. Dates in Indian format: "6 Oct 2026, 2:15 pm" (Asia/Kolkata).
+
+B. STORE DASHBOARD at app.lebrands.store/stores/:id
+Navigation: Overview · Orders · Products · Customers · Invoices ·
+Settings · View store ↗. Mobile-friendly.
+
+1. Overview: setup checklist (online payments, delivery, own domain,
+   more products — "coming soon" where not built), today's orders, orders
+   and revenue for last 7/30 days, average order value, top products,
+   orders by source (mall / direct / other), orders needing action.
+
+2. Orders: list with filters (status, date range, search by order number,
+   name or phone). Order detail page: items, totals with tax breakdown,
+   customer, address, timeline of status changes.
+   Status workflow: Confirmed → Packed → Shipped (courier name + tracking
+   number/link required) → Delivered; also Cancelled (before shipping;
+   restores stock) and Returned/RTO (after shipping; optional restock).
+   COD: "Mark payment collected" with date. Every change recorded in
+   audit_log with who and when. /track on the store shows the new status
+   and tracking link.
+
+3. Products: list, add, edit, archive (not delete if it has orders),
+   stock adjustments, images (reuse wizard components and R2 uploads),
+   HSN + GST rate (current slabs), show notice for legacy 12%/28% rates.
+
+4. Customers: list (name, phone, email, orders count, total spent, last
+   order), detail with their orders and addresses. Search.
+
+5. Invoices:
+   - When an order is marked Shipped, generate a GST tax invoice if the
+     store has a GSTIN. Consecutive number per store per financial year
+     (e.g. STO/2026-27/0001), no gaps, never reused, never deleted.
+   - Invoice contents: supplier legal name, address, GSTIN; invoice number
+     and date; customer name, address, state and state code; place of
+     supply; per line: description, HSN, qty, unit price, taxable value,
+     GST rate, CGST+SGST (same state) or IGST (other state); totals;
+     amount in words; "Reverse charge: No"; authorised signatory line.
+   - If the store has no GSTIN, issue a "Bill of Supply / Order receipt"
+     without GST lines instead, clearly labelled.
+   - Printable HTML invoice page (print/save as PDF from the browser),
+     viewable by the brand; customer can open it from the order page.
+   - Cancellation after invoicing: mark invoice cancelled and record a
+     credit note number (simple record now; full credit notes later).
+
+6. Settings: edit store details and theme (reuse wizard steps), checkout
+   settings (delivery, COD limit, store GST state), policies, unpublish.
+
+7. Exports (owner only, logged in audit_log): customers, orders (one row
+   per item), products as CSV; neutralise cells starting with = + - @.
+
+C. TESTS
+- Offline: status transitions (allowed/forbidden), stock restore on
+  cancel, invoice numbering (consecutive, per FY, concurrency-safe),
+  CGST/SGST vs IGST, amount in words, CSV formula neutralisation.
+- Extend db/test-isolation.js: dashboard data, invoices, audit_log and
+  exports never cross stores; non-members can't access any of it.
+
+When done: list files changed, new secrets (if any), exact commands.

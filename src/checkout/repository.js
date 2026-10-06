@@ -80,22 +80,28 @@ export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source) 
   const order_number = `${prefix}-${sequence.number}`, orderId = crypto.randomUUID();
   await tx`INSERT INTO public.orders
     (id,store_id,customer_id,order_number,status,payment_method,subtotal_paise,tax_paise,shipping_paise,total_paise,
-      shipping_address,source,idempotency_key,request_hash,confirmation_hash)
+      shipping_address,source,idempotency_key,request_hash,confirmation_hash,supplier_snapshot)
     VALUES (${orderId},${id},${customer.id},${order_number},'confirmed_cod','cod',${quote.subtotal_paise},
       ${quote.tax_paise},${quote.delivery_paise},${quote.total_paise},${tx.json(address)},${source},
-      ${input.idempotency_key},${requestHash},${receiptHash})`;
+      ${input.idempotency_key},${requestHash},${receiptHash},${tx.json({
+        legal_name:context.snapshot.settings?.legal_name || context.store.name,
+        address:context.snapshot.settings?.address || "",gstin:context.snapshot.settings?.gstin || "",state:context.settings.store_state,
+      })})`;
   for (const line of quote.items) {
     await tx`INSERT INTO public.order_items
       (store_id,order_id,product_id,title,hsn_code,gst_rate,quantity,unit_price_paise,total_paise,
-        tax_paise,taxable_paise,cgst_paise,sgst_paise,igst_paise)
+        tax_paise,taxable_paise,cgst_paise,sgst_paise,igst_paise,inventory_deducted)
       VALUES (${id},${orderId},${line.product_id},${line.title},${line.hsn_code},${line.gst_rate},
         ${line.quantity},${line.unit_price_paise},${line.line_total_paise},${line.tax_paise},
-        ${line.taxable_paise},${line.cgst_paise},${line.sgst_paise},${line.igst_paise})`;
+        ${line.taxable_paise},${line.cgst_paise},${line.sgst_paise},${line.igst_paise},
+        (SELECT track_inventory FROM public.products WHERE store_id = ${id} AND id = ${line.product_id}))`;
     const [updated] = await tx`UPDATE public.products SET stock = CASE WHEN track_inventory THEN stock - ${line.quantity} ELSE stock END
       WHERE store_id = ${id} AND id = ${line.product_id} AND status = 'active'
         AND (NOT track_inventory OR stock >= ${line.quantity}) RETURNING id`;
     if (!updated) throw commerceError("A product just sold out. Update your cart and try again.",undefined,409);
   }
+  await tx`INSERT INTO public.audit_log (store_id,actor_type,action,entity_type,entity_id,metadata)
+    VALUES (${id},'system','order.created','order',${orderId},${tx.json({to:"confirmed_cod",source})})`;
   return {order_number,total_paise:quote.total_paise,receipt_url:`/orders/${input.receipt_token}`,replayed:false};
 }
 export async function receiptOrder(tx,id,hash) {
@@ -104,6 +110,7 @@ export async function receiptOrder(tx,id,hash) {
   if (!order) throw commerceError("Order not found.",undefined,404);
   const items = await tx`SELECT title,quantity,unit_price_paise,total_paise AS line_total_paise
     FROM public.order_items WHERE store_id = ${id} AND order_id = ${order.id} ORDER BY created_at,id`;
-  return {...order,subtotal_paise:Number(order.subtotal_paise),shipping_paise:Number(order.shipping_paise),
+  const [invoice] = await tx`SELECT id,invoice_number,status FROM public.invoices WHERE store_id = ${id} AND order_id = ${order.id}`;
+  return {...order,invoice,subtotal_paise:Number(order.subtotal_paise),shipping_paise:Number(order.shipping_paise),
     total_paise:Number(order.total_paise),items:items.map((i) => ({...i,unit_price_paise:Number(i.unit_price_paise),line_total_paise:Number(i.line_total_paise)}))};
 }

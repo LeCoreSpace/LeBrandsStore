@@ -10,6 +10,11 @@ Checkout/cart, integrations, AI helpers and email are out of scope.
 This was the initial setup phase only. The user later explicitly authorized
 cart, guest COD checkout, customer records and orders as a separate phase.
 Razorpay, Shiprocket, email/SMS and invoice PDFs were still excluded.
+The user then authorized the brand dashboard, manual fulfilment, CSV exports,
+and printable HTML invoices with browser print/save-as-PDF. A separate PDF
+generation service is not authorized. Razorpay, Shiprocket, email/SMS, custom
+domains and the drag-and-drop editor remain excluded from this phase. Add new
+migrations only; do not execute migrations or deploy.
 
 **Why:** The user's phase-specific instructions override the broader MVP roadmap.
 The full requirements are not permission to build every described capability.

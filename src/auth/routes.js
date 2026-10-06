@@ -3,6 +3,7 @@ import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
 import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
 import { isMerchantCheckoutPath, merchantCheckout } from "../checkout/merchant.js";
+import { isDashboardPath, handleDashboard } from "../dashboard/routes.js";
 import { assertPasswordPepper, hashPassword, needsPasswordRehash, randomToken, sha256, validatePassword, verifyPassword } from "./passwords.js";
 import {
   GENERIC_LOGIN_ERROR, SECURITY_HEADERS, ipHash, isValidOrigin, normalizeEmail,
@@ -60,6 +61,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     if (user?.must_change_password && path !== "/account" && path !== "/logout") {
       return path.startsWith("/api/") ? json({ available: false, error: "Change your password first." }, 403) : redirect("/account");
     }
+    if (isDashboardPath(path,request.method)) return await handleDashboard(request,db,user,tokenHash);
     if (isMerchantCheckoutPath(path)) return await merchantCheckout(request,db,user,tokenHash);
     if (isStoreRoute(path)) return await handleStoreRoutes(request, env, db, user, tokenHash);
     if (request.method !== "POST") {

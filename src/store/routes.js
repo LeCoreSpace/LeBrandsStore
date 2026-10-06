@@ -1,6 +1,6 @@
 import { renderWizard } from "../ui/wizard.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
-import { UUID } from "../public/validation.js";
+import { UUID, validateProduct } from "../public/validation.js";
 import { settingsPatch, progressPatch, productPatch, readJson, readBody, badInput } from "./input.js";
 import { validateUpload } from "./media.js";
 import { setupFieldNames, storeFailureDetails } from "./diagnostics.js";
@@ -8,8 +8,9 @@ import {
   loadDraft, saveSetup, saveProduct, deleteProduct, insertMedia,
   regeneratePolicies, savePolicy, publish,
 } from "./repository.js";
+import { audit, syncPublishedProducts, dashboardAccess } from "../dashboard/repository.js";
 
-export const isStoreRoute = (path) => /^\/(?:api\/)?stores\/[^/]+\//.test(path);
+export const isStoreRoute = (path) => /^\/(?:api\/)?stores\/(?!new(?:\/|$))[^/]+(?:\/|$)/.test(path);
 const json = (value, status = 200) => new Response(JSON.stringify(value), {
   status, headers: { ...SECURITY_HEADERS, "content-type": "application/json; charset=utf-8" },
 });
@@ -45,11 +46,43 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         const body = await readJson(request);
         fieldNames = setupFieldNames(body);
         if (!Object.keys(body).length || Object.keys(body).some((k) => !["settings", "progress"].includes(k))) throw badInput("Use the setup form.");
-        return saveSetup(tx, id, body.settings === undefined ? undefined : settingsPatch(body.settings),
+        const saved = await saveSetup(tx, id, body.settings === undefined ? undefined : settingsPatch(body.settings),
           body.progress === undefined ? undefined : progressPatch(body.progress));
+        await audit(tx,id,user.id,"store.setup_changed","store",id,{fields:fieldNames});
+        return saved;
       }
-      if (route === "POST products" || route === "PATCH products/child") return saveProduct(tx, id, child, productPatch(await readJson(request)));
-      if (route === "DELETE products/child") return deleteProduct(tx, id, child);
+      if (route === "POST products" || route === "PATCH products/child") {
+        const body = await readJson(request), expected = body.expected_stock, catalogue = body.publish_catalogue;
+        delete body.expected_stock;
+        delete body.publish_catalogue;
+        if (catalogue !== undefined && typeof catalogue !== "boolean") throw badInput("Invalid catalogue save request.");
+        const patch = productPatch(body);
+        if (child && expected !== undefined && patch.stock !== undefined) {
+          if (expected !== null && (!Number.isInteger(expected) || expected < 0)) throw badInput("Invalid stock revision.");
+          const [current] = await tx`SELECT stock,track_inventory FROM public.products WHERE store_id = ${id} AND id = ${child} FOR UPDATE`;
+          const stock = current?.track_inventory ? current.stock : null;
+          if (!current) throw Object.assign(new Error("Product not found."),{status:404});
+          if (patch.stock === expected) delete patch.stock; // No intended stock edit: preserve current checkout-adjusted stock.
+          else if (stock !== expected) throw Object.assign(new Error("Stock changed while you were editing. Reload before adjusting it."),{status:409});
+        }
+        const result = await saveProduct(tx, id, child, patch);
+        if (catalogue) {
+          const product = result.products.find((p) => p.id === result.saved_product_id);
+          const errors = product ? validateProduct(product) : {_general:"This archived product is not in the active catalogue."};
+          // Archived edits remain archived; they cannot be used as an implicit restore.
+          const [record] = await tx`SELECT status FROM public.products WHERE store_id = ${id} AND id = ${result.saved_product_id}`;
+          if (record?.status !== "archived" && Object.keys(errors).length) throw badInput("Complete the product before adding it to your live catalogue.",errors);
+          await syncPublishedProducts(tx,id,result.saved_product_id,true);
+        }
+        await audit(tx,id,user.id,child ? "product.edited" : "product.created","product",result.saved_product_id,{fields:Object.keys(patch)});
+        return result;
+      }
+      if (route === "DELETE products/child") {
+        const result = await deleteProduct(tx,id,child);
+        await syncPublishedProducts(tx,id,child);
+        await audit(tx,id,user.id,"product.deleted","product",child);
+        return result;
+      }
       if (route === "POST media") {
         if (!env.MEDIA) throw unavailable();
         if (!/^multipart\/form-data;\s*boundary=/i.test(request.headers.get("content-type") ?? "")) throw badInput("Choose a file to upload.");
@@ -68,9 +101,20 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         });
         return { media: await insertMedia(tx, id, uploadedKey, type, data.length, metadata, alt.trim() || (type === "logo" ? `${user.name || "Brand"} logo` : "Product image")) };
       }
-      if (route === "POST policies/child") return regeneratePolicies(tx, id);
-      if (route === "PUT policies/child") return savePolicy(tx, id, child, await readJson(request));
-      return publish(tx, id, action === "publish");
+      if (route === "POST policies/child") {
+        const result = await regeneratePolicies(tx,id);
+        await audit(tx,id,user.id,"store.policies_generated","store",id);
+        return result;
+      }
+      if (route === "PUT policies/child") {
+        const result = await savePolicy(tx,id,child,await readJson(request));
+        await audit(tx,id,user.id,"store.policy_edited","store",id,{kind:child});
+        return result;
+      }
+      await dashboardAccess(tx,id,user.id,false,true);
+      const result = await publish(tx,id,action === "publish");
+      await audit(tx,id,user.id,action === "publish" ? "store.published" : "store.unpublished","store",id);
+      return result;
     });
     return json(result);
   } catch (error) {

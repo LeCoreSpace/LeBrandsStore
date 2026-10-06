@@ -1,3 +1,4 @@
+import { statusLabel, indianDate } from "./dashboard-rules.js";
 const configNode = document.querySelector("[data-commerce-config]");
 const storeKey = configNode?.dataset.storeKey || "";
 const page = configNode?.dataset.page || "";
@@ -382,7 +383,7 @@ function initTurnstile() {
     const slot = document.querySelector("[data-turnstile]");
     if (!slot || !window.turnstile) { showCheckoutError("Security verification could not load. Check your connection and retry."); return; }
     try {
-      turnstileWidget = window.turnstile.render(slot, { sitekey: siteKey, action: "checkout", callback: (token) => { turnstileToken = token; clearCheckoutError(); }, "expired-callback": () => { turnstileToken = ""; }, "error-callback": () => { turnstileToken = ""; showCheckoutError("Security verification is temporarily unavailable. Please retry."); } });
+      turnstileWidget = window.turnstile.render(slot, { sitekey: siteKey, action: "checkout", theme: "auto", callback: (token) => { turnstileToken = token; clearCheckoutError(); }, "expired-callback": () => { turnstileToken = ""; }, "error-callback": () => { turnstileToken = ""; showCheckoutError("Security verification is temporarily unavailable. Please retry."); } });
     } catch { showCheckoutError("Security verification could not start. Please reload and try again."); }
   };
   script.onerror = () => showCheckoutError("Security verification could not load. Check your connection and retry.");
@@ -403,7 +404,8 @@ async function trackOrder(event) {
   button.disabled = true; button.textContent = "Looking up…";
   try {
     const result = await api("/api/orders/track", { order_number, phone });
-    resultSlot.innerHTML = `<div class="track-result"><span class="commerce-kicker">Order ${esc(result.order_number)}</span><strong>${esc(String(result.status || "In progress").replace(/_/g," "))}</strong><p>Placed ${result.created_at ? esc(new Date(result.created_at).toLocaleString("en-IN")) : "recently"}</p></div>`;
+    const tracking = typeof result.tracking_url === "string" && /^https:\/\//i.test(result.tracking_url) ? `<p>${esc(result.courier)} · ${esc(result.tracking_number)}<br><a href="${esc(result.tracking_url)}" target="_blank" rel="noopener noreferrer">Track shipment</a></p>` : "";
+    resultSlot.innerHTML = `<div class="track-result"><span class="commerce-kicker">Order ${esc(result.order_number)}</span><strong>${esc(statusLabel(result.status,result.payment_method))}</strong><p>Placed ${esc(indianDate(result.created_at))}</p>${tracking}</div>`;
   } catch {
     errorSlot.hidden = false; errorSlot.textContent = "We couldn’t find an order with those details. Check the order number and mobile, then try again.";
   } finally { button.disabled = false; button.textContent = "Find my order"; }

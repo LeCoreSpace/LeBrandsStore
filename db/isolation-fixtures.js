@@ -197,6 +197,14 @@ export async function setupFixtures(admin) {
           'RLS Test Item', 1, 10000, 10000) RETURNING id
       `;
       store.itemId = item.id;
+      await tx`INSERT INTO public.invoice_sequences(store_id,financial_year,last_number)
+        VALUES (${store.storeId},'2026-27',1)`;
+      const [invoice] = await tx`INSERT INTO public.invoices
+        (store_id,order_id,invoice_number,financial_year,subtotal_paise,total_paise,document_type,snapshot)
+        VALUES (${store.storeId},${order.id},'RLS/2026-27/0001','2026-27',10000,10000,'receipt',${tx.json({fixture:MARKER})}) RETURNING id`;
+      store.invoiceId = invoice.id;
+      await tx`INSERT INTO public.audit_log(store_id,actor_type,action,entity_type,entity_id,metadata)
+        VALUES (${store.storeId},'system','order.created','order',${order.id},${tx.json({fixture:MARKER})})`;
     }
     const accountUsers = [];
     for (const [index, user] of ACCOUNT_USERS.entries()) {

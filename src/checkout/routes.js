@@ -6,12 +6,14 @@ import { cartItems, commerceError, INDIAN_STATES } from "../public/commerce-rule
 import { indianPhone, orderInput, orderSource } from "./input.js";
 import { verifyTurnstile } from "./turnstile.js";
 import { checkoutQuote, consumeIpLimit, findReplay, placeCodOrder, receiptOrder } from "./repository.js";
+import { renderInvoice } from "../ui/invoice.js";
+import { invoiceDetail } from "../dashboard/repository.js";
 
 export const CHECKOUT_HEADERS = {...SECURITY_HEADERS,"cache-control":"no-store","referrer-policy":"no-referrer","x-robots-tag":"noindex, nofollow"};
 const json = (data,status = 200) => new Response(JSON.stringify(data),{
   status,headers:{...CHECKOUT_HEADERS,"content-type":"application/json; charset=utf-8"},
 });
-export const isCheckoutPath = (path) => ["/api/cart/validate","/api/checkout/order","/api/orders/track","/cart","/checkout","/track"].includes(path) || /^\/orders\/[0-9a-f]{64}$/.test(path);
+export const isCheckoutPath = (path) => ["/api/cart/validate","/api/checkout/order","/api/orders/track","/cart","/checkout","/track"].includes(path) || /^\/orders\/[0-9a-f]{64}(?:\/invoice)?$/.test(path);
 export async function handleCheckout(request,env,db,store,data,dependencies = {}) {
   const url = new URL(request.url), api = url.pathname.startsWith("/api/");
   try {
@@ -20,8 +22,16 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
       const options = {commerce:true,siteKey:env.TURNSTILE_SITE_KEY ?? "",page:url.pathname.slice(1)};
       if (url.pathname.startsWith("/orders/")) {
         options.page = "confirmation";
-        const receiptHash = await sha256(`${store.store_id}:${url.pathname.slice("/orders/".length)}`);
+        const token = url.pathname.split("/")[2];
+        const receiptHash = await sha256(`${store.store_id}:${token}`);
         options.order = await db.withStore(store.store_id,(tx) => receiptOrder(tx,store.store_id,receiptHash));
+        options.invoiceUrl = `/orders/${token}/invoice`;
+        if (url.pathname.endsWith("/invoice")) {
+          if (!options.order.invoice) throw commerceError("Your invoice will be available when the order is shipped.",undefined,404);
+          const invoice = await db.withStore(store.store_id,(tx) => invoiceDetail(tx,store.store_id,options.order.invoice.id));
+          return new Response(request.method === "HEAD" ? null : renderInvoice(invoice,`/orders/${token}`),
+            {headers:{...CHECKOUT_HEADERS,"content-type":"text/html; charset=utf-8"}});
+        }
       }
       const csp = CHECKOUT_HEADERS["content-security-policy"]
         .replace("script-src 'self' 'unsafe-inline'","script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com")
@@ -45,7 +55,10 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
     if (purpose === "track") {
       const phone = indianPhone(body.phone);
       if (!phone || typeof body.order_number !== "string" || !/^[A-Z]{1,3}-[0-9]{4,18}$/.test(body.order_number)) throw commerceError("Enter your order number and mobile number.");
-      const [order] = await db.withStore(store.store_id,(tx) => tx`SELECT o.order_number,o.status,o.created_at FROM public.orders o
+      const [order] = await db.withStore(store.store_id,(tx) => tx`SELECT o.order_number,o.status,o.payment_method,o.created_at,o.updated_at,
+        s.courier,s.tracking_number,s.tracking_url FROM public.orders o
+        LEFT JOIN LATERAL (SELECT courier,tracking_number,tracking_url FROM public.shipments
+          WHERE store_id = o.store_id AND order_id = o.id ORDER BY created_at DESC,id DESC LIMIT 1) s ON true
         WHERE o.store_id = ${store.store_id} AND o.order_number = ${body.order_number} AND o.shipping_address->>'phone' = ${phone}`);
       if (!order) throw commerceError("No matching order was found. Check the order number and phone.",undefined,404);
       return json(order);

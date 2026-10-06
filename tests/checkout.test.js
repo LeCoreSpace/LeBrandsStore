@@ -46,6 +46,8 @@ function fakeDatabase() {
       if (q.startsWith("SELECT") && q.includes("confirmation_hash")) return state.orders.filter((o)=>own(o.store_id)&&o.confirmation_hash===values[1]);
       if (q.startsWith("SELECT") && q.includes("o.order_number")) return state.orders.filter((o)=>own(o.store_id)&&o.order_number===values[1]&&state.customers.some((c)=>c.id===o.customer_id&&c.phone===values[2]));
       if (q.startsWith("SELECT") && q.includes("public.order_items")) return state.items.filter((i)=>own(i.store_id)&&i.order_id===values[1]).map((i)=>({...i,line_total_paise:i.total_paise}));
+      if (q.startsWith("SELECT") && q.includes("public.invoices")) return [];
+      if (q.startsWith("INSERT INTO public.audit_log")) return [];
       if (q.startsWith("INSERT INTO public.checkout_attempts")) {state.attempts.push({store_id:values[0],ip_hash:values[1],purpose:values[2]});return [];}
       if (q.startsWith("DELETE FROM public.checkout_attempts")) return [];
       if (q.startsWith("INSERT INTO public.customers")) {
