@@ -2,6 +2,18 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { listOrders,listCustomers,listInvoices,invoiceDetail,overview,exportRows,changeOrderStatus,issueInvoice } from "../src/dashboard/repository.js";
 import { handleDashboard } from "../src/dashboard/routes.js";
+import { financialYear,invoiceNumber } from "../src/public/dashboard-rules.js";
+
+async function shippedInvoiceFixture(tx,store) {
+  const id = randomUUID();
+  await tx`INSERT INTO public.orders(id,store_id,customer_id,order_number,status,payment_method,subtotal_paise,total_paise,shipping_address,supplier_snapshot)
+    VALUES (${id},${store.storeId},${store.customerId},${`rls-test-invoice-${id}`},'shipped','cod',10000,10000,
+      ${tx.json({name:"RLS Fixture",line1:"RLS Fixture Address",city:"Mumbai",state:"27",pincode:"400001"})},
+      ${tx.json({legal_name:"RLS Fixture Supplier",address:"RLS Fixture Supplier Address",gstin:"27ABCDE1234F1Z5",state:"27"})})`;
+  await tx`INSERT INTO public.order_items(store_id,order_id,product_id,title,hsn_code,quantity,unit_price_paise,total_paise,taxable_paise)
+    VALUES (${store.storeId},${id},${store.productIds[0]},'RLS Invoice Item','1234',1,10000,10000,10000)`;
+  return id;
+}
 
 export function dashboardIsolationChecks(getFixtures,transaction,denied) {
   const tables = ["invoices","invoice_sequences","audit_log"];
@@ -95,5 +107,42 @@ export function dashboardIsolationChecks(getFixtures,transaction,denied) {
         await denied(a.storeId,(tx) => tx`UPDATE public.invoice_sequences SET last_number = 0 WHERE store_id = ${a.storeId}`);
         await denied(a.storeId,(tx) => tx`UPDATE public.invoice_sequences SET last_number = last_number + 2 WHERE store_id = ${a.storeId}`);
       }},
+    {name:"dashboard.issue-invoice.own",reason:"Own-store issuance creates an invoice and item snapshot through the real definer function, not APP table writes.",
+      fn:() => {const {a} = getFixtures();return transaction(a.storeId,async (tx) => {
+        const orderId = await shippedInvoiceFixture(tx,a);
+        const [clock] = await tx`SELECT now() AS issued_at`;
+        const fy = financialYear(clock.issued_at);
+        const [counter] = await tx`SELECT last_number FROM public.invoice_sequences WHERE store_id = ${a.storeId} AND financial_year = ${fy}`;
+        const [issued] = await tx`SELECT * FROM public.issue_invoice(${orderId})`;
+        assert.equal(issued.invoice_number,invoiceNumber(a.subdomain,fy,Number(counter?.last_number || 0) + 1));
+        const [invoice] = await tx`SELECT * FROM public.invoices WHERE store_id = ${a.storeId} AND id = ${issued.id}`;
+        assert.equal(invoice.order_id,orderId);assert.equal(invoice.snapshot.items.length,1);
+        assert.equal(invoice.snapshot.items[0].title,"RLS Invoice Item");
+      });}},
+    {name:"dashboard.issue-invoice.cross-store",reason:"Even an existing invoice/order in another store is rejected with 42501 before idempotent lookup.",
+      fn:() => {const {a,b} = getFixtures();return denied(a.storeId,(tx) => tx`SELECT * FROM public.issue_invoice(${b.orderId})`);}},
+    {name:"dashboard.issue-invoice.no-context",reason:"The definer requires transaction-local store context.",
+      fn:() => denied(null,(tx) => tx`SELECT * FROM public.issue_invoice(${getFixtures().a.orderId})`)},
+    {name:"dashboard.issue-invoice.idempotent",reason:"Calling twice returns the same invoice and does not consume a second number.",
+      fn:() => {const {a} = getFixtures();return transaction(a.storeId,async (tx) => {
+        const orderId = await shippedInvoiceFixture(tx,a);
+        const [first] = await tx`SELECT * FROM public.issue_invoice(${orderId})`;
+        const [second] = await tx`SELECT * FROM public.issue_invoice(${orderId})`;
+        assert.deepEqual(second,first);
+        const [count] = await tx`SELECT count(*)::integer AS count FROM public.invoices WHERE store_id = ${a.storeId} AND order_id = ${orderId}`;
+        assert.equal(count.count,1);
+      });}},
+    {name:"dashboard.issue-invoice.consecutive",reason:"Two own-store orders get consecutive numbers in the same store/FY series.",
+      fn:() => {const {a} = getFixtures();return transaction(a.storeId,async (tx) => {
+        const orderA = await shippedInvoiceFixture(tx,a),orderB = await shippedInvoiceFixture(tx,a);
+        const [first] = await tx`SELECT * FROM public.issue_invoice(${orderA})`;
+        const [second] = await tx`SELECT * FROM public.issue_invoice(${orderB})`;
+        assert.equal(first.invoice_number.split("/").slice(0,-1).join("/"),second.invoice_number.split("/").slice(0,-1).join("/"));
+        assert.equal(Number(second.invoice_number.split("/").at(-1)),Number(first.invoice_number.split("/").at(-1)) + 1);
+      });}},
+    {name:"dashboard.invoice.delete.denied",reason:"APP cannot delete an own-store issued invoice; denial is specifically 42501.",
+      fn:() => {const {a} = getFixtures();return denied(a.storeId,(tx) => tx`DELETE FROM public.invoices WHERE store_id = ${a.storeId} AND id = ${a.invoiceId}`);}},
+    {name:"dashboard.cancel-invoice.cross-store",reason:"The cancellation definer also rejects another store's invoice/order with 42501.",
+      fn:() => {const {a,b} = getFixtures();return denied(a.storeId,(tx) => tx`SELECT * FROM public.cancel_invoice(${b.orderId})`);}},
   ];
 }

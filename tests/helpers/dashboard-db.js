@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { financialYear,invoiceNumber } from "../../src/public/dashboard-rules.js";
+import { inferStoreState } from "../../src/public/commerce-rules.js";
 export const STORE = "10000000-0000-4000-8000-000000000001";
 export const USER = "10000000-0000-4000-8000-000000000002";
 export const ORDER = "10000000-0000-4000-8000-000000000003";
@@ -10,7 +12,7 @@ export function dashboardDb() {
     supplier_snapshot:{legal_name:"Legal Store",address:"Supplier Street, Chennai",gstin:"33ABCDE1234F1Z5",state:"33"}}],
     items:[{store_id:STORE,order_id:ORDER,product_id:PRODUCT,title:"Product",quantity:2,unit_price_paise:5900,
       total_paise:11800,taxable_paise:10000,tax_paise:1800,cgst_paise:900,sgst_paise:900,igst_paise:0,gst_rate:18,inventory_deducted:true}],
-    stock:3,invoices:[],shipments:[],audit:[],sequences:{},queries:[]};
+    stock:3,invoices:[],shipments:[],audit:[],sequences:{},queries:[],contextStore:STORE,clock:"2026-10-06T08:00:00Z"};
   const tx = async (strings,...v) => {
     const q = strings.join("?").replace(/\s+/g," ");
     state.queries.push(q);
@@ -25,24 +27,46 @@ export function dashboardDb() {
     if (q.startsWith("SELECT") && q.includes("FROM public.invoices")) return state.invoices.filter((i) => i.store_id === v[0] && (i.order_id === v[1] || i.id === v[1]));
     if (q.startsWith("SELECT") && q.includes("FROM public.shipments")) return state.shipments.filter((i) => i.store_id === v[0] && i.order_id === v[1]);
     if (q.startsWith("SELECT") && q.includes("FROM public.audit_log")) return state.audit.filter((i) => i.store_id === v[0] && i.entity_id === v[1]);
-    if (q.startsWith("INSERT INTO public.invoice_sequences")) {
-      assert.match(q,/ON CONFLICT\(store_id,financial_year\) DO UPDATE SET last_number = public.invoice_sequences.last_number \+ 1 RETURNING last_number/);
-      const seq = state.sequences[`${v[0]}:${v[1]}`] ??= {last_number:0,last_credit_number:0};
-      seq.last_number++;return [{...seq}];
-    }
-    if (q.startsWith("INSERT INTO public.invoices")) {
+    // Function-boundary model only, not execution of PL/pgSQL or real RLS.
+    if (q.startsWith("SELECT * FROM public.issue_invoice") || q.startsWith("SELECT * FROM public.cancel_invoice")) {
+      const fail = (message,code) => {throw Object.assign(new Error(message),{code});};
+      const order = state.orders.find((o) => o.store_id === state.contextStore && o.id === v[0]);
+      if (!state.contextStore || !order) fail("Order is not in the current store","42501");
+      let invoice = state.invoices.find((i) => i.store_id === state.contextStore && i.order_id === order.id);
+      if (q.includes("cancel_invoice")) {
+        if (!invoice) return [];
+        if (invoice.status === "cancelled") return [{...invoice,changed:false}];
+        if (!["cancelled","returned","rto"].includes(order.status)) fail("Cancel or return the order first","23514");
+        const seq = state.sequences[`${state.contextStore}:${invoice.financial_year}`];
+        if (!seq) fail("The invoice sequence is missing","23514");
+        seq.last_credit_number++;
+        Object.assign(invoice,{status:"cancelled",credit_note_number:invoiceNumber("store",invoice.financial_year,seq.last_credit_number,true),cancelled_at:state.clock});
+        return [{...invoice,changed:true}];
+      }
+      if (invoice) return [{id:invoice.id,invoice_number:invoice.invoice_number}];
+      if (!["shipped","delivered","returned","rto"].includes(order.status)) fail("Invoices are issued when an order is shipped","23514");
+      const settings = state.publicationSettings ?? {legal_name:"Legal Store",address:"Supplier Street, Chennai",gstin:"33ABCDE1234F1Z5"};
+      const supplier = order.supplier_snapshot ?? {legal_name:settings.legal_name || "Store",address:settings.address,gstin:settings.gstin || "",state:inferStoreState(settings)};
+      if (!supplier.legal_name || !supplier.address) fail("Complete supplier details","23514");
+      const document_type = supplier.gstin ? "tax_invoice" : "receipt";
+      const items = state.items.filter((i) => i.store_id === state.contextStore && i.order_id === order.id);
+      if (document_type === "tax_invoice") {
+        if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(supplier.gstin) || supplier.gstin.slice(0,2) !== supplier.state) fail("GST state mismatch","23514");
+        const intra = supplier.state === order.shipping_address.state;
+        if (items.some((i) => i.tax_paise > 0 && (intra ? i.igst_paise !== 0 : i.cgst_paise !== 0 || i.sgst_paise !== 0))) fail("Tax split mismatch","23514");
+      }
+      const fy = financialYear(state.clock), seq = state.sequences[`${state.contextStore}:${fy}`] ??= {last_number:0,last_credit_number:0};
+      seq.last_number++;
       if (state.failInvoice) throw new Error("Simulated invoice insert failure");
-      const invoice = {id:crypto.randomUUID(),store_id:v[0],order_id:v[1],invoice_number:v[2],financial_year:v[3],
-        document_type:v[4],subtotal_paise:v[5],tax_paise:v[6],total_paise:v[7],snapshot:v[8],issued_at:v[9],status:"issued"};
-      state.invoices.push(invoice);return [{...invoice}];
+      invoice = {id:crypto.randomUUID(),store_id:state.contextStore,order_id:order.id,
+        invoice_number:invoiceNumber("store",fy,seq.last_number),financial_year:fy,document_type,
+        subtotal_paise:order.subtotal_paise,tax_paise:document_type === "tax_invoice" ? order.tax_paise : 0,
+        total_paise:order.total_paise,issued_at:state.clock,status:"issued",
+        snapshot:structuredClone({supplier,customer:order.shipping_address,items,order_number:order.order_number,totals:order,place_of_supply:order.shipping_address.state})};
+      state.invoices.push(invoice);return [{id:invoice.id,invoice_number:invoice.invoice_number}];
     }
-    if (q.startsWith("UPDATE public.invoice_sequences")) {
-      const seq = state.sequences[`${v[0]}:${v[1]}`];if (!seq) return [];
-      seq.last_credit_number++;return [{...seq}];
-    }
-    if (q.startsWith("UPDATE public.invoices")) {
-      const invoice = state.invoices.find((i) => i.store_id === v[1] && i.id === v[2]);
-      Object.assign(invoice,{status:"cancelled",credit_note_number:v[0],cancelled_at:"2026-10-07T08:00:00Z"});return [];
+    if (/^(INSERT INTO|UPDATE|DELETE FROM|TRUNCATE).*public\.(invoices|invoice_sequences)\b/.test(q)) {
+      throw Object.assign(new Error("Invoice tables are SELECT-only"),{code:"42501"});
     }
     if (q.startsWith("UPDATE public.orders")) {
       const clock = q.includes("stock_restored_at"), order = state.orders.find((o) => o.store_id === v[clock ? 0 : 1] && o.id === v[clock ? 1 : 2]);

@@ -2,3 +2,4 @@
 - [Store setup boundaries](store-setup-boundaries.md) — phase-specific Worker/R2 uploads override signed-URL roadmap; later commerce/integration features stay out.
 - [Worker array boundaries](worker-array-boundaries.md) — disabled type discovery leaves native arrays unparsed; use explicit JSON boundaries on reads and writes.
 - [GST choices and legacy values](gst-choices.md) — use current slabs for new edits, but never silently replace previously saved 12%/28% product rates.
+- [Invoice permission boundary](invoice-privilege-boundary.md) — APP financial writes must use tenant-checked functions; preserve strict 42501 isolation denials.

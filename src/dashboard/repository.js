@@ -1,6 +1,6 @@
 import { loadDraft } from "../store/repository.js";
-import { transitionInput, shouldRestoreStock, financialYear, invoiceNumber, dateFilters, stateName, indianDate, statusLabel } from "../public/dashboard-rules.js";
-import { commerceError, inferStoreState } from "../public/commerce-rules.js";
+import { transitionInput, shouldRestoreStock, dateFilters, stateName, indianDate, statusLabel } from "../public/dashboard-rules.js";
+import { commerceError } from "../public/commerce-rules.js";
 
 const missing = () => commerceError("Record not found.",undefined,404);
 const numberFields = ["total_paise","subtotal_paise","shipping_paise","tax_paise","cod_fee_paise","discount_paise",
@@ -94,56 +94,25 @@ export async function invoiceDetail(tx,id,invoiceId) {
   return numbers(invoice);
 }
 export async function issueInvoice(tx,id,orderId,actorId) {
-  // Locks the order even when called independently of a status mutation.
-  const [order] = await tx`SELECT * FROM public.orders WHERE store_id = ${id} AND id = ${orderId} FOR UPDATE`;
-  if (!order) throw missing();
-  if (!["shipped","delivered","returned","rto"].includes(order.status)) throw commerceError("Invoices are issued when an order is shipped.",undefined,409);
   const [existing] = await tx`SELECT * FROM public.invoices WHERE store_id = ${id} AND order_id = ${orderId}`;
-  if (existing) return numbers(existing);
-  const [store] = await tx`SELECT subdomain,name FROM public.stores WHERE store_id = ${id}`;
-  const [publication] = await tx`SELECT snapshot FROM public.store_publications WHERE store_id = ${id}`;
-  const settings = publication?.snapshot?.settings ?? {};
-  const supplier = order.supplier_snapshot ?? {legal_name:settings.legal_name || store.name,address:settings.address,
-    gstin:settings.gstin || "",state:inferStoreState(settings)};
-  if (!supplier.legal_name || !supplier.address) throw commerceError("Complete the supplier legal name and address before shipping.",undefined,409);
-  const document_type = supplier.gstin ? "tax_invoice" : "receipt";
-  const items = (await tx`SELECT * FROM public.order_items WHERE store_id = ${id} AND order_id = ${orderId} ORDER BY created_at,id`).map(numbers);
-  if (document_type === "tax_invoice") {
-    if (!/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/.test(supplier.gstin) || supplier.gstin.slice(0,2) !== supplier.state) {
-      throw commerceError("The supplier GSTIN and GST state do not match. Resolve the store tax setup before shipping.",undefined,409);
-    }
-    const intra = supplier.state === order.shipping_address.state;
-    if (items.some((i) => i.tax_paise > 0 && (intra ? i.igst_paise !== 0 : i.cgst_paise !== 0 || i.sgst_paise !== 0))) {
-      throw commerceError("The stored order tax split does not match the place of supply. Resolve it before shipping.",undefined,409);
-    }
-  }
-  const [clock] = await tx`SELECT now() AS issued_at`;
-  const fy = financialYear(clock.issued_at);
-  // The atomic UPSERT and the invoice insertion share one transaction.
-  // Rollback returns the sequence counter too, so failed issuance leaves no gap.
-  const [sequence] = await tx`INSERT INTO public.invoice_sequences(store_id,financial_year,last_number) VALUES (${id},${fy},1)
-    ON CONFLICT(store_id,financial_year) DO UPDATE SET last_number = public.invoice_sequences.last_number + 1 RETURNING last_number`;
-  const number = invoiceNumber(store.subdomain,fy,sequence.last_number);
-  const snapshot = {supplier,customer:order.shipping_address,items,order_number:order.order_number,
-    totals:numbers(order),place_of_supply:order.shipping_address.state};
-  const [invoice] = await tx`INSERT INTO public.invoices(store_id,order_id,invoice_number,financial_year,document_type,
-    subtotal_paise,tax_paise,total_paise,snapshot,issued_at)
-    VALUES (${id},${orderId},${number},${fy},${document_type},${order.subtotal_paise},
-      ${document_type === "tax_invoice" ? order.tax_paise : 0},${order.total_paise},${tx.json(snapshot)},${clock.issued_at}) RETURNING *`;
-  await audit(tx,id,actorId,"invoice.issued","order",orderId,{invoice_number:number,document_type});
+  const [issued] = await invoiceMutation(() => tx`SELECT * FROM public.issue_invoice(${orderId})`);
+  const [invoice] = await tx`SELECT * FROM public.invoices WHERE store_id = ${id} AND id = ${issued.id}`;
+  if (!invoice) throw missing();
+  if (!existing) await audit(tx,id,actorId,"invoice.issued","order",orderId,
+    {invoice_number:invoice.invoice_number,document_type:invoice.document_type});
   return numbers(invoice);
 }
 async function cancelInvoice(tx,id,orderId,actorId) {
-  const [invoice] = await tx`SELECT * FROM public.invoices WHERE store_id = ${id} AND order_id = ${orderId} FOR UPDATE`;
-  if (!invoice || invoice.status === "cancelled") return;
-  const [store] = await tx`SELECT subdomain FROM public.stores WHERE store_id = ${id}`;
-  const [sequence] = await tx`UPDATE public.invoice_sequences SET last_credit_number = last_credit_number + 1
-    WHERE store_id = ${id} AND financial_year = ${invoice.financial_year} RETURNING last_credit_number`;
-  if (!sequence) throw commerceError("The invoice sequence is missing.",undefined,409);
-  const credit = invoiceNumber(store.subdomain,invoice.financial_year,sequence.last_credit_number,true);
-  await tx`UPDATE public.invoices SET status = 'cancelled',credit_note_number = ${credit},cancelled_at = now()
-    WHERE store_id = ${id} AND id = ${invoice.id}`;
-  await audit(tx,id,actorId,"invoice.cancelled","order",orderId,{invoice_number:invoice.invoice_number,credit_note_number:credit});
+  const [invoice] = await invoiceMutation(() => tx`SELECT * FROM public.cancel_invoice(${orderId})`);
+  if (invoice?.changed) await audit(tx,id,actorId,"invoice.cancelled","order",orderId,
+    {invoice_number:invoice.invoice_number,credit_note_number:invoice.credit_note_number});
+}
+async function invoiceMutation(fn) {
+  try { return await fn(); } catch (error) {
+    if (error.code === "42501") throw commerceError("You do not have permission to change this invoice.",undefined,403);
+    if (error.code === "23514") throw commerceError("Invoice details are inconsistent. Check the order status, supplier legal details and GST setup before continuing.",undefined,409);
+    throw error;
+  }
 }
 export async function changeOrderStatus(tx,id,orderId,actorId,body) {
   const [order] = await tx`SELECT * FROM public.orders WHERE store_id = ${id} AND id = ${orderId} FOR UPDATE`;

@@ -98,7 +98,7 @@ test("failed invoice issuance rolls back shipment, status, audit and sequence wi
   db.state.failInvoice = false;await change(db,shipping);
   assert.equal(db.state.invoices[0].invoice_number,"STORE/2026-27/0001");
 });
-test("parallel invoice issuance uses atomic per-store/FY UPSERT and consecutive numbers", async () => {
+test("parallel invoice issuance uses the locked definer counter and consecutive numbers", async () => {
   const db = dashboardDb(), second = "10000000-0000-4000-8000-000000000099";
   db.state.orders[0].status = "shipped";
   db.state.orders.push({...db.state.orders[0],id:second,order_number:"STO-1002"});
@@ -107,7 +107,12 @@ test("parallel invoice issuance uses atomic per-store/FY UPSERT and consecutive 
   assert.deepEqual(result.map((r) => r.invoice_number),["STORE/2026-27/0001","STORE/2026-27/0002"]);
   // This is a transaction model, not a live PostgreSQL concurrency claim.
   assert.equal(db.state.sequences[`${STORE}:2026-27`].last_number,2);
-  assert.match(db.state.queries.find((q) => q.startsWith("INSERT INTO public.invoice_sequences")),/ON CONFLICT\(store_id,financial_year\)/);
+  assert.ok(db.state.queries.some((q) => q.startsWith("SELECT * FROM public.issue_invoice")));
+  assert.ok(!db.state.queries.some((q) => /^(INSERT INTO|UPDATE).*public\.(invoices|invoice_sequences)\b/.test(q)));
+  const {readFile} = await import("node:fs/promises");
+  const migration = await readFile(new URL("../db/migrations/0008_invoice_lockdown.sql",import.meta.url),"utf8");
+  assert.match(migration,/ON CONFLICT\(store_id,financial_year\) DO NOTHING/);
+  assert.match(migration,/SELECT seq\.last_number[\s\S]*?FOR UPDATE/);
 });
 test("Indian financial year boundary and document numbering do not collide across FY", () => {
   assert.equal(financialYear("2026-03-31T18:29:59Z"),"2025-26");

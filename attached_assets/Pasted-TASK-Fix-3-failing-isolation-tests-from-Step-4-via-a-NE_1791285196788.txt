@@ -1,0 +1,44 @@
+TASK: Fix 3 failing isolation tests from Step 4 via a NEW migration
+db/migrations/0008_invoice_lockdown.sql. Do NOT edit 0007 (already applied).
+Do NOT run migrations or deploy. Do NOT weaken or change the expectations of
+the existing isolation tests; they correctly expect SQLSTATE 42501.
+
+Failing tests and actual results:
+- dashboard.invoices.cross-insert: got 23503 (FK), expected 42501
+- dashboard.invoice.content.immutable: got 23514 (CHECK), expected 42501
+- dashboard.invoice.counter.protected: got 23514 (CHECK), expected 42501
+Meaning: lebrands_app currently has INSERT/UPDATE privileges on invoice
+tables and RLS lets the statements through to constraint checks.
+
+Required design:
+1. lebrands_app gets SELECT only on the invoice table(s), invoice line/item
+   table(s) and the invoice counter table. REVOKE INSERT, UPDATE, DELETE,
+   TRUNCATE on all of them from lebrands_app (and from PUBLIC). Keep RLS
+   ENABLED + FORCED and keep the SELECT policies store-scoped.
+2. Create one function, e.g. issue_invoice(p_order_id), SECURITY DEFINER,
+   owned by postgres, with SET search_path = pg_catalog, public.
+   It must:
+   - read the current store from the same transaction-local context the
+     app already uses; raise ERRCODE 'insufficient_privilege' if missing;
+   - verify the order exists AND belongs to that store (explicit store_id
+     filter, do not rely on RLS inside the definer function); otherwise
+     raise ERRCODE 'insufficient_privilege';
+   - if an invoice already exists for that order, return it (idempotent);
+   - lock the store's counter row (SELECT ... FOR UPDATE), increment it,
+     and insert the invoice + items snapshot in the same transaction, so
+     numbers are unique and consecutive per store with no gaps;
+   - return the invoice id/number.
+   REVOKE EXECUTE ON FUNCTION ... FROM PUBLIC; GRANT EXECUTE TO lebrands_app.
+   Preserve the existing invoice number format and any per-store/financial-
+   year logic from 0007 exactly.
+3. Keep or add BEFORE UPDATE/DELETE triggers on invoices as a second layer,
+   but they must RAISE with ERRCODE = 'insufficient_privilege'.
+4. Update the Worker dashboard code so it ONLY creates invoices by calling
+   issue_invoice(); remove any direct INSERT/UPDATE on invoice or counter
+   tables. Grep the codebase to confirm none remain.
+5. Add isolation tests: issue_invoice succeeds for own-store order; fails
+   with 42501 for another store's order; calling twice returns the same
+   invoice; two invoices in a store get consecutive numbers; APP cannot
+   DELETE an invoice (42501).
+6. Run pnpm run test:offline and report results. Summarise every GRANT,
+   REVOKE, policy and function in 0008 so I can review before migrating.
