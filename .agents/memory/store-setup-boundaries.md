@@ -13,3 +13,10 @@ The full requirements are not permission to build every described capability.
 
 **How to apply:** Keep later phases out of follow-up fixes unless requested.
 No deployment or migration execution is authorized by implementation work.
+
+Production deploys must use only the root `wrangler.jsonc`. The second Wrangler
+config is for local preview only.
+
+**Why:** The user explicitly requires one production configuration.
+
+**How to apply:** Keep preview adapters out of production entrypoints and commands.

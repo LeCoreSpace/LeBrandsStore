@@ -3,6 +3,7 @@ import { SECURITY_HEADERS } from "../auth/security.js";
 import { UUID } from "../public/validation.js";
 import { settingsPatch, progressPatch, productPatch, readJson, readBody, badInput } from "./input.js";
 import { validateUpload } from "./media.js";
+import { setupFieldNames, storeFailureDetails } from "./diagnostics.js";
 import {
   loadDraft, saveSetup, saveProduct, deleteProduct, insertMedia,
   regeneratePolicies, savePolicy, publish,
@@ -20,6 +21,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
   if (!user || user.must_change_password) return json({ error: "Sign in and complete any required password change first." }, 401);
   const [, id, action, child] = match;
   let uploadedKey;
+  let fieldNames = [];
   try {
     if (!api) {
       if (action !== "setup" || child || !["GET", "HEAD"].includes(request.method)) return json({ error: "Page not found." }, 404);
@@ -41,6 +43,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
       if (route === "GET setup") return loadDraft(tx, id);
       if (route === "PATCH setup") {
         const body = await readJson(request);
+        fieldNames = setupFieldNames(body);
         if (!Object.keys(body).length || Object.keys(body).some((k) => !["settings", "progress"].includes(k))) throw badInput("Use the setup form.");
         return saveSetup(tx, id, body.settings === undefined ? undefined : settingsPatch(body.settings),
           body.progress === undefined ? undefined : progressPatch(body.progress));
@@ -76,11 +79,17 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
       try { await env.MEDIA.delete(uploadedKey); }
       catch { console.error("Orphan media cleanup failed", { code: "R2_CLEANUP_FAILED" }); }
     }
-    console.error("Store setup request failed", { code: error?.code ?? (error?.status ? "REQUEST_REJECTED" : "STORE_SERVICE_ERROR") });
+    console.error("Store setup request failed", storeFailureDetails(error, request, fieldNames));
     let status = error.status ?? 503;
     let message = error.status ? error.message : "Store services are temporarily unavailable. Please try again.";
     if (error.code === "23505") { status = 409; message = "That store address or SKU is already in use."; }
     if (error.code === "23503") { status = 409; message = "That item is in use or is not part of this store."; }
-    return json({ error: message, ...(error.errors ? { errors: error.errors } : {}) }, status);
+    let fieldErrors = error.errors;
+    if (["23502", "23514", "22P02", "22001", "22003"].includes(error.code)) {
+      status = 400;
+      message = "Check your input and try again.";
+      fieldErrors = { _general: "A value could not be saved. Check the form and try again." };
+    }
+    return json({ error: message, ...(fieldErrors ? { errors: fieldErrors } : {}) }, status);
   }
 }

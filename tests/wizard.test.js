@@ -97,7 +97,7 @@ test("autosaved address is confirmed by a progress-only Continue, never while ty
     const tx = async (strings, ...values) => {
       const query = strings.join("?"); queries.push(query);
       if (query.includes("SELECT store_id, name")) return [data.store];
-      if (query.includes("SELECT * FROM public.store_setup")) return [{
+      if (query.includes("FROM public.store_setup")) return [{
         settings: { ...data.settings, subdomain: "new-brand" }, logo_media_id: MEDIA_ID, step: 1, completed: [],
       }];
       if (query.includes("SELECT * FROM public.media")) return [{ id: MEDIA_ID, object_key: KEY }];

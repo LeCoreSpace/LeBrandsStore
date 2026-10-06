@@ -19,10 +19,12 @@ export async function loadDraft(tx, storeId) {
   const [store] = await tx`SELECT store_id, name, subdomain, status, subdomain_changed_at
     FROM public.stores WHERE store_id = ${storeId}`;
   if (!store) throw missing();
-  const [setup] = await tx`SELECT * FROM public.store_setup WHERE store_id = ${storeId}`;
+  // fetch_types:false leaves native PG arrays as strings. JSON has a built-in
+  // parser, so keep the Worker driver configuration and cross this boundary explicitly.
+  const [setup] = await tx`SELECT *, to_json(completed) AS completed FROM public.store_setup WHERE store_id = ${storeId}`;
   const [logo] = setup?.logo_media_id ? await tx`SELECT * FROM public.media
     WHERE store_id = ${storeId} AND id = ${setup.logo_media_id} AND upload_type = 'logo'` : [];
-  const products = await tx`SELECT * FROM public.products WHERE store_id = ${storeId}
+  const products = await tx`SELECT *, to_json(tags) AS tags FROM public.products WHERE store_id = ${storeId}
     AND status <> 'archived' ORDER BY created_at, id`;
   const images = await tx`SELECT pm.product_id, m.* FROM public.product_media pm
     JOIN public.media m ON m.store_id = pm.store_id AND m.id = pm.media_id
@@ -86,7 +88,7 @@ export async function saveSetup(tx, id, settings, progress) {
     if (logo_media_id != null) {
       const [logo] = await tx`SELECT id FROM public.media WHERE store_id = ${id}
         AND id = ${logo_media_id} AND upload_type = 'logo'`;
-      if (!logo) throw badInput("Choose a logo uploaded to this store.");
+      if (!logo) throw badInput("Choose a logo uploaded to this store.", { logo_media_id: "Choose a logo uploaded to this store." });
     }
     if (brand_name !== undefined) await tx`UPDATE public.stores SET name = ${brand_name} WHERE store_id = ${id}`;
     await tx`UPDATE public.store_setup SET settings = settings || ${tx.json(values)}
@@ -98,13 +100,14 @@ export async function saveSetup(tx, id, settings, progress) {
   if (progress) {
     const updated = await loadDraft(tx, id);
     await tx`UPDATE public.store_setup SET step = ${progress.step},
-      completed = ${completion(updated, progress)}::integer[] WHERE store_id = ${id}`;
+      completed = ARRAY(SELECT jsonb_array_elements_text(${tx.json(completion(updated, progress))})::integer)
+      WHERE store_id = ${id}`;
   }
   return loadDraft(tx, id);
 }
 export async function saveProduct(tx, id, productId, patch) {
   await ensureSetup(tx, id);
-  const [existing] = productId ? await tx`SELECT * FROM public.products
+  const [existing] = productId ? await tx`SELECT *, to_json(tags) AS tags FROM public.products
     WHERE store_id = ${id} AND id = ${productId}` : [];
   if (productId && !existing) throw missing();
   const p = {
@@ -119,12 +122,12 @@ export async function saveProduct(tx, id, productId, patch) {
   const sku = p.sku || `LB-${uuid.slice(0, 8).toUpperCase()}`;
   if (existing) await tx`UPDATE public.products SET title = ${p.title}, description = ${p.description},
     price_paise = ${p.price_paise}, compare_at_price_paise = ${p.compare_at_paise},
-    tags = ${p.tags}::text[], sku = ${sku}, stock = ${p.stock ?? 0}, track_inventory = ${p.stock != null},
+    tags = ARRAY(SELECT jsonb_array_elements_text(${tx.json(p.tags)})), sku = ${sku}, stock = ${p.stock ?? 0}, track_inventory = ${p.stock != null},
     hsn_code = ${p.hsn_code}, gst_rate = ${p.gst_rate ?? 0} WHERE store_id = ${id} AND id = ${uuid}`;
   else await tx`INSERT INTO public.products
     (id, store_id, title, slug, description, price_paise, compare_at_price_paise, tags, sku, stock, track_inventory, hsn_code, gst_rate)
     VALUES (${uuid}, ${id}, ${p.title}, ${uuid}, ${p.description}, ${p.price_paise}, ${p.compare_at_paise},
-      ${p.tags}::text[], ${sku}, ${p.stock ?? 0}, ${p.stock != null}, ${p.hsn_code}, ${p.gst_rate ?? 0})`;
+      ARRAY(SELECT jsonb_array_elements_text(${tx.json(p.tags)})), ${sku}, ${p.stock ?? 0}, ${p.stock != null}, ${p.hsn_code}, ${p.gst_rate ?? 0})`;
   if (patch.images) {
     for (const image of patch.images) {
       const [media] = await tx`SELECT id FROM public.media WHERE store_id = ${id}

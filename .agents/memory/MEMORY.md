@@ -1,2 +1,3 @@
 - [Cloudflare password runtime](cloudflare-password-runtime.md) — user replaced the obsolete 600k requirement after confirming production Workers cap PBKDF2 at 100k.
 - [Store setup boundaries](store-setup-boundaries.md) — phase-specific Worker/R2 uploads override signed-URL roadmap; later commerce/integration features stay out.
+- [Worker array boundaries](worker-array-boundaries.md) — disabled type discovery leaves native arrays unparsed; use explicit JSON boundaries on reads and writes.

@@ -80,7 +80,11 @@ function refreshPublishButton(){
 }
 function currentSettings(){return data.settings||(data.settings={})}
 function currentProduct(){return data.products?.find((p)=>String(p.id)===String(activeProductId))||null}
-function changedSetting(field,value){currentSettings()[field]=value;revision++;fieldRevision.set(field,revision);queueSave();schedulePreview()}
+function changedSetting(field,value){
+  delete formErrors[field];
+  for(const error of document.querySelectorAll("[data-error]"))if(error.dataset.error===field)error.remove();
+  currentSettings()[field]=value;revision++;fieldRevision.set(field,revision);queueSave();schedulePreview();
+}
 function changedProduct(field,value){const p=currentProduct();if(!p)return;p[field]=value;revision++;p._revision=revision;queueSave();schedulePreview()}
 async function api(path,options={}){
   if(visualOnly)throw new Error("Read-only preview. Sign in to use store actions.");
