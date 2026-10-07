@@ -4,6 +4,10 @@ Subsequent GST registration requirements are implemented in a separate,
 unapplied migration, `0009_required_gstin.sql`. That migration rejects new
 receipts/invalid GSTINs and nonzero tax on exempt lines via an INSERT-only
 guard. Historical invoices and the protections in 0008 remain unchanged.
+The subsequent A–E polish also extends that same unapplied migration with
+short numbering and prefix locks. See [STEP4_POLISH_REVIEW.md](STEP4_POLISH_REVIEW.md)
+for its complete review; the numbering described below is 0008's historical
+behavior, not the new 0009 formats.
 
 This migration is **not applied**. Migration 0007 is already applied and is
 unchanged. No migrations, live isolation tests, deployments, secrets, Wrangler

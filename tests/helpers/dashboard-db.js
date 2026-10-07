@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { financialYear,invoiceNumber } from "../../src/public/dashboard-rules.js";
-import { inferStoreState,gstinError } from "../../src/public/commerce-rules.js";
+import { inferStoreState,gstinError,defaultInvoicePrefix } from "../../src/public/commerce-rules.js";
 export const STORE = "10000000-0000-4000-8000-000000000001";
 export const USER = "10000000-0000-4000-8000-000000000002";
 export const ORDER = "10000000-0000-4000-8000-000000000003";
@@ -9,7 +9,7 @@ export function dashboardDb() {
   let state = {role:"owner",orders:[{id:ORDER,store_id:STORE,order_number:"STO-1001",status:"confirmed_cod",payment_method:"cod",
     created_at:"2026-01-01T00:00:00Z",customer_name:"Buyer",phone:"+919000000000",subtotal_paise:11800,total_paise:11800,
     tax_paise:1800,shipping_paise:0,shipping_address:{name:"Buyer",line1:"Street",city:"Chennai",state:"33",pincode:"600001"},
-    supplier_snapshot:{legal_name:"Legal Store",address:"Supplier Street, Chennai",gstin:"33ABCDE1234F1Z7",state:"33"}}],
+    supplier_snapshot:{legal_name:"Legal Store",address:"Supplier Street, Chennai",line1:"Supplier Street",city:"Chennai",pincode:"600001",gstin:"33ABCDE1234F1Z7",state:"33"}}],
     items:[{store_id:STORE,order_id:ORDER,product_id:PRODUCT,title:"Product",quantity:2,unit_price_paise:5900,
       total_paise:11800,taxable_paise:10000,tax_paise:1800,cgst_paise:900,sgst_paise:900,igst_paise:0,gst_rate:18,inventory_deducted:true}],
     stock:3,invoices:[],shipments:[],audit:[],sequences:{},queries:[],contextStore:STORE,clock:"2026-10-06T08:00:00Z"};
@@ -37,17 +37,22 @@ export function dashboardDb() {
         if (!invoice) return [];
         if (invoice.status === "cancelled") return [{...invoice,changed:false}];
         if (!["cancelled","returned","rto"].includes(order.status)) fail("Cancel or return the order first","23514");
-        const seq = state.sequences[`${state.contextStore}:${invoice.financial_year}`];
-        if (!seq) fail("The invoice sequence is missing","23514");
+        const fy=financialYear(state.clock),seq = state.sequences[`${state.contextStore}:${fy}`] ??= {last_number:0,last_credit_number:0};
         seq.last_credit_number++;
-        Object.assign(invoice,{status:"cancelled",credit_note_number:invoiceNumber("store",invoice.financial_year,seq.last_credit_number,true),cancelled_at:state.clock});
+        Object.assign(invoice,{status:"cancelled",credit_note_number:invoiceNumber(state.invoicePrefix || defaultInvoicePrefix("Store"),fy,seq.last_credit_number,true),cancelled_at:state.clock});
         return [{...invoice,changed:true}];
       }
       if (invoice) return [{id:invoice.id,invoice_number:invoice.invoice_number}];
       if (!["shipped","delivered","returned","rto"].includes(order.status)) fail("Invoices are issued when an order is shipped","23514");
       const settings = state.publicationSettings ?? {legal_name:"Legal Store",address:"Supplier Street, Chennai",gstin:"33ABCDE1234F1Z7"};
-      const supplier = order.supplier_snapshot ?? {legal_name:settings.legal_name || "Store",address:settings.address,gstin:settings.gstin || "",state:inferStoreState(settings)};
+      const supplier = state.businessSettings ? {
+        legal_name:state.businessSettings.legal_name,address:state.businessSettings.address,
+        line1:state.businessSettings.business_line1,city:state.businessSettings.business_city,
+        pincode:state.businessSettings.business_pincode,gstin:state.businessSettings.gstin,
+        state:state.businessSettings.business_state,
+      } : order.supplier_snapshot ?? {legal_name:settings.legal_name || "Store",address:settings.address,gstin:settings.gstin || "",state:inferStoreState(settings)};
       if (!supplier.legal_name || !supplier.address) fail("Complete supplier details","23514");
+      if (state.businessSettings && (!supplier.line1 || !supplier.city || !/^[1-9][0-9]{5}$/.test(supplier.pincode || ""))) fail("Complete registered address in Settings","23514");
       if (gstinError(supplier.gstin)) fail("A valid GSTIN is required for new invoices","23514");
       const document_type = "tax_invoice";
       const items = state.items.filter((i) => i.store_id === state.contextStore && i.order_id === order.id);
@@ -60,10 +65,10 @@ export function dashboardDb() {
       seq.last_number++;
       if (state.failInvoice) throw new Error("Simulated invoice insert failure");
       invoice = {id:crypto.randomUUID(),store_id:state.contextStore,order_id:order.id,
-        invoice_number:invoiceNumber("store",fy,seq.last_number),financial_year:fy,document_type,
+        invoice_number:invoiceNumber(state.invoicePrefix || defaultInvoicePrefix("Store"),fy,seq.last_number),financial_year:fy,document_type,
         subtotal_paise:order.subtotal_paise,tax_paise:document_type === "tax_invoice" ? order.tax_paise : 0,
         total_paise:order.total_paise,issued_at:state.clock,status:"issued",
-        snapshot:structuredClone({supplier,customer:order.shipping_address,items,order_number:order.order_number,totals:order,place_of_supply:order.shipping_address.state})};
+        snapshot:structuredClone({supplier,customer:order.shipping_address,items:items.map(i=>({...i,uqc:"NOS"})),order_number:order.order_number,totals:order,place_of_supply:order.shipping_address.state})};
       state.invoices.push(invoice);return [{id:invoice.id,invoice_number:invoice.invoice_number}];
     }
     if (/^(INSERT INTO|UPDATE|DELETE FROM|TRUNCATE).*public\.(invoices|invoice_sequences)\b/.test(q)) {

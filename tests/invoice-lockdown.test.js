@@ -79,7 +79,7 @@ test("Worker reports permission/business errors safely and cancelled issuance st
   const [cancelled] = await db.transaction((tx) => tx`SELECT * FROM public.cancel_invoice(${ORDER})`);
   const same = await db.transaction((tx) => issueInvoice(tx,STORE,ORDER,USER));
   assert.equal(same.id,first.id);assert.equal(same.status,"cancelled");
-  assert.equal(cancelled.credit_note_number,"STORE/CN/2026-27/0001");
+  assert.equal(cancelled.credit_note_number,"STRC/26-27/0001");
   const [again] = await db.transaction((tx) => tx`SELECT * FROM public.cancel_invoice(${ORDER})`);
   assert.equal(again.changed,false);
   assert.equal(db.state.sequences[`${STORE}:2026-27`].last_number,1);

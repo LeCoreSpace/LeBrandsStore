@@ -78,6 +78,6 @@ test("new database guard validates checksum and exempt tax on INSERT only, prese
   assert.match(sql,/NEW\.document_type <> 'tax_invoice'/);
   assert.match(sql,/Exempt invoice lines must have zero tax/);
   assert.match(sql,/AS element\(value\)/);
-  assert.ok(!/\bUPDATE public\.invoices\b/.test(sql));
+  assert.ok(!/\bUPDATE public\.invoices[^;]*(snapshot|invoice_number)\s*=/.test(sql),"No financial snapshots or existing invoice serials are rewritten");
   assert.match(sql,/REVOKE ALL ON FUNCTION public\.gstin_is_valid\(text,text\) FROM PUBLIC, lebrands_app/);
 });

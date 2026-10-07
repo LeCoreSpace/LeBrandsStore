@@ -103,7 +103,7 @@ export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source) 
     if (!updated) throw commerceError("A product just sold out. Update your cart and try again.",undefined,409);
   }
   await tx`INSERT INTO public.audit_log (store_id,actor_type,action,entity_type,entity_id,metadata)
-    VALUES (${id},'system','order.created','order',${orderId},${tx.json({to:"confirmed_cod",source})})`;
+    VALUES (${id},'system','order.created','order',${orderId},${tx.json({payment_method:input.payment_method || "cod",source})})`;
   return {order_number,total_paise:quote.total_paise,receipt_url:`/orders/${input.receipt_token}`,replayed:false};
 }
 export async function receiptOrder(tx,id,hash) {

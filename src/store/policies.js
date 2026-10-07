@@ -1,3 +1,4 @@
+import { formatPhone } from "../public/commerce-rules.js";
 const definitions = [
   ["privacy", "Privacy Policy", "We use information you provide to respond to enquiries and fulfil orders when ordering becomes available. We share only the information necessary with service providers. Contact us for access, correction or deletion requests. The business must review its actual retention, security and processing practices before publication."],
   ["terms", "Terms & Conditions", "Product descriptions and prices should be checked before purchase. Our products and services are subject to availability and applicable Indian law. These terms must be reviewed for the business's actual sale conditions, dispute handling and consumer rights."],
@@ -8,7 +9,7 @@ const definitions = [
 ];
 export function generatePolicies(data) {
   const s = data.settings;
-  const details = `${s.brand_name}\nOperated by ${s.legal_name}\n${s.address}\nSupport: ${s.support_email} | ${s.support_phone}${s.gstin ? `\nGSTIN: ${s.gstin}` : ""}`;
+  const details = `${s.brand_name}\nOperated by ${s.legal_name}\n${s.address}\nSupport: ${s.support_email} | ${formatPhone(s.support_phone)}${s.gstin ? `\nGSTIN: ${s.gstin}` : ""}`;
   return definitions.map(([kind, title, text]) => ({
     kind, title, body: `${title}\n\n${details}\n\n${text}`, reviewed: false,
   }));

@@ -1,3 +1,20 @@
+export function defaultInvoicePrefix(name) {
+  const letters = String(name || "").toUpperCase().replace(/[^A-Z0-9]/g,"");
+  return (letters.replace(/[AEIOU]/g,"") || letters || "STO").slice(0,3);
+}
+export const validInvoicePrefix = value => /^[A-Z0-9]{1,4}$/.test(String(value || ""));
+export function formatPhone(value) {
+  const digits = String(value || "").replace(/\D/g,"");
+  const local = digits.length === 12 && digits.startsWith("91") ? digits.slice(2) : digits.length === 10 ? digits : "";
+  return local ? `+91 ${local.slice(0,5)} ${local.slice(5)}` : String(value || "");
+}
+export function registeredSupplierErrors(settings) {
+  const errors = businessGSTINErrors(settings);
+  if (!String(settings.legal_name || "").trim()) errors.legal_name = "Enter the registered legal business name.";
+  for (const key of ["business_line1","business_city"]) if (!String(settings[key] || "").trim()) errors[key] = key === "business_line1" ? "Enter registered address line 1." : "Enter the registered address city.";
+  if (!/^[1-9][0-9]{5}$/.test(settings.business_pincode || "")) errors.business_pincode = "Enter the registered address six-digit PIN.";
+  return errors;
+}
 // Pure shared rules. Money is integer paise; tax rounding never uses floats.
 export const CURRENT_GST_RATES = [0, 5, 18, 40];
 export const LEGACY_GST_RATES = [0.25, 3, 12, 28];

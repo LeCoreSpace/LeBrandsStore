@@ -23,6 +23,7 @@ test("live catalogue sync publishes only its target, never other wizard drafts",
   let saved;
   const tx = async (parts,...values) => {
     const sql = parts.join("?").replace(/\s+/g," ").trim();
+    if (sql.startsWith("SELECT EXISTS")) return [{locked:false}];
     if (sql.startsWith("SELECT status FROM public.stores")) return [{status:"live"}];
     if (sql.startsWith("UPDATE public.products SET status")) {
       assert.equal(values[1],PRODUCT);products[0].status = "active";return [];
@@ -69,7 +70,7 @@ test("pack, ship and deliver issue one immutable document; COD payment is separa
   const db = dashboardDb();
   await change(db,{status:"packed"});await change(db,shipping);
   assert.equal(db.state.invoices.length,1);
-  assert.equal(db.state.invoices[0].invoice_number,"STORE/2026-27/0001");
+  assert.equal(db.state.invoices[0].invoice_number,"STR/26-27/0001");
   assert.equal(db.state.invoices[0].document_type,"tax_invoice");
   const first = structuredClone(db.state.invoices[0].snapshot);
   const same = await db.transaction((tx) => issueInvoice(tx,STORE,ORDER,USER));
@@ -86,8 +87,8 @@ test("returned/RTO document cancellation records credit number and optional rest
     await change(db,{status:"rto",restock});
     assert.equal(db.state.stock,restock ? 5 : 3);
     assert.equal(db.state.invoices[0].status,"cancelled");
-    assert.equal(db.state.invoices[0].credit_note_number,"STORE/CN/2026-27/0001");
-    assert.equal(db.state.invoices[0].invoice_number,"STORE/2026-27/0001");
+    assert.equal(db.state.invoices[0].credit_note_number,"STRC/26-27/0001");
+    assert.equal(db.state.invoices[0].invoice_number,"STR/26-27/0001");
   }
 });
 test("failed invoice issuance rolls back shipment, status, audit and sequence without gaps", async () => {
@@ -96,7 +97,7 @@ test("failed invoice issuance rolls back shipment, status, audit and sequence wi
   assert.equal(db.state.orders[0].status,"packed");assert.equal(db.state.shipments.length,0);
   assert.deepEqual(db.state.sequences,{});assert.equal(db.state.invoices.length,0);
   db.state.failInvoice = false;await change(db,shipping);
-  assert.equal(db.state.invoices[0].invoice_number,"STORE/2026-27/0001");
+  assert.equal(db.state.invoices[0].invoice_number,"STR/26-27/0001");
 });
 test("parallel invoice issuance uses the locked definer counter and consecutive numbers", async () => {
   const db = dashboardDb(), second = "10000000-0000-4000-8000-000000000099";
@@ -104,7 +105,7 @@ test("parallel invoice issuance uses the locked definer counter and consecutive 
   db.state.orders.push({...db.state.orders[0],id:second,order_number:"STO-1002"});
   db.state.items.push({...db.state.items[0],order_id:second});
   const result = await Promise.all([ORDER,second].map((id) => db.transaction((tx) => issueInvoice(tx,STORE,id,USER))));
-  assert.deepEqual(result.map((r) => r.invoice_number),["STORE/2026-27/0001","STORE/2026-27/0002"]);
+  assert.deepEqual(result.map((r) => r.invoice_number),["STR/26-27/0001","STR/26-27/0002"]);
   // This is a transaction model, not a live PostgreSQL concurrency claim.
   assert.equal(db.state.sequences[`${STORE}:2026-27`].last_number,2);
   assert.ok(db.state.queries.some((q) => q.startsWith("SELECT * FROM public.issue_invoice")));
@@ -117,8 +118,8 @@ test("parallel invoice issuance uses the locked definer counter and consecutive 
 test("Indian financial year boundary and document numbering do not collide across FY", () => {
   assert.equal(financialYear("2026-03-31T18:29:59Z"),"2025-26");
   assert.equal(financialYear("2026-03-31T18:30:00Z"),"2026-27");
-  assert.notEqual(invoiceNumber("shop","2025-26",1),invoiceNumber("shop","2026-27",1));
-  assert.equal(invoiceNumber("shop","2026-27",10000),"SHOP/2026-27/10000");
+  assert.notEqual(invoiceNumber("SHOP","2025-26",1),invoiceNumber("SHOP","2026-27",1));
+  assert.equal(invoiceNumber("SHOP","2026-27",10000),"SHOP/26-27/10000");
 });
 test("missing GSTIN blocks new issuance rather than creating a Bill of Supply", async () => {
   const db = dashboardDb();db.state.orders[0].supplier_snapshot.gstin = "";
@@ -179,7 +180,8 @@ test("order detail aggregates item tax components for dashboard breakdown", asyn
   order.timeline = [{action:"order.status_changed",metadata:{from:"confirmed_cod",to:"packed"}}];
   const html = renderDashboard("order",{store:{store_id:STORE},role:"owner",order},{});
   assert.match(html,/Buyer/);assert.match(html,/Street/);assert.match(html,/Tamil Nadu/);
-  assert.match(html,/Previous status: Confirmed · Cash on Delivery/);
+  assert.match(html,/Marked as packed/);
+  assert.ok(!html.includes("Previous status:"));
 });
 test("dashboard paths cover base store and nested records without capturing wizard writes", () => {
   assert.ok(isDashboardPath(`/stores/${STORE}`));

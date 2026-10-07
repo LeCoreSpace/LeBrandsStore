@@ -1,6 +1,6 @@
 import { validateProduct } from "/assets/validation.js";
 import { statusLabel, stateName, indianDate, allowedTransitions } from "/assets/dashboard-rules.js";
-import { businessGSTINErrors } from "/assets/commerce-rules.js";
+import { registeredSupplierErrors, validInvoicePrefix, INDIAN_STATES } from "/assets/commerce-rules.js";
 
 const root = document.querySelector(".lb-app");
 const storeId = root?.dataset.storeId || "";
@@ -56,28 +56,57 @@ function busy(button, value, text) {
 function handleError(error, button) {
   busy(button, false);
   notify(error?.message || "Something went wrong. Please try again.", true);
+  if (button?.dataset.orderStatus === "shipped") {
+    const message=document.querySelector("[data-shipping-error]");
+    if(message){message.hidden=false;message.querySelector("span").textContent=error.message;}
+  }
 }
 async function postJson(url, body, method = "POST") {
   return request(url, { method, body: JSON.stringify(body) });
 }
+document.querySelector("[data-signature-upload]")?.addEventListener("change",async event=>{
+  if (!["owner","admin"].includes(role)) return;
+  const file=event.target.files?.[0];if (!file) return;
+  try {
+    const body=new FormData();body.set("file",file);body.set("type","logo");body.set("alt","Authorised signature");
+    const result=await request(`${api}/media`,{method:"POST",body});
+    await postJson(`${api}/setup`,{settings:{signature_media_id:result.media.id}},"PATCH");
+    const preview=document.querySelector("[data-signature-preview]");preview.replaceChildren();
+    const image=document.createElement("img");image.src=result.media.url;image.alt="Authorised signature";image.style.maxWidth="180px";image.style.maxHeight="80px";preview.append(image);
+    document.querySelector("[data-signature-remove]").hidden=false;notify("Signature saved for future invoices.");
+  } catch(error) {notify(error.message,true);}
+  finally {event.target.value="";}
+});
+document.querySelector("[data-signature-remove]")?.addEventListener("click",async()=>{
+  if (!["owner","admin"].includes(role)) return;
+  try {await postJson(`${api}/setup`,{settings:{signature_media_id:null}},"PATCH");document.querySelector("[data-signature-preview]").replaceChildren();document.querySelector("[data-signature-remove]").hidden=true;notify("Signature removed from future invoices.");}
+  catch(error){notify(error.message,true);}
+});
 const taxForm = document.querySelector("[data-tax-settings-form]");
 function taxPayload(form) {
   const values = Object.fromEntries(new FormData(form));
   for (const key of Object.keys(values)) values[key] = String(values[key]).trim();
   values.gstin = (values.gstin || "").toUpperCase();
+  values.invoice_prefix = (values.invoice_prefix || "").toUpperCase();
+  values.address=[values.business_line1,values.business_line2,`${values.business_city || ""}, ${INDIAN_STATES.find(s=>s.code===values.business_state)?.name || ""} ${values.business_pincode || ""}`].filter(Boolean).join("\n");
   return values;
 }
+function taxErrors(payload) {
+  const errors=registeredSupplierErrors(payload);
+  if (!validInvoicePrefix(payload.invoice_prefix)) errors.invoice_prefix="Use 1 to 4 uppercase letters or digits.";
+  return errors;
+}
 function taxInlineErrors(form,errors) {
-  for (const name of ["gstin","business_state"]) {
+  for (const name of ["gstin","business_state","legal_name","business_line1","business_line2","business_city","business_pincode","invoice_prefix"]) {
     form.querySelector(`[data-tax-error="${name}"]`).textContent = errors[name] || "";
     form.querySelector(`[name="${name}"]`).setAttribute("aria-invalid",String(!!errors[name]));
   }
 }
-taxForm?.addEventListener("input",() => taxInlineErrors(taxForm,businessGSTINErrors(taxPayload(taxForm))));
+taxForm?.addEventListener("input",() => taxInlineErrors(taxForm,taxErrors(taxPayload(taxForm))));
 taxForm?.addEventListener("submit",async event => {
   event.preventDefault();
   if (!["owner","admin"].includes(role)) return;
-  const payload = taxPayload(taxForm), errors = businessGSTINErrors(payload);
+  const payload = taxPayload(taxForm), errors = taxErrors(payload);
   taxInlineErrors(taxForm,errors);
   const message = taxForm.querySelector("[data-tax-form-error]");
   message.textContent = "";
@@ -273,6 +302,9 @@ document.querySelectorAll("[data-order-status]").forEach(button => {
     if (!["owner", "admin"].includes(role)) { notify("Only a store owner or admin can update order status.", true); return; }
     const form = document.querySelector("[data-order-form]");
     const status = button.dataset.orderStatus;
+    const selector=form?.querySelector("[data-next-order-action]");
+    if (selector) {selector.value=status;selector.dispatchEvent(new Event("change"));}
+    if (status === "cancelled" && !window.confirm("Cancel this order? Reserved stock will be restored.")) return;
     const transitions = allowedTransitions(document.querySelector(".lb-detail-head [data-status]")?.dataset.status || "");
     if (!transitions.includes(status)) { notify("That status change is not available for this order.", true); return; }
     const body = {
@@ -293,6 +325,18 @@ document.querySelectorAll("[data-order-status]").forEach(button => {
       window.location.reload();
     } catch (error) { handleError(error, button); }
   });
+});
+document.querySelector("[data-next-order-action]")?.addEventListener("change",event=>{
+  const form=event.target.closest("[data-order-form]"),status=event.target.value;
+  const shipping=form.querySelector('[data-action-fields="shipping"]'),restock=form.querySelector('[data-action-fields="restock"]');
+  if(shipping) shipping.hidden=status!=="shipped";
+  if(restock) {
+    restock.hidden=!["cancelled","returned","rto"].includes(status);
+    const input=restock.querySelector("input");input.disabled=status==="cancelled";
+    if(input.disabled) input.checked=true;
+    else if(input.dataset.wasCancellation==="true") input.checked=false;
+    input.dataset.wasCancellation=String(status==="cancelled");
+  }
 });
 document.querySelector("[data-payment-collected]")?.addEventListener("click", async event => {
   const button = event.currentTarget;

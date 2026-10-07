@@ -61,10 +61,11 @@ export async function overview(tx,id,period = 7) {
     FROM public.orders WHERE store_id = ${id}
       AND created_at >= ((date_trunc('day',now() AT TIME ZONE 'Asia/Kolkata') - (${period}::integer - 1) * interval '1 day') AT TIME ZONE 'Asia/Kolkata')
     GROUP BY 1 ORDER BY 1`;
-  const action = await tx`SELECT id,order_number,status,total_paise,created_at,payment_method FROM public.orders
-    WHERE store_id = ${id} AND (status IN ('confirmed_cod','confirmed','paid','packed','processing')
-      OR (status = 'delivered' AND payment_method = 'cod' AND payment_collected_at IS NULL))
-    ORDER BY created_at,id LIMIT 50`;
+  const action = await tx`SELECT o.id,o.order_number,o.status,o.total_paise,o.created_at,o.payment_method,c.name AS customer_name FROM public.orders o
+    JOIN public.customers c ON c.store_id=o.store_id AND c.id=o.customer_id
+    WHERE o.store_id = ${id} AND (o.status IN ('confirmed_cod','confirmed','paid','packed','processing')
+      OR (o.status = 'delivered' AND o.payment_method = 'cod' AND o.payment_collected_at IS NULL))
+    ORDER BY o.created_at,o.id LIMIT 50`;
   return {...numbers(stats),orders:Number(stats.orders),aov_paise:Number(stats.aov_paise),top_products:top.map(numbers),sources,needing_action:action.map(numbers)};
 }
 export async function listCustomers(tx,id,search = "") {
@@ -110,7 +111,8 @@ async function cancelInvoice(tx,id,orderId,actorId) {
 async function invoiceMutation(fn) {
   try { return await fn(); } catch (error) {
     if (error.code === "42501") throw commerceError("You do not have permission to change this invoice.",undefined,403);
-    if (error.code === "23514") throw commerceError("Invoice details are inconsistent. Check the order status, supplier legal details and GST setup before continuing.",undefined,409);
+    if (error.code === "23514" && ["Document serial cannot exceed 16 characters","Complete the registered legal name, full address and valid GSTIN in Settings before shipping","Complete the registered supplier address and GSTIN in Settings"].includes(error.message)) throw commerceError(error.message,undefined,409);
+    if (error.code === "23514") throw commerceError("Cannot ship or issue this document. Complete the registered legal name, full business address and valid GSTIN in Settings, and check the stored tax split and serial limit.",undefined,409);
     throw error;
   }
 }

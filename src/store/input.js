@@ -1,5 +1,5 @@
 import { CATEGORIES, UUID, validateTheme } from "../public/validation.js";
-import { CURRENT_GST_RATES, LEGACY_GST_RATES, INDIAN_STATES, gstinError } from "../public/commerce-rules.js";
+import { CURRENT_GST_RATES, LEGACY_GST_RATES, INDIAN_STATES, gstinError, validInvoicePrefix } from "../public/commerce-rules.js";
 
 export const badInput = (message, errors) => Object.assign(new Error(message), { status: 400, errors });
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -12,11 +12,12 @@ export function settingsPatch(value) {
   const result = {}, limits = {
     brand_name: 40, subdomain: 30, tagline: 60, description: 500,
     legal_name: 120, address: 500, support_email: 254, support_phone: 25,
+    business_line1:150,business_line2:150,business_city:80,business_pincode:6,invoice_prefix:4,
     gstin: 15, business_state: 2, category: 30, theme: 20, accent_color: 7, font_preset: 20, button_style: 20,
   };
   for (const [key, val] of Object.entries(value)) {
-    if (key === "logo_media_id") {
-      if (val != null && !UUID.test(val)) throw badInput("Choose an uploaded logo.", { logo_media_id: "Choose an uploaded logo." });
+    if (["logo_media_id","signature_media_id"].includes(key)) {
+      if (val != null && !UUID.test(val)) throw badInput("Choose an uploaded image.", { [key]: "Choose an image uploaded to this store." });
       result[key] = val; continue;
     }
     if (!(key in limits)) throw badInput("Unknown store setting.");
@@ -26,6 +27,16 @@ export function settingsPatch(value) {
   if (result.category && !CATEGORIES.some((c) => c.value === result.category)) throw badInput("Choose a store category.", { category: "Choose a store category from the list." });
   if (result.gstin) result.gstin = result.gstin.toUpperCase();
   const formatErrors = {};
+  if ("invoice_prefix" in result && !validInvoicePrefix(result.invoice_prefix)) formatErrors.invoice_prefix = "Use 1 to 4 uppercase letters or digits.";
+  if (result.business_pincode && !/^[1-9][0-9]{5}$/.test(result.business_pincode)) formatErrors.business_pincode = "Enter a six-digit PIN.";
+  if (result.support_phone) {
+    const digits=result.support_phone.replace(/\D/g,"");
+    if (digits.length===10) result.support_phone=`+91${digits}`;
+    else if (digits.length===12 && digits.startsWith("91")) result.support_phone=`+${digits}`;
+  }
+  if (result.business_line1 && result.business_city && result.business_pincode && result.business_state) {
+    result.address=[result.business_line1,result.business_line2,`${result.business_city}, ${INDIAN_STATES.find(s=>s.code===result.business_state)?.name || ""} ${result.business_pincode}`].filter(Boolean).join("\n");
+  }
   const gstError = gstinError(result.gstin,false);
   if (gstError) formatErrors.gstin = gstError;
   if (result.business_state && !INDIAN_STATES.some(s => s.code === result.business_state)) formatErrors.business_state = "Choose a valid Indian state.";

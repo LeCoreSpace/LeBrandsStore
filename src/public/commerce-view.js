@@ -1,7 +1,7 @@
-import { INDIAN_STATES } from "./commerce-rules.js";
+import { INDIAN_STATES, formatPhone } from "./commerce-rules.js";
 import { stateName, statusLabel, indianDate } from "./dashboard-rules.js";
 
-const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+const esc = (value) => String(/^\+91[0-9]{10}$/.test(String(value)) ? formatPhone(value) : value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 const money = (value) => `₹${(Math.max(0, Number(value) || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 function stateSelect() {
   return `<label class="commerce-field">State<select name="state" autocomplete="address-level1" required><option value="">Choose state or UT</option>${INDIAN_STATES.map(({code,name})=>`<option value="${esc(code)}">${esc(name)}</option>`).join("")}</select></label>`;

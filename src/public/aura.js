@@ -1,5 +1,6 @@
 import { contrastColor } from "./validation.js";
 import { renderCommerceBody } from "./commerce-view.js";
+import { formatPhone } from "./commerce-rules.js";
 
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
   "&": "&amp;",
@@ -255,7 +256,7 @@ export function renderAura(data = {}, options = {}) {
       <p>For questions about an order or the collection, get in touch with our studio.</p>
       <div class="aura-contact-details">
         ${settings.support_email ? `<a href="mailto:${esc(settings.support_email)}">${esc(settings.support_email)}</a>` : ""}
-        ${settings.support_phone ? `<a href="tel:${esc(String(settings.support_phone).replace(/[^\d+]/g, ""))}">${esc(settings.support_phone)}</a>` : ""}
+        ${settings.support_phone ? `<a href="tel:${esc(String(settings.support_phone).replace(/[^\d+]/g, ""))}">${esc(formatPhone(settings.support_phone))}</a>` : ""}
         ${settings.address ? `<p>${esc(settings.address).replace(/\n/g, "<br>")}</p>` : ""}
       </div>
     </main>`;

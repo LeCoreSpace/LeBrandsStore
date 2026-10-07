@@ -1,7 +1,7 @@
 import { escapeHtml, layout } from "./layout.js";
 import { validateProduct } from "../public/validation.js";
-import { CURRENT_GST_RATES, INDIAN_STATES, registeredBusinessState, businessGSTINErrors } from "../public/commerce-rules.js";
-import { statusLabel, stateName, indianDate, allowedTransitions } from "../public/dashboard-rules.js";
+import { CURRENT_GST_RATES, INDIAN_STATES, registeredBusinessState, registeredSupplierErrors, defaultInvoicePrefix, formatPhone } from "../public/commerce-rules.js";
+import { statusLabel, stateName, indianDate, allowedTransitions, timelineSentence } from "../public/dashboard-rules.js";
 
 const esc = escapeHtml;
 const money = (value) => `₹${(Number(value || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -13,6 +13,14 @@ const safeJson = (value) => JSON.stringify(value ?? {}).replace(/</g, "\\u003c")
 const safeHttps = (value) => {
   try { const url = new URL(String(value || "")); return url.protocol === "https:" ? url.href : ""; } catch { return ""; }
 };
+export function orderActionForm(storeId,orderId,transitions) {
+  const next=transitions[0];
+  return `<div class="lb-order-form" data-order-form data-order-id="${orderId}">
+    <label>Next action<select data-next-order-action>${transitions.map(s=>`<option value="${s}">${esc(statusLabel(s))}</option>`).join("")}</select></label>
+    ${transitions.includes("shipped") ? `<div data-action-fields="shipping" ${next==="shipped" ? "" : "hidden"}><label>Courier name<input name="courier"></label><label>Tracking number<input name="tracking_number"></label><label>Tracking URL<input name="tracking_url" type="url" placeholder="https://…"></label></div>` : ""}
+    ${transitions.some(s=>["cancelled","returned","rto"].includes(s)) ? `<label class="lb-check-input" data-action-fields="restock" ${["cancelled","returned","rto"].includes(next) ? "" : "hidden"}><input name="restock" type="checkbox" ${next==="cancelled" ? "checked disabled" : ""}>Restock goods (automatic on cancellation)</label>` : ""}
+    <p data-shipping-error hidden role="alert"><span></span> <a href="/stores/${storeId}/settings">Open Settings</a></p></div>`;
+}
 
 function documentPage(view, data, user, body) {
   const store = obj(data.store);
@@ -110,7 +118,7 @@ function overview(data) {
 function orderTable(rows, storeId) {
   return `<div class="lb-table-wrap"><table class="lb-table"><thead><tr><th>Order</th><th>Placed</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody>${rows.map(order => `<tr>
     <td><a class="lb-row-link" href="/stores/${storeId}/orders/${encodeURIComponent(order.id || "")}">${esc(order.order_number || "Order")}</a></td>
-    <td>${esc(date(order.created_at))}</td><td><strong>${esc(order.customer_name || "Customer")}</strong><small>${esc(order.phone || "Phone unavailable")}</small></td>
+    <td>${esc(date(order.created_at))}</td><td><strong>${esc(order.customer_name || "Customer")}</strong><small>${esc(formatPhone(order.phone) || "Phone unavailable")}</small></td>
     <td>${Number(order.item_count ?? order.items_count ?? 0)}</td><td>${money(order.total_paise)}</td><td>${statusPill(order.status, order.payment_method)}</td></tr>`).join("")}</tbody></table></div>`;
 }
 function ordersPage(data) {
@@ -130,7 +138,7 @@ function ordersPage(data) {
 function addressBlock(address, title = "Delivery address") {
   const a = obj(address);
   const state = a.state ? stateName(a.state) : "";
-  const lines = [a.recipient_name || a.name, a.address_line_1 || a.line1, a.address_line_2 || a.line2, a.landmark, [a.city, state, a.pincode].filter(Boolean).join(", "), a.phone].filter(Boolean);
+  const lines = [a.recipient_name || a.name, a.address_line_1 || a.line1, a.address_line_2 || a.line2, a.landmark, [a.city, state, a.pincode].filter(Boolean).join(", "), formatPhone(a.phone)].filter(Boolean);
   return `<div class="lb-address"><h3>${esc(title)}</h3>${lines.length ? lines.map((line, i) => `<span${i === 0 ? ' class="lb-address-name"' : ""}>${esc(line)}</span>`).join("") : `<p>Address not available.</p>`}</div>`;
 }
 function orderDetail(data) {
@@ -144,7 +152,7 @@ function orderDetail(data) {
   const invoice = obj(o.invoice);
   const itemRows = items.length ? items.map(item => `<tr><td><strong>${esc(item.title || "Product")}</strong><small>HSN ${esc(item.hsn_code || "Not supplied")} · GST ${esc(item.gst_rate ?? "Not recorded")}%</small></td><td>${Number(item.quantity || 0)}</td><td>${money(item.unit_price_paise)}</td><td>${money(item.total_paise)}</td></tr>`).join("") : `<tr><td colspan="4" class="lb-no-data">No line items recorded.</td></tr>`;
   const address = addressBlock(o.shipping_address);
-  const statusActions = transitions.length && canEdit ? `<div class="lb-status-actions">${transitions.map(next => `<button type="button" class="lb-button lb-button-small" data-order-status="${esc(next)}">${esc(next === "shipped" ? "Mark shipped" : next === "packed" ? "Mark packed" : `Mark ${next}`)}</button>`).join("")}</div>` : "";
+  const statusActions = transitions.length && canEdit ? `<div class="lb-status-actions">${transitions.map(next => `<button type="button" class="lb-button lb-button-small${next === "cancelled" ? " lb-button-quiet" : ""}" data-order-status="${esc(next)}">${esc(next === "shipped" ? "Mark shipped" : next === "packed" ? "Mark packed" : `Mark ${next}`)}</button>`).join("")}</div>` : "";
   const payment = `<div class="lb-payment-state"><span class="lb-payment-label">Payment</span><strong>${esc(o.payment_collected_at ? `Collected · ${date(o.payment_collected_at)}` : /cod/i.test(o.payment_method || "") ? "Cash on Delivery · not collected" : o.payment_method || "Not recorded")}</strong>${canCollect ? `<button type="button" class="lb-text-button" data-payment-collected>Mark payment collected</button>` : ""}</div>`;
   const tax = `<div class="lb-totals">${[
     ["Items subtotal", o.subtotal_paise ?? totals.subtotal_paise], ["Delivery", o.shipping_paise ?? o.delivery_paise ?? totals.shipping_paise ?? totals.delivery_paise],
@@ -152,22 +160,9 @@ function orderDetail(data) {
   ].filter(([, v]) => v != null).map(([label, value]) => `<div><span>${esc(label)}</span><strong>${money(value)}</strong></div>`).join("")}<div class="lb-total-final"><span>Order total</span><strong>${money(o.total_paise ?? totals.total_paise)}</strong></div></div>`;
   const shipMarkup = shipments.length ? shipments.map(s => { const trackingUrl = safeHttps(s.tracking_url); return `<div class="lb-shipment"><strong>${esc(s.courier || "Courier")}</strong><span>${esc(s.tracking_number || "Tracking not recorded")}</span>${trackingUrl ? `<a href="${esc(trackingUrl)}" target="_blank" rel="noopener">Track shipment ↗</a>` : ""}</div>`; }).join("") : `<p class="lb-muted">No shipment recorded yet.</p>`;
   const events = timeline.length ? timeline.map(t => {
-    const metadata = obj(t.metadata);
-    const statusNames = { confirmed_cod: "Confirmed · Cash on Delivery", confirmed: "Confirmed", pending_payment: "Awaiting payment", packed: "Packed", shipped: "Shipped", delivered: "Delivered", cancelled: "Cancelled", returned: "Returned", rto: "Returned to origin" };
-    const actionNames = { "order.created": "Order placed", "order.status_changed": "Order status updated", "order.payment_collected": "COD payment collected", "payment.collected": "COD payment collected", "order.invoice_issued": "Invoice issued" };
-    const from = metadata.from ?? metadata.from_status ?? metadata.previous_status;
-    const to = metadata.to ?? metadata.to_status ?? metadata.new_status ?? metadata.status;
-    const action = actionNames[t.action] || (from && to ? `${statusNames[from] || from} to ${statusNames[to] || to}` : String(t.action || "Order updated").replace(/^order\./, "").replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase()));
-    const metadataLabels = { from:"Previous status",to:"New status",from_status: "Previous status", previous_status: "Previous status", to_status: "New status", new_status: "New status", status: "Status", courier: "Courier", tracking_number: "Tracking number", tracking_url: "Tracking link", restock: "Restocked", collected_at: "Collected at" };
-    const metadataText = Object.entries(metadata).map(([key, value]) => {
-      const label = metadataLabels[key] || key.replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-      const isStatus = ["from","to","from_status", "previous_status", "to_status", "new_status", "status"].includes(key);
-      const display = isStatus ? (statusNames[value] || value) : key === "restock" ? (value ? "Yes" : "No") : key === "collected_at" ? date(value) : value;
-      return `${label}: ${display}`;
-    }).join(" · ");
-    const detail = metadataText || (typeof t.metadata === "string" ? t.metadata : "");
-    const actor = t.actor_name || (t.actor_type === "system" ? "Customer checkout" : t.actor_user_id ? `User (${t.actor_user_id})` : "Team member");
-    return `<li><span class="lb-timeline-dot"></span><div><strong>${esc(action)}</strong><small>${esc(actor)} · ${esc(date(t.created_at))}</small>${detail ? `<p>${esc(detail)}</p>` : ""}</div></li>`;
+    const action = timelineSentence(t);
+    const actor = t.actor_name || (t.actor_type === "system" ? "Customer checkout" : "Team member");
+    return `<li><span class="lb-timeline-dot"></span><div><strong>${esc(action)}</strong><small>${esc(actor)} · ${esc(date(t.created_at))}</small></div></li>`;
   }).join("") : `<li class="lb-muted">No timeline events recorded.</li>`;
   return `${pageHeading("Order desk", esc(o.order_number || "Order detail"), `Placed ${date(o.created_at)}`, buttonLink(`/stores/${id}/orders`, "Back to orders", "quiet"))}
     ${actionError(data)}<div class="lb-detail-head">${statusPill(o.status, o.payment_method)}${payment}${statusActions}</div>
@@ -175,7 +170,7 @@ function orderDetail(data) {
     ${card("Shipping", shipMarkup)}${card("Order timeline", `<ol class="lb-timeline">${events}</ol>`)}</div>
     <aside class="lb-detail-aside">${card("Customer", `<h3 class="lb-customer-name">${esc(o.customer_name || o.name || "Customer")}</h3><a href="tel:${esc(o.phone || "")}">${esc(o.phone || "Phone unavailable")}</a>${o.email ? `<a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : ""}`)}${card("Delivery details", address)}
     ${invoice.id ? card("Invoice", `<p>${esc(invoice.invoice_number || "Invoice")} · ${esc(invoiceStatus(invoice.status))}</p><a class="lb-inline-link" href="/stores/${id}/invoices/${encodeURIComponent(invoice.id)}">View invoice ↗</a>`) : ""}
-    ${canEdit ? card("Update order", `<div class="lb-order-form" data-order-form data-order-id="${uuid}"><p>Select a status to record the next step. Shipping requires courier and tracking details.</p><label>Courier name<input name="courier" autocomplete="organization" placeholder="Courier partner"></label><label>Tracking number<input name="tracking_number" placeholder="Tracking number"></label><label>Tracking URL<input name="tracking_url" type="url" placeholder="https://…"></label><label class="lb-check-input"><input name="restock" type="checkbox">Restock returned goods</label><p class="lb-form-hint">Required fields are checked for the selected status.</p></div>`) : `<div class="lb-readonly-note">Only store owners and admins can change order status or payment.</div>`}
+    ${canEdit && transitions.length ? card("Update order",orderActionForm(id,uuid,transitions)) : ""}
     </aside></div>`;
 }
 
@@ -275,14 +270,17 @@ function settingsPage(data) {
   const exports = data.role === "owner"
     ? `<div class="lb-export-buttons"><button type="button" data-export="customers">Customers CSV</button><button type="button" data-export="orders">Orders CSV</button><button type="button" data-export="products">Products CSV</button></div><small>Exports are available to the store owner.</small>`
     : `<p class="lb-muted">Exports are available to the store owner.</p>`;
-  const taxErrors = businessGSTINErrors(settings);
+  const taxErrors = registeredSupplierErrors(settings);
   const taxError = name => `<span id="tax-error-${name}" data-tax-error="${name}" class="field-error" role="alert">${esc(taxErrors[name] || "")}</span>`;
   const taxForm = `<form data-tax-settings-form novalidate><fieldset ${["owner","admin"].includes(data.role) ? "" : "disabled"}>
-    <label class="lb-field">Legal business name<input name="legal_name" maxlength="120" value="${esc(settings.legal_name || "")}"></label>
-    <label class="lb-field">Registered business address<textarea name="address" maxlength="500" rows="3">${esc(settings.address || "")}</textarea></label>
+    <label class="lb-field">Legal business name<input name="legal_name" maxlength="120" value="${esc(settings.legal_name || "")}">${taxError("legal_name")}</label>
+    ${[["business_line1","Registered address line 1",150],["business_line2","Address line 2 (optional)",150],["business_city","Registered address city",80],["business_pincode","Registered address PIN",6]].map(([name,label,max])=>`<label class="lb-field">${label}<input name="${name}" maxlength="${max}" value="${esc(settings[name] || "")}" aria-describedby="tax-error-${name}">${taxError(name)}</label>`).join("")}
+    <label class="lb-field">Invoice prefix<input name="invoice_prefix" maxlength="4" value="${esc(settings.invoice_prefix || defaultInvoicePrefix(store.name))}" ${draft.invoice_prefix_locked ? "readonly" : ""}>${taxError("invoice_prefix")}<small>${draft.invoice_prefix_locked ? "Locked until the next financial year (1 April)." : "1 to 4 uppercase letters or digits. Locked after issuance this financial year."}</small></label>
     <label class="lb-field">Registered business state<select name="business_state" aria-describedby="tax-error-business_state" aria-invalid="${!!taxErrors.business_state}"><option value="">Choose the registered address state</option>${INDIAN_STATES.map(s=>`<option value="${s.code}" ${registeredBusinessState(settings)===s.code?"selected":""}>${esc(s.name)}</option>`).join("")}</select>${taxError("business_state")}</label>
     <label class="lb-field">GSTIN (required to publish)<input name="gstin" maxlength="15" autocapitalize="characters" spellcheck="false" aria-describedby="tax-error-gstin" aria-invalid="${!!taxErrors.gstin}" value="${esc(settings.gstin || "")}">${taxError("gstin")}</label>
-    <p class="lb-muted">GSTIN must match your registration certificate and registered address state. Changes are saved to your setup draft. Review policies and publish changes to apply them to your live store.</p>
+    <label class="lb-field">Signature image (optional)<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" data-signature-upload><small>PNG, JPEG, WebP or safe SVG, up to 5 MB. Uses the same tenant-scoped R2 upload rules as a logo.</small></label>
+    <div data-signature-preview>${settings.signature_url ? `<img src="${esc(settings.signature_url)}" alt="Authorised signature" style="max-width:180px;max-height:80px">` : ""}</div><button type="button" class="lb-text-button" data-signature-remove ${settings.signature_media_id ? "" : "hidden"}>Remove signature</button>
+    <p class="lb-muted">Registered details are checked and frozen when an invoice is issued. Storefront changes remain drafts until policies are reviewed and changes published.</p>
     <p data-tax-form-error role="alert"></p><button class="lb-button" type="submit">Save business details</button>
     </fieldset></form>`;
   return `${pageHeading("Store controls", "Settings.", "The details behind your storefront and checkout.", "")}${actionError(data)}
@@ -320,5 +318,5 @@ export function renderDashboard(view, data = {}, user = {}) {
     case "settings": body = settingsPage(data); break;
     default: body = overview(data);
   }
-  return documentPage(current, data, user, body);
+  return documentPage(current, data, user, body.replace(/>\+91(\d{5})(\d{5})</g,">+91 $1 $2<"));
 }

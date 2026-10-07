@@ -1,3 +1,4 @@
+import { formatPhone } from "/assets/commerce-rules.js";
 import { renderAura } from "/assets/aura.js";
 import { CATEGORIES, validateBasics, validateTheme, validateProduct, publishChecklist, resumeStep } from "/assets/validation.js";
 import { INDIAN_STATES, registeredBusinessState, businessGSTINErrors } from "/assets/commerce-rules.js";
@@ -229,7 +230,7 @@ function renderBasics(){
    <div class="field-grid">${field("legal_name","Legal business name",s.legal_name||"",{max:120})}${field("gstin","GSTIN (required to publish)",s.gstin||"",{max:15,placeholder:"15-character GSTIN"})}</div>
    ${field("address","Business address",s.address||"",{textarea:true,max:500,rows:2})}
    ${field("business_state","Registered business state",registeredBusinessState(s),{select:true,placeholder:"Choose the registered address state",options:INDIAN_STATES.map(s=>({value:s.code,label:s.name}))})}
-   <div class="field-grid">${field("support_email","Support email",s.support_email||"",{type:"email",max:254,autocomplete:"email"})}${field("support_phone","Support phone / WhatsApp",s.support_phone||"",{type:"tel",max:20,autocomplete:"tel"})}</div>
+   <div class="field-grid">${field("support_email","Support email",s.support_email||"",{type:"email",max:254,autocomplete:"email"})}${field("support_phone","Support phone / WhatsApp",formatPhone(s.support_phone),{type:"tel",max:20,autocomplete:"tel"})}</div>
    ${field("category","What best describes your brand?",s.category||"",{select:true,options:cats})}`);
 }
 function renderTheme(){

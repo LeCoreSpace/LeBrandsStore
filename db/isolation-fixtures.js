@@ -160,7 +160,7 @@ export async function setupFixtures(admin) {
           'image', 'logo', 'image/png', 32, 1, 1, 'RLS fixture logo') RETURNING id`;
       store.mediaId = media.id;
       await tx`INSERT INTO public.store_setup (store_id, logo_media_id, settings)
-        VALUES (${store.storeId}, ${media.id}, ${tx.json({ fixture: MARKER })})`;
+        VALUES (${store.storeId}, ${media.id}, ${tx.json({ fixture: MARKER,invoice_prefix:"RLS",legal_name:"RLS Fixture Supplier",business_line1:"RLS Fixture Address",business_city:"Mumbai",business_pincode:"400001",business_state:"27",gstin:"27ABCDE1234F1Z0" })})`;
       await tx`INSERT INTO public.store_publications (store_id, snapshot)
         VALUES (${store.storeId}, ${tx.json({ fixture: MARKER })})`;
       await tx`INSERT INTO public.store_address_history (store_id, subdomain)
@@ -201,7 +201,7 @@ export async function setupFixtures(admin) {
         VALUES (${store.storeId},'2026-27',1)`;
       const [invoice] = await tx`INSERT INTO public.invoices
         (store_id,order_id,invoice_number,financial_year,subtotal_paise,total_paise,document_type,snapshot)
-        VALUES (${store.storeId},${order.id},'RLS/2026-27/0001','2026-27',10000,10000,'tax_invoice',${tx.json({fixture:MARKER,supplier:{gstin:"27ABCDE1234F1Z0",state:"27"},items:[]})}) RETURNING id`;
+        VALUES (${store.storeId},${order.id},'RLS/2026-27/0001','2026-27',10000,10000,'tax_invoice',${tx.json({fixture:MARKER,supplier:{legal_name:"RLS Fixture Supplier",line1:"RLS Fixture Address",city:"Mumbai",pincode:"400001",gstin:"27ABCDE1234F1Z0",state:"27"},items:[]})}) RETURNING id`;
       store.invoiceId = invoice.id;
       await tx`INSERT INTO public.audit_log(store_id,actor_type,action,entity_type,entity_id,metadata)
         VALUES (${store.storeId},'system','order.created','order',${order.id},${tx.json({fixture:MARKER})})`;

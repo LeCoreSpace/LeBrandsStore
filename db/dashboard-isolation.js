@@ -18,6 +18,28 @@ async function shippedInvoiceFixture(tx,store) {
 export function dashboardIsolationChecks(getFixtures,transaction,denied) {
   const tables = ["invoices","invoice_sequences","audit_log"];
   return [
+    {name:"dashboard.prefix.fy-lock",reason:"An existing current-FY invoice prevents prefix changes with 42501.",
+      fn:()=>{const {a}=getFixtures();return denied(a.storeId,tx=>tx`UPDATE public.store_setup SET settings=jsonb_set(settings,'{invoice_prefix}','\"DIFF\"'::jsonb) WHERE store_id=${a.storeId}`);}},
+    {name:"dashboard.prefix.delete-locked",reason:"Deleting the settings row cannot bypass the current-FY prefix lock.",
+      fn:()=>{const {a}=getFixtures();return denied(a.storeId,tx=>tx`DELETE FROM public.store_setup WHERE store_id=${a.storeId}`);}},
+    {name:"dashboard.prefix.cross-store",reason:"Other-store prefixes cannot be read or changed through tenant RLS.",
+      fn:()=>{const {a,b}=getFixtures();return transaction(a.storeId,async tx=>{
+        assert.equal((await tx`SELECT settings->>'invoice_prefix' AS prefix FROM public.store_setup WHERE store_id=${b.storeId}`).length,0);
+        assert.equal((await tx`UPDATE public.store_setup SET settings=jsonb_set(settings,'{invoice_prefix}','\"DIFF\"'::jsonb) WHERE store_id=${b.storeId} RETURNING store_id`).length,0);
+      });}},
+    {name:"dashboard.cancel-invoice.cross-store",reason:"Credit-note authority cannot cancel another store's invoice.",
+      fn:()=>{const {a,b}=getFixtures();return denied(a.storeId,tx=>tx`SELECT * FROM public.cancel_invoice(${b.orderId})`);}},
+    {name:"dashboard.cancel-invoice.own-store",reason:"Restricted APP can issue, then cancel via definer functions with short separate credit numbering.",
+      fn:()=>{const {a}=getFixtures();return transaction(a.storeId,async tx=>{
+        const orderId=await shippedInvoiceFixture(tx,a);
+        const [issued]=await tx`SELECT * FROM public.issue_invoice(${orderId})`;
+        await tx`UPDATE public.orders SET status='returned' WHERE store_id=${a.storeId} AND id=${orderId}`;
+        const [cancelled]=await tx`SELECT * FROM public.cancel_invoice(${orderId})`;
+        assert.equal(cancelled.invoice_number,issued.invoice_number);assert.equal(cancelled.changed,true);
+        assert.match(cancelled.credit_note_number,/^RLSC\/[0-9]{2}-[0-9]{2}\/[0-9]{4,}$/);assert.ok(cancelled.credit_note_number.length<=16);
+        const [again]=await tx`SELECT * FROM public.cancel_invoice(${orderId})`;
+        assert.equal(again.credit_note_number,cancelled.credit_note_number);assert.equal(again.changed,false);
+      });}},
     ...tables.map((table) => ({name:`dashboard.${table}.no-context`,reason:"Seeded invoice and audit fixtures cannot be read without store context.",
       fn:() => transaction(null,async (tx) => assert.equal((await tx`SELECT store_id FROM public.${tx(table)}`).length,0))})),
     ...tables.map((table) => ({name:`dashboard.${table}.own-context`,reason:"Invoices, numbering and audit entries belong only to the authorized store.",
@@ -114,7 +136,7 @@ export function dashboardIsolationChecks(getFixtures,transaction,denied) {
         const fy = financialYear(clock.issued_at);
         const [counter] = await tx`SELECT last_number FROM public.invoice_sequences WHERE store_id = ${a.storeId} AND financial_year = ${fy}`;
         const [issued] = await tx`SELECT * FROM public.issue_invoice(${orderId})`;
-        assert.equal(issued.invoice_number,invoiceNumber(a.subdomain,fy,Number(counter?.last_number || 0) + 1));
+        assert.equal(issued.invoice_number,invoiceNumber("RLS",fy,Number(counter?.last_number || 0) + 1));
         const [invoice] = await tx`SELECT * FROM public.invoices WHERE store_id = ${a.storeId} AND id = ${issued.id}`;
         assert.equal(invoice.order_id,orderId);assert.equal(invoice.snapshot.items.length,1);
         assert.equal(invoice.snapshot.items[0].title,"RLS Invoice Item");

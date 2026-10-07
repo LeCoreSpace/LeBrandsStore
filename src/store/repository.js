@@ -8,6 +8,7 @@ import { CURRENT_GST_RATES, businessGSTINErrors } from "../public/commerce-rules
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
   support_email: "", support_phone: "", gstin: "", business_state: "", category: "",
+  business_line1:"",business_line2:"",business_city:"",business_pincode:"",signature_media_id:null,
   theme: "aura", accent_color: "#214a3d", font_preset: "serif", button_style: "rounded",
 };
 const missing = () => Object.assign(new Error("Store or product not found."), { status: 404 });
@@ -25,6 +26,15 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
   const [setup] = await tx`SELECT *, to_json(completed) AS completed FROM public.store_setup WHERE store_id = ${storeId}`;
   const [logo] = setup?.logo_media_id ? await tx`SELECT * FROM public.media
     WHERE store_id = ${storeId} AND id = ${setup.logo_media_id} AND upload_type = 'logo'` : [];
+  const [signature] = setup?.settings?.signature_media_id ? await tx`SELECT * FROM public.media
+    WHERE store_id = ${storeId} AND id = ${setup.settings.signature_media_id} AND upload_type = 'logo'` : [];
+  const [prefixLock] = await tx`SELECT EXISTS(SELECT 1 FROM public.invoices i WHERE i.store_id = ${storeId}
+    AND ((i.issued_at AT TIME ZONE 'Asia/Kolkata')::date >=
+      make_date(extract(year FROM now() AT TIME ZONE 'Asia/Kolkata')::integer -
+        CASE WHEN extract(month FROM now() AT TIME ZONE 'Asia/Kolkata') < 4 THEN 1 ELSE 0 END,4,1)
+      OR (i.credit_note_number IS NOT NULL AND (i.cancelled_at AT TIME ZONE 'Asia/Kolkata')::date >=
+      make_date(extract(year FROM now() AT TIME ZONE 'Asia/Kolkata')::integer -
+        CASE WHEN extract(month FROM now() AT TIME ZONE 'Asia/Kolkata') < 4 THEN 1 ELSE 0 END,4,1)))) AS locked`;
   const products = await tx`SELECT *, to_json(tags) AS tags FROM public.products WHERE store_id = ${storeId}
     AND (${includeArchived} OR status <> 'archived') ORDER BY created_at, id`;
   const images = await tx`SELECT pm.product_id, m.* FROM public.product_media pm
@@ -34,8 +44,10 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
     WHERE store_id = ${storeId} ORDER BY slug`;
   const data = {
     store,
+    invoice_prefix_locked:!!prefixLock?.locked,
     settings: { ...DEFAULT_SETTINGS, brand_name: store.name, subdomain: store.subdomain,
-      ...setup?.settings, logo_media_id: logo?.id ?? null, logo_url: logo ? mediaUrl(logo.object_key) : "" },
+      ...setup?.settings, logo_media_id: logo?.id ?? null, logo_url: logo ? mediaUrl(logo.object_key) : "",
+      signature_url:signature ? mediaUrl(signature.object_key) : "" },
     products: products.map((p) => ({
       id: p.id, status: p.status, title: p.title, description: p.description, price_paise: Number(p.price_paise),
       compare_at_paise: p.compare_at_price_paise == null ? null : Number(p.compare_at_price_paise),
@@ -91,14 +103,25 @@ export async function saveSetup(tx, id, settings, progress) {
   if (settings) {
     const { logo_media_id, ...values } = settings;
     const { brand_name } = settings;
+    if (settings.signature_media_id != null) {
+      const [signature] = await tx`SELECT id FROM public.media WHERE store_id = ${id}
+        AND id = ${settings.signature_media_id} AND upload_type = 'logo'`;
+      if (!signature) throw badInput("Choose a signature uploaded to this store.",{signature_media_id:"Upload your signature to this store first."});
+    }
     if (logo_media_id != null) {
       const [logo] = await tx`SELECT id FROM public.media WHERE store_id = ${id}
         AND id = ${logo_media_id} AND upload_type = 'logo'`;
       if (!logo) throw badInput("Choose a logo uploaded to this store.", { logo_media_id: "Choose a logo uploaded to this store." });
     }
     if (brand_name !== undefined) await tx`UPDATE public.stores SET name = ${brand_name} WHERE store_id = ${id}`;
-    await tx`UPDATE public.store_setup SET settings = settings || ${tx.json(values)}
-      WHERE store_id = ${id}`;
+    try {
+      await tx`UPDATE public.store_setup SET settings = settings || ${tx.json(values)}
+        WHERE store_id = ${id}`;
+    } catch (error) {
+      if (error.code === "42501" && settings.invoice_prefix !== undefined) throw Object.assign(
+        badInput("Invoice prefix is locked until the next financial year.",{invoice_prefix:"An invoice or credit note has been issued this financial year. Prefix changes unlock on 1 April."}),{status:409});
+      throw error;
+    }
     if (logo_media_id !== undefined) await tx`UPDATE public.store_setup SET logo_media_id = ${logo_media_id} WHERE store_id = ${id}`;
     // Preserve edited bodies; changing underlying details requires re-review.
     if (Object.keys(settings).some((key) => data.settings[key] !== settings[key])) await invalidatePolicies(tx, id);

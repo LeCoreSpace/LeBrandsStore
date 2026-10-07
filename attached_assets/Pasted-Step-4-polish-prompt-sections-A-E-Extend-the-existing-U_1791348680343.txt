@@ -1,0 +1,67 @@
+Step 4 polish prompt (sections A–E). Extend the existing UNAPPLIED migration
+db/migrations/0009_required_gstin.sql (keep the GSTIN work already in it).
+Do NOT edit 0001–0008. Do NOT run migrations or deploy. Do NOT weaken any
+existing test. Keep invoice privileges exactly as 0008 set them (APP = SELECT
+only; writes only via SECURITY DEFINER functions with fixed search_path and
+explicit store_id checks).
+
+A. INVOICE NUMBERING (GST Rules 46 and 53: serial ≤ 16 characters)
+1. Per-store invoice_prefix: ^[A-Z0-9]{1,4}$, editable in Settings, default =
+   first letters of the brand name (STONESCENCE → STN). Replaces the current
+   12-character subdomain prefix for NEW documents.
+2. Invoice format: PREFIX/YY-YY/NNNN, e.g. STN/26-27/0001.
+3. Credit note format: PREFIX + "C" / YY-YY / NNNN, e.g. STNC/26-27/0001.
+   A separate consecutive series per store per financial year, as now.
+4. Sequences are zero-padded to 4 digits and consecutive per store per Indian
+   financial year (Apr–Mar).
+5. Once a store has issued any invoice or credit note in the current
+   financial year, its prefix is locked until the next financial year.
+   Enforce this in the database (trigger raising 42501), not only in the UI.
+6. issue_invoice() and cancel_invoice() must RAISE (ERRCODE
+   'check_violation') rather than issue any number longer than 16 characters.
+7. Do NOT modify or renumber already-issued invoices or credit notes.
+
+B. INVOICE CONTENT
+1. Label "Invoice No." instead of "Document number".
+2. Show tax rates separately per line: CGST % and SGST % (e.g. 6% + 6%) for
+   intra-state, IGST % for inter-state. Totals as now. Exempt lines show
+   "Exempt" and zero tax (already done).
+3. Quantity with unit: default UQC "NOS", stored in the invoice snapshot.
+4. Supplier block: full registered address (line 1, line 2 optional, city,
+   state, PIN) + GSTIN + state code. Required in Settings. If the address or
+   GSTIN is incomplete or invalid, "Mark shipped" is blocked with a clear
+   message linking to Settings. Never issue an incomplete invoice.
+5. Optional signature image upload in Settings (R2, same upload rules as
+   other media); if present, print it above "Authorised signatory".
+6. Phone display format +91 81110 06300 everywhere (store E.164).
+7. GSTIN required to publish (already done). Add 27AAPFU0939F1ZV as a
+   known-valid offline test vector.
+
+C. ORDER PAGE / TIMELINE
+1. Checkout writes an "Order placed" timeline event (with payment method).
+   No backfill.
+2. Timeline entries as plain sentences: "Marked as packed", "Shipped via
+   Bluedart · tracking 4564354", "Tax invoice STN/26-27/0001 issued",
+   "Delivered", "Payment collected". Omit empty/No fields, no raw keys such
+   as tax_invoice, no duplicated status text.
+3. Empty state "No timeline events recorded." must not wrap one word per
+   line. Fix the Shipping card's missing padding.
+4. Update-order panel shows only fields for the next valid action:
+   courier/tracking only when shipping; restock only for cancel/return; hide
+   the panel when no actions remain.
+5. "Mark cancelled" = secondary/outline style + confirmation dialog.
+
+D. DASHBOARD OVERVIEW
+1. "Needs your attention" shows the customer's name, not "Customer".
+2. Captions/helper text use the muted text colour token, not link blue (KPI
+   captions, setup rows, gross-sales footnote, order page labels). Only real
+   links are link-coloured.
+3. Larger 7 days / 30 days toggle with a clear selected state.
+
+E. TESTS AND REPORT
+- Offline: prefix validation and default, invoice and credit-note formats,
+  16-char rejection, FY rollover, GSTIN vectors, timeline sentences, field
+  visibility per status.
+- Isolation: prefix FY lock holds after an invoice is issued (42501); another
+  store cannot read or change this store's prefix; issue_invoice and
+  cancel_invoice (including credit-note creation) still work with the

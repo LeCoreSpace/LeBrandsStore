@@ -42,10 +42,24 @@ export function financialYear(value = new Date()) {
   const start = month >= 4 ? year : year - 1;
   return `${start}-${String(start + 1).slice(-2)}`;
 }
-export function invoiceNumber(subdomain, fy, sequence, credit = false) {
+export function invoiceNumber(prefix, fy, sequence, credit = false) {
   if (!Number.isSafeInteger(Number(sequence)) || Number(sequence) < 1) throw commerceError("Invalid document sequence.");
-  const prefix = String(subdomain).replace(/[^a-z0-9]/gi,"").slice(0,12).toUpperCase() || "STO";
-  return `${prefix}/${credit ? "CN/" : ""}${fy}/${String(sequence).padStart(4,"0")}`;
+  if (!/^[A-Z0-9]{1,4}$/.test(prefix) || !/^[0-9]{4}-[0-9]{2}$/.test(fy)) throw commerceError("Invalid invoice prefix or financial year.");
+  const serial = `${prefix}${credit ? "C" : ""}/${fy.slice(2)}/${String(sequence).padStart(4,"0")}`;
+  if (serial.length > 16) throw commerceError("Document serial cannot exceed 16 characters.",undefined,409);
+  return serial;
+}
+export function timelineSentence(event) {
+  const m = event.metadata || {}, to = m.to || m.to_status || m.new_status || m.status;
+  if (event.action === "order.created") return `Order placed${m.payment_method ? ` · ${m.payment_method === "cod" ? "Cash on Delivery" : "Online payment"}` : ""}`;
+  if (["order.payment_collected","payment.collected"].includes(event.action)) return "Payment collected";
+  if (["order.invoice_issued","invoice.issued"].includes(event.action)) return `Tax invoice ${m.invoice_number || ""} issued`.replace(/ +/g," ");
+  if (["order.invoice_cancelled","invoice.cancelled"].includes(event.action)) return `Invoice cancelled${m.credit_note_number ? ` · credit note ${m.credit_note_number}` : ""}`;
+  if (event.action === "order.status_changed") {
+    if (to === "shipped") return `Shipped${m.courier ? ` via ${m.courier}` : ""}${m.tracking_number ? ` · tracking ${m.tracking_number}` : ""}`;
+    return ({packed:"Marked as packed",delivered:"Delivered",cancelled:"Cancelled",returned:"Returned",rto:"Returned to origin"})[to] || "Order status updated";
+  }
+  return "Order updated";
 }
 const small = ["Zero","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
 function words(n) {
