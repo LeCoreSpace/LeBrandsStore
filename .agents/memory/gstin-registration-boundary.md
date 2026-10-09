@@ -27,3 +27,16 @@ were available.
 **How to apply:** Invoice issuance uses complete current registered business
 details while preserving the order's stored amounts and validating its tax
 split. A tax-state mismatch must block issuance rather than recalculate money.
+
+Registration should automatically verify GSTIN through the same provider used
+by LeBrands.Space. Use the brand-confirmed principal or additional registered
+address for legal business details and new invoices; verified addresses are
+read-only. Provider failures may permit manual draft entry, but unverified
+stores cannot issue invoices.
+
+**Why:** The user requested automatic verification and provider-sourced
+registered addresses throughout the store, including invoices.
+
+**How to apply:** Preserve the existing financial permission boundary and
+historical snapshots. Never substitute customer delivery addresses with the
+merchant's registered address. Do not infer a provider contract from a key name.

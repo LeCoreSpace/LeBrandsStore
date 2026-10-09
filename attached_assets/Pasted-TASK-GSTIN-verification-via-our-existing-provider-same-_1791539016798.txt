@@ -1,0 +1,37 @@
+TASK: GSTIN verification via our existing provider (same one LeBrands.Space
+uses). Do NOT run migrations or deploy. New schema changes go in a NEW
+migration file (next number). Keep all existing grants/RLS rules.
+
+Provider details (sample request/response, keys removed):
+<<PASTE HERE>>
+
+1. Worker-side adapter module (src/gstin/provider.js) — the only file that
+   knows the provider's format. Reads the key from env.GSTIN_API_KEY (Worker
+   secret; never logged, never sent to the browser). Timeout 8s. Maps the
+   response to: gstin, legal_name, trade_name, status, taxpayer_type,
+   constitution, registration_date, principal_address {line1, line2, city,
+   district, state, state_code, pin}, additional_addresses [...].
+2. Flow in wizard + Settings: brand types GSTIN → local format/checksum/state
+   check first (no paid call if it fails) → server calls provider →
+   show legal name, trade name and addresses for confirmation.
+   - status not Active → block with clear message.
+   - taxpayer type Composition → block tax invoicing, explain they can't
+     make inter-state sales; do not publish.
+   - Brand PICKS the principal or an additional address; the address is
+     read-only (no free text) when verified.
+   - Legal name and trade name autofill the invoice supplier block.
+3. Fallback: provider error/timeout → allow manual address entry, mark the
+   store gstin_verification = 'unverified', show a banner, retry
+   automatically. Invoices cannot be issued while unverified, with a clear
+   message.
+4. Re-verification: store verified_at and the raw response (JSON) in a
+   store-scoped table (RLS forced; APP may insert/select its own store's rows
+   only). Re-check if verified_at is older than 30 days before issuing an
+   invoice and on Settings open. If the GSTIN becomes inactive, block new
+   invoices and alert in "Needs your attention".
+5. Abuse protection: endpoint requires a logged-in brand session; max 10
+   lookups per store per day and 3 per minute; cache results per GSTIN for
+   24 hours.
+6. Tests: offline tests with a mocked provider (active, cancelled,
+   composition, timeout, malformed response, rate limit); isolation tests for
+   the new table. Report results and summarise all schema/grant changes.
