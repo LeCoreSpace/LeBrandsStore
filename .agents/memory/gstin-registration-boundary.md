@@ -40,3 +40,25 @@ registered addresses throughout the store, including invoices.
 **How to apply:** Preserve the existing financial permission boundary and
 historical snapshots. Never substitute customer delivery addresses with the
 merchant's registered address. Do not infer a provider contract from a key name.
+
+Additional registered addresses are best-effort: parse each as a principal
+address; skip malformed entries with warnings, never invalidate a valid
+principal registration. Display/invoice city selects city, then locality,
+then district, while retaining the raw provider response.
+
+**Why:** The user does not want a future warehouse/depot address to break
+Stonescence's verification, and GST responses commonly leave city empty.
+
+**How to apply:** Use the same field-selection and warning behavior in all
+verification consumers; keep provider-selected business details distinct
+from customer delivery addresses.
+
+The numbering/GSTIN polish rollout must be migrated and deployed before the
+provider-verification schema is applied. The user requires the polish security
+section before authorizing any migration.
+
+**Why:** The user explicitly requires this staged rollout and approval order.
+
+**How to apply:** Do not allow a migration command to apply both stages together.
+Stage the later schema outside the active migration set until the earlier
+rollout has completed. Never infer migration or deployment approval.

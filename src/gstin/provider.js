@@ -1,7 +1,7 @@
 import { gstinError, INDIAN_STATES } from "../public/commerce-rules.js";
 
-// This module alone translates the provider's GST public-search response.
-// No endpoint or authentication contract has been supplied: do not guess one.
+// Only this server-side module knows the provider URL, credentials and schema.
+// Never log request URLs, raw responses, transport exceptions or their stacks.
 export class GSTINProviderError extends Error {
   constructor(code, message) {
     super(message);
@@ -47,8 +47,9 @@ function address(value, gstin) {
   return {
     line1,
     line2,
-    // A blank city stays blank. Locality and district are not assumed cities.
-    city: text(source.city),
+    // Provider field selection, not invented data. Raw values remain in the
+    // raw response returned separately for store-scoped server persistence.
+    city: text(source.city) || text(source.loc) || text(source.dst),
     district: text(source.dst),
     state,
     state_code: knownState.code,
@@ -72,11 +73,26 @@ export function mapGSTINResponse(body, { httpStatus = 200, expectedGSTIN } = {})
   if (!object(data)) malformed();
   const gstin = text(data.gstin, true);
   if (gstinError(gstin) || (expectedGSTIN !== undefined && gstin !== expectedGSTIN)) malformed();
-  if (!Array.isArray(data.adadr) || !Array.isArray(data.nba)) malformed();
-  // The real fixture's adadr is empty. Until an actual nonempty example is
-  // supplied, fail explicitly rather than invent its item schema.
-  if (data.adadr.length) {
-    throw new GSTINProviderError("UNSUPPORTED_ADDRESS_SCHEMA", "Additional registered addresses could not be verified. The provider response format needs confirmation.");
+  if (!Array.isArray(data.nba)) malformed();
+  const warnings = [], additionalAddresses = [];
+  // Additional entries use the same addr shape as pradr (and may carry ntr).
+  // A broken depot entry must not invalidate the principal registration.
+  if (Array.isArray(data.adadr)) {
+    data.adadr.forEach((entry, index) => {
+      try {
+        additionalAddresses.push(address(entry, gstin));
+      } catch {
+        warnings.push({
+          code: "INVALID_ADDITIONAL_ADDRESS", index,
+          message: "An additional registered address could not be read and was skipped.",
+        });
+      }
+    });
+  } else {
+    warnings.push({
+      code: "INVALID_ADDITIONAL_ADDRESS_LIST",
+      message: "Additional registered addresses could not be read and were skipped.",
+    });
   }
   const result = {
     gstin,
@@ -88,8 +104,9 @@ export function mapGSTINResponse(body, { httpStatus = 200, expectedGSTIN } = {})
     registration_date: text(data.rgdt, true),
     cancellation_date: text(data.cxdt),
     principal_address: address(data.pradr, gstin),
-    additional_addresses: [],
+    additional_addresses: additionalAddresses,
     nature_of_business: data.nba.map(item => text(item, true)),
+    warnings,
   };
   if (!validPortalDate(result.registration_date) ||
       (result.cancellation_date && !validPortalDate(result.cancellation_date))) malformed();
@@ -103,15 +120,71 @@ function validPortalDate(value) {
   return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
 
-// Accepts a Response from a future server-only transport. Do not log or expose
-// raw response bodies, including provider error messages.
-export async function parseGSTINResponse(response, expectedGSTIN) {
+async function responseBody(response) {
   checkHTTP(response.status);
-  let body;
   try {
-    body = await response.json();
+    return await response.json();
   } catch {
     malformed();
   }
-  return mapGSTINResponse(body, { httpStatus: response.status, expectedGSTIN });
+}
+
+export async function parseGSTINResponse(response, expectedGSTIN) {
+  return mapGSTINResponse(await responseBody(response), { httpStatus: response.status, expectedGSTIN });
+}
+
+const safeFailures = {
+  MALFORMED: "The GSTIN provider returned an incomplete or invalid response.",
+  NOT_FOUND: "The GSTIN provider could not verify this registration.",
+  RATE_LIMIT: "The GSTIN provider is temporarily rate limited.",
+  HTTP_ERROR: "The GSTIN provider could not verify this registration.",
+  TIMEOUT: "GSTIN verification timed out. Please try again.",
+};
+
+/**
+ * Server-only lookup. Tests inject a fetch implementation; callers never
+ * receive the request URL/key or original exception/cause/stack.
+ * Raw data must remain server-side and be stored under tenant-scoped RLS.
+ */
+export async function lookupGSTIN(env, gstin, { fetchImpl = fetch, timeoutMs = 8000 } = {}) {
+  if (gstinError(gstin)) {
+    throw new GSTINProviderError("INVALID_GSTIN", "Check the GSTIN format and checksum before verification.");
+  }
+  const key = env?.GSTIN_KEY;
+  if (typeof key !== "string" || !key.trim()) {
+    throw new GSTINProviderError("UNCONFIGURED", "GSTIN verification is not configured.");
+  }
+  const controller = new AbortController();
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new GSTINProviderError("TIMEOUT", safeFailures.TIMEOUT));
+    }, Math.min(8000, Math.max(1, timeoutMs)));
+  });
+  try {
+    const result = await Promise.race([
+      (async () => {
+        const response = await fetchImpl(
+          `https://sheet.gstincheck.co.in/check/${encodeURIComponent(key)}/${encodeURIComponent(gstin)}`,
+          { method: "GET", redirect: "manual", signal: controller.signal },
+        );
+        const raw = await responseBody(response);
+        return {
+          registration: mapGSTINResponse(raw, { httpStatus: response.status, expectedGSTIN: gstin }),
+          raw_response: raw,
+        };
+      })(),
+      timeout,
+    ]);
+    return result;
+  } catch (error) {
+    // Construct a new safe error, with no cause. Fetch exceptions can include
+    // the credential-bearing URL in both message and stack.
+    const code = controller.signal.aborted ? "TIMEOUT"
+      : error instanceof GSTINProviderError && Object.hasOwn(safeFailures, error.code) ? error.code : "NETWORK_ERROR";
+    throw new GSTINProviderError(code, safeFailures[code] || "GSTIN verification is temporarily unavailable.");
+  } finally {
+    clearTimeout(timer);
+  }
 }

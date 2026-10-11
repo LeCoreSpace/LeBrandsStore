@@ -16,10 +16,26 @@ was performed while implementing this work.
 
 ## Exact database permissions
 
+### Security approval and rollout boundary
+
+This is a source review, not confirmation that SQL has run successfully on
+Supabase. 0009 remains unapplied by the agent. No production grant/policy
+catalog or isolation probe was changed or tested as part of this review.
+The manual isolation suite must still pass against the migrated database.
+
+Do not run `db:migrate` without the user's approval of this security section.
+The current runner applies **all** pending SQL files atomically, not just the
+next file. Keep 0010 out of the active migrations directory until 0009 has
+been migrated and deployed, so one invocation cannot apply both.
+This review does not authorize deployment.
+
 No table grants/revokes, role membership, policies or RLS settings change.
 `invoices` and `invoice_sequences` remain APP SELECT-only with forced,
 tenant-scoped RLS exactly as 0008 configured them. Invoice items remain
 embedded in immutable snapshots; `order_items` is not an invoice-items table.
+No schemas, tables or columns are added, and no existing function is dropped.
+Three functions are SECURITY DEFINER (`guard_invoice_prefix`, `issue_invoice`,
+`cancel_invoice`); the remaining six are SECURITY INVOKER.
 
 **GRANT:** EXECUTE on `issue_invoice(uuid)` and `cancel_invoice(uuid)` to
 `lebrands_app`, reaffirming the existing 0008 grants.
