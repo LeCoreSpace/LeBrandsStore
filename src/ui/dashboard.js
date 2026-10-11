@@ -2,6 +2,8 @@ import { escapeHtml, layout } from "./layout.js";
 import { validateProduct } from "../public/validation.js";
 import { CURRENT_GST_RATES, INDIAN_STATES, registeredBusinessState, registeredSupplierErrors, defaultInvoicePrefix, formatPhone } from "../public/commerce-rules.js";
 import { statusLabel, stateName, indianDate, allowedTransitions, timelineSentence } from "../public/dashboard-rules.js";
+import { paymentState, fulfilmentState } from "../public/dashboard-view-model.js";
+import { dashboardIcon } from "./dashboard-icons.js";
 
 const esc = escapeHtml;
 const money = (value) => `₹${(Number(value || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -26,7 +28,7 @@ function documentPage(view, data, user, body) {
   const store = obj(data.store);
   const storeId = String(store.store_id || "");
   const title = ({
-    overview: "Overview", orders: "Orders", order: "Order details", products: "Products",
+    overview: "Home", orders: "Orders", order: "Order details", products: "Products",
     "product-new": "Add product", product: "Edit product", customers: "Customers",
     customer: "Customer details", invoices: "Invoices", settings: "Settings",
   })[view] || "Overview";
@@ -38,7 +40,7 @@ function documentPage(view, data, user, body) {
     extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>',
     body: `<div class="lb-app" data-store-id="${esc(storeId)}" data-role="${esc(data.role || "editor")}">
       ${header(data, user, view)}
-       <main class="lb-main">${store.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline; your data is unchanged. ${esc(store.approval_revocation_note || "")}${store.status === "awaiting_approval" ? " Your renewed approval request is awaiting review." : ""}</p>` : store.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is offline until a LeBrands reviewer approves it.</p>' : ""}${body}</main>
+       <main class="lb-main"><div class="lb-content">${store.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline; your data is unchanged. ${esc(store.approval_revocation_note || "")}${store.status === "awaiting_approval" ? " Your renewed approval request is awaiting review." : ""}</p>` : store.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is offline until a LeBrands reviewer approves it.</p>' : ""}${body}</div></main></div></div>
       <div class="lb-toast" role="status" aria-live="polite" data-toast hidden></div>
       <script type="application/json" id="dashboard-data">${safeJson({ store, role: data.role, draft: data.draft, filters: data.filters, checkoutSettings: data.checkoutSettings })}</script>
     </div>`,
@@ -46,38 +48,55 @@ function documentPage(view, data, user, body) {
 }
 
 function header(data, user, view) {
+  // Inline navigation icons use Lucide path data. Lucide is ISC licensed, copyright Lucide Contributors.
   const store = obj(data.store);
   const id = encodeURIComponent(store.store_id || "");
   const root = `/stores/${id}`;
   const items = [
-    ["overview", "Overview", root],
-    ["orders", "Orders", `${root}/orders`],
-    ["products", "Products", `${root}/products`],
-    ["customers", "Customers", `${root}/customers`],
-    ["invoices", "Invoices", `${root}/invoices`],
-    ["settings", "Settings", `${root}/settings`],
+    ["overview", "Home", root, "home"],
+    ["orders", "Orders", `${root}/orders`, "orders"],
+    ["products", "Products", `${root}/products`, "products"],
+    ["customers", "Customers", `${root}/customers`, "customers"],
+    ["invoices", "Invoices", `${root}/invoices`, "invoices"],
   ];
   const active = view === "order" ? "orders" : view.startsWith("product") || view === "product" ? "products" : view === "customer" ? "customers" : view;
   const storeUrl = store.subdomain ? `https://${encodeURIComponent(store.subdomain)}.lebrands.store/` : "#";
-  return `<header class="lb-header">
-    <a class="lb-wordmark" href="${root}" aria-label="LeBrands.Store workspace"><span class="lb-mark">L</span><span>LeBrands<small>STORE WORKSPACE</small></span></a>
-    <div class="lb-header-right"><span class="lb-store-name">${esc(store.name || "Your store")}</span><span class="lb-user">${esc(user?.name || user?.email || "Account")}</span><a class="lb-visit" href="${esc(storeUrl)}" ${store.subdomain ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'}>View store <span aria-hidden="true">↗</span></a>
-    <button type="button" class="lb-menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false"><span></span><span></span></button></div>
-  </header><nav class="lb-nav" data-nav aria-label="Store navigation">
-    <div class="lb-nav-inner">${items.map(([key, label, href]) => `<a href="${href}" ${key === active ? 'aria-current="page"' : ""}>${esc(label)}</a>`).join("")}
-      <a class="lb-nav-mobile-store" href="${esc(storeUrl)}" ${store.subdomain ? 'target="_blank" rel="noopener"' : ""}>View store ↗</a>
-    </div>
-  </nav>`;
+  return `<div class="lb-shell">
+    <button type="button" class="lb-drawer-shade" data-drawer-close aria-label="Close navigation"></button>
+    <aside class="lb-sidebar" data-sidebar>
+      <div class="lb-sidebar-top"><a class="lb-wordmark" href="${root}" aria-label="LeBrands home"><span class="lb-mark">L</span><span>LeBrands</span></a><button type="button" class="lb-icon-button lb-sidebar-collapse" data-sidebar-collapse aria-label="Collapse sidebar" title="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div>
+      <div class="lb-store-switch"><span class="lb-store-avatar">${esc(String(store.name || "S").trim().slice(0,1).toUpperCase())}</span><span class="lb-store-switch-copy"><strong>${esc(store.name || "Your store")}</strong><small>Store workspace</small></span><a href="${esc(storeUrl)}" class="lb-view-store" ${store.subdomain ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'} aria-label="View store" title="View store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
+      <nav class="lb-nav" data-nav aria-label="Store navigation"><span class="lb-nav-caption">Workspace</span>
+        ${items.map(([key,label,href,icon]) => `<a href="${href}" class="lb-nav-link" ${key === active ? 'aria-current="page"' : ""} title="${esc(label)}">${dashboardIcon(icon)}<span>${esc(label)}</span>${key === "orders" ? `<b class="lb-count" data-open-order-count hidden title="Loading open orders"></b>` : ""}</a>`).join("")}
+        <span class="lb-nav-caption lb-nav-caption-spaced">Manage</span>
+        <span class="lb-nav-link is-disabled" aria-disabled="true" title="Analytics coming soon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg><span>Analytics</span><small>Coming soon</small></span>
+        <a href="${root}/setup" class="lb-nav-link" title="Online store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-1.5-6h-15L3 9Zm2 0v12h14V9M9 21v-7h6v7"/></svg><span>Online store</span></a>
+        <div class="lb-online-links"><a href="${root}/setup">Theme and store editor</a><a href="${root}/settings#policies">Pages and policies</a>${store.subdomain ? `<a href="${esc(storeUrl)}" target="_blank" rel="noopener">Preview store</a>` : '<span>Preview unavailable</span>'}</div>
+      </nav>
+      <div class="lb-sidebar-bottom"><a href="${root}/settings" class="lb-nav-link ${active === "settings" ? "is-current" : ""}" ${active === "settings" ? 'aria-current="page"' : ""} title="Settings">${dashboardIcon("settings")}<span>Settings</span></a></div>
+    </aside>
+    <div class="lb-workspace">
+      <header class="lb-header">
+        <button type="button" class="lb-icon-button lb-menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+        <form class="lb-global-search" role="search" data-global-search><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" role="combobox" aria-label="Search orders, products and customers" aria-controls="global-search-results" aria-expanded="false" aria-autocomplete="list" placeholder="Search orders, products, customers…" autocomplete="off" data-search-input><kbd>⌘ K</kbd><div id="global-search-results" class="lb-search-results" data-search-results role="region" aria-label="Search results" hidden></div></form>
+        <div class="lb-header-right"><button type="button" class="lb-icon-button" data-help-button aria-label="Help" title="Help"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3m.1 4h.01"/></svg></button><details class="lb-account-menu" data-account-menu><summary class="lb-account"><span class="lb-account-avatar">${esc(String(user?.name || user?.email || "A").trim().slice(0,1).toUpperCase())}</span><span class="lb-user">${esc(user?.name || user?.email || "Account")}</span></summary><div class="lb-account-panel"><strong>${esc(user?.name || user?.email || "Account")}</strong><form method="post" action="/logout"><button type="submit" class="lb-logout">Log out</button></form></div></details></div>
+      </header>
+      <div class="lb-help-popover" data-help-popover hidden><strong>LeBrands support</strong><span>For workspace help, contact your store administrator.</span></div>`;
 }
 
 function pageHeading(kicker, title, intro, actions = "") {
-  return `<div class="lb-page-heading"><div><div class="lb-kicker">${esc(kicker)}</div><h1>${title}</h1><p>${esc(intro)}</p></div>${actions ? `<div class="lb-heading-actions">${actions}</div>` : ""}</div>`;
+  return `<div class="lb-page-heading"><div><h1>${title}</h1>${intro ? `<p>${esc(intro)}</p>` : ""}</div>${actions ? `<div class="lb-heading-actions">${actions}</div>` : ""}</div>`;
 }
 function buttonLink(href, label, kind = "primary") { return `<a class="lb-button ${kind === "quiet" ? "lb-button-quiet" : ""}" href="${href}">${esc(label)}</a>`; }
 function exportControl(role, kind, label) { return role === "owner" ? `<button type="button" class="lb-button lb-button-outline" data-export="${esc(kind)}">${esc(label)}</button>` : `<span class="lb-export-restricted">Exports: owner only</span>`; }
 function empty(title, copy, action = "") { return `<section class="lb-empty"><span class="lb-empty-mark" aria-hidden="true"></span><h2>${esc(title)}</h2><p>${esc(copy)}</p>${action}</section>`; }
 function card(title, body, klass = "") { return `<section class="lb-card ${klass}"><div class="lb-card-heading"><h2>${esc(title)}</h2></div>${body}</section>`; }
-function statusPill(status, method = "") { return `<span class="lb-status" data-status="${esc(status || "unknown")}">${esc(statusText(status, method))}</span>`; }
+function statusPill(status, method = "") { return `<span class="lb-status" data-status="${esc(status || "unknown")}">${esc(status==="unfulfilled"?"Unfulfilled":statusText(status, method))}</span>`; }
+function paymentPill(order) {
+  const state=paymentState(order);
+  const label={paid:"Paid",cod:"COD",unpaid:"Unpaid",pending_payment:"Pending",failed:"Failed",unknown:"Not recorded"}[state];
+  return `<span class="lb-status ${state==="cod"?"lb-status-cod":""}" data-status="${state}">${label}</span>`;
+}
 function actionError(data) { return data.error ? `<div class="lb-server-error" role="alert"><span>${esc(data.error)}</span><button type="button" data-retry>Try again</button></div>` : ""; }
 
 function overview(data) {
@@ -87,52 +106,61 @@ function overview(data) {
   const catalogProducts = list(data.draft?.products || data.products);
   const period = Number(data.filters?.period) === 7 ? 7 : 30;
   const checks = [
-    ["Online payments", "Connect a payment provider", "Coming soon"],
-    ["Delivery integration", "Connect your courier account", "Coming soon"],
-    ["Own domain", "Use your existing domain", "Coming soon"],
-    ["More products", "Build out your catalogue", "Add products", ""],
+    ["Products", catalogProducts.length ? "Catalogue is ready" : "Add your first product", catalogProducts.length ? "Done" : "Add product", catalogProducts.length > 0],
+    ["Payments", "Payment-provider integrations are not available yet", "Coming soon", false],
+    ["Shipping", "Courier integrations are not available yet", "Coming soon", false],
+    ["Domain", "Custom domain setup is not available here", "Coming soon", false],
+    ["Policies", "Review store policies in setup", "Review policies", false],
   ];
-  const setup = `<div class="lb-checklist">${checks.map(([label, text, action]) => `<div class="lb-check-row"><span class="lb-check-dot ${action ? "is-pending" : ""}" aria-hidden="true"></span><div><strong>${esc(label)}</strong><small>${esc(text)}</small></div>${action === "Add products" ? `<a href="/stores/${storeId}/products/new">${action}</a>` : `<span class="lb-coming">${esc(action)}</span>`}</div>`).join("")}</div>`;
+  const setupDone = checks.filter(item => item[3]).length;
+  const setup = `<div class="lb-setup-progress"><span>${setupDone} of ${checks.length} steps complete</span><div role="progressbar" aria-label="Store setup progress" aria-valuemin="0" aria-valuemax="${checks.length}" aria-valuenow="${setupDone}"><i style="width:${setupDone / checks.length * 100}%"></i></div></div><div class="lb-checklist">${checks.map(([label, text, action, done]) => `<div class="lb-check-row"><span class="lb-check-dot ${done ? "" : "is-pending"}" aria-hidden="true"></span><div><strong>${esc(label)}</strong><small>${esc(text)}</small></div>${action === "Add product" ? `<a href="/stores/${storeId}/products/new">${action}</a>` : action === "Review policies" ? `<a href="/stores/${storeId}/setup">${action}</a>` : `<span class="lb-coming" ${action === "Coming soon" ? 'aria-disabled="true"' : ""}>${esc(action)}</span>`}</div>`).join("")}</div>`;
   const soldTop = top.filter(p => Number(p.quantity || 0) > 0);
   const sourced = sources.filter(s => Number(s.orders || 0) > 0);
   const rankRows = soldTop.length ? soldTop.slice(0, 5).map((p, i) => `<div class="lb-rank-row"><span class="lb-rank">${String(i + 1).padStart(2, "0")}</span><strong>${esc(p.title || "Untitled product")}</strong><span>${Number(p.quantity || 0)} sold</span><b>${money(p.revenue_paise)}</b></div>`).join("") : `<div class="lb-inline-empty">${top.length ? "No product sales in this period." : catalogProducts.length ? "Product sales will appear after orders are placed." : `Add a product before sales can be ranked. <a href="/stores/${storeId}/products/new">Add a product</a>.`}</div>`;
   const sourceRows = sourced.length ? sourced.map(s => `<div class="lb-source-row"><span>${esc(s.source === "mall" ? "Mall" : s.source === "direct" ? "Direct" : "Other")}</span><strong>${Number(s.orders || 0)} ${Number(s.orders || 0) === 1 ? "order" : "orders"}</strong></div>`).join("") : `<div class="lb-inline-empty">${sources.length ? "No attributed orders in this period." : "Source attribution will appear with recorded orders."}</div>`;
-  const actionRows = needs.length ? needs.slice(0, 5).map(order => `<a class="lb-action-row" href="/stores/${storeId}/orders/${encodeURIComponent(order.id || "")}"><span class="lb-action-mark"></span><span><strong>${esc(order.order_number || "Order")}</strong><small>${esc(order.customer_name || "Customer")} · ${date(order.created_at)}</small></span>${statusPill(order.status, order.payment_method)}</a>`).join("") : `<div class="lb-clear-state"><span class="lb-clear-mark">✓</span><strong>Nothing needs attention</strong><p>Orders awaiting your next step will be listed here.</p></div>`;
-  const periodControl = `<div class="lb-period-switch" aria-label="Overview period"><a href="?period=7" ${period === 7 ? 'aria-current="true"' : ""}>7 days</a><a href="?period=30" ${period === 30 ? 'aria-current="true"' : ""}>30 days</a></div>`;
+  const actionRows = needs.length ? needs.slice(0, 5).map(order => {
+    const paymentDue=order.status==="delivered"&&order.payment_method==="cod";
+    return `<a class="lb-action-row" href="/stores/${storeId}/orders/${encodeURIComponent(order.id || "")}"><span class="lb-action-mark"></span><span><strong>${esc(order.order_number || "Order")}</strong><small>${paymentDue?"Payment to collect":"Order to fulfil"} · ${esc(order.customer_name || "Customer")} · ${date(order.created_at)}</small></span>${statusPill(order.status, order.payment_method)}</a>`;
+  }).join("") : `<div class="lb-clear-state"><strong>Nothing needs attention</strong><p>Orders awaiting your next step will be listed here.</p></div>`;
+  const periodControl = `<div class="lb-period-switch" data-home-range><label><span>Date range</span><select data-chart-range aria-label="Date range"><option value="today">Today</option><option value="7" ${period === 7 ? "selected" : ""}>Last 7 days</option><option value="30" ${period === 30 ? "selected" : ""}>Last 30 days</option><option value="custom">Custom range</option></select></label><label data-custom-date hidden><span>From</span><input type="date" data-chart-from></label><label data-custom-date hidden><span>To</span><input type="date" data-chart-to></label><button type="button" class="lb-button lb-button-small lb-button-outline" data-chart-apply hidden>Apply</button></div>`;
   const metrics = [
-    ["Today's orders", Number(o.today_orders || 0), "Placed today"],
-    [`Orders · ${period} days`, Number(o.orders || 0), `Last ${period === 7 ? "seven" : "30"} days`],
-    [`Gross sales · ${period} days`, money(o.revenue_paise), "Excludes cancelled and returned orders"],
-    ["Average order value", Number(o.orders || 0) ? money(o.aov_paise) : "Not yet available", "Across recorded orders"],
+    ["Total sales", money(o.revenue_paise), `Authoritative last ${period} days`],
+    ["Orders", Number(o.orders || 0).toLocaleString("en-IN"), `Last ${period} days`],
+    ["Average order value", Number(o.orders || 0) ? money(o.aov_paise) : "–", "Based on recorded orders"],
+    ["Online store sessions", `<span title="Session analytics are not available yet">–</span>`, "Session data unavailable"],
   ];
-  return `${pageHeading("Operating workspace", "The day, in view.", "A clear read on orders, gross sales and the work waiting for you.", buttonLink(`/stores/${storeId}/orders`, "Open orders"))}
+  return `${pageHeading("", "Home", "", buttonLink(`/stores/${storeId}/orders`, "View orders"))}
     ${actionError(data)}
-    ${periodControl}<div class="lb-metric-grid">${metrics.map(([label, value, note], i) => `<article class="lb-metric"><div class="lb-metric-label">${esc(label)}<span class="lb-metric-index">0${i + 1}</span></div><strong>${esc(value)}</strong><small>${esc(note)}</small></article>`).join("")}</div>
-    <p class="lb-data-note">Gross sales exclude cancelled, refunded and returned orders. They are not cash collected.</p>
+    <section class="lb-card lb-setup-card"><div class="lb-card-heading lb-card-heading-toggle"><span><h2>Set up your store</h2><small>${setupDone} of ${checks.length} complete</small></span><button type="button" data-setup-toggle aria-expanded="true">Collapse</button></div><div data-setup-content>${setup}</div></section>
+    <div class="lb-home-toolbar">${periodControl}<small class="lb-data-note" data-summary-scope>Summary figures use the official ${period}-day overview totals. Sales exclude cancelled, refunded and returned orders.</small></div>
+    <div class="lb-metric-grid">${metrics.map(([label, value, note], i) => `<article class="lb-metric"><div class="lb-metric-label">${esc(label)}</div><strong data-home-metric="${i}">${value}</strong><small data-home-metric-note="${i}">${esc(note)}</small></article>`).join("")}</div>
+    <section class="lb-card lb-chart-card"><div class="lb-card-heading"><div><h2>Sales over time</h2><small data-chart-caption>Loading sales from recorded orders</small></div></div><div class="lb-chart" data-sales-chart aria-label="Sales over time chart"><div class="lb-chart-skeleton" aria-hidden="true"></div></div><div class="lb-chart-table" data-chart-table></div><p class="lb-chart-scope" data-chart-scope>Chart is based on loaded orders, not a complete sales ledger.</p></section>
+    <h2 class="lb-section-heading">Things to do</h2>
     <div class="lb-overview-grid"><div class="lb-overview-main">
-      ${card("Setup, at your pace", setup, "lb-setup-card")}
       <div class="lb-split">${card("Top products", `<div class="lb-rank-list">${rankRows}</div>`)}${card("Orders by source", `<div class="lb-source-list">${sourceRows}</div>`)}</div>
-    </div><aside>${card("Needs your attention", `<div class="lb-action-list">${actionRows}</div>`, "lb-attention-card")}</aside></div>`;
+    </div><aside>${card("Orders and payments", `<div class="lb-action-list" data-today-tasks>${actionRows}</div><div class="lb-today-invoices" data-today-invoices><p>Invoices issued today</p><span>Loading invoice records</span></div>`, "lb-attention-card")}</aside></div>`;
 }
 
-function orderTable(rows, storeId) {
-  return `<div class="lb-table-wrap"><table class="lb-table"><thead><tr><th>Order</th><th>Placed</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr></thead><tbody>${rows.map(order => `<tr>
-    <td><a class="lb-row-link" href="/stores/${storeId}/orders/${encodeURIComponent(order.id || "")}">${esc(order.order_number || "Order")}</a></td>
+function orderTable(rows, storeId, selectable = false) {
+  return `<div class="lb-table-wrap"><table class="lb-table lb-order-table"><thead><tr>${selectable ? '<th><span class="lb-sr-only">Select</span><input type="checkbox" aria-label="Select all orders" data-select-all></th>' : ""}<th>Order</th><th>Date</th><th>Customer</th><th>Total</th><th>Payment status</th><th>Fulfilment</th><th>Items</th><th>Delivery method</th></tr></thead><tbody>${rows.map(order => `<tr ${selectable ? `data-order-row data-order-id="${esc(order.id || "")}" data-order-status="${esc(order.status || "")}" data-payment-status="${paymentState(order)}" tabindex="0" data-href="/stores/${storeId}/orders/${encodeURIComponent(order.id || "")}"` : ""}>
+    ${selectable ? `<td><input type="checkbox" aria-label="Select ${esc(order.order_number || "order")}" data-order-checkbox></td>` : ""}<td><a class="lb-row-link" href="/stores/${storeId}/orders/${encodeURIComponent(order.id || "")}">${esc(order.order_number || "Order")}</a></td>
     <td>${esc(date(order.created_at))}</td><td><strong>${esc(order.customer_name || "Customer")}</strong><small>${esc(formatPhone(order.phone) || "Phone unavailable")}</small></td>
-    <td>${Number(order.item_count ?? order.items_count ?? 0)}</td><td>${money(order.total_paise)}</td><td>${statusPill(order.status, order.payment_method)}</td></tr>`).join("")}</tbody></table></div>`;
+    <td>${money(order.total_paise)}</td><td>${paymentPill(order)}</td><td>${statusPill(fulfilmentState(order.status))}</td><td>${order.item_count != null || order.items_count != null ? Number(order.item_count ?? order.items_count) : "Not loaded"}</td><td>${esc(order.delivery_method || "Not recorded")}</td></tr>`).join("")}</tbody></table></div>`;
 }
 function ordersPage(data) {
   const storeId = encodeURIComponent(data.store?.store_id || "");
   const rows = list(data.orders);
   const f = obj(data.filters);
   const statuses = ["", "confirmed_cod", "pending_payment", "paid", "packed", "shipped", "delivered", "cancelled", "returned", "rto"];
-  return `${pageHeading("Order desk", "Orders, without the guesswork.", "Filter the queue, open an order and keep its next step moving.", exportControl(data.role, "orders", "Export CSV"))}
+  const tabs = [["all","All",""],["unfulfilled","Unfulfilled",""],["unpaid","Unpaid",""],["open","Open",""],["cancelled","Cancelled","cancelled"]];
+  return `${pageHeading("", "Orders", "", exportControl(data.role, "orders", "Export CSV"))}
+    <div class="lb-order-tabs" role="tablist" aria-label="Order filters">${tabs.map(([key,label,status])=>`<button type="button" data-order-tab="${key}" role="tab" aria-selected="${key==="all"?"true":"false"}">${label}</button>`).join("")}</div>
     ${actionError(data)}<form class="lb-filter-bar" method="get" action="/stores/${storeId}/orders" data-filter-form>
     <label class="lb-search"><span>Search</span><input type="search" name="search" value="${esc(f.search || "")}" placeholder="Order number, name or phone"></label>
     <label><span>Status</span><select name="status">${statuses.map(s => `<option value="${esc(s)}" ${String(f.status || "") === s ? "selected" : ""}>${s ? esc(statusText(s)) : "All statuses"}</option>`).join("")}</select></label>
     <label><span>From</span><input type="date" name="from" value="${esc(f.from || "")}"></label><label><span>To</span><input type="date" name="to" value="${esc(f.to || "")}"></label>
     <button class="lb-button lb-button-small" type="submit">Apply</button><a class="lb-reset" href="/stores/${storeId}/orders">Reset</a></form>
-    ${rows.length ? orderTable(rows, storeId) : empty("No matching orders.", f.search || f.status || f.from || f.to ? "Try widening your filters. Your order records remain unchanged." : "New customer orders will appear here as they come in.")}`;
+    ${rows.length ? `<div data-order-results>${orderTable(rows, storeId, true)}</div><p class="lb-list-scope" data-orders-count>Showing ${rows.length.toLocaleString("en-IN")} loaded orders. Lists are capped at 500 records.</p>` : empty("No matching orders.", f.search || f.status || f.from || f.to ? "Try widening your filters. Your order records remain unchanged." : "New customer orders will appear here as they come in.")}`;
 }
 
 function addressBlock(address, title = "Delivery address") {
@@ -164,24 +192,26 @@ function orderDetail(data) {
     const actor = t.actor_name || (t.actor_type === "system" ? "Customer checkout" : "Team member");
     return `<li><span class="lb-timeline-dot"></span><div><strong>${esc(action)}</strong><small>${esc(actor)} · ${esc(date(t.created_at))}</small></div></li>`;
   }).join("") : `<li class="lb-muted">No timeline events recorded.</li>`;
-  return `${pageHeading("Order desk", esc(o.order_number || "Order detail"), `Placed ${date(o.created_at)}`, buttonLink(`/stores/${id}/orders`, "Back to orders", "quiet"))}
+  const timelineMarkup = `<ol class="lb-timeline">${events}</ol><div class="lb-timeline-comment"><label for="order-timeline-comment">Add a timeline comment</label><textarea id="order-timeline-comment" rows="2" disabled placeholder="Timeline comments are not available"></textarea><button type="button" class="lb-button lb-button-outline lb-button-small" disabled title="Comments are not supported by the current dashboard API">Add comment</button><small>Comments cannot be saved in the current dashboard.</small></div>`;
+  return `${pageHeading("", esc(o.order_number || "Order details"), `Placed ${date(o.created_at)}`, buttonLink(`/stores/${id}/orders`, "Back to orders", "quiet"))}
     ${actionError(data)}<div class="lb-detail-head">${statusPill(o.status, o.payment_method)}${payment}${statusActions}</div>
-    <div class="lb-detail-grid"><div class="lb-detail-primary">${card("Items", `<div class="lb-table-wrap"><table class="lb-table lb-items"><thead><tr><th>Product</th><th>Qty</th><th>Unit price</th><th>Line total</th></tr></thead><tbody>${itemRows}</tbody></table></div>${tax}`)}
-    ${card("Shipping", shipMarkup)}${card("Order timeline", `<ol class="lb-timeline">${events}</ol>`)}</div>
+    <div class="lb-detail-grid"><div class="lb-detail-primary">${card("Items", `<div class="lb-table-wrap"><table class="lb-table lb-items"><thead><tr><th>Product</th><th>Qty</th><th>Unit price</th><th>Line total</th></tr></thead><tbody>${itemRows}</tbody></table></div>`)}${card("Payment summary",tax)}
+     ${card("Shipping", shipMarkup)}${card("Order timeline", timelineMarkup)}</div>
     <aside class="lb-detail-aside">${card("Customer", `<h3 class="lb-customer-name">${esc(o.customer_name || o.name || "Customer")}</h3><a href="tel:${esc(o.phone || "")}">${esc(o.phone || "Phone unavailable")}</a>${o.email ? `<a href="mailto:${esc(o.email)}">${esc(o.email)}</a>` : ""}`)}${card("Delivery details", address)}
-    ${invoice.id ? card("Invoice", `<p>${esc(invoice.invoice_number || "Invoice")} · ${esc(invoiceStatus(invoice.status))}</p><a class="lb-inline-link" href="/stores/${id}/invoices/${encodeURIComponent(invoice.id)}">View invoice ↗</a>`) : ""}
+     ${invoice.id ? card("Invoice", `<p>${esc(invoice.invoice_number || "Invoice")} · ${esc(invoiceStatus(invoice.status))}</p><a class="lb-inline-link" href="/stores/${id}/invoices/${encodeURIComponent(invoice.id)}">View and print invoice</a> <a class="lb-inline-link" href="/stores/${id}/invoices/${encodeURIComponent(invoice.id)}" download="${esc(invoice.invoice_number || "invoice").replaceAll("/","-")}.html">Download HTML</a>`) : card("Invoice",'<p class="lb-muted">No invoice issued yet.</p>')}
+     ${card("Notes",o.notes || o.customer_note ? `<p class="lb-order-notes">${esc(o.notes || o.customer_note)}</p>` : '<p class="lb-muted">No notes recorded.</p>')}
     ${canEdit && transitions.length ? card("Update order",orderActionForm(id,uuid,transitions)) : ""}
-    </aside></div>`;
+  </aside></div>`;
 }
 
 function productRows(products, storeId, archived = false) {
-  return `<div class="lb-product-grid">${products.map(p => { const imageUrl = safeHttps(p.images?.[0]?.url); return `<article class="lb-product-row"><a class="lb-product-image" href="/stores/${storeId}/products/${encodeURIComponent(p.id)}">${imageUrl ? `<img src="${esc(imageUrl)}" alt="${esc(p.images[0].alt || p.title || "")}">` : `<span>Image pending</span>`}</a><div class="lb-product-info"><a href="/stores/${storeId}/products/${encodeURIComponent(p.id)}"><strong>${esc(p.title || "Untitled product")}</strong></a><small>${esc(p.sku || "No SKU")} · HSN ${esc(p.hsn_code || "Not recorded")}</small></div><div class="lb-product-price">${money(p.price_paise)}<small>${p.stock == null ? "Always in stock" : `${Number(p.stock)} in stock`}</small></div><span class="lb-product-gst">${archived ? `<span class="lb-archived-badge">Archived</span>` : `${esc(p.gst_rate ?? "Not recorded")}% GST`}</span><a class="lb-edit-link" href="/stores/${storeId}/products/${encodeURIComponent(p.id)}">${archived ? "View" : "Edit"}</a></article>`; }).join("")}</div>`;
+  return `<div class="lb-table-wrap"><table class="lb-table lb-products-table"><thead><tr><th>Product</th><th>Status</th><th>Inventory</th><th>Price</th><th>GST</th><th></th></tr></thead><tbody>${products.map(p => { const imageUrl = safeHttps(p.images?.[0]?.url), href=`/stores/${storeId}/products/${encodeURIComponent(p.id)}`; return `<tr><td><div class="lb-product-cell">${imageUrl ? `<img src="${esc(imageUrl)}" alt="${esc(p.images[0].alt || p.title || "")}">` : `<span class="lb-product-thumb" aria-hidden="true"></span>`}<span><a class="lb-row-link" href="${href}">${esc(p.title || "Untitled product")}</a><small>${esc(p.sku || "No SKU")} · HSN ${esc(p.hsn_code || "Not recorded")}</small></span></div></td><td><span class="lb-status" data-status="${archived ? "cancelled" : esc(p.status || "active")}">${archived ? "Archived" : esc(p.status || "Active")}</span></td><td>${p.stock == null ? "Not tracked" : `${Number(p.stock).toLocaleString("en-IN")} in stock`}</td><td>${money(p.price_paise)}</td><td>${esc(p.gst_rate ?? "Not recorded")}%</td><td><a class="lb-edit-link" href="${href}">${archived ? "View" : "Edit"}</a></td></tr>`; }).join("")}</tbody></table></div>`;
 }
 function productsPage(data) {
   const storeId = encodeURIComponent(data.store?.store_id || ""), allProducts = list(data.products ?? data.draft?.products);
   const archived = allProducts.filter(p => p.status === "archived" || p.archived_at);
   const products = allProducts.filter(p => p.status !== "archived" && !p.archived_at);
-  return `${pageHeading("Catalogue", "Products.", "Keep titles, pricing, tax and stock current.", buttonLink(`/stores/${storeId}/products/new`, "Add product"))}${actionError(data)}
+  return `${pageHeading("", "Products", "", buttonLink(`/stores/${storeId}/products/new`, "Add product"))}${actionError(data)}
     ${products.length ? productRows(products, storeId) : empty("Your catalogue is open.", "Add a product when you are ready. Nothing is shown here until a product is saved.", buttonLink(`/stores/${storeId}/products/new`, "Add your first product"))}
     ${archived.length ? `<section class="lb-archived-products"><div class="lb-section-title"><h2>Archived products</h2><span>${archived.length} retained</span></div>${productRows(archived, storeId, true)}</section>` : ""}`;
 }
@@ -196,7 +226,7 @@ function productEditor(data, isNew) {
   const rates = [...new Set([...CURRENT_GST_RATES, ...(CURRENT_GST_RATES.includes(Number(product.gst_rate)) || product.gst_rate == null ? [] : [Number(product.gst_rate)])])].sort((a,b)=>a-b);
   const legacy = product.gst_rate != null && !CURRENT_GST_RATES.includes(Number(product.gst_rate));
   const imageList = list(product.images);
-  const formFields = `<form class="lb-product-form" data-product-form data-new="${isNew}" data-product-id="${esc(id)}" data-expected-stock="${product.stock == null ? "null" : esc(product.stock)}" data-product-status="${isArchived ? "archived" : ""}">
+  const formFields = `<form id="lb-product-form" class="lb-product-form" data-product-form data-new="${isNew}" data-product-id="${esc(id)}" data-expected-stock="${product.stock == null ? "null" : esc(product.stock)}" data-product-status="${isArchived ? "archived" : ""}">
     ${isArchived ? `<div class="lb-archived-notice" role="status"><strong>Archived product</strong><span>This record is retained for order history. Saving keeps it archived; no restore action is available.</span></div>` : ""}
     <div class="lb-form-columns"><div class="lb-form-main">
       <label class="lb-field">Product title<input name="title" required maxlength="80" value="${esc(product.title || "")}" placeholder="For example, Everyday tote"></label>
@@ -205,16 +235,19 @@ function productEditor(data, isNew) {
         <div class="lb-image-grid" data-images>${imageList.map((img, i) => { const imageUrl = safeHttps(img.url); return `<figure class="lb-image-card" data-image-id="${esc(img.id)}">${imageUrl ? `<img src="${esc(imageUrl)}" alt="${esc(img.alt || "")}">` : `<div class="lb-image-missing">Image unavailable</div>`}<figcaption><label>Alt text<input value="${esc(img.alt || "")}" maxlength="200" data-image-alt></label><button type="button" class="lb-text-button" data-image-remove>Remove</button></figcaption></figure>`; }).join("")}</div>
       </section>
       <label class="lb-field">Tags<input name="tags" value="${esc(list(product.tags).join(", "))}" placeholder="Comma-separated tags"></label>
+       <section class="lb-side-box"><h2>Pricing</h2><label class="lb-field">Price (₹)<input name="price" inputmode="decimal" required value="${product.price_paise == null ? "" : esc((Number(product.price_paise)/100).toFixed(2))}" placeholder="1290.00"></label><label class="lb-field">Compare-at price (₹)<input name="compare_at" inputmode="decimal" value="${product.compare_at_paise == null ? "" : esc((Number(product.compare_at_paise)/100).toFixed(2))}" placeholder="Optional"></label></section>
+       <section class="lb-side-box"><h2>Inventory</h2><label class="lb-field">SKU<input name="sku" maxlength="80" value="${esc(product.sku || "")}"></label><label class="lb-field">Stock quantity<input name="stock" type="number" min="0" step="1" value="${product.stock == null ? "" : esc(product.stock)}" placeholder="Leave blank for always in stock"></label></section>
     </div><aside class="lb-form-side">
-      <section class="lb-side-box"><h2>Pricing</h2><label class="lb-field">Price (₹)<input name="price" inputmode="decimal" required value="${product.price_paise == null ? "" : esc((Number(product.price_paise)/100).toFixed(2))}" placeholder="1290.00"></label><label class="lb-field">Compare-at price (₹)<input name="compare_at" inputmode="decimal" value="${product.compare_at_paise == null ? "" : esc((Number(product.compare_at_paise)/100).toFixed(2))}" placeholder="Optional"></label></section>
-      <section class="lb-side-box"><h2>Inventory & tax</h2><label class="lb-field">SKU<input name="sku" maxlength="80" value="${esc(product.sku || "")}"></label><label class="lb-field">Stock quantity<input name="stock" type="number" min="0" step="1" value="${product.stock == null ? "" : esc(product.stock)}" placeholder="Leave blank for always in stock"></label><label class="lb-field">HSN code<input name="hsn_code" maxlength="8" value="${esc(product.hsn_code || "")}" placeholder="4, 6 or 8 digits"></label><label class="lb-field">GST rate<select name="gst_rate">${rates.map(rate => `<option value="${rate}" ${Number(product.gst_rate) === rate ? "selected" : ""}>${rate}%${CURRENT_GST_RATES.includes(rate) ? "" : " · legacy rate"}</option>`).join("")}</select></label>${legacy ? `<p class="lb-legacy-notice">This product uses a legacy ${esc(product.gst_rate)}% GST rate. Confirm the correct slab before updating.</p>` : ""}</section>
+       <section class="lb-side-box"><h2>Status &amp; category</h2><label class="lb-field">Listing status<input value="${esc(isArchived ? "Archived" : product.status || (isNew ? "New listing" : "Active"))}" disabled></label><label class="lb-field">Product category<input value="Unavailable" disabled><small>Product categories are not supported by the current dashboard API.</small></label></section>
+      <section class="lb-side-box"><h2>Tax</h2><label class="lb-field">HSN code<input name="hsn_code" maxlength="8" value="${esc(product.hsn_code || "")}" placeholder="4, 6 or 8 digits"></label><label class="lb-field">GST rate<select name="gst_rate">${rates.map(rate => `<option value="${rate}" ${Number(product.gst_rate) === rate ? "selected" : ""}>${rate}%${CURRENT_GST_RATES.includes(rate) ? "" : " · legacy rate"}</option>`).join("")}</select></label>${legacy ? `<p class="lb-legacy-notice">This product uses a legacy ${esc(product.gst_rate)}% GST rate. Confirm the correct slab before updating.</p>` : ""}</section>
        ${!isNew && !isArchived ? `<section class="lb-side-box"><h2>Stock adjustment</h2><label class="lb-field">Quantity change<input type="number" step="1" name="stock_delta" value="1"></label><label class="lb-field">Reason<input name="stock_reason" maxlength="200" placeholder="Stock count correction"></label><button type="button" class="lb-button lb-button-outline lb-full" data-stock-adjust>Adjust stock</button></section>` : ""}
     </aside></div>
     <div class="lb-form-error" role="alert" data-form-error ${Object.keys(errors).length ? "" : "hidden"}>${Object.values(errors).map(esc).join(" ")}</div>
-    <div class="lb-form-actions"><a class="lb-text-button" href="/stores/${storeId}/products">Cancel</a><button class="lb-button" type="submit">${isNew ? "Save product" : "Save changes"}</button>${!isNew && !isArchived ? `<button type="button" class="lb-button lb-button-danger" data-archive>Archive product</button>` : ""}</div>
+     <div class="lb-form-actions"><a class="lb-text-button" href="/stores/${storeId}/products">Cancel</a><button class="lb-button lb-button-outline" type="submit">${isNew ? "Save product" : "Save changes"}</button>${!isNew && !isArchived ? `<button type="button" class="lb-button lb-button-danger" data-archive>Archive product</button>` : ""}</div>
   </form>`;
   const validationMessage = Object.keys(errors).length ? `<div class="lb-validation-summary"><strong>Before you save</strong><ul>${Object.values(errors).map(error => `<li>${esc(error)}</li>`).join("")}</ul></div>` : "";
-  return `${pageHeading("Catalogue", isNew ? "Add a product." : esc(product.title || "Edit product"), isNew ? "A considered product listing is easier to keep accurate later." : "Changes apply to your product listing and inventory.", buttonLink(`/stores/${storeId}/products`, "Back to products", "quiet"))}${actionError(data)}${validationMessage}${formFields}`;
+  const editorActions=`<button class="lb-button" type="submit" form="lb-product-form" data-product-save>${isNew ? "Save product" : "Save changes"}</button>${buttonLink(`/stores/${storeId}/products`, "Back to products", "quiet")}`;
+  return `${pageHeading("", isNew ? "Add product" : esc(product.title || "Edit product"), "", editorActions)}${actionError(data)}${validationMessage}${formFields}`;
 }
 
 function customerTable(rows, storeId) {
@@ -222,7 +255,7 @@ function customerTable(rows, storeId) {
 }
 function customersPage(data) {
   const rows = list(data.customers), storeId = encodeURIComponent(data.store?.store_id || ""), f = obj(data.filters);
-  return `${pageHeading("People who buy from you", "Customers.", "The customer record belongs to your store. Search it when you need it.", exportControl(data.role, "customers", "Export CSV"))}${actionError(data)}
+  return `${pageHeading("", "Customers", "", exportControl(data.role, "customers", "Export CSV"))}${actionError(data)}
     <form class="lb-filter-bar lb-customer-search" method="get" action="/stores/${storeId}/customers" data-filter-form><label class="lb-search"><span>Find a customer</span><input type="search" name="search" value="${esc(f.search || "")}" placeholder="Name, phone or email"></label><button class="lb-button lb-button-small" type="submit">Search</button></form>
     ${rows.length ? customerTable(rows, storeId) : empty("No customers to show.", f.search ? "No customer matched that search. Try another name or number." : "Customer records appear after their first order.")}`;
 }
@@ -231,7 +264,7 @@ function customerDetail(data) {
   const orders = list(c.orders), addresses = list(c.addresses);
   const addressCards = addresses.length ? addresses.map(a => addressBlock(a, a.recipient_name || "Saved address")).join("") : `<div class="lb-inline-empty">No saved addresses.</div>`;
   const rows = orders.length ? orderTable(orders, storeId) : empty("No orders yet.", "Orders placed by this customer will appear here.");
-  return `${pageHeading("Customer record", esc(c.name || "Customer"), c.phone || "Customer contact details", buttonLink(`/stores/${storeId}/customers`, "Back to customers", "quiet"))}${actionError(data)}
+  return `${pageHeading("", esc(c.name || "Customer"), c.phone || "Customer contact details", buttonLink(`/stores/${storeId}/customers`, "Back to customers", "quiet"))}${actionError(data)}
     <div class="lb-customer-metrics"><div><small>Orders</small><strong>${Number(c.orders_count || 0)}</strong></div><div><small>Total spent</small><strong>${money(c.total_spent_paise)}</strong></div><div><small>Last order</small><strong>${esc(date(c.last_order_at))}</strong></div></div>
     <div class="lb-detail-grid"><div class="lb-detail-primary">${card("Order history", rows)}</div><aside>${card("Contact", `<a href="tel:${esc(c.phone || "")}">${esc(c.phone || "Phone unavailable")}</a>${c.email ? `<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>` : ""}`)}${card("Addresses", `<div class="lb-address-stack">${addressCards}</div>`)}</aside></div>`;
 }
@@ -248,7 +281,7 @@ function invoicesPage(data) {
     const documentNo = i.invoice_number || "Order document";
     return `<tr><td><a class="lb-row-link" href="/stores/${storeId}/invoices/${encodeURIComponent(i.id)}">${esc(documentNo)}</a>${cancelled && i.credit_note_number ? `<small>Credit note ${esc(i.credit_note_number)}</small>` : `<small>FY ${esc(i.financial_year || "Not recorded")}</small>`}</td><td>${esc(date(i.issued_at))}</td><td>${esc(i.order_number || "Not recorded")}</td><td>${esc(invoiceType(i.document_type))}</td><td>${money(i.total_paise)}</td><td><span class="lb-status lb-invoice-status" data-status="${esc(i.status || "issued")}">${esc(invoiceStatus(i.status))}</span></td></tr>`;
   }).join("")}</tbody></table></div>`;
-  return `${pageHeading("Financial records", "Invoices.", "Issued order documents and cancellation records in one place.", exportControl(data.role, "orders", "Export orders"))}${actionError(data)}
+  return `${pageHeading("", "Invoices", "", exportControl(data.role, "orders", "Export orders"))}${actionError(data)}
     ${rows.length ? table : empty("No invoices issued yet.", "Invoices or order receipts appear when your first qualifying order is shipped.")}`;
 }
 function settingsPage(data) {
@@ -272,7 +305,7 @@ function settingsPage(data) {
     : `<p class="lb-muted">Exports are available to the store owner.</p>`;
   const taxErrors = registeredSupplierErrors(settings);
   const taxError = name => `<span id="tax-error-${name}" data-tax-error="${name}" class="field-error" role="alert">${esc(taxErrors[name] || "")}</span>`;
-  const taxForm = `<form data-tax-settings-form novalidate><fieldset ${["owner","admin"].includes(data.role) ? "" : "disabled"}>
+  const taxForm = `<form id="lb-business-form" data-tax-settings-form novalidate><fieldset ${["owner","admin"].includes(data.role) ? "" : "disabled"}>
     <label class="lb-field">Legal business name<input name="legal_name" maxlength="120" value="${esc(settings.legal_name || "")}">${taxError("legal_name")}</label>
     ${[["business_line1","Registered address line 1",150],["business_line2","Address line 2 (optional)",150],["business_city","Registered address city",80],["business_pincode","Registered address PIN",6]].map(([name,label,max])=>`<label class="lb-field">${label}<input name="${name}" maxlength="${max}" value="${esc(settings[name] || "")}" aria-describedby="tax-error-${name}">${taxError(name)}</label>`).join("")}
     <label class="lb-field">Invoice prefix<input name="invoice_prefix" maxlength="4" value="${esc(settings.invoice_prefix || defaultInvoicePrefix(store.name))}" ${draft.invoice_prefix_locked ? "readonly" : ""}>${taxError("invoice_prefix")}<small>${draft.invoice_prefix_locked ? "Locked until the next financial year (1 April)." : "1 to 4 uppercase letters or digits. Locked after issuance this financial year."}</small></label>
@@ -281,10 +314,21 @@ function settingsPage(data) {
     <label class="lb-field">Signature image (optional)<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" data-signature-upload><small>PNG, JPEG, WebP or safe SVG, up to 5 MB. Uses the same tenant-scoped R2 upload rules as a logo.</small></label>
     <div data-signature-preview>${settings.signature_url ? `<img src="${esc(settings.signature_url)}" alt="Authorised signature" style="max-width:180px;max-height:80px">` : ""}</div><button type="button" class="lb-text-button" data-signature-remove ${settings.signature_media_id ? "" : "hidden"}>Remove signature</button>
     <p class="lb-muted">Registered details are checked and frozen when an invoice is issued. Storefront changes remain drafts until policies are reviewed and changes published.</p>
-    <p data-tax-form-error role="alert"></p><button class="lb-button" type="submit">Save business details</button>
+    <p data-tax-form-error role="alert"></p><button class="lb-button lb-button-outline" type="submit">Save business details</button>
     </fieldset></form>`;
-  return `${pageHeading("Store controls", "Settings.", "The details behind your storefront and checkout.", "")}${actionError(data)}
-    <div class="lb-settings-layout"><div>${card("Registered business & GST",taxForm)}${card("Store setup", checklist)}${card("Policies", policyMarkup)}</div><aside>${card("Store identity", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status === "awaiting_approval" ? "Awaiting approval" : store.status || "Setup in progress")}</dd></div><div><dt>Registered business state</dt><dd>${esc(registeredBusinessState(settings) ? stateName(registeredBusinessState(settings)) : "Not set")}</dd></div></dl>`)}${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}${card("Store availability", ownerActions)}</aside></div>`;
+  return `${pageHeading("", "Settings", "",`<button class="lb-button" type="submit" form="lb-business-form" ${["owner","admin"].includes(data.role)?"":"disabled"}>Save business details</button>`)}${actionError(data)}
+    <div class="lb-settings-layout"><nav class="lb-settings-index" aria-label="Settings sections">
+      <a href="#store-details">Store details</a><a href="#business-gst">Business &amp; GST</a><a href="#policies">Policies</a>
+      <a href="${`/stores/${id}/settings/checkout`}">Checkout</a><span>Payments <small>Unavailable</small></span><span>Shipping <small>Unavailable</small></span><span>Domains <small>Unavailable</small></span><span>Users <small>Unavailable</small></span>
+    </nav><div class="lb-settings-panels">
+      <div id="store-details">${card("Store details", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Store address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status === "awaiting_approval" ? "Awaiting approval" : store.status || "Setup in progress")}</dd></div><div><dt>Store setup</dt><dd><a class="lb-inline-link" href="/stores/${id}/setup">Open store setup</a></dd></div></dl>`)}</div>
+      <div id="business-gst">${card("Business & GST", taxForm)}</div>
+      <div id="policies">${card("Policies", `${policyMarkup}<p class="lb-settings-note">Review, publish and unpublish controls are managed in store setup.</p><div class="lb-export-buttons"><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/setup">Review policies and publishing</a></div>`)}</div>
+      ${card("Checkout", `<p>Checkout and delivery settings are available in the existing checkout settings screen.</p><div class="lb-export-buttons"><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/settings/checkout">Open checkout settings</a></div><small>${esc(checkoutSettings.store_state ? `Registered state: ${stateName(checkoutSettings.store_state)}` : "Checkout configuration is not included in this dashboard view.")}</small>`)}
+      ${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}
+      ${card("Store availability", ownerActions)}
+      <section class="lb-card lb-settings-unavailable"><div class="lb-card-heading"><h2>Payments, shipping, domains and users</h2></div><p>These controls are not available in the current dashboard API. No changes can be saved here.</p></section>
+    </div></div>`;
 }
 
 function normalizeView(view) {

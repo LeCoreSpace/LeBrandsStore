@@ -6,23 +6,60 @@ import { renderAura } from "./public/aura.js";
 import { DEFAULT_SETTINGS } from "./store/repository.js";
 import { SECURITY_HEADERS } from "./auth/security.js";
 import { renderDashboard } from "./ui/dashboard.js";
+import { localDashboardFixture } from "./local-dashboard-fixture.js";
+import { dateFilters } from "./public/dashboard-rules.js";
+
+const LOCAL_STORE_ID = "00000000-0000-4000-8000-000000000000";
+function filterDashboardFixture(data, filters) {
+  data.filters=filters;
+  data.orders=data.orders.filter(o=>
+    (!filters.status || o.status===filters.status) &&
+    (!filters.search || `${o.order_number} ${o.customer_name} ${o.phone}`.toLowerCase().includes(filters.search.toLowerCase())) &&
+    (!filters.from || o.created_at.slice(0,10)>=filters.from) &&
+    (!filters.to || o.created_at.slice(0,10)<=filters.to));
+  if(filters.search)data.customers=data.customers.filter(c=>
+    `${c.name} ${c.phone} ${c.email}`.toLowerCase().includes(filters.search.toLowerCase()));
+  return data;
+}
+function dashboardPreviewLink(path) {
+  const parts=path.split("/").filter(Boolean).slice(2);
+  const section=parts[0] || "overview";
+  const view=section==="orders" && parts[1] ? "order" :
+    section==="products" && parts[1] ? (parts[1]==="new" ? "product-new" : "product") :
+    ["orders","products","customers","invoices","settings"].includes(section) ? section : "overview";
+  if(section==="setup") return "/__step2-preview";
+  return `/__step4-preview?view=${view}`;
+}
 
 export default {
   async fetch(request, env, ctx) {
     const original = new URL(request.url);
+    // Only the local preview adapter serves display fixtures. Every mutation
+    // targeting this synthetic store fails explicitly and never reaches a DB.
+    if (original.pathname.startsWith(`/api/stores/${LOCAL_STORE_ID}`)) {
+      if (!["GET","HEAD"].includes(request.method)) return Response.json(
+        {error:"Read-only local preview. Changes cannot be saved."},{status:403});
+      const data=localDashboardFixture(), filters=dateFilters(original.searchParams);
+      const section=original.pathname.split("/")[4];
+      filterDashboardFixture(data,filters);
+      return new Response(request.method==="HEAD"?null:JSON.stringify(data),{headers:{
+        ...SECURITY_HEADERS,"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
+    }
     if (["GET","HEAD"].includes(request.method) && original.pathname === "/__step4-preview") {
       const requested = original.searchParams.get("view") || "overview";
-      const view = ["overview","orders","products","customers","invoices","settings"].includes(requested) ? requested : "overview";
-      const store = {store_id:"00000000-0000-4000-8000-000000000000",name:"Your store",subdomain:"",status:"draft"};
-      const data = {store,role:"viewer",draft:{store,settings:{...DEFAULT_SETTINGS},products:[],policies:[]},
-        filters:{period:7},overview:{today_orders:0,orders:0,revenue_paise:0,aov_paise:0,top_products:[],sources:[],needing_action:[]},
-        orders:[],customers:[],invoices:[]};
-      let body = renderDashboard(view,data,{}).replace("<body>",'<body><p role="status" style="padding:14px;text-align:center">Read-only dashboard preview. No account or database is attached; no real dashboard totals are available.</p>');
-      body = body.replace(/<script type="module" src="\/assets\/dashboard.js"><\/script>/g,"")
-        .replace(/href="\/stores\/[^"]*"/g,(href) => {
-          const path = href.slice(6,-1).split("/").slice(3).join("/");
-          return `href="/__step4-preview?view=${["orders","products","customers","invoices","settings"].includes(path) ? path : "overview"}"`;
-        }).replace(/<button\b/g,"<button disabled").replace(/<input\b/g,"<input disabled").replace(/<select\b/g,"<select disabled");
+      const view = ["overview","orders","order","products","product","product-new","customers","invoices","settings"].includes(requested) ? requested : "overview";
+      const data = localDashboardFixture();
+      filterDashboardFixture(data,dateFilters(original.searchParams));
+      let body = renderDashboard(view,data,{name:"Demo owner"}).replace("<body>",'<body><p role="status" style="position:fixed;bottom:0;left:0;right:0;z-index:150;padding:7px;margin:0;text-align:center;font:12px system-ui;background:#fff4ce;color:#514111">Read-only local preview with synthetic sample data. No account or database is attached.</p>')
+        .replace('class="lb-app"','class="lb-app" data-preview="true"');
+      body=body.replace(/href="(\/stores\/[^"]*)"/g,(_,path)=>`href="${dashboardPreviewLink(path)}"`)
+        .replace(/action="(\/stores\/[^"]*)"/g,(_,path)=>`action="${dashboardPreviewLink(path)}"`)
+        // Read-only filters/navigation remain usable; mutation forms and actions
+        // are blocked server-side even if a disabled control is forced open.
+        .replace(/<button([^>]*\bdata-(?:order-status|payment-collected|export|archive-product|stock-adjust|publish-store|unpublish-store)\b[^>]*)>/g,"<button disabled$1>")
+        .replace(/<input([^>]*\btype="file"[^>]*)>/g,"<input disabled$1>");
+      body=body.replace(/(<form\b[^>]*data-filter-form[^>]*>)/g,
+        `$1<input type="hidden" name="view" value="${view}">`);
       return new Response(request.method === "HEAD" ? null : body,{headers:{...SECURITY_HEADERS,
         "content-security-policy":SECURITY_HEADERS["content-security-policy"].replace("frame-ancestors 'none'","frame-ancestors *"),
         "content-type":"text/html; charset=utf-8","cache-control":"no-store","x-frame-options":"SAMEORIGIN"}});

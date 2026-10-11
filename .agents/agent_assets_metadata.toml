@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "kAyYJ5D1mOM5LPHLMaf0y"
+uri = "file://generated-artifacts/dashboard/dashboard-before-after.html"
+type = "html"
+title = "Dashboard before and after: five pages"
+description = "Downloadable comparison gallery with all ten original JPG screenshots, captured using synthetic data in the local read-only preview."
+logical_id = "122a8524-3b0d-4955-b905-a8e2193f3ea9"
+content_hash = "sha256:87a5c5ede252d9870214808b8344febcd1c03b5b0a5cf9abdea81dd36cd6fe45"
+size = 2244834
+mtime_ms = 1791722440621
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/122a8524-3b0d-4955-b905-a8e2193f3ea9/ffc52b37-f3a1-429d-ac77-c389d3b10f7a"
+storage_version_token = "1791722442138607"
+content_type = "text/html"
