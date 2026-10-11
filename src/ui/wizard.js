@@ -17,6 +17,7 @@ export function renderWizard(data = {}, user = {}) {
       </header>
       <main class="wizard-main">
         <div class="wizard-heading"><div><h1>Bring your brand into focus.</h1><p>Setup for ${escapeHtml(data.settings?.brand_name || data.store?.name || "your store")}</p></div><div class="save-status" id="save-status" data-state="${accountName ? "saving" : "readonly"}" role="status" aria-live="polite">${accountName ? "Loading" : "Sign in to save"}</div></div>
+         ${data.store?.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline and your data remains saved. ${escapeHtml(data.store.approval_revocation_note || "")}</p>` : data.store?.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is not public until a LeBrands reviewer approves it.</p>' : ""}
         <div class="wizard-workspace">
           <section class="wizard-panel" id="wizard-panel" aria-live="polite"></section>
           <section class="wizard-preview-panel" id="preview-panel" aria-label="Live store preview"></section>

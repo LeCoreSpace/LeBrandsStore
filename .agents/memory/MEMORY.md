@@ -5,3 +5,4 @@
 - [GST registration and exempt invoices](gstin-registration-boundary.md) — publication requires valid checksum/state-matched GSTIN; zero-rate lines are Exempt, not a new Bill of Supply flow.
 - [Invoice permission boundary](invoice-privilege-boundary.md) — APP financial writes must use tenant-checked functions; preserve strict 42501 isolation denials.
 - [Document numbering boundary](document-numbering-boundary.md) — short new-document serials, DB prefix locks and overflow rejection; never renumber historical documents.
+- [Platform approval boundary](platform-approval-boundary.md) — staff-only script reviews every first go-live; manual review does not grant invoice verification.

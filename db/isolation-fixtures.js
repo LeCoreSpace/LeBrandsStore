@@ -20,6 +20,7 @@ const STORES = [
 // Children before parents; this covers all 25 tenant child tables.
 const CLEANUP_TABLES = [
   "refunds", "invoices", "order_items", "shipments", "payments", "orders",
+  "store_gstin_verifications",
   "customer_addresses", "customers", "product_media", "collection_products",
   "product_options", "products", "collections", "store_setup", "media", "page_versions",
   "pages", "policy_pages", "store_publications", "store_address_history", "checkout_attempts", "checkout_settings",
@@ -29,13 +30,15 @@ const CLEANUP_TABLES = [
 
 export async function assertCleanupPermission(admin) {
   await admin.begin(async (tx) => {
+    const [approval] = await tx`SELECT to_regclass('public.store_gstin_verifications') IS NOT NULL AS enabled`;
+    const tables = approval.enabled ? CLEANUP_TABLES : CLEANUP_TABLES.filter(table => table !== "store_gstin_verifications");
     const [role] = await tx`
       SELECT rolsuper, rolbypassrls FROM pg_catalog.pg_roles WHERE rolname = current_user
     `;
     assert.ok(role && (role.rolsuper || role.rolbypassrls),
       "ADMIN must have BYPASSRLS or superuser privileges.");
     const missing = await tx`
-      SELECT table_name FROM unnest(${["brands", "stores", "users", "sessions", "login_attempts", ...CLEANUP_TABLES]}::text[]) AS t(table_name)
+      SELECT table_name FROM unnest(${["brands", "stores", "users", "sessions", "login_attempts", ...tables]}::text[]) AS t(table_name)
       WHERE NOT has_table_privilege(current_user, 'public.' || table_name, 'SELECT')
          OR NOT has_table_privilege(current_user, 'public.' || table_name, 'DELETE')
     `;
@@ -82,6 +85,7 @@ async function ownedFixtures(tx) {
 
 export async function cleanupFixtures(admin) {
   await admin.begin(async (tx) => {
+    const [approval] = await tx`SELECT to_regclass('public.store_gstin_verifications') IS NOT NULL AS enabled`;
     const { brands, stores } = await ownedFixtures(tx);
     const users = await tx`
       SELECT id, external_user_id, email, name FROM public.users
@@ -107,7 +111,7 @@ export async function cleanupFixtures(admin) {
       // Replica mode is session-local and automatically resets on commit/rollback.
       // Only verified, marked fixture stores are targeted; no global DDL is used.
       await tx`SET LOCAL session_replication_role = replica`;
-      for (const table of CLEANUP_TABLES) {
+      for (const table of CLEANUP_TABLES.filter(table => approval.enabled || table !== "store_gstin_verifications")) {
         await tx`DELETE FROM public.${tx(table)} WHERE store_id = ANY(${ids}::uuid[])`;
       }
       await tx`DELETE FROM public.stores WHERE store_id = ANY(${ids}::uuid[])`;
@@ -135,6 +139,7 @@ export async function cleanupFixtures(admin) {
 
 export async function setupFixtures(admin) {
   return admin.begin(async (tx) => {
+    const [approval] = await tx`SELECT to_regclass('public.store_gstin_verifications') IS NOT NULL AS enabled`;
     const brandIds = [];
     for (const brand of BRANDS) {
       const [row] = await tx`
@@ -145,7 +150,12 @@ export async function setupFixtures(admin) {
     }
     const stores = [];
     for (const store of STORES) {
-      const [row] = await tx`
+      const [row] = approval.enabled && store.status === "live" ? await tx`
+        INSERT INTO public.stores (brand_id, subdomain, name, status, settings,approved_at,approved_by,approval_note)
+        VALUES (${brandIds[store.brand]}, ${store.subdomain}, ${store.subdomain},
+          ${store.status}, ${tx.json({ rls_test_fixture: MARKER })},now(),'rls-test-platform','RLS fixture only')
+        RETURNING store_id
+      ` : await tx`
         INSERT INTO public.stores (brand_id, subdomain, name, status, settings)
         VALUES (${brandIds[store.brand]}, ${store.subdomain}, ${store.subdomain},
           ${store.status}, ${tx.json({ rls_test_fixture: MARKER })})
@@ -161,6 +171,12 @@ export async function setupFixtures(admin) {
       store.mediaId = media.id;
       await tx`INSERT INTO public.store_setup (store_id, logo_media_id, settings)
         VALUES (${store.storeId}, ${media.id}, ${tx.json({ fixture: MARKER,invoice_prefix:"RLS",legal_name:"RLS Fixture Supplier",business_line1:"RLS Fixture Address",business_city:"Mumbai",business_pincode:"400001",business_state:"27",gstin:"27ABCDE1234F1Z0" })})`;
+      if (approval.enabled) await tx`INSERT INTO public.store_gstin_verifications
+        (store_id,gstin,state,verified_at,normalized,raw_response)
+        VALUES (${store.storeId},'27ABCDE1234F1Z0','verified',now(),
+          ${tx.json({gstin:"27ABCDE1234F1Z0",status:"Active",taxpayer_type:"Regular",
+            legal_name:"RLS Fixture Supplier",principal_address:{state_code:"27",line1:"RLS Fixture Address",city:"Mumbai",pin:"400001"},additional_addresses:[]})},
+          ${tx.json({fixture:MARKER,flag:true})})`;
       await tx`INSERT INTO public.store_publications (store_id, snapshot)
         VALUES (${store.storeId}, ${tx.json({ fixture: MARKER })})`;
       await tx`INSERT INTO public.store_address_history (store_id, subdomain)

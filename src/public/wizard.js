@@ -214,7 +214,7 @@ function field(name,label,value="",opts={}){
 }
 function progressBar(){return `<nav class="step-progress" aria-label="Setup steps">${["Brand basics","Choose a theme","Your products","Review & publish"].map((label,i)=>`<button type="button" data-step="${i+1}" aria-current="${step===i+1?"step":"false"}" data-complete="${(data.progress?.completed||[]).includes(i+1)}"><span class="step-number">0${i+1}</span>${label}</button>`).join("")}</nav>`}
 function footerNav(){
-  return `<div class="bottom-nav"><button class="btn btn-secondary" type="button" data-action="back" ${step===1?"disabled":""}>Back</button><span class="field-error-summary" id="step-error" role="status">${esc(formErrors._step||"")}</span>${step<4?`<button class="btn" type="button" data-action="next">Continue <span aria-hidden="true">→</span></button>`:`<button class="btn" id="publish-button" type="button" data-action="publish" ${!publishReady()||busy||uploadBusy?"disabled":""}>${busy?"Publishing…":data.store?.status==="live"?"Publish changes":"Publish store"}</button>`}</div>`;
+  return `<div class="bottom-nav"><button class="btn btn-secondary" type="button" data-action="back" ${step===1?"disabled":""}>Back</button><span class="field-error-summary" id="step-error" role="status">${esc(formErrors._step||"")}</span>${step<4?`<button class="btn" type="button" data-action="next">Continue <span aria-hidden="true">→</span></button>`:`<button class="btn" id="publish-button" type="button" data-action="publish" ${!publishReady()||busy||uploadBusy?"disabled":""}>${busy?"Publishing…":data.store?.status==="live"?"Publish changes":data.store?.status==="awaiting_approval"?"Resubmit for approval":"Publish store"}</button>`}</div>`;
 }
 function shellStep(kicker,title,intro,content){return `${progressBar()}<div class="step-card"><div class="step-kicker">${esc(kicker)}</div><h2>${esc(title)}</h2><p class="step-intro">${esc(intro)}</p>${formErrors._general?`<div class="form-error" role="alert">${esc(formErrors._general)}</div>`:""}${content}${footerNav()}</div>`}
 function renderBasics(){
@@ -283,7 +283,7 @@ function renderReview(){
    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:19px 0 6px"><strong style="font:500 22px var(--serif)">Store policies</strong><button class="btn btn-secondary" type="button" data-action="generate-policies" ${busy||uploadBusy?"disabled":""}>Generate drafts</button></div>
   <p class="field-help">Generating again replaces the current drafts. You'll be asked first.</p>
   ${POLICY_KINDS.map(kind=>{const policy=policies.find(p=>p.kind===kind)||{kind,title:POLICY_NAMES[kind],body:"",reviewed:false};return `<details class="policy-card"><summary>${esc(policy.title||POLICY_NAMES[kind])}${policy.reviewed?" · reviewed":" · draft"}</summary><textarea data-policy="${esc(kind)}" aria-label="${esc(POLICY_NAMES[kind])} text">${esc(policy.body||"")}</textarea><div class="policy-actions"><label class="checkline"><input type="checkbox" data-policy-reviewed="${esc(kind)}" ${policy.reviewed?"checked":""}>I have reviewed this policy</label><span class="field-help">${(policy.body||"").length} characters</span></div></details>`}).join("")}
-  ${data.store?.status==="live"?`<div class="publish-result" role="status"><strong>Your store is live.</strong><br><a href="https://${esc(data.store.subdomain||currentSettings().subdomain)}.lebrands.store/" target="_blank" rel="noopener">Visit ${esc(data.store.subdomain||currentSettings().subdomain)}.lebrands.store</a><br><button class="btn-quiet" type="button" data-action="unpublish">Unpublish store</button></div>`:""}
+  ${data.store?.status==="awaiting_approval"?`<div class="publish-result" role="status"><strong>Awaiting approval.</strong><br>A LeBrands reviewer must approve your store before customers can visit it. Your storefront is offline until then.<br><button class="btn-quiet" type="button" data-action="unpublish">Withdraw request</button></div>`:data.store?.status==="live"?`<div class="publish-result" role="status"><strong>Your store is live.</strong><br><a href="https://${esc(data.store.subdomain||currentSettings().subdomain)}.lebrands.store/" target="_blank" rel="noopener">Visit ${esc(data.store.subdomain||currentSettings().subdomain)}.lebrands.store</a><br><button class="btn-quiet" type="button" data-action="unpublish">Unpublish store</button></div>`:""}
   ${formErrors._publish?`<div class="form-error" role="alert">${esc(formErrors._publish)}</div>`:""}`);
 }
 function renderPanel(){
@@ -529,7 +529,9 @@ async function flushPolicies(){
 async function submitPublish(){
   if(visualOnly){showReadOnly("publish a store");return}
   if(uploadBusy)return;
-  if(!window.confirm("Publish your store? It will be available at your LeBrands.Store address."))return;
+  if(!window.confirm(data.store?.approval_enabled && (!data.store?.approved_at || data.store?.approval_revoked_at)
+    ?"Submit your store for LeBrands approval? It will remain offline until approved."
+    :"Publish your store? It will be available at your LeBrands.Store address."))return;
   busy=true;formErrors={};renderPanel();setStatus("saving","Publishing");
   try{
     if(!await flushPolicies())throw new Error("A policy draft could not be saved. Retry before publishing.");

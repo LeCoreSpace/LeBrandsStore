@@ -213,6 +213,35 @@ try {
   });
   fixtures = await setupFixtures(admin);
   record("setup", true, "Created only marked rls-test fixtures; cleanup permission verified.");
+  const [approvalSchema] = await admin`SELECT to_regclass('public.store_gstin_verifications') IS NOT NULL AS enabled`;
+  if (approvalSchema.enabled) {
+    checks.push(
+      { name: "approval.own-fields-immutable", reason: "APP cannot set or clear even its own store approval; SQLSTATE 42501.",
+        fn: () => denied(fixtures.a.storeId, tx => tx`
+          UPDATE public.stores SET approved_at = NULL, approved_by = NULL,
+            approval_note = NULL WHERE store_id = ${fixtures.a.storeId}
+        `) },
+      { name: "approval.owner-cannot-approve-draft", reason: "APP cannot self-approve a draft; SQLSTATE 42501.",
+        fn: () => denied(fixtures.a.storeId, tx => tx`
+          UPDATE public.stores SET approved_at = now(),approved_by = 'brand owner'
+          WHERE store_id = ${fixtures.draft.storeId}
+        `) },
+      { name: "approval.unapproved-cannot-go-live", reason: "APP cannot make an unapproved store live; SQLSTATE 42501.",
+        fn: () => denied(fixtures.draft.storeId, tx => tx`
+          UPDATE public.stores SET status = 'live' WHERE store_id = ${fixtures.draft.storeId}
+        `) },
+      { name: "gstin.verification-own-update-denied", reason: "APP cannot rewrite verified GSTIN evidence; SQLSTATE 42501.",
+        fn: () => denied(fixtures.a.storeId, tx => tx`
+          UPDATE public.store_gstin_verifications SET state = 'unverified'
+          WHERE store_id = ${fixtures.a.storeId}
+        `) },
+      { name: "gstin.verification-cross-store-insert-denied", reason: "APP cannot record another store's verification; SQLSTATE 42501.",
+        fn: () => denied(fixtures.a.storeId, tx => tx`
+          INSERT INTO public.store_gstin_verifications(store_id,gstin,state)
+          VALUES (${fixtures.b.storeId},'27ABCDE1234F1Z0','unverified')
+        `) },
+    );
+  }
   for (const entry of checks) await check(entry.name, entry.fn, entry.reason);
 } catch (error) {
   record("setup", false, formatDatabaseError(error, secrets()));

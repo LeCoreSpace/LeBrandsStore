@@ -18,8 +18,14 @@ const mediaRecord = (m) => ({
   size: Number(m.size_bytes), width: m.width, height: m.height, alt: m.alt_text,
 });
 export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
-  const [store] = await tx`SELECT store_id, name, subdomain, status, subdomain_changed_at
-    FROM public.stores WHERE store_id = ${storeId}`;
+  // to_jsonb is compatible both before and after the staged 0010 migration.
+  const [store] = await tx`SELECT store_id, name, subdomain, status, subdomain_changed_at,
+    to_jsonb(s) ? 'approved_at' AS approval_enabled,
+    to_jsonb(s)->>'approved_at' AS approved_at,
+    to_jsonb(s)->>'approved_by' AS approved_by,
+    to_jsonb(s)->>'approval_revoked_at' AS approval_revoked_at,
+    to_jsonb(s)->>'approval_revocation_note' AS approval_revocation_note
+    FROM public.stores s WHERE store_id = ${storeId}`;
   if (!store) throw missing();
   // fetch_types:false leaves native PG arrays as strings. JSON has a built-in
   // parser, so keep the Worker driver configuration and cross this boundary explicitly.
@@ -217,6 +223,7 @@ export async function savePolicy(tx, id, kind, value) {
 }
 export async function publish(tx, id, live) {
   await ensureSetup(tx, id);
+  let status = "draft";
   if (live) {
     const data = await loadDraft(tx, id), checklist = publishChecklist(data);
     const gstErrors = businessGSTINErrors(data.settings);
@@ -225,7 +232,11 @@ export async function publish(tx, id, live) {
       throw badInput("Confirm your store address in Brand basics before publishing.");
     }
     if (checklist.some((item) => !item.complete)) throw badInput("Complete every item in the publish checklist.", Object.fromEntries(checklist.filter((v) => !v.complete).map((v) => [v.label, "Not complete"])));
-    data.store.status = "live";
+    // Before 0010 is applied, keep the 0009-era workflow intact. After 0010,
+    // every first go-live awaits a platform-only approval, never a brand action.
+    status = data.store.approval_enabled && (!data.store.approved_at || data.store.approval_revoked_at)
+      ? "awaiting_approval" : "live";
+    data.store.status = status;
     data.progress = { step: 4, completed: [1, 2, 3, 4] };
     await tx`INSERT INTO public.store_publications (store_id, snapshot)
       VALUES (${id}, ${tx.json(data)}) ON CONFLICT (store_id) DO UPDATE
@@ -234,6 +245,6 @@ export async function publish(tx, id, live) {
     await tx`UPDATE public.policy_pages SET published_at = now() WHERE store_id = ${id}`;
     await tx`UPDATE public.store_setup SET step = 4, completed = ARRAY[1,2,3,4] WHERE store_id = ${id}`;
   }
-  await tx`UPDATE public.stores SET status = ${live ? "live" : "draft"} WHERE store_id = ${id}`;
+  await tx`UPDATE public.stores SET status = ${status} WHERE store_id = ${id}`;
   return loadDraft(tx, id);
 }

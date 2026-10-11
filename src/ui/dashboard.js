@@ -38,7 +38,7 @@ function documentPage(view, data, user, body) {
     extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>',
     body: `<div class="lb-app" data-store-id="${esc(storeId)}" data-role="${esc(data.role || "editor")}">
       ${header(data, user, view)}
-      <main class="lb-main">${body}</main>
+       <main class="lb-main">${store.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline; your data is unchanged. ${esc(store.approval_revocation_note || "")}${store.status === "awaiting_approval" ? " Your renewed approval request is awaiting review." : ""}</p>` : store.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is offline until a LeBrands reviewer approves it.</p>' : ""}${body}</main>
       <div class="lb-toast" role="status" aria-live="polite" data-toast hidden></div>
       <script type="application/json" id="dashboard-data">${safeJson({ store, role: data.role, draft: data.draft, filters: data.filters, checkoutSettings: data.checkoutSettings })}</script>
     </div>`,
@@ -266,7 +266,7 @@ function settingsPage(data) {
     const p = policies.find(item => item.kind === key);
     return `<div><span><strong>${esc(label)}</strong><small>${p ? (p.reviewed ? "Reviewed" : "Draft ready") : "Not drafted"}</small></span><a href="/stores/${id}/setup">Review in setup ↗</a></div>`;
   }).join("") : ""}</div>`;
-  const ownerActions = data.role === "owner" ? `<div class="lb-settings-danger"><div><h3>Stop accepting orders</h3><p>Unpublishing makes your public store unavailable to customers until you publish it again.</p></div><button type="button" class="lb-button lb-button-danger" data-unpublish>Unpublish store</button></div>` : `<p class="lb-muted">Only the store owner can unpublish the store.</p>`;
+  const ownerActions = data.role === "owner" && ["live","awaiting_approval"].includes(store.status) ? `<div class="lb-settings-danger"><div><h3>${store.status === "live" ? "Stop accepting orders" : "Withdraw approval request"}</h3><p>${store.status === "live" ? "Unpublishing makes your public store unavailable to customers until you publish it again." : "Withdraw your request and keep your draft. You can resubmit it later."}</p></div><button type="button" class="lb-button lb-button-danger" data-unpublish>${store.status === "live" ? "Unpublish store" : "Withdraw request"}</button></div>` : `<p class="lb-muted">${data.role === "owner" ? "Your storefront is offline." : "Only the store owner can withdraw or unpublish the store."}</p>`;
   const exports = data.role === "owner"
     ? `<div class="lb-export-buttons"><button type="button" data-export="customers">Customers CSV</button><button type="button" data-export="orders">Orders CSV</button><button type="button" data-export="products">Products CSV</button></div><small>Exports are available to the store owner.</small>`
     : `<p class="lb-muted">Exports are available to the store owner.</p>`;
@@ -284,7 +284,7 @@ function settingsPage(data) {
     <p data-tax-form-error role="alert"></p><button class="lb-button" type="submit">Save business details</button>
     </fieldset></form>`;
   return `${pageHeading("Store controls", "Settings.", "The details behind your storefront and checkout.", "")}${actionError(data)}
-    <div class="lb-settings-layout"><div>${card("Registered business & GST",taxForm)}${card("Store setup", checklist)}${card("Policies", policyMarkup)}</div><aside>${card("Store identity", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status || "Setup in progress")}</dd></div><div><dt>Registered business state</dt><dd>${esc(registeredBusinessState(settings) ? stateName(registeredBusinessState(settings)) : "Not set")}</dd></div></dl>`)}${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}${card("Store availability", ownerActions)}</aside></div>`;
+    <div class="lb-settings-layout"><div>${card("Registered business & GST",taxForm)}${card("Store setup", checklist)}${card("Policies", policyMarkup)}</div><aside>${card("Store identity", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status === "awaiting_approval" ? "Awaiting approval" : store.status || "Setup in progress")}</dd></div><div><dt>Registered business state</dt><dd>${esc(registeredBusinessState(settings) ? stateName(registeredBusinessState(settings)) : "Not set")}</dd></div></dl>`)}${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}${card("Store availability", ownerActions)}</aside></div>`;
 }
 
 function normalizeView(view) {
