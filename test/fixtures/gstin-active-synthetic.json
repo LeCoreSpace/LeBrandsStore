@@ -1,0 +1,45 @@
+{
+  "flag": true,
+  "message": "Synthetic public-search fixture",
+  "data": {
+    "ntcrbs": "Synthetic value",
+    "adhrVFlag": "No",
+    "lgnm": "EXAMPLE FIXTURE BUSINESS",
+    "stj": "Synthetic jurisdiction",
+    "dty": "Regular",
+    "cxdt": "",
+    "gstin": "27ABCDE1234F1Z0",
+    "nba": ["Retail Business", "Wholesale Business"],
+    "ekycVFlag": "No",
+    "cmpRt": "NA",
+    "rgdt": "01/07/2017",
+    "ctb": "Proprietorship",
+    "pradr": {
+      "adr": "101, Synthetic Building, Example Locality, Example District, Maharashtra, 400001",
+      "addr": {
+        "flno": "",
+        "lg": "",
+        "loc": "Example Locality",
+        "pncd": "400001",
+        "bnm": "Synthetic Building",
+        "city": "",
+        "lt": "",
+        "stcd": "Maharashtra",
+        "bno": "101",
+        "dst": "Example District",
+        "st": "Example Street"
+      }
+    },
+    "sts": "Active",
+    "tradeNam": "Example Fixture Shop",
+    "isFieldVisitConducted": "No",
+    "adhrVdt": "NA",
+    "ctj": "Synthetic jurisdiction",
+    "einvoiceStatus": "No",
+    "lstupdt": "",
+    "adadr": [],
+    "ctjCd": "",
+    "errorMsg": null,
+    "stjCd": ""
+  }
+}

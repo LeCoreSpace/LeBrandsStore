@@ -1,0 +1,48 @@
+{
+  "flag": true,
+  "message": "GSTIN  found.",
+  "data": {
+    "ntcrbs": "TRD:TRR",
+    "adhrVFlag": "Yes",
+    "lgnm": "STONESCENCE PRIVATE LIMITED",
+    "stj": "State - Tamil Nadu,Division - TIRUNELVELI,Zone - Kanyakumari,Circle - NAGERCOIL - 2 (Jurisdictional Office)",
+    "dty": "Regular",
+    "cxdt": "",
+    "gstin": "33ABLCS0390L1Z2",
+    "nba": [
+      "Recipient of Goods or Services",
+      "Warehouse / Depot"
+    ],
+    "ekycVFlag": "Not Applicable",
+    "cmpRt": "NA",
+    "rgdt": "01/04/2024",
+    "ctb": "Private Limited Company",
+    "pradr": {
+      "adr": "248A, Stonescence Private Limited, K.P Road, Nagercoil, Nagercoil, Kanniyakumari, Tamil Nadu, 629003",
+      "addr": {
+        "flno": "",
+        "lg": "",
+        "loc": "Nagercoil",
+        "pncd": "629003",
+        "bnm": "K.P Road",
+        "city": "",
+        "lt": "",
+        "stcd": "Tamil Nadu",
+        "bno": "0",
+        "dst": "Kanniyakumari",
+        "st": "Nagercoil"
+      }
+    },
+    "sts": "Active",
+    "tradeNam": "STONESCENCE PRIVATE LIMITED",
+    "isFieldVisitConducted": "No",
+    "adhrVdt": "28/01/2025",
+    "ctj": "State - CBIC,Zone - CHENNAI,Commissionerate - MADURAI,Division - TIRUNELVELI,Range - NAGERCOIL RANGE",
+    "einvoiceStatus": "No",
+    "lstupdt": "",
+    "adadr": [],
+    "ctjCd": "",
+    "errorMsg": null,
+    "stjCd": ""
+  }
+}
