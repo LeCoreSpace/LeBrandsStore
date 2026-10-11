@@ -28,7 +28,7 @@ function alertBlock(error, notice) {
 function authFrame({ eyebrow, heading, intro, title, description, form, after, user }) {
   return accountDoc(title, `${accountHeader(user)}<main class="wrap auth-shell">
     <section class="auth-intro"><div class="eyebrow">${escapeHtml(eyebrow)}</div><h1>${escapeHtml(heading)}</h1><p>${escapeHtml(intro)}</p>
-      <div class="auth-stamp"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#e4e9d4"/><path d="M12 20h16M20 12v16" stroke="#214a3d" stroke-width="1.5"/></svg><span>Built for independent Indian brands</span></div>
+      <div class="auth-stamp"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#f1e5ea"/><path d="M12 20h16M20 12v16" stroke="#6b1735" stroke-width="1.5"/></svg><span>Built for independent Indian brands</span></div>
     </section>
     <section class="auth-card"><h2>${escapeHtml(title)}</h2><p>${escapeHtml(description)}</p>${form}${after || ""}</section>
   </main>`);

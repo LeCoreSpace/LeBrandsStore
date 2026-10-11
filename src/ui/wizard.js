@@ -1,4 +1,5 @@
 import { escapeHtml, layout } from "./layout.js";
+import { LE_BRANDS_MARK } from "./brand.js";
 
 const APP_ORIGIN = "https://app.lebrands.store";
 
@@ -8,7 +9,7 @@ export function renderWizard(data = {}, user = {}) {
   const safeData = JSON.stringify(data).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
   const body = `<div class="wizard-shell" id="wizard" data-store-id="${escapeHtml(storeId)}">
       <header class="wizard-top">
-        <a class="wizard-brand" href="/" aria-label="LeBrands.Store dashboard"><span class="wizard-brandmark" aria-hidden="true">L</span><span>LeBrands<small>store studio</small></span></a>
+        <a class="wizard-brand" href="/" aria-label="LeBrands.Store dashboard"><span class="wizard-brandmark" aria-hidden="true">${LE_BRANDS_MARK}</span><span>LeBrands<small>store studio</small></span></a>
         <div class="wizard-account">
           ${accountName
             ? `<span>${escapeHtml(accountName)}</span><a href="/">Dashboard</a><form method="post" action="/logout"><button type="submit">Sign out</button></form>`

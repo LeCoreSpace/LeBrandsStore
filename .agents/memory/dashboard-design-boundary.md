@@ -15,6 +15,15 @@ admin styling into storefront or checkout files. For visual-only requests,
 represent unavailable capabilities honestly rather than inventing data or
 silently expanding backend/schema scope.
 
+LeBrands app branding also includes sign-in, signup, password and account pages,
+not just the wizard and store dashboard. Use the supplied hanging-sign logo.
+
+**Why:** The user pointed out that the inner account pages and old L logo had
+been missed when the app branding was recoloured.
+
+**How to apply:** Check public account-entry pages as well as protected app
+screens when changing LeBrands branding; preserve operational layouts and flows.
+
 Storefront/Aura colours belong to the brand's chosen preset, not LeBrands plum.
 
 **Why:** The user explicitly stated this boundary when approving the app accent

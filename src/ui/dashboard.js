@@ -1,4 +1,5 @@
 import { escapeHtml, layout } from "./layout.js";
+import { LE_BRANDS_MARK } from "./brand.js";
 import { validateProduct } from "../public/validation.js";
 import { CURRENT_GST_RATES, INDIAN_STATES, registeredBusinessState, registeredSupplierErrors, defaultInvoicePrefix, formatPhone } from "../public/commerce-rules.js";
 import { statusLabel, stateName, indianDate, allowedTransitions, timelineSentence } from "../public/dashboard-rules.js";
@@ -64,7 +65,7 @@ function header(data, user, view) {
   return `<div class="lb-shell">
     <button type="button" class="lb-drawer-shade" data-drawer-close aria-label="Close navigation"></button>
     <aside class="lb-sidebar" data-sidebar>
-      <div class="lb-sidebar-top"><a class="lb-wordmark" href="${root}" aria-label="LeBrands home"><span class="lb-mark">L</span><span>LeBrands</span></a><button type="button" class="lb-icon-button lb-sidebar-collapse" data-sidebar-collapse aria-label="Collapse sidebar" title="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div>
+      <div class="lb-sidebar-top"><a class="lb-wordmark" href="${root}" aria-label="LeBrands home"><span class="lb-mark">${LE_BRANDS_MARK}</span><span>LeBrands</span></a><button type="button" class="lb-icon-button lb-sidebar-collapse" data-sidebar-collapse aria-label="Collapse sidebar" title="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div>
       <div class="lb-store-switch"><span class="lb-store-avatar">${esc(String(store.name || "S").trim().slice(0,1).toUpperCase())}</span><span class="lb-store-switch-copy"><strong>${esc(store.name || "Your store")}</strong><small>Store workspace</small></span><a href="${esc(storeUrl)}" class="lb-view-store" ${store.subdomain ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'} aria-label="View store" title="View store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
       <nav class="lb-nav" data-nav aria-label="Store navigation"><span class="lb-nav-caption">Workspace</span>
         ${items.map(([key,label,href,icon]) => `<a href="${href}" class="lb-nav-link" ${key === active ? 'aria-current="page"' : ""} title="${esc(label)}">${dashboardIcon(icon)}<span>${esc(label)}</span>${key === "orders" ? `<b class="lb-count" data-open-order-count hidden title="Loading open orders"></b>` : ""}</a>`).join("")}

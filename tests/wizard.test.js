@@ -265,9 +265,9 @@ test("live routing returns real product/policy pages and branded 404 for missing
   assert.equal(storefrontPage("/policies/privacy", data).status, 200);
   assert.equal(storefrontPage("/checkout", data).status, 404);
 });
-test("signed-in headers escape the user's name and show Sign out, not Sign in; mark is L", () => {
+test("signed-in headers escape the user's name and show Sign out, not Sign in; mark uses supplied artwork", () => {
   const html = accountHeader({ name: '<img src=x onerror="x">' });
   assert.match(html, /Sign out/); assert.ok(!html.includes("Sign in"));
   assert.ok(!html.includes("<img")); assert.match(html, /&lt;img/);
-  assert.match(brandMark(), /M14 14h6v15h15v6H14z/);
+  assert.match(brandMark(), /REPLACE-lebrands-light-logo\.webp/);
 });
