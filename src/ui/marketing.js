@@ -101,47 +101,40 @@ function footer({ pricing = false } = {}) {
 </footer>`;
 }
 
-function detailRow(title, copy, media, extra = "") {
-  return `<article class="m-detail-row m-reveal">
-  <div class="m-detail-media">${imageMarkup(media)}${media.caption ? `<span class="m-media-caption">${media.caption}</span>` : ""}</div>
-  <div class="m-detail-copy">
-    <h3>${title}</h3>
-    <p>${copy}</p>
-    ${extra ? `<p class="m-clarification">${extra}</p>` : ""}
-  </div>
-</article>`;
-}
-
 export function renderHome() {
   const body = `${nav()}
 <main id="top">
   <section class="m-hero" aria-labelledby="hero-title">
     <div class="m-hero-inner">
       <div class="m-hero-copy">
+        <p class="m-kicker">A considered place to begin</p>
         <h1 id="hero-title">A flagship store for your brand.</h1>
         <p class="m-hero-lede">Live today. Built for Indian D2C brands that intend to be remembered.</p>
         <div class="m-hero-actions">
           <a class="m-cta" href="${SIGNUP}">Open your store</a>
-          <a class="m-text-link" href="#showcase">Explore the store concept <span aria-hidden="true">&rarr;</span></a>
+          <a class="m-text-link" href="#craft">Explore the store concept <span aria-hidden="true">&rarr;</span></a>
         </div>
         <p class="m-hero-note">First publication requires platform approval.</p>
       </div>
       <div class="m-hero-visual" aria-label="Example Studio fictional clothing store concept shown on laptop and phone">
+        <span class="m-hero-index">01 / 04</span>
         <div class="m-device-laptop">${imageMarkup(MARKETING_MEDIA.exampleDesktop, { eager: true })}<span class="m-device-caption">Example store concept</span></div>
         <div class="m-device-phone">${imageMarkup(MARKETING_MEDIA.exampleMobile, { eager: true })}</div>
+        <span class="m-orbit-note">Made for the way<br>your brand moves.</span>
       </div>
     </div>
-    <span class="m-scroll-cue" aria-hidden="true">Scroll to explore</span>
+    <span class="m-scroll-cue" aria-hidden="true">Scroll to explore <span></span></span>
   </section>
 
   <section class="m-statement" aria-label="Our approach">
-    <p class="m-wrap m-reveal">Most store builders give you a website. We give you a storefront that looks like you already made it.</p>
+    <div class="m-wrap m-statement-inner"><span class="m-kicker m-reveal">Built around your point of view</span><p class="m-reveal">Most store builders give you a website. We give you a storefront that looks like you already made it.</p></div>
   </section>
 
   <section class="m-how" id="features">
     <div class="m-wrap">
       <div class="m-how-heading m-reveal">
-        <h2 class="m-section-title">In one sitting.</h2>
+        <div><span class="m-kicker">From first details to first look</span><h2 class="m-section-title">In one sitting.</h2></div>
+        <p>A guided setup that gets the shape of your brand right before you go live.</p>
       </div>
       <div class="m-how-grid">
         <div class="m-wizard-media m-reveal">${videoMarkup(MARKETING_MEDIA.wizardVideo)}</div>
@@ -157,16 +150,43 @@ export function renderHome() {
     </div>
   </section>
 
-  <section class="m-details">
+  <section class="m-details" id="craft">
     <div class="m-wrap">
       <div class="m-details-head m-reveal">
-        <h2 class="m-section-title">Crafted details.</h2>
+        <div><span class="m-kicker">The store, behind the scenes</span><h2 class="m-section-title">Crafted details.</h2></div>
         <p>A storefront and the work that keeps it moving, considered together.</p>
       </div>
-      ${detailRow("The store.", "Product pages, collections, cart and checkout designed to sell, on every screen size.", MARKETING_MEDIA.productPhoto, "Catalogue display is available. Advanced collections: Coming soon.")}
-      ${detailRow("The checkout.", "Cash on delivery with built-in fraud protection, COD limits and order tracking for your customers.", MARKETING_MEDIA.checkout, "Cash on delivery is the only payment option available today.")}
-      ${detailRow("The back office.", "Orders from packed to delivered, customers, and payment collection in one calm dashboard.", MARKETING_MEDIA.dashboard)}
-      ${detailRow("The paperwork.", "GST tax invoices with CGST, SGST or IGST worked out for you, numbered correctly every financial year.", MARKETING_MEDIA.invoice)}
+      <div class="m-craft-carousel" data-craft-carousel role="region" aria-roledescription="carousel" aria-label="Crafted details" tabindex="0">
+        <div class="m-craft-stage" data-craft-stage>
+          <article class="m-craft-slide" data-craft-slide role="group" aria-roledescription="slide" aria-label="1 of 4: The store">
+            <div class="m-craft-media">${imageMarkup(MARKETING_MEDIA.productPhoto)}${MARKETING_MEDIA.productPhoto.caption ? `<span class="m-media-caption">${MARKETING_MEDIA.productPhoto.caption}</span>` : ""}</div>
+            <div class="m-craft-copy"><span class="m-craft-count">01 <i>/ 04</i></span><h3>The store.</h3><p>Product pages, collections, cart and checkout designed to sell, on every screen size.</p><p class="m-clarification">Catalogue display is available. Advanced collections: Coming soon.</p></div>
+          </article>
+          <article class="m-craft-slide" data-craft-slide role="group" aria-roledescription="slide" aria-label="2 of 4: The checkout">
+            <div class="m-craft-media">${imageMarkup(MARKETING_MEDIA.checkout)}${MARKETING_MEDIA.checkout.caption ? `<span class="m-media-caption">${MARKETING_MEDIA.checkout.caption}</span>` : ""}</div>
+            <div class="m-craft-copy"><span class="m-craft-count">02 <i>/ 04</i></span><h3>The checkout.</h3><p>Cash on delivery with built-in fraud protection, COD limits and order tracking for your customers.</p><p class="m-clarification">Cash on delivery is the only payment option available today.</p></div>
+          </article>
+          <article class="m-craft-slide" data-craft-slide role="group" aria-roledescription="slide" aria-label="3 of 4: The back office">
+            <div class="m-craft-media">${imageMarkup(MARKETING_MEDIA.dashboard)}${MARKETING_MEDIA.dashboard.caption ? `<span class="m-media-caption">${MARKETING_MEDIA.dashboard.caption}</span>` : ""}</div>
+            <div class="m-craft-copy"><span class="m-craft-count">03 <i>/ 04</i></span><h3>The back office.</h3><p>Orders from packed to delivered, customers, and payment collection in one calm dashboard.</p></div>
+          </article>
+          <article class="m-craft-slide" data-craft-slide role="group" aria-roledescription="slide" aria-label="4 of 4: The paperwork">
+            <div class="m-craft-media">${imageMarkup(MARKETING_MEDIA.invoice)}${MARKETING_MEDIA.invoice.caption ? `<span class="m-media-caption">${MARKETING_MEDIA.invoice.caption}</span>` : ""}</div>
+            <div class="m-craft-copy"><span class="m-craft-count">04 <i>/ 04</i></span><h3>The paperwork.</h3><p>GST tax invoices with CGST, SGST or IGST worked out for you, numbered correctly every financial year.</p></div>
+          </article>
+        </div>
+        <div class="m-craft-controls" data-craft-controls aria-label="Carousel controls">
+          <div class="m-craft-arrows"><button type="button" data-craft-prev aria-label="Previous crafted detail">←</button><button type="button" data-craft-next aria-label="Next crafted detail">→</button></div>
+          <div class="m-craft-selectors" role="group" aria-label="Choose a crafted detail">
+            <button type="button" data-craft-select="0" aria-label="Show The store" aria-current="true">01</button>
+            <button type="button" data-craft-select="1" aria-label="Show The checkout" aria-current="false">02</button>
+            <button type="button" data-craft-select="2" aria-label="Show The back office" aria-current="false">03</button>
+            <button type="button" data-craft-select="3" aria-label="Show The paperwork" aria-current="false">04</button>
+          </div>
+          <button class="m-craft-play" type="button" data-craft-toggle aria-pressed="false">Pause</button>
+        </div>
+        <p class="m-craft-live" data-craft-live aria-live="polite" aria-atomic="true">The store, 1 of 4</p>
+      </div>
     </div>
   </section>
 

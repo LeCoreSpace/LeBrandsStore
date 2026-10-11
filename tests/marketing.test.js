@@ -153,6 +153,7 @@ test("marketing motion honours reduced motion and automatic video playback only 
       URLSearchParams,IntersectionObserver:Observer,
       window:{location:{search},matchMedia(){return preference;},addEventListener(){},requestAnimationFrame(callback){callback();},IntersectionObserver:Observer},
       document:{
+        addEventListener(){},
         querySelector(){return null;},
         querySelectorAll(selector){return selector===".m-reveal"?[item]:[video];},
         documentElement:{classList:{add(name){classes.add(name);},remove(name){classes.delete(name);}}}
@@ -222,7 +223,7 @@ test("landing theme initializes before DOM readiness, follows OS, and preserves 
   assert.ok(!unavailable.classes.has("m-motion"));
 });
 
-test("landing delivers supplied logo variants and distinct reduced-motion-safe section choreography",async()=>{
+test("landing delivers supplied logos and one four-slide showcase on a consistent canvas",async()=>{
   const html=renderHome(),css=await readFile("src/public/marketing.css","utf8");
   assert.match(html,/data-theme-toggle/);
   assert.match(html,/<script src="\/assets\/marketing\.js"><\/script>/);
@@ -230,8 +231,71 @@ test("landing delivers supplied logo variants and distinct reduced-motion-safe s
     assert.match(html,new RegExp(`REPLACE-lebrands-${variant}-logo\\.webp`));
     assert.ok((await stat(`src/public/img/REPLACE-lebrands-${variant}-logo.webp`)).size<45000);
   }
-  for(const selector of [".m-hero-visual",".m-statement",".m-step",".m-detail-row",".m-discovery",".m-principle",".m-coming-list",".m-showcase-frame",".m-pricing-inner",".m-faq-item",".m-final",".m-footer"]){
-    assert.ok(css.includes(`.m-motion ${selector}`),`Missing choreography for ${selector}`);
-  }
+  assert.equal((html.match(/\bdata-craft-carousel\b/g)||[]).length,1);
+  assert.equal((html.match(/\bdata-craft-slide\b/g)||[]).length,4);
+  assert.equal((html.match(/data-craft-select="\d"/g)||[]).length,4);
+  assert.doesNotMatch(html,/class="m-detail-row/);
+  for(const control of ["prev","next","toggle"])assert.ok(html.includes(`data-craft-${control}`));
+  assert.match(css,/\.m-craft-carousel:not\(\.is-enhanced\)/);
+  assert.match(css,/@keyframes/);
   assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);
+});
+
+test("showcase autoplay, manual selection, explicit pause and motion preferences work together",async()=>{
+  const source=await readFile("src/public/marketing.js","utf8");
+  function setup(reduced=false,search=""){
+    const timers=new Map(),observers=[],events={},documentEvents={};
+    let timerId=0,onMotionChange;
+    function element(){
+      const attrs={},classes=new Set(),listeners={};
+      return {attrs,classes,listeners,hidden:false,disabled:false,textContent:"",
+        setAttribute(k,v){attrs[k]=v;},getAttribute(k){return attrs[k];},
+        addEventListener(k,cb){listeners[k]=cb;},
+        classList:{add(k){classes.add(k);},remove(k){classes.delete(k);},toggle(k,on){on?classes.add(k):classes.delete(k);}}};
+    }
+    const slides=Array.from({length:4},(_,i)=>{const e=element();e.attrs["aria-label"]=`${i+1} of 4: Item ${i+1}`;return e;});
+    const buttons=slides.map((_,i)=>({...element(),dataset:{craftSelect:String(i)}}));
+    const previous=element(),next=element(),toggle=element(),live=element(),carousel=element();
+    carousel.contains=()=>false;
+    carousel.querySelectorAll=s=>s==="[data-craft-slide]"?slides:buttons;
+    carousel.querySelector=s=>({"[data-craft-prev]":previous,"[data-craft-next]":next,"[data-craft-toggle]":toggle,"[data-craft-live]":live}[s]||null);
+    const preference={matches:reduced,addEventListener(_k,cb){onMotionChange=cb;}};
+    class Observer{constructor(cb){this.cb=cb;observers.push(this);}observe(){}disconnect(){}unobserve(){}}
+    const doc={hidden:false,readyState:"complete",documentElement:element(),
+      querySelector:s=>s==="[data-craft-carousel]"?carousel:null,querySelectorAll:()=>[],
+      addEventListener(k,cb){documentEvents[k]=cb;}};
+    runInNewContext(source,{URLSearchParams,IntersectionObserver:Observer,document:doc,
+      window:{location:{search},matchMedia:q=>q.includes("reduced-motion")?preference:{matches:false,addEventListener(){}},
+        localStorage:{getItem(){return null;}},IntersectionObserver:Observer,
+        requestAnimationFrame(cb){cb();},addEventListener(k,cb){events[k]=cb;},
+        setTimeout(cb,ms){assert.equal(ms,5200);timers.set(++timerId,cb);return timerId;},clearTimeout(id){timers.delete(id);}}});
+    return {timers,slides,buttons,previous,next,toggle,carousel,doc,preference,
+      active:()=>slides.findIndex(e=>!e.hidden),
+      view(inView){observers[0]?.cb([{target:carousel,isIntersecting:inView}]);},
+      tick(){const entry=timers.entries().next().value;assert.ok(entry,"Autoplay timer missing");timers.delete(entry[0]);entry[1]();},
+      motion(value){preference.matches=value;onMotionChange();},
+      visibility(hidden){doc.hidden=hidden;documentEvents.visibilitychange();}};
+  }
+  const s=setup();
+  assert.equal(s.active(),0);assert.equal(s.timers.size,0);
+  s.view(true);s.tick();assert.equal(s.active(),1);
+  s.toggle.listeners.click();assert.equal(s.timers.size,0);
+  s.next.listeners.click();assert.equal(s.active(),2);assert.equal(s.timers.size,0);
+  s.view(false);s.view(true);assert.equal(s.timers.size,0,"Explicit pause must survive leaving/re-entering");
+  s.toggle.listeners.click();assert.equal(s.timers.size,1);
+  s.carousel.listeners.mouseenter();assert.equal(s.timers.size,0);
+  s.carousel.listeners.mouseleave();assert.equal(s.timers.size,1);
+  s.carousel.listeners.focusin();assert.equal(s.timers.size,0);
+  s.carousel.listeners.focusout({relatedTarget:null});assert.equal(s.timers.size,1);
+  s.visibility(true);assert.equal(s.timers.size,0);
+  s.visibility(false);assert.equal(s.timers.size,1);
+  s.buttons[3].listeners.click();assert.equal(s.active(),3);
+  s.carousel.listeners.keydown({key:"Home",preventDefault(){}});assert.equal(s.active(),0);
+  s.previous.listeners.click();assert.equal(s.active(),3,"Previous wraps to the last slide");
+  s.motion(true);assert.equal(s.timers.size,0);
+  for(const quiet of [setup(true),setup(false,"?motion=off")]){
+    quiet.view(true);assert.equal(quiet.timers.size,0);
+    quiet.next.listeners.click();assert.equal(quiet.active(),1,"Manual navigation must work without automatic motion");
+    assert.equal(quiet.timers.size,0);
+  }
 });

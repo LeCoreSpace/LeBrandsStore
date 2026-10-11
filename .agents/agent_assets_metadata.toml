@@ -112,3 +112,17 @@ mtime_ms = 1791730717341
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/1358da8d-0d3a-462c-bd89-228c72a11350/0719a558-b177-4403-8a98-504048e37246"
 storage_version_token = "1791730832168887"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "KI-nu1X9GPKSaz1OLqe7g"
+uri = "file://generated-artifacts/premium-clothing/carousel-motion-proof.mp4"
+type = "video"
+title = "Actual carousel animation recording"
+description = "An 18-second browser recording showing the store, checkout, back-office and invoice slides advancing automatically, without clicks."
+logical_id = "cc509a8a-8860-45bd-8720-f0926c73c24e"
+content_hash = "sha256:a746206d3a7217c3ce9e647b814fa0a4c28130b9ba5c481b81c6233fb2d4a96d"
+size = 237120
+mtime_ms = 1791734607700
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/cc509a8a-8860-45bd-8720-f0926c73c24e/dd690306-762b-4f1f-ba73-060fd564e1ca"
+storage_version_token = "1791734788340580"
+content_type = "video/mp4"

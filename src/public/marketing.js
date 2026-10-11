@@ -59,6 +59,11 @@
   const motionDisabled = new URLSearchParams(window.location.search).get("motion") === "off";
   const revealItems = [...document.querySelectorAll(".m-reveal")];
   const videos = [...document.querySelectorAll(".m-wizard-media video")];
+  const carousel = document.querySelector("[data-craft-carousel]");
+  const carouselSlides = carousel ? [...carousel.querySelectorAll("[data-craft-slide]")] : [];
+  const carouselSelectors = carousel ? [...carousel.querySelectorAll("[data-craft-select]")] : [];
+  const carouselToggle = carousel ? carousel.querySelector("[data-craft-toggle]") : null;
+  const carouselLive = carousel ? carousel.querySelector("[data-craft-live]") : null;
   const hero = document.querySelector(".m-hero");
   const laptop = document.querySelector(".m-device-laptop");
   const navBar = document.querySelector(".m-nav");
@@ -66,6 +71,97 @@
   let videoObserver;
   let scrollQueued = false;
   let fallbackVideoMode = false;
+  let carouselIndex = 0;
+  let carouselInView = false;
+  let carouselPausedByUser = false;
+  let carouselTimer = null;
+  let carouselHover = false;
+  let carouselFocus = false;
+  const carouselInterval = 5200;
+
+  function paintCarousel(index, announce = true) {
+    if (!carouselSlides.length) return;
+    carouselIndex = (index + carouselSlides.length) % carouselSlides.length;
+    carouselSlides.forEach((slide, position) => {
+      const active = position === carouselIndex;
+      slide.hidden = !active;
+      slide.setAttribute("aria-hidden", String(!active));
+      slide.classList.toggle("is-active", active);
+    });
+    carouselSelectors.forEach((button, position) => {
+      const active = position === carouselIndex;
+      button.setAttribute("aria-current", String(active));
+      if (active) button.setAttribute("aria-pressed", "true");
+      else button.setAttribute("aria-pressed", "false");
+    });
+    if (announce && carouselLive) {
+      const slideName = carouselSlides[carouselIndex].getAttribute("aria-label") || "";
+      carouselLive.textContent = slideName.replace(/^\d+ of \d+:\s*/, "") + `, ${carouselIndex + 1} of ${carouselSlides.length}`;
+    }
+  }
+
+  function canAutoplayCarousel() {
+    return Boolean(carouselSlides.length) && !motionPreference.matches && !motionDisabled &&
+      !carouselPausedByUser && carouselInView && !document.hidden && !carouselHover && !carouselFocus;
+  }
+
+  function stopCarouselTimer() {
+    if (carouselTimer !== null) window.clearTimeout(carouselTimer);
+    carouselTimer = null;
+  }
+
+  function scheduleCarousel() {
+    stopCarouselTimer();
+    if (!canAutoplayCarousel()) return;
+    carouselTimer = window.setTimeout(() => {
+      carouselTimer = null;
+      if (!canAutoplayCarousel()) return;
+      paintCarousel(carouselIndex + 1);
+      scheduleCarousel();
+    }, carouselInterval);
+  }
+
+  function initializeCarousel() {
+    if (!carousel || !carouselSlides.length || !carousel.querySelector) return;
+    carousel.classList.add("is-enhanced");
+    paintCarousel(0, false);
+    const move = (index) => {
+      paintCarousel(index);
+      scheduleCarousel();
+    };
+    const previous = carousel.querySelector("[data-craft-prev]");
+    const next = carousel.querySelector("[data-craft-next]");
+    if (previous) previous.addEventListener("click", () => move(carouselIndex - 1));
+    if (next) next.addEventListener("click", () => move(carouselIndex + 1));
+    carouselSelectors.forEach((button) => {
+      button.addEventListener("click", () => move(Number(button.dataset.craftSelect)));
+    });
+    if (carouselToggle) {
+      carouselToggle.addEventListener("click", () => {
+        carouselPausedByUser = !carouselPausedByUser;
+        carouselToggle.setAttribute("aria-pressed", String(carouselPausedByUser));
+        carouselToggle.textContent = carouselPausedByUser ? "Play" : "Pause";
+        carouselToggle.setAttribute("aria-label", carouselPausedByUser ? "Play slideshow" : "Pause slideshow");
+        scheduleCarousel();
+      });
+    }
+    carousel.addEventListener("mouseenter", () => { carouselHover = true; scheduleCarousel(); });
+    carousel.addEventListener("mouseleave", () => { carouselHover = false; scheduleCarousel(); });
+    carousel.addEventListener("focusin", () => { carouselFocus = true; scheduleCarousel(); });
+    carousel.addEventListener("focusout", (event) => {
+      if (!carousel.contains(event.relatedTarget)) {
+        carouselFocus = false;
+        scheduleCarousel();
+      }
+    });
+    carousel.addEventListener("keydown", (event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key === "ArrowLeft") { event.preventDefault(); move(carouselIndex - 1); }
+      if (event.key === "ArrowRight") { event.preventDefault(); move(carouselIndex + 1); }
+      if (event.key === "Home") { event.preventDefault(); move(0); }
+      if (event.key === "End") { event.preventDefault(); move(carouselSlides.length - 1); }
+    });
+  }
 
   function setNavTone() {
     if (!navBar) return;
@@ -140,6 +236,13 @@
   function configureMotion() {
     revealObserver?.disconnect();
     videoObserver?.disconnect();
+    stopCarouselTimer();
+    if (carouselToggle) {
+      const disabled = motionPreference.matches || motionDisabled;
+      carouselToggle.disabled = disabled;
+      carouselToggle.textContent = disabled ? "Autoplay off" : carouselPausedByUser ? "Play" : "Pause";
+      carouselToggle.setAttribute("aria-label", disabled ? "Autoplay is off because automatic motion is disabled" : carouselPausedByUser ? "Play slideshow" : "Pause slideshow");
+    }
     fallbackVideoMode = false;
     if (motionPreference.matches || motionDisabled) {
       document.documentElement.classList.remove("m-motion");
@@ -152,7 +255,7 @@
     }
 
     document.documentElement.classList.add("m-motion");
-    window.requestAnimationFrame(() => document.documentElement.classList.add("m-flight-ready"));
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => document.documentElement.classList.add("m-flight-ready")));
     if (!("IntersectionObserver" in window)) {
       for (const item of revealItems) item.classList.add("is-visible");
       fallbackVideoMode = true;
@@ -163,12 +266,18 @@
     try {
       revealObserver = new IntersectionObserver((entries, observer) => {
         for (const entry of entries) {
+          if (entry.target === carousel) {
+            carouselInView = entry.isIntersecting;
+            scheduleCarousel();
+            continue;
+          }
           if (!entry.isIntersecting) continue;
           entry.target.classList.add("is-visible");
           observer.unobserve(entry.target);
         }
       }, { threshold: 0.12, rootMargin: "0px 0px -36px 0px" });
       for (const item of revealItems) revealObserver.observe(item);
+      if (carousel && carousel.querySelector) revealObserver.observe(carousel);
 
       videoObserver = new IntersectionObserver((entries) => {
         for (const entry of entries) {
@@ -195,12 +304,14 @@
 
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
+  document.addEventListener("visibilitychange", scheduleCarousel);
   for (const video of videos) {
     video.addEventListener("playing", () => showVideo(video));
     video.addEventListener("pause", () => showPoster(video));
   }
   if (motionPreference.addEventListener) motionPreference.addEventListener("change", configureMotion);
   else motionPreference.addListener(configureMotion);
+  initializeCarousel();
   configureMotion();
   setNavTone();
   }

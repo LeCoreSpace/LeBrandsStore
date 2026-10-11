@@ -14,3 +14,14 @@ as a later step.
 **How to apply:** Stage and review the clothing design independently. A landing
 page refresh is not permission to change live Aura stores or operational screens.
 Treat Aura integration as separate work until the user requests it.
+
+The landing page should have one continuous canvas per theme, not alternating
+dark background bands. Its store, checkout, back-office and paperwork showcase
+belongs in one auto-playing carousel, not four tall stacked rows.
+
+**Why:** The user rejected the alternating-color design as repetitive and not
+premium, and requested a new page design with one auto carousel.
+
+**How to apply:** Keep the preserved operational imagery, but present it together.
+Use actual visible carousel movement rather than claiming static screenshots or
+subtle one-time reveals demonstrate the requested animation.
