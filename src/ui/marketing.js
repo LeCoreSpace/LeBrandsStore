@@ -10,6 +10,13 @@ function imageMarkup(media, { eager = false, className = "", alt = media.alt } =
   if (!media.available) {
     return `<div class="m-asset-placeholder${className ? ` ${className}` : ""}" role="img" aria-label="${alt}. Awaiting supplied image at ${media.src}."><span><strong>Image awaiting supply</strong>${media.src}</span></div>`;
   }
+  if (media.fallback) {
+    const priority = eager
+      ? 'loading="eager" fetchpriority="high"'
+      : 'loading="lazy"';
+    const webpSrcset = `${media.srcset}, ${media.src} ${media.width}w`;
+    return `<picture class="m-responsive-media"><source type="image/avif" srcset="${media.avifSrcset}" sizes="${media.sizes}"><source type="image/webp" srcset="${webpSrcset}" sizes="${media.sizes}"><img class="${className}" src="${media.fallback}" width="${media.width}" height="${media.height}" alt="${alt}" ${priority} decoding="async"></picture>`;
+  }
   const priority = eager
     ? 'loading="eager" fetchpriority="high"'
     : 'loading="lazy"';
@@ -19,9 +26,9 @@ function imageMarkup(media, { eager = false, className = "", alt = media.alt } =
 
 function videoMarkup(media) {
   if (!media.available) {
-    return `<div class="m-asset-placeholder" role="img" aria-label="${media.alt}. Awaiting video at ${media.src} and poster at ${media.poster}."><span><strong>Video awaiting supply</strong>${media.src}<br>Poster: ${media.poster}</span></div>`;
+    return `<div class="m-asset-placeholder" role="img" aria-label="${media.alt}. Awaiting video at ${media.src} and poster at ${media.poster.src}."><span><strong>Video awaiting supply</strong>${media.src}<br>Poster: ${media.poster.src}</span></div>`;
   }
-  return `<video muted playsinline loop preload="none" poster="${media.poster}" aria-label="${media.alt}"><source src="${media.src}" type="video/webm"></video>`;
+  return `<div class="m-wizard-poster" data-wizard-poster>${imageMarkup(media.poster)}</div><video muted playsinline loop preload="none" aria-label="${media.alt}" aria-hidden="true"><source data-src="${media.src}" type="video/webm"></video><span class="m-media-caption">${media.caption}</span>`;
 }
 
 function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://lebrands.store", pageClass = "", body }) {
@@ -96,7 +103,7 @@ function footer({ pricing = false } = {}) {
 
 function detailRow(title, copy, media, extra = "") {
   return `<article class="m-detail-row m-reveal">
-  <div class="m-detail-media">${imageMarkup(media)}</div>
+  <div class="m-detail-media">${imageMarkup(media)}${media.caption ? `<span class="m-media-caption">${media.caption}</span>` : ""}</div>
   <div class="m-detail-copy">
     <h3>${title}</h3>
     <p>${copy}</p>

@@ -1,0 +1,46 @@
+Produce the homepage media yourself. CAPTURE real product screens; GENERATE
+only demo-brand product photos. Never present generated images as a real
+brand or customer. Use the local preview only; no production data writes.
+
+STEP 1 — Demo store (local preview only, seeded fixtures)
+- Create a fictional example brand for screenshots: name "Example Studio"
+  (handmade cotton apparel), clearly labelled "Example store" wherever it
+  appears on the homepage.
+- 6 products with realistic names and Indian prices (₹1,290–₹3,490), Aura
+  theme, policies filled.
+- Generate 6 product photos for it with these rules: studio product
+  photography, single garment folded or on a plain wooden hanger, soft
+  natural window light from the left, warm off-white seamless background,
+  muted natural colours (indigo, ecru, rust, olive), visible fabric texture,
+  85mm lens look, no people, no faces, no hands, no text, no logos, no
+  props except one linen fold or wooden surface, consistent across all
+  six, 2000×2500px. Reject any image with warped seams, extra sleeves,
+  melted textures or glossy CGI look; regenerate until all six are
+  consistent and believable.
+- Seed realistic demo orders: 12 orders over 7 days, fictional customers
+  (e.g. "Priya R.", "Arjun M.", cities across India), mix of statuses
+  (unfulfilled, shipped, delivered, payment collected), at least one
+  inter-state order (IGST) and one intra-state (CGST+SGST).
+
+STEP 2 — Capture (Playwright, real UI, device scale factor 2)
+- REPLACE-store-photo.jpg: Example Studio storefront home, desktop
+  1440×900 AND mobile 390×844, composed side by side in simple CSS device
+  frames (no generated mockup art). 2880px wide.
+- REPLACE-dashboard.jpg: dashboard Home with the demo data, 1440×900.
+- REPLACE-checkout.jpg: mobile checkout for one Example Studio product,
+  390×844.
+- REPLACE-invoice.jpg: tax invoice of the inter-state demo order, cropped
+  to supplier block, items and tax summary. Supplier = Example Studio with
+  a clearly fake GSTIN-format placeholder marked "SAMPLE" as a light
+  watermark across the invoice.
+- REPLACE-wizard-loop.webm: Playwright video of the wizard being filled
+  for Example Studio with the live preview updating, 12–15 seconds,
+  1600px wide, no audio, VP9 ~1 Mbps, plus REPLACE-wizard-poster.jpg
+  from its first frame.
+
+STEP 3 — Wire in and verify
+- Replace the placeholders, export AVIF/WebP + JPG fallbacks with srcset,
+  lazy-load everything below the hero.
+- Label every Example Studio visual with a small "Example store" caption.
+- The "See a live store" link stays stonescence.lebrands.store.
+- Run test:offline; send desktop + mobile full-page screenshots.

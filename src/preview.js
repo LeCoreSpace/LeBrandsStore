@@ -8,6 +8,9 @@ import { SECURITY_HEADERS } from "./auth/security.js";
 import { renderDashboard } from "./ui/dashboard.js";
 import { localDashboardFixture } from "./local-dashboard-fixture.js";
 import { dateFilters } from "./public/dashboard-rules.js";
+import { EXAMPLE_STORE_ID,EXAMPLE_PRODUCTS,exampleFixture,exampleInvoice,exampleMedia } from "./local-example-fixture.js";
+import { renderInvoice } from "./ui/invoice.js";
+import { quoteCart } from "./public/commerce-rules.js";
 
 const LOCAL_STORE_ID = "00000000-0000-4000-8000-000000000000";
 function filterDashboardFixture(data, filters) {
@@ -34,6 +37,64 @@ function dashboardPreviewLink(path) {
 export default {
   async fetch(request, env, ctx) {
     const original = new URL(request.url);
+    const exampleHeaders={...SECURITY_HEADERS,"x-frame-options":"SAMEORIGIN","cache-control":"no-store",
+      "content-security-policy":SECURITY_HEADERS["content-security-policy"].replace("frame-ancestors 'none'","frame-ancestors *")};
+    if(original.pathname.startsWith(`/api/stores/${EXAMPLE_STORE_ID}`)){
+      if(!["GET","HEAD"].includes(request.method))return Response.json({error:"Example store is read-only. Nothing is saved."},{status:403});
+      return new Response(request.method==="HEAD"?null:exampleMedia(JSON.stringify(exampleFixture())),{headers:{...exampleHeaders,"content-type":"application/json"}});
+    }
+    if(original.pathname==="/api/cart/validate" && request.headers.get("referer")?.includes("/__example-preview/")){
+      if(request.method!=="POST")return new Response("Method not allowed",{status:405});
+      try{
+        const input=await request.json(),data=exampleFixture();
+        return new Response(exampleMedia(JSON.stringify(quoteCart(data.products,data.products,input.items,data.checkout,input.state||""))),
+          {headers:{...exampleHeaders,"content-type":"application/json"}});
+      }catch{return Response.json({error:"Invalid example cart"},{status:400});}
+    }
+    if(original.pathname==="/api/checkout/order" && request.headers.get("referer")?.includes("/__example-preview/")){
+      return Response.json({error:"Example store is read-only. Orders cannot be placed."},{status:403});
+    }
+    if(original.pathname.startsWith("/__example-media/")){
+      if(!["GET","HEAD"].includes(request.method))return new Response("Read-only example assets",{status:405});
+      const filename=original.pathname.slice("/__example-media/".length);
+      if(![...EXAMPLE_PRODUCTS.map(p=>p[0]+".webp"),"store-desktop.png","store-mobile.png"].includes(filename))return new Response("Not found",{status:404});
+      const asset=await env.ASSETS.fetch(new Request(new URL(`/img/local-example/${filename}`,original)));
+      return new Response(request.method==="HEAD"?null:asset.body,{status:asset.status,headers:asset.headers});
+    }
+    if(["GET","HEAD"].includes(request.method) && original.pathname.startsWith("/__example-module/")){
+      const name=original.pathname.split("/").pop();
+      if(!["aura.js","wizard.js"].includes(name))return new Response("Not found",{status:404});
+      const asset=await env.ASSETS.fetch(new Request(new URL("/"+name,original)));
+      let source=await asset.text();
+      if(name==="aura.js")source=source.replace('const safeImage = (url) =>',
+        'const safeImage = (url) => /^\\/__example-media\\/[a-z0-9-]+\\.webp$/.test(String(url || "")) ? String(url) :')
+        .replaceAll('from "./','from "/assets/');
+      else source=source.replace('from "/assets/aura.js"','from "/__example-module/aura.js"');
+      return new Response(request.method==="HEAD"?null:source,{headers:{...exampleHeaders,"content-type":"text/javascript; charset=utf-8"}});
+    }
+    if(original.pathname.startsWith("/__example-preview/")){
+      if(!["GET","HEAD"].includes(request.method))return new Response("Example store is read-only",{status:405});
+      const view=original.pathname.split("/").pop(),data=exampleFixture();
+      const banner='<p role="status" style="margin:0;padding:7px 16px;text-align:center;font:12px system-ui;background:#f6f3ee;color:#214a3d">Example store. Fictional brand and customers. Generated demo product photography.</p>';
+      let body;
+      if(view==="store"){
+        body=exampleMedia(renderAura(data,{preview:true,commerce:true,readOnly:true}));
+      }else if(view==="checkout"){
+        body=exampleMedia(renderAura(data,{page:"checkout",commerce:true,preview:true,readOnly:false,storeKey:EXAMPLE_STORE_ID}));
+      }else if(view==="dashboard"){
+        body=exampleMedia(renderDashboard("overview",data,{name:"Example owner"})).replace('class="lb-app"','class="lb-app" data-preview="true"');
+      }else if(view==="invoice"){
+        body=renderInvoice(exampleInvoice(data)).replace("</head>",'<style>main{position:relative}.tools,.addresses,.signature,main>p{display:none}main::after{content:"SAMPLE";position:absolute;inset:35% 0 auto;text-align:center;font-size:120px;letter-spacing:.1em;opacity:.075;transform:rotate(-24deg);pointer-events:none}body{padding:24px}</style></head>');
+      }else if(view==="wizard"){
+        data.settings={...data.settings,brand_name:"",description:"",tagline:"",category:""};
+        body=exampleMedia(renderWizard(data,{})).replace('id="wizard"','data-visual-only="true" id="wizard"')
+          .replace('src="/assets/wizard.js"','src="/__example-module/wizard.js"');
+      }else if(view==="composite"){
+        body='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}html,body{overflow:hidden}body{margin:0;background:#f6f3ee;width:1440px;height:550px;display:flex;align-items:center;justify-content:center;gap:60px}.laptop{width:800px;border:10px solid #292923;border-radius:10px;background:#292923;position:relative}.laptop:after{content:"";position:absolute;width:110%;height:9px;background:#b7b5ae;left:-5%;bottom:-18px;border-radius:0 0 12px 12px}.laptop img{display:block;width:100%;height:auto}.phone{height:466px;border:8px solid #292923;border-radius:28px;overflow:hidden;background:#292923}.phone img{display:block;height:100%;width:auto}img{object-fit:contain}</style></head><body><div class="laptop"><img src="/__example-media/store-desktop.png" alt="Example Studio fictional storefront desktop"></div><div class="phone"><img src="/__example-media/store-mobile.png" alt="Example Studio fictional storefront mobile"></div></body></html>';
+      }else return new Response("Not found",{status:404});
+      if(view!=="composite")body=body.replace(/<body([^>]*)>/,`<body$1>${banner}`);
+      return new Response(request.method==="HEAD"?null:body,{headers:{...exampleHeaders,"content-type":"text/html; charset=utf-8"}});
+    }
     // Only the local preview adapter serves display fixtures. Every mutation
     // targeting this synthetic store fails explicitly and never reaches a DB.
     if (original.pathname.startsWith(`/api/stores/${LOCAL_STORE_ID}`)) {

@@ -61,14 +61,30 @@ test("homepage preserves the requested story, seven native FAQ items, and honest
   assert.match(renderLegal("refund-policy"),/draft/i);
 });
 
-test("genuine captures exist, hero images are responsive/eager and missing assets are never fetched",async()=>{
+test("real UI captures exist, examples are labelled, responsive and lazy, and genuine hero stays small",async()=>{
   const html=renderHome();
   for(const media of Object.values(MARKETING_MEDIA)){
     if(media.available){
       const path="src/public"+media.src;
-      assert.ok((await stat(path)).size<100000,"Optimised storefront captures must stay small");
-      assert.ok(media.src.endsWith(".webp"));
-      assert.ok(html.includes(`srcset="${media.srcset}"`));
+      assert.ok((await stat(path)).size>0,"Available media must exist");
+      if(media.poster){
+        assert.ok((await stat("src/public"+media.poster.src)).size>0);
+        assert.ok((await stat("src/public"+media.poster.fallback)).size>0);
+        assert.ok(html.includes(media.poster.avifSrcset));
+        assert.ok(html.includes(`data-src="${media.src}"`));
+        assert.ok(!html.includes(` src="${media.src}"`),"Video is loaded only when visible");
+      }else{
+        assert.ok(media.src.endsWith(".webp"));
+        assert.ok(html.includes(media.srcset));
+        if(media.fallback){
+          assert.ok((await stat("src/public"+media.fallback)).size>0);
+          assert.ok(html.includes(media.avifSrcset));
+          for(const candidate of (media.srcset+","+media.avifSrcset).split(",")){
+            assert.ok((await stat("src/public"+candidate.trim().split(" ")[0])).size>0);
+          }
+          assert.match(media.alt,/fictional/i);
+        }else assert.ok((await stat(path)).size<100000,"Genuine hero captures stay small");
+      }
     }else{
       assert.ok(html.includes(media.src),"Named placeholder must be disclosed");
       assert.ok(!html.includes(`src="${media.src}"`),"Do not fetch nonexistent media");
@@ -77,6 +93,8 @@ test("genuine captures exist, hero images are responsive/eager and missing asset
   }
   assert.equal((html.match(/<img\b[^>]*fetchpriority="high"/g)||[]).length,2);
   assert.match(html,/loading="lazy"/);
+  assert.equal((html.match(/class="m-media-caption">Example store</g)||[]).length,5);
+  assert.doesNotMatch(html,/Image awaiting supply|Video awaiting supply/);
   const eagerBytes=(await stat("src/public/instrument-sans-latin.woff2")).size+
     (await stat("src/public"+MARKETING_MEDIA.stonescenceDesktop.src)).size+
     (await stat("src/public"+MARKETING_MEDIA.stonescenceMobile.src)).size;
@@ -108,7 +126,7 @@ test("marketing routes are read-only, scoped CSP supports font/video, and previe
     assert.equal(response.status,200);assert.equal(response.headers.get("x-content-type-options"),"nosniff");
   }
   const count=requests.length;
-  for(const pathname of ["/__step4-preview","/__aura-preview?capture=stonescence","/__dashboard-preview","/assets/preview.js","/img/.stonescence-capture.html","/img/private.sql"]){
+  for(const pathname of ["/__step4-preview","/__aura-preview?capture=stonescence","/__dashboard-preview","/__example-preview/store","/__example-preview/invoice","/__example-media/indigo-shirt.webp","/__example-module/aura.js","/img/local-example/indigo-shirt.webp","/assets/preview.js","/img/.stonescence-capture.html","/img/private.sql"]){
     assert.equal((await worker.fetch(new Request("https://lebrands.store"+pathname),env,{})).status,404);
   }
   assert.equal(requests.length,count,"Unknown/preview files must not reach the public asset binding");
@@ -119,7 +137,10 @@ test("marketing motion honours reduced motion and automatic video playback only 
   function setup(reduced,search=""){
     const classes=new Set(),itemClasses=new Set(),observers=[];
     let plays=0,pauses=0,onPreferenceChange;
-    const video={pause(){pauses++;},play(){plays++;return Promise.resolve();}};
+    const poster={classList:{add(){},remove(){}},setAttribute(){},removeAttribute(){}};
+    const video={parentElement:{querySelector(){return poster;}},classList:{add(){},remove(){}},
+      setAttribute(){},removeAttribute(){},addEventListener(){},querySelectorAll(){return [];},
+      load(){},pause(){pauses++;},play(){plays++;return Promise.resolve();}};
     const item={classList:{add(name){itemClasses.add(name);}}};
     const preference={matches:reduced,addEventListener(_event,callback){onPreferenceChange=callback;}};
     class Observer{

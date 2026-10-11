@@ -42,3 +42,45 @@ mtime_ms = 1791725591505
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/cb84a9b6-93b8-4fd6-be12-1f6ebacef8b0/2b5a646e-251c-4ec4-8e8a-80ce91e83715"
 storage_version_token = "1791725868759765"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "z1ZaSNblNT4QUzY8hDMq4"
+uri = "file://generated-artifacts/homepage-media/homepage-desktop-full.jpg"
+type = "image"
+title = "Homepage: full desktop screenshot"
+description = "Complete final homepage at 1440px, with all media loaded and clearly labelled Example store."
+logical_id = "46ba5a9d-8113-4e9d-a25c-081859d0eb8e"
+content_hash = "sha256:b9b092174d334f101e946b273c94c9f50c93611eb8c1bb63d99201d71a17bdfb"
+size = 959723
+mtime_ms = 1791728810065
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/46ba5a9d-8113-4e9d-a25c-081859d0eb8e/fd199674-cf1b-4745-b199-765084bef25e"
+storage_version_token = "1791728974105297"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "CAQ5m7Hb5PQ_TRaeQ-T47"
+uri = "file://generated-artifacts/homepage-media/homepage-mobile-full.jpg"
+type = "image"
+title = "Homepage: full mobile screenshot"
+description = "Complete final homepage at 390px, with all media loaded and clearly labelled Example store."
+logical_id = "a0d95c11-0986-4d14-aee7-bbd3d70070e1"
+content_hash = "sha256:a30307a03078fdeb97e76cc4f8badd573623497ead9865c8fae1dc58a15ac151"
+size = 460070
+mtime_ms = 1791728822477
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/a0d95c11-0986-4d14-aee7-bbd3d70070e1/b5f5e111-d93c-4033-b5a1-3a918a43adc9"
+storage_version_token = "1791728975320315"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "oafKBHEfeQntORSo3RjFX"
+uri = "file://src/public/img/REPLACE-wizard-loop.webm"
+type = "video"
+title = "Example Studio: real wizard recording"
+description = "15-second Playwright-driven recording of the actual wizard and changing live preview. 1600px, VP9, no audio. Fictional local example."
+logical_id = "2307ffb5-1ff4-41a4-b535-09894fe3918a"
+content_hash = "sha256:51b0aa433b0e453edff468bb3ab4c40fc57a93d36dd04f29d0388d905ccc0169"
+size = 980739
+mtime_ms = 1791728067161
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/2307ffb5-1ff4-41a4-b535-09894fe3918a/87be3bbd-21fa-4004-a917-9d8cb88da57a"
+storage_version_token = "1791728976552759"
+content_type = "video/webm"

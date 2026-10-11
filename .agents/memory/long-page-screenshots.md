@@ -15,3 +15,13 @@ valid images.
 top, middle and bottom sections with an image reader, then present the
 complete original as a downloadable asset. Do not repeat the capture just
 because its inline preview was rejected.
+
+A full-height file can still contain blank offscreen lazy-loaded images.
+
+**Why:** The static capture tool did not scroll to trigger those image loads,
+even though the assets themselves returned HTTP 200.
+
+**How to apply:** Inspect the actual media in the saved file. For final
+full-page exports, scroll through the page with Playwright, wait for images
+to finish loading, return to the top and capture. Preserve normal lazy
+loading rather than changing application behavior just for an export.

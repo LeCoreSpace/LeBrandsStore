@@ -8,3 +8,4 @@
 - [Platform approval boundary](platform-approval-boundary.md) — staff-only script reviews every first go-live; manual review does not grant invoice verification.
 - [Dashboard visual boundary](dashboard-design-boundary.md) — professional commerce admin is separate from Aura; visual-only work must not invent backend capabilities.
 - [Long-page screenshots](long-page-screenshots.md) — an image-limit error can still leave a complete saved capture; inspect its dimensions and crops before retrying.
+- [Browser video capture](browser-video-capture.md) — remote native recording may lack FFmpeg; actual CDP screencast frames can be encoded locally.

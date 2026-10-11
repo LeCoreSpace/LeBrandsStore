@@ -1,42 +1,65 @@
 # Homepage media
 
-The homepage uses actual public Stonescence storefront captures, taken on
-11 October 2026 at desktop and 390px mobile widths. The WebP variants are
-small, responsive assets. They are not fabricated storefront mockups.
-The original captures and review screenshots are in the ignored
-`generated-artifacts/homepage/` directory.
+The hero retains genuine public Stonescence storefront captures. Its live-store
+link remains https://stonescence.lebrands.store. These images are not AI art.
 
-No original product photography, real checkout/dashboard/invoice capture,
-or wizard screen recording was supplied. These slots show named placeholders
-instead of invented imagery or broken image/video requests.
+The other five media slots are real Playwright captures of the existing Aura,
+dashboard, checkout, invoice and setup-wizard renderers, populated with the
+fictional Example Studio local fixture. Every homepage example is captioned
+**Example store**. None is a real merchant, customer or financial record.
 
-## Assets to supply
+## Local-only source
 
-Place supplied files in `src/public/img/`. Their public URLs are:
+`src/local-example-fixture.js` is imported only by `src/preview.js`, the entry
+for `wrangler.preview.jsonc`. Production still uses root `wrangler.jsonc` and
+`src/index.js`; production cannot serve the example routes or original local
+product assets.
 
-| URL | Required content |
+The local fixture contains six cotton apparel products priced from ₹1,290 to
+₹3,490, all six reviewed example policies, and twelve fictional orders across
+seven days. Names are abbreviated; addresses and contacts are fictional.
+Intra-state CGST/SGST and interstate IGST are calculated with the existing pure
+cart/tax rules. Dashboard totals come from these orders, not invented metrics.
+The sample tax invoice belongs to the interstate demo order, uses the existing
+short FY numbering convention, displays a fake GSTIN-format placeholder, and
+has a light SAMPLE watermark. It is never issued to the database.
+
+Only the six garment photographs were AI-generated. Their original and
+2000×2500 exports are in ignored `generated-artifacts/homepage-media/`.
+The garment photos were reviewed for anatomy, seams, matte texture and absence
+of people, text or branding. Smaller WebP copies serve the local fixture.
+No AI-generated UI or device artwork is used.
+
+Local routes: `/__example-preview/store`, `/checkout`, `/dashboard`, `/invoice`,
+`/wizard` and `/composite` (each under the same `/__example-preview` prefix).
+The compositor places the actual desktop/mobile captures in simple CSS frames.
+The wizard uses the real client in visual-only mode; edits update its real live
+preview in memory. Save, publish and order placement are blocked. Cart quote
+requests compute prices locally without persistence or provider access.
+
+## Finished homepage files
+
+Files live in `src/public/img/`:
+
+| Base filename | Content |
 | --- | --- |
-| `/img/REPLACE-store-photo.jpg` | Original Stonescence product photography, not a stock or AI image |
-| `/img/REPLACE-checkout.jpg` | Actual COD checkout capture, with customer information removed |
-| `/img/REPLACE-dashboard.jpg` | Actual brand dashboard capture, with personal/financial details removed |
-| `/img/REPLACE-invoice.jpg` | Actual GST invoice capture, with personal/customer details removed |
-| `/img/REPLACE-wizard-loop.webm` | Short recording of the real wizard and its changing live preview |
-| `/img/REPLACE-wizard-poster.jpg` | Still from that recording |
+| `REPLACE-store-photo` | Real desktop and mobile storefront captures in CSS device frames, 2880px wide |
+| `REPLACE-checkout` | Real mobile COD checkout, 780×1688 |
+| `REPLACE-dashboard` | Real dashboard Home, 2880×1800 |
+| `REPLACE-invoice` | Actual supplier/items/tax-summary crop with SAMPLE watermark |
+| `REPLACE-wizard-loop.webm` | Real Playwright wizard recording, 1600px wide, VP9, no audio |
+| `REPLACE-wizard-poster` | First frame from the final recording |
 
-After supplying a file, set its `available` flag to `true` in
-`src/ui/marketing-media.js` and update the width/height to its real dimensions.
-Keep paths aligned with the Worker image/video allowlist. Prefer WebP or AVIF
-for supplied images; the placeholder routes accept both formats.
+Stills have responsive AVIF/WebP sources and JPG fallbacks. The checkout is not
+upscaled for its responsive candidates. All example images are lazy-loaded
+below the hero, including the first-frame poster. The video source loads only when visible; playback is
+muted, inline, looping and disabled by reduced motion or `?motion=off`.
 
-The video is muted, inline and looping. It starts automatically only while
-visible and with motion allowed. Reduced motion stops video and parallax.
-`?motion=off` also gives a motion-free page for static full-page exports.
+Raw captures, full-resolution photos, recording intermediates and full-page
+review screenshots stay in ignored `generated-artifacts/`, not Git history.
+No database migration, production data write, deployment or secret read was
+performed to produce this media.
 
-Instrument Sans is self-hosted with a single Latin WOFF2 subset, using only
-weights 400 and 600. Its OFL licence is in `licenses/instrument-sans-OFL.txt`.
-
-The font and two eager desktop hero images total less than 100 KB.
-This is an asset budget, not a claim that 4G LCP has been measured.
-
-The refund-policy page is explicitly a draft, like the existing Terms and
-Privacy pages. No final legal policy was invented.
+Instrument Sans remains self-hosted with its OFL licence in
+`licenses/instrument-sans-OFL.txt`. The font and two eager hero images remain
+under 100 KB combined. This is an asset budget, not a measured 4G LCP claim.
