@@ -126,3 +126,17 @@ mtime_ms = 1791734607700
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/cc509a8a-8860-45bd-8720-f0926c73c24e/dd690306-762b-4f1f-ba73-060fd564e1ca"
 storage_version_token = "1791734788340580"
 content_type = "video/mp4"
+
+[[outputs]]
+id = "wnVqd7zf1r8WCwU-hGzDg"
+uri = "file://generated-artifacts/premium-clothing/premium-landing-motion.mp4"
+type = "video"
+title = "Updated landing page motion"
+description = "A 22-second recording of the actual browser, showing the moving hero, setup preview, carousel and animated section details."
+logical_id = "7d28ea56-b2de-4456-a234-9c670fcb7791"
+content_hash = "sha256:21f46c834cef3e077756825cf4e7a5b79fe225a34fc4dce1c1213c83681c0afd"
+size = 510842
+mtime_ms = 1791736151847
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/7d28ea56-b2de-4456-a234-9c670fcb7791/e70197ec-5fc7-4c17-aed1-453d568f59e1"
+storage_version_token = "1791736196805242"
+content_type = "video/mp4"

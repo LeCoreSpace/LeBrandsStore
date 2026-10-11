@@ -145,7 +145,7 @@ test("marketing motion honours reduced motion and automatic video playback only 
     const video={parentElement:{querySelector(){return poster;}},classList:{add(){},remove(){}},
       setAttribute(){},removeAttribute(){},addEventListener(){},querySelectorAll(){return [];},
       load(){},pause(){pauses++;},play(){plays++;return Promise.resolve();}};
-    const item={classList:{add(name){itemClasses.add(name);}}};
+    const item={matches(){return false;},classList:{add(name){itemClasses.add(name);},toggle(name,on){on?itemClasses.add(name):itemClasses.delete(name);}}};
     const preference={matches:reduced,addEventListener(_event,callback){onPreferenceChange=callback;}};
     class Observer{
       constructor(callback){this.callback=callback;observers.push(this);}
@@ -157,8 +157,8 @@ test("marketing motion honours reduced motion and automatic video playback only 
       document:{
         addEventListener(){},
         querySelector(){return null;},
-        querySelectorAll(selector){return selector===".m-reveal"?[item]:[video];},
-        documentElement:{classList:{add(name){classes.add(name);},remove(name){classes.delete(name);}}}
+        querySelectorAll(selector){return selector===".m-reveal"?[item]:selector===".m-wizard-media video"?[video]:[];},
+        documentElement:{classList:{add(name){classes.add(name);},remove(name){classes.delete(name);},toggle(name,on){on?classes.add(name):classes.delete(name);}}}
       }
     };
     runInNewContext(source,context);
@@ -197,7 +197,7 @@ test("landing theme initializes before DOM readiness, follows OS, and preserves 
       },
       document:{
         readyState:"loading",
-        documentElement:{setAttribute(k,v){attrs[k]=v;},classList:{add(k){classes.add(k);},remove(k){classes.delete(k);}}},
+        documentElement:{setAttribute(k,v){attrs[k]=v;},classList:{add(k){classes.add(k);},remove(k){classes.delete(k);},toggle(k,on){on?classes.add(k):classes.delete(k);}}},
         querySelector(selector){return selector==="[data-m-theme-color]"?{setAttribute(k,v){metaAttrs[k]=v;}}:selector==="[data-theme-label]"?label:null;},
         querySelectorAll(selector){return selector==="[data-theme-toggle]"?[button]:[];},
         addEventListener(k,cb){events[k]=cb;}
@@ -252,7 +252,7 @@ test("showcase autoplay, manual selection, explicit pause and motion preferences
     let timerId=0,onMotionChange;
     function element(){
       const attrs={},classes=new Set(),listeners={};
-      return {attrs,classes,listeners,hidden:false,disabled:false,textContent:"",
+      return {attrs,classes,listeners,hidden:false,disabled:false,textContent:"",matches(){return false;},
         setAttribute(k,v){attrs[k]=v;},getAttribute(k){return attrs[k];},
         addEventListener(k,cb){listeners[k]=cb;},
         classList:{add(k){classes.add(k);},remove(k){classes.delete(k);},toggle(k,on){on?classes.add(k):classes.delete(k);}}};

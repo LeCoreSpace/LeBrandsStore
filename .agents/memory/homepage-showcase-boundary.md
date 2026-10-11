@@ -26,3 +26,13 @@ stacked showcase rows.
 **How to apply:** Keep the preserved operational imagery, but present it together.
 Use actual visible carousel movement rather than claiming static screenshots or
 subtle one-time reveals demonstrate the requested animation.
+
+Keep section headings restrained and use visible motion while sections are being
+viewed, not only entrance fades that finish before the user notices them.
+
+**Why:** The user repeatedly said the landing page looked static and its section
+headings were too big.
+
+**How to apply:** Preserve readable, stationary body copy; animate decorative
+elements and media, and verify actual movement in a browser rather than relying
+on static screenshots. Keep reduced-motion and offscreen/tab-hidden pauses.

@@ -58,6 +58,7 @@
   // Static exports and anyone preferring a motion-free page can opt out by URL.
   const motionDisabled = new URLSearchParams(window.location.search).get("motion") === "off";
   const revealItems = [...document.querySelectorAll(".m-reveal")];
+  const sections = [...document.querySelectorAll("#top > section")];
   const videos = [...document.querySelectorAll(".m-wizard-media video")];
   const carousel = document.querySelector("[data-craft-carousel]");
   const carouselSlides = carousel ? [...carousel.querySelectorAll("[data-craft-slide]")] : [];
@@ -180,9 +181,24 @@
   function onScroll() {
     setNavTone();
     updateFallbackVideos();
+    if (fallbackVideoMode) updateFallbackSections();
     if (scrollQueued) return;
     scrollQueued = true;
     window.requestAnimationFrame(setParallax);
+  }
+
+  function isInViewport(element, margin = 0) {
+    if (!element) return false;
+    const bounds = element.getBoundingClientRect();
+    return bounds.bottom > margin && bounds.top < window.innerHeight - margin;
+  }
+
+  function updateFallbackSections() {
+    for (const section of sections) section.classList.toggle("m-section-active", isInViewport(section, 80));
+    if (carousel) {
+      carouselInView = isInViewport(carousel, 80);
+      scheduleCarousel();
+    }
   }
 
   function stopVideos() {
@@ -222,8 +238,7 @@
   function updateFallbackVideos() {
     if (!fallbackVideoMode || motionPreference.matches || motionDisabled) return;
     for (const video of videos) {
-      const bounds = video.getBoundingClientRect();
-      if (bounds.top < window.innerHeight && bounds.bottom > 0) {
+      if (!document.hidden && isInViewport(video)) {
         loadVideoSource(video);
         video.play().catch(() => {});
       } else {
@@ -237,6 +252,7 @@
     revealObserver?.disconnect();
     videoObserver?.disconnect();
     stopCarouselTimer();
+    document.documentElement.classList.toggle("m-page-hidden", document.hidden);
     if (carouselToggle) {
       const disabled = motionPreference.matches || motionDisabled;
       carouselToggle.disabled = disabled;
@@ -247,6 +263,7 @@
     if (motionPreference.matches || motionDisabled) {
       document.documentElement.classList.remove("m-motion");
       document.documentElement.classList.remove("m-flight-ready");
+      for (const section of sections) section.classList.remove("m-section-active");
       for (const item of revealItems) item.classList.add("is-visible");
       stopVideos();
       for (const video of videos) showPoster(video);
@@ -259,30 +276,34 @@
     if (!("IntersectionObserver" in window)) {
       for (const item of revealItems) item.classList.add("is-visible");
       fallbackVideoMode = true;
+      updateFallbackSections();
       updateFallbackVideos();
       return;
     }
 
     try {
-      revealObserver = new IntersectionObserver((entries, observer) => {
+      revealObserver = new IntersectionObserver((entries) => {
         for (const entry of entries) {
+          if (entry.target.matches("#top > section")) {
+            entry.target.classList.toggle("m-section-active", entry.isIntersecting);
+            continue;
+          }
           if (entry.target === carousel) {
             carouselInView = entry.isIntersecting;
             scheduleCarousel();
             continue;
           }
-          if (!entry.isIntersecting) continue;
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
+          entry.target.classList.toggle("is-visible", entry.isIntersecting);
         }
       }, { threshold: 0.12, rootMargin: "0px 0px -36px 0px" });
       for (const item of revealItems) revealObserver.observe(item);
+      for (const section of sections) revealObserver.observe(section);
       if (carousel && carousel.querySelector) revealObserver.observe(carousel);
 
       videoObserver = new IntersectionObserver((entries) => {
         for (const entry of entries) {
           const video = entry.target;
-          if (entry.isIntersecting && !motionPreference.matches && !motionDisabled) {
+          if (entry.isIntersecting && !document.hidden && !motionPreference.matches && !motionDisabled) {
             loadVideoSource(video);
             video.play().catch(() => {});
           } else {
@@ -296,15 +317,37 @@
       revealObserver?.disconnect();
       videoObserver?.disconnect();
       document.documentElement.classList.remove("m-motion");
+      document.documentElement.classList.remove("m-flight-ready");
       for (const item of revealItems) item.classList.add("is-visible");
+      for (const section of sections) section.classList.remove("m-section-active");
+      stopVideos();
+      for (const video of videos) showPoster(video);
       fallbackVideoMode = true;
+      updateFallbackSections();
       updateFallbackVideos();
     }
   }
 
+  function handleVisibilityChange() {
+    document.documentElement.classList.toggle("m-page-hidden", document.hidden);
+    if (document.hidden) {
+      stopVideos();
+    } else if (fallbackVideoMode) {
+      updateFallbackVideos();
+    } else if (!motionPreference.matches && !motionDisabled) {
+      for (const video of videos) {
+        if (isInViewport(video)) {
+          loadVideoSource(video);
+          video.play().catch(() => {});
+        }
+      }
+    }
+    scheduleCarousel();
+  }
+
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", onScroll, { passive: true });
-  document.addEventListener("visibilitychange", scheduleCarousel);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
   for (const video of videos) {
     video.addEventListener("playing", () => showVideo(video));
     video.addEventListener("pause", () => showPoster(video));
