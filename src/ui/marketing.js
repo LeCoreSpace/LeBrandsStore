@@ -190,16 +190,6 @@ export function renderHome() {
     </div>
   </section>
 
-  <section class="m-discovery">
-    <div class="m-wrap m-discovery-inner">
-      <h2 class="m-reveal">Your store, with shoppers already looking.</h2>
-      <div class="m-discovery-copy m-reveal m-reveal-delay">
-        <p>Every LeBrands store is listed on LeBrands.Space, India's D2C brand search engine, with 300,000+ brands across 38 categories.</p>
-        <span class="m-status">Rolling out.</span>
-        <p class="m-discovery-clarification">Discovery is rolling out. Listings are not yet available for every store.</p>
-      </div>
-    </div>
-  </section>
 
   <section class="m-principles" aria-label="Our principles">
     <div class="m-wrap m-principles-list">
@@ -255,7 +245,6 @@ export function renderHome() {
         <details class="m-faq-item m-reveal"><summary>How do payments work?</summary><p>Cash on delivery today. Online payments through your own Razorpay account are coming soon, and the money goes straight to you.</p></details>
         <details class="m-faq-item m-reveal"><summary>Can I use my own domain?</summary><p>Coming soon. Your store starts at yourbrand.lebrands.store.</p></details>
         <details class="m-faq-item m-reveal"><summary>Who owns my customer data?</summary><p>You do. We never market to your customers.</p></details>
-        <details class="m-faq-item m-reveal"><summary>What does the LeBrands.Space listing mean?</summary><p>Your brand appears on India's D2C brand search engine, where shoppers discover brands by category and niche. Rolling out.</p></details>
         <details class="m-faq-item m-reveal"><summary>How long does setup take?</summary><p>Most brands finish the guided setup in one sitting.</p></details>
       </div>
     </div>

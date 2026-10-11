@@ -33,7 +33,7 @@ test("homepage has the exact title, canonical, original concept OG image, single
   for(const id of ["features","faq"])assert.ok(html.includes(`id="${id}"`));
 });
 
-test("homepage preserves the requested story, seven native FAQ items, and honest availability labels",()=>{
+test("homepage preserves the requested story, six native FAQ items, and honest availability labels",()=>{
   const html=renderHome(),copy=text(html);
   for(const required of [
     "Live today. Built for Indian D2C brands that intend to be remembered.",
@@ -44,21 +44,24 @@ test("homepage preserves the requested story, seven native FAQ items, and honest
     "Cash on delivery with built-in fraud protection, COD limits and order tracking for your customers.",
     "Orders from packed to delivered, customers, and payment collection in one calm dashboard.",
     "GST tax invoices with CGST, SGST or IGST worked out for you, numbered correctly every financial year.",
-    "Your store, with shoppers already looking.","300,000+ brands across 38 categories.",
-    "Rolling out.","Zero commission on your sales.","Your domain, your payments, your customer data.",
+    "Zero commission on your sales.","Your domain, your payments, your customer data.",
     "We never market to your customers.","Simple monthly pricing. No commission, ever.",
     "Your brand is ready. Your store can be too.","LeBrandsSpace Digital Private Limited","Chennai"
   ])assert.ok(copy.includes(required),`Missing requested copy: ${required}`);
-  assert.equal((html.match(/<details\b/g)||[]).length,7);
+  assert.equal((html.match(/<details\b/g)||[]).length,6);
   assert.match(copy,/valid GSTIN is required to publish/i);
   assert.match(copy,/First publication requires platform approval/);
   assert.match(copy,/Razorpay payments and integrations with any logistics partner can be added for your brand/);
   assert.match(html,/href="\/contact">Contact us to discuss your setup/);
+  for(const page of [html,renderPricing()]){
+    assert.doesNotMatch(page,/LeBrands\.Space|300[,\s]?000|\bdiscovery\b|\bmall\b|listed on|shoppers already looking|listing mean/i);
+    assert.match(page,/LeBrandsSpace Digital Private Limited/);
+    assert.doesNotMatch(page,/m-discovery/);
+  }
   for(const feature of ["Razorpay","Shiprocket","Your own domain","Order emails","Drag-and-drop page editor","Bazaar"]){
     assert.ok(html.includes(feature));
   }
   assert.equal((html.match(/<p>[^<]*<span>Coming soon<\/span><\/p>/g)||[]).length,6);
-  assert.match(copy,/Listings are not yet available for every store/);
   assert.match(renderPricing(),/Pricing is being finalised\. Talk to us\./);
   assert.match(renderPricing(),/href="mailto:support@lebrands\.store"/);
   assert.match(renderLegal("refund-policy"),/Refund policy/);

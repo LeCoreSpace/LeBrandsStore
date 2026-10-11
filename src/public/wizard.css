@@ -8,7 +8,7 @@
   --ink: #243b34;
   --muted: #68766c;
   --line: #d9ddd2;
-  --accent: #526b53;
+  --accent: #6b1735;
   --accent-ink: #fffdf4;
   --warm: #c47d61;
   --gold: #dfc88d;
@@ -96,8 +96,8 @@ a:focus-visible {
   display: grid;
   place-items: center;
   border-radius: 11px;
-  background: #28483c;
-  color: #ead39c;
+  background: var(--accent);
+  color: var(--accent-ink);
   font: 500 22px var(--serif);
 }
 

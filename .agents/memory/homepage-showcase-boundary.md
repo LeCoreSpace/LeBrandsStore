@@ -36,3 +36,13 @@ headings were too big.
 **How to apply:** Preserve readable, stationary body copy; animate decorative
 elements and media, and verify actual movement in a browser rather than relying
 on static screenshots. Keep reduced-motion and offscreen/tab-hidden pauses.
+
+Do not mention LeBrands.Space, its listings, discovery/mall claims or the
+300,000+ brands figure anywhere in marketing. Keep the registered legal company
+name LeBrandsSpace Digital Private Limited in the footer, terms and policies.
+
+**Why:** The user removed that marketing direction and explicitly said the
+standalone discovery headline would be an unsupported claim.
+
+**How to apply:** Do not reintroduce removed claims in copy, FAQ, metadata,
+alt text or generated visuals; preserve the legal identity.
