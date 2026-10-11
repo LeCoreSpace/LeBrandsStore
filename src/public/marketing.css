@@ -497,7 +497,7 @@ html, body { background: var(--m-ivory); color: var(--m-ink); overflow-x: hidden
 :focus-visible { outline-color: var(--m-accent-deep); }
 .m-nav :focus-visible, .m-final :focus-visible, .m-footer :focus-visible { outline-color: var(--m-green); }
 
-/* One continuous fashion-editorial canvas, with material coming from imagery and linework. */
+/* Shared shell palette; homepage bands alternate light and dark surfaces. */
 :root {
   --m-ivory: #f4efe7;
   --m-paper: #f4efe7;
@@ -540,6 +540,38 @@ body { font-family: var(--m-sans); }
 .m-hero, .m-statement, .m-how, .m-details, .m-discovery, .m-principles, .m-coming,
 .m-showcase, .m-pricing-tease, .m-faq, .m-final, .m-footer {
   background: var(--m-ivory); color: var(--m-ink);
+}
+/* Scope the full palette to each band so text and controls retain contrast.
+   Dark mode reverses the order, rather than turning both bands dark. */
+#top > section:nth-of-type(odd),
+:root[data-theme="dark"] #top > section:nth-of-type(even) {
+  --m-ivory: #f4efe7;
+  --m-paper: #f4efe7;
+  --m-soft: #f4efe7;
+  --m-panel: #f4efe7;
+  --m-ink: #342528;
+  --m-muted: #76686a;
+  --m-green: #d29a91;
+  --m-accent-deep: #883d50;
+  --m-line: rgba(67, 43, 47, .22);
+  --m-hero-bg: #f4efe7;
+  --m-hero-fg: #342528;
+  --m-hero-muted: #76686a;
+}
+#top > section:nth-of-type(even),
+:root[data-theme="dark"] #top > section:nth-of-type(odd) {
+  --m-ivory: #241c1e;
+  --m-paper: #241c1e;
+  --m-soft: #241c1e;
+  --m-panel: #241c1e;
+  --m-ink: #f0e7de;
+  --m-muted: #b9a9a8;
+  --m-green: #d7a096;
+  --m-accent-deep: #e0a69a;
+  --m-line: rgba(240, 231, 222, .23);
+  --m-hero-bg: #241c1e;
+  --m-hero-fg: #f0e7de;
+  --m-hero-muted: #b9a9a8;
 }
 .m-hero {
   min-height: max(760px, 100svh); padding: 100px 0 76px; overflow: hidden;
@@ -672,6 +704,8 @@ body { font-family: var(--m-sans); }
 .m-principle { font-size: clamp(31px, 5vw, 66px); }
 .m-coming { padding: 28px 0 114px; }
 .m-coming-list p { color: var(--m-muted); }
+.m-coming-list .m-integration-note { max-width: 640px; margin: 28px 0 0; padding: 0; border: 0; color: var(--m-muted); font-size: 15px; line-height: 1.7; }
+.m-integration-note a { color: var(--m-accent-deep); text-decoration: underline; text-underline-offset: 4px; }
 .m-showcase { padding: 58px 0 110px; }
 .m-showcase-head h2 { font-size: clamp(44px, 6.4vw, 78px); }
 .m-showcase-head p { color: var(--m-muted); }

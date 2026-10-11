@@ -15,12 +15,13 @@ as a later step.
 page refresh is not permission to change live Aura stores or operational screens.
 Treat Aura integration as separate work until the user requests it.
 
-The landing page should have one continuous canvas per theme, not alternating
-dark background bands. Its store, checkout, back-office and paperwork showcase
+The landing page should alternate clearly light and dark bands, not two dark
+shades and not one continuous background. Its store, checkout, back-office and paperwork showcase
 belongs in one auto-playing carousel, not four tall stacked rows.
 
-**Why:** The user rejected the alternating-color design as repetitive and not
-premium, and requested a new page design with one auto carousel.
+**Why:** The user clarified that alternating bands are wanted, but one must be
+light and the other dark. They also requested one auto carousel instead of four
+stacked showcase rows.
 
 **How to apply:** Keep the preserved operational imagery, but present it together.
 Use actual visible carousel movement rather than claiming static screenshots or

@@ -52,6 +52,8 @@ test("homepage preserves the requested story, seven native FAQ items, and honest
   assert.equal((html.match(/<details\b/g)||[]).length,7);
   assert.match(copy,/valid GSTIN is required to publish/i);
   assert.match(copy,/First publication requires platform approval/);
+  assert.match(copy,/Razorpay payments and integrations with any logistics partner can be added for your brand/);
+  assert.match(html,/href="\/contact">Contact us to discuss your setup/);
   for(const feature of ["Razorpay","Shiprocket","Your own domain","Order emails","Drag-and-drop page editor","Bazaar"]){
     assert.ok(html.includes(feature));
   }
@@ -223,7 +225,7 @@ test("landing theme initializes before DOM readiness, follows OS, and preserves 
   assert.ok(!unavailable.classes.has("m-motion"));
 });
 
-test("landing delivers supplied logos and one four-slide showcase on a consistent canvas",async()=>{
+test("landing delivers supplied logos, one four-slide showcase and contrasting alternating bands",async()=>{
   const html=renderHome(),css=await readFile("src/public/marketing.css","utf8");
   assert.match(html,/data-theme-toggle/);
   assert.match(html,/<script src="\/assets\/marketing\.js"><\/script>/);
@@ -238,6 +240,8 @@ test("landing delivers supplied logos and one four-slide showcase on a consisten
   for(const control of ["prev","next","toggle"])assert.ok(html.includes(`data-craft-${control}`));
   assert.match(css,/\.m-craft-carousel:not\(\.is-enhanced\)/);
   assert.match(css,/@keyframes/);
+  assert.match(css,/:root\[data-theme="dark"\] #top > section:nth-of-type\(even\)/);
+  assert.match(css,/:root\[data-theme="dark"\] #top > section:nth-of-type\(odd\)/);
   assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);
 });
 
