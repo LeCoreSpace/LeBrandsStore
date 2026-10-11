@@ -1,0 +1,60 @@
+TASK: Redesign the brand dashboard (app.lebrands.store) to feel like a
+professional commerce admin in the style of Shopify's admin — dense, calm,
+functional. Visual/UI change only: no schema changes, no migrations, no
+deploy. All existing behaviour, routes, permissions and tests must keep
+working. Do not copy Shopify's logo, icons, illustrations or exact assets;
+use Lucide icons and our own LeBrands green as the single accent colour.
+
+LAYOUT
+- Fixed left sidebar (240px, collapsible to icons): Home, Orders (with
+  open-order count badge), Products, Customers, Invoices, Analytics (coming
+  soon), Online store (theme/pages/preview), then Settings pinned at the
+  bottom. Store name + "View store" at the top of the sidebar.
+- Top bar: global search (orders by number/customer, products, customers),
+  help icon, account menu with name and Log out.
+- Content max-width ~1000px, centred; mobile: sidebar becomes a drawer.
+
+VISUAL SYSTEM (replace the current editorial style everywhere)
+- Font: Inter (or system UI stack). 14px base, 13px tables/meta, page
+  titles 20px semibold. No serif fonts, no taglines, no eyebrow labels, no
+  decorative headings anywhere in the app.
+- Background #f1f2f4; cards white, 1px border #e3e3e3, 12px radius,
+  subtle shadow; 16px card padding; 8px spacing grid.
+- Text: primary #1a1a1a, secondary #616161. Links only for real links.
+- Status badges with fixed tones: Paid/Delivered = green, Pending/
+  Unfulfilled = yellow, Cancelled = grey, Failed/Unpaid overdue = red,
+  COD = neutral outline.
+- Buttons: one primary (accent) per page, top-right of the page header;
+  secondary = white with border; destructive = red text/outline + confirm.
+
+PAGES
+- Home: setup guide card (checklist with progress bar, collapsible:
+  products, payments, shipping, domain, policies — "Coming soon" items
+  disabled); KPI row (Total sales, Orders, Average order value, Online
+  store sessions — show "—" with tooltip if no data) with date-range picker
+  (Today / 7 days / 30 days / custom); sales-over-time line chart; "Things
+  to do" list (orders to fulfil, payments to collect, invoices issued
+  today).
+- Orders: tabs (All, Unfulfilled, Unpaid, Open, Cancelled), search +
+  filters, dense table (checkbox, Order, Date, Customer, Total, Payment
+  status badge, Fulfilment status badge, Items, Delivery method). Row click
+  opens order.
+- Order detail: two columns. Left: line items card with fulfilment
+  status and "Mark as packed/Ship" actions, payment summary card (subtotal,
+  shipping, CGST/SGST/IGST, total, paid/collected), timeline at the bottom
+  with a comment box. Right: customer card, contact, shipping address,
+  invoice card (number + View/Download), notes.
+- Products, Customers, Invoices: same list-table pattern; product
+  editor as two columns (title/description/media/pricing/inventory left;
+  status, category, GST rate/HSN right).
+- Settings: left list of sections (Store details, Business & GST, Policies,
+  Checkout, Payments, Shipping, Domains, Users) with forms on the right.
+- Empty states: short one-line message + one action, no illustrations.
+
+QUALITY
+- Keyboard focus states, AA contrast, Indian number formatting (₹1,23,456),
+  Indian date format, loading skeletons for tables.
+- Keep the live store (Aura theme) and checkout untouched.
+- Run pnpm run test:offline; update UI tests where markup changed but do
+  not weaken assertions. Give me before/after screenshots of Home, Orders,
+  Order detail, Product editor and Settings via the local preview.
