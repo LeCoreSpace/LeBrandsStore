@@ -177,6 +177,7 @@ export async function setupFixtures(admin) {
           ${tx.json({gstin:"27ABCDE1234F1Z0",status:"Active",taxpayer_type:"Regular",
             legal_name:"RLS Fixture Supplier",principal_address:{state_code:"27",line1:"RLS Fixture Address",city:"Mumbai",pin:"400001"},additional_addresses:[]})},
           ${tx.json({fixture:MARKER,flag:true})})`;
+      await tx`SELECT set_config('app.store_id',${store.storeId},true)`;
       await tx`INSERT INTO public.store_publications (store_id, snapshot)
         VALUES (${store.storeId}, ${tx.json({ fixture: MARKER })})`;
       await tx`INSERT INTO public.store_address_history (store_id, subdomain)

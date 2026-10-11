@@ -63,7 +63,7 @@ All nine functions are explicitly owned by `postgres`.
 | `gstin_is_valid` | New | Invoker, immutable; `pg_catalog` | Pattern, mod-36 checksum, known state and prefix/state match |
 | `default_invoice_prefix` | New | Invoker, immutable; `pg_catalog` | First three consonants/alphanumerics of brand name; letters fallback; `STO` if empty. Stonescence → STN |
 | `invoice_serial` | New | Invoker, immutable; `pg_catalog` | Short FY, minimum four-digit padding, valid prefix/sequence, 16-character ceiling; failures `23514` |
-| `guard_invoice_prefix` | New | Definer; `pg_catalog, public` | Current-IST-FY prefix lock, tenant context check on changes, removal/deletion protection; failures `42501` |
+| `guard_invoice_prefix` | New | Definer; `pg_catalog, public` | Current-IST-FY lock on draft and published prefixes, tenant context, upsert/republish/removal/deletion protection; failures `42501` |
 | `supplier_is_complete` | New | Invoker, immutable; `pg_catalog, public` | Required legal name, street, city, PIN and valid state-matched GSTIN |
 | `invoice_supplier` | New | Invoker; `pg_catalog, public` | Reads one explicit store's current registered Settings and tenant-owned signature media; incomplete details `23514` |
 | `validate_new_tax_invoice` | New | Invoker; `pg_catalog, public` | Complete supplier, GST-only new documents and zero tax on exempt lines; failures `23514` |
@@ -73,8 +73,13 @@ All nine functions are explicitly owned by `postgres`.
 The two authorities retain explicit `store_id` filters on every tenant read
 and write and reject missing/invalid context or cross-store orders with `42501`.
 They lock the store row first, matching the Worker's outer transaction, then
-the settings/order rows and counter. Settings row locking serializes prefix
-editing with issuance. Failed issuance/cancellation rolls back allocation.
+the draft settings row, published snapshot, order rows and counter. Invoice
+and credit-note numbering read **only the published snapshot's Settings**.
+Draft edits do not change the issued prefix. The shared settings row lock
+serializes prefix editing/republishing with issuance. Both sides of an
+`INSERT ... ON CONFLICT` republish check the existing published prefix, so
+unchanged-prefix republish succeeds but an earlier draft prefix cannot be
+published after current-FY issuance. Failed issuance/cancellation rolls back allocation.
 The existing 0008 invoice/counter immutability triggers remain unchanged.
 
 ## Triggers, constraint and default initialization
@@ -82,9 +87,15 @@ The existing 0008 invoice/counter immutability triggers remain unchanged.
 - `validate_new_tax_invoice`: BEFORE INSERT, each row, on `invoices`.
 - `guard_invoice_prefix`: BEFORE UPDATE OF settings, each row, on `store_setup`.
 - `guard_invoice_prefix_delete`: BEFORE DELETE, each row, on `store_setup`.
+- `guard_published_invoice_prefix`: BEFORE INSERT or UPDATE OF snapshot, each
+  row, on `store_publications`, invoking the same `guard_invoice_prefix`.
+- `guard_published_invoice_prefix_delete`: BEFORE DELETE, each row, on
+  `store_publications`, invoking the same `guard_invoice_prefix`.
 - `invoice_prefix_valid`: CHECK on `store_setup.settings`, enforcing
   `^[A-Z0-9]{1,4}$` when a prefix is stored.
-- Existing stores without a prefix receive the default in their settings.
+- `published_invoice_prefix_valid`: the same CHECK on the published prefix.
+- Existing stores without a prefix receive the default independently in
+  their draft Settings and published snapshots, based on each one's brand name.
   This pins their default against later brand renames. No issued invoice,
   credit note or counter is renumbered/reset.
 

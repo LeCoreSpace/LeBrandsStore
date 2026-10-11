@@ -109,3 +109,30 @@ test("migration preserves 0008 privilege boundary and adds DB prefix locks, comp
   assert.ok(!/GRANT\s+(?:ALL|INSERT|UPDATE|DELETE|TRUNCATE)[\s\S]*?\bON TABLE\b/i.test(sql));
   assert.ok(!/CREATE POLICY|DROP POLICY|DISABLE ROW LEVEL SECURITY/.test(sql));
 });
+test("financial numbering reads published settings and republish guards cover upserts, removal and deletion",()=>{
+  const sql=readFileSync(new URL("../db/migrations/0009_required_gstin.sql",import.meta.url),"utf8");
+  for (const name of ["issue_invoice","cancel_invoice"]) {
+    const body=sql.split(`CREATE OR REPLACE FUNCTION public.${name}`)[1].split("END $$;")[0];
+    assert.match(body,/SELECT p\.snapshot->'settings' INTO v_settings FROM public\.store_publications p\s+WHERE p\.store_id = v_store_id FOR UPDATE/);
+    assert.doesNotMatch(body,/SELECT st\.settings INTO v_settings/);
+    assert.doesNotMatch(body,/UPDATE public\.store_setup/);
+    assert.match(body,/v_prefix := COALESCE\(v_settings->>'invoice_prefix'/);
+  }
+  const guard=sql.split("CREATE FUNCTION public.guard_invoice_prefix()")[1].split("END $$;")[0];
+  assert.match(guard,/TG_TABLE_NAME = 'store_publications'/);
+  assert.match(guard,/v_old_settings := COALESCE\(OLD\.snapshot->'settings'/);
+  assert.match(guard,/v_new_settings := COALESCE\(NEW\.snapshot->'settings'/);
+  assert.match(guard,/v_existing_published := FOUND/);
+  assert.match(guard,/AND NOT v_existing_published/);
+  assert.match(guard,/v_old_settings->>'invoice_prefix' IS NOT NULL AND v_new_settings->>'invoice_prefix' IS NULL/);
+  assert.match(guard,/i\.credit_note_number IS NOT NULL AND i\.cancelled_at >= v_boundary/);
+  for (const raise of guard.matchAll(/RAISE EXCEPTION[\s\S]*?USING ERRCODE = '([^']+)'/g)) {
+    assert.equal(raise[1],"insufficient_privilege","Every prefix guard denial must be SQLSTATE 42501");
+  }
+  assert.match(sql,/CREATE TRIGGER guard_published_invoice_prefix BEFORE INSERT OR UPDATE OF snapshot/);
+  assert.match(sql,/CREATE TRIGGER guard_published_invoice_prefix_delete BEFORE DELETE ON public\.store_publications/);
+  assert.match(sql,/Pin the published default independently of any unpublished draft changes/);
+  const probes=readFileSync(new URL("../db/dashboard-isolation.js",import.meta.url),"utf8");
+  assert.match(probes,/dashboard\.prefix\.republish-draft-denied/);
+  assert.match(probes,/dashboard\.prefix\.republish-unchanged-allowed/);
+});

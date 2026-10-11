@@ -51,49 +51,86 @@ ALTER TABLE public.store_setup ADD CONSTRAINT invoice_prefix_valid
 UPDATE public.store_setup st SET settings = jsonb_set(st.settings,'{invoice_prefix}',
   to_jsonb(public.default_invoice_prefix(COALESCE(st.settings->>'brand_name',s.name))))
   FROM public.stores s WHERE s.store_id = st.store_id AND st.settings->>'invoice_prefix' IS NULL;
+-- Pin the published default independently of any unpublished draft changes.
+UPDATE public.store_publications p SET snapshot = jsonb_set(p.snapshot,'{settings}',
+  COALESCE(p.snapshot->'settings','{}'::jsonb) || jsonb_build_object('invoice_prefix',
+    public.default_invoice_prefix(COALESCE(p.snapshot->'settings'->>'brand_name',
+      p.snapshot->'store'->>'name',s.name))))
+  FROM public.stores s WHERE s.store_id = p.store_id
+    AND p.snapshot->'settings'->>'invoice_prefix' IS NULL;
+ALTER TABLE public.store_publications ADD CONSTRAINT published_invoice_prefix_valid
+  CHECK (snapshot->'settings'->>'invoice_prefix' IS NULL
+    OR snapshot->'settings'->>'invoice_prefix' ~ '^[A-Z0-9]{1,4}$');
 CREATE FUNCTION public.guard_invoice_prefix() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog,public AS $$
 DECLARE v_old text; v_new text; v_name text; v_start timestamp; v_boundary timestamptz; v_scope uuid;
+  v_id uuid; v_old_settings jsonb; v_new_settings jsonb; v_existing_published boolean := false;
 BEGIN
+  IF TG_OP = 'INSERT' THEN v_id := NEW.store_id; ELSE v_id := OLD.store_id; END IF;
+  IF TG_TABLE_NAME = 'store_publications' THEN
+    -- Serialize direct SQL republish/delete with issuance as well as Worker
+    -- writes, whose outer transaction already locks the store first.
+    PERFORM 1 FROM public.store_setup st WHERE st.store_id = v_id FOR UPDATE;
+    IF TG_OP = 'INSERT' THEN
+      -- BEFORE INSERT also runs for ON CONFLICT republish. Compare that
+      -- candidate against the existing published prefix, not an empty row.
+      SELECT COALESCE(p.snapshot->'settings','{}'::jsonb) INTO v_old_settings
+        FROM public.store_publications p WHERE p.store_id = v_id FOR UPDATE;
+      v_existing_published := FOUND;
+      v_old_settings := COALESCE(v_old_settings,'{}'::jsonb);
+    ELSE v_old_settings := COALESCE(OLD.snapshot->'settings','{}'::jsonb); END IF;
+    IF TG_OP <> 'DELETE' THEN v_new_settings := COALESCE(NEW.snapshot->'settings','{}'::jsonb); END IF;
+  ELSE
+    v_old_settings := OLD.settings;
+    IF TG_OP <> 'DELETE' THEN v_new_settings := NEW.settings; END IF;
+  END IF;
   IF TG_OP = 'DELETE' THEN
     v_start := date_trunc('year',now() AT TIME ZONE 'Asia/Kolkata') + interval '3 months';
     IF now() AT TIME ZONE 'Asia/Kolkata' < v_start THEN v_start := v_start - interval '1 year'; END IF;
     v_boundary := v_start AT TIME ZONE 'Asia/Kolkata';
-    IF EXISTS (SELECT 1 FROM public.invoices i WHERE i.store_id = OLD.store_id AND
+    IF EXISTS (SELECT 1 FROM public.invoices i WHERE i.store_id = v_id AND
       (i.issued_at >= v_boundary OR (i.credit_note_number IS NOT NULL AND i.cancelled_at >= v_boundary))) THEN
       RAISE EXCEPTION 'Invoice prefix is locked until the next Indian financial year' USING ERRCODE = 'insufficient_privilege';
     END IF;
     RETURN OLD;
   END IF;
-  SELECT s.name INTO v_name FROM public.stores s WHERE s.store_id = OLD.store_id;
-  v_old := COALESCE(OLD.settings->>'invoice_prefix',public.default_invoice_prefix(COALESCE(OLD.settings->>'brand_name',v_name)));
-  v_new := COALESCE(NEW.settings->>'invoice_prefix',public.default_invoice_prefix(COALESCE(NEW.settings->>'brand_name',v_name)));
+  SELECT s.name INTO v_name FROM public.stores s WHERE s.store_id = v_id;
+  v_old := COALESCE(v_old_settings->>'invoice_prefix',public.default_invoice_prefix(COALESCE(v_old_settings->>'brand_name',v_name)));
+  v_new := COALESCE(v_new_settings->>'invoice_prefix',public.default_invoice_prefix(COALESCE(v_new_settings->>'brand_name',v_name)));
   IF v_old IS DISTINCT FROM v_new OR
-    (OLD.settings->>'invoice_prefix' IS NOT NULL AND NEW.settings->>'invoice_prefix' IS NULL) THEN
+    (v_old_settings->>'invoice_prefix' IS NOT NULL AND v_new_settings->>'invoice_prefix' IS NULL)
+    OR (TG_OP = 'INSERT' AND TG_TABLE_NAME = 'store_publications' AND NOT v_existing_published) THEN
     BEGIN
       v_scope := NULLIF(current_setting('app.store_id',true),'')::uuid;
     EXCEPTION WHEN invalid_text_representation THEN
       RAISE EXCEPTION 'Store context is required' USING ERRCODE = 'insufficient_privilege';
     END;
-    IF v_scope IS DISTINCT FROM OLD.store_id
-      OR NEW.store_id IS DISTINCT FROM OLD.store_id THEN
+    IF v_scope IS DISTINCT FROM v_id OR NEW.store_id IS DISTINCT FROM v_id THEN
       RAISE EXCEPTION 'Store context is required' USING ERRCODE = 'insufficient_privilege';
     END IF;
     v_start := date_trunc('year',now() AT TIME ZONE 'Asia/Kolkata') + interval '3 months';
     IF now() AT TIME ZONE 'Asia/Kolkata' < v_start THEN v_start := v_start - interval '1 year'; END IF;
     v_boundary := v_start AT TIME ZONE 'Asia/Kolkata';
-    IF EXISTS (SELECT 1 FROM public.invoices i WHERE i.store_id = OLD.store_id AND
+    IF EXISTS (SELECT 1 FROM public.invoices i WHERE i.store_id = v_id AND
       ((i.issued_at >= v_boundary AND i.issued_at < v_boundary + interval '1 year') OR
        (i.credit_note_number IS NOT NULL AND i.cancelled_at >= v_boundary AND i.cancelled_at < v_boundary + interval '1 year'))) THEN
       RAISE EXCEPTION 'Invoice prefix is locked until the next Indian financial year'
         USING ERRCODE = 'insufficient_privilege';
     END IF;
   END IF;
+  IF TG_TABLE_NAME = 'store_publications' THEN
+    NEW.snapshot := jsonb_set(NEW.snapshot,'{settings}',
+      v_new_settings || jsonb_build_object('invoice_prefix',v_new));
+  END IF;
   RETURN NEW;
 END $$;
 CREATE TRIGGER guard_invoice_prefix BEFORE UPDATE OF settings ON public.store_setup
   FOR EACH ROW EXECUTE FUNCTION public.guard_invoice_prefix();
 CREATE TRIGGER guard_invoice_prefix_delete BEFORE DELETE ON public.store_setup
+  FOR EACH ROW EXECUTE FUNCTION public.guard_invoice_prefix();
+CREATE TRIGGER guard_published_invoice_prefix BEFORE INSERT OR UPDATE OF snapshot ON public.store_publications
+  FOR EACH ROW EXECUTE FUNCTION public.guard_invoice_prefix();
+CREATE TRIGGER guard_published_invoice_prefix_delete BEFORE DELETE ON public.store_publications
   FOR EACH ROW EXECUTE FUNCTION public.guard_invoice_prefix();
 
 CREATE FUNCTION public.supplier_is_complete(p_supplier jsonb) RETURNS boolean
@@ -140,9 +177,12 @@ BEGIN
   -- Match the Worker's outer store lock before any order/settings row lock.
   PERFORM 1 FROM public.stores s WHERE s.store_id = v_store_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Store is not in the current context' USING ERRCODE = 'insufficient_privilege'; END IF;
-  -- Shared lock ordering: store, setup row, order, then store/FY counter. Prefix
-  -- edits wait for issuance; issuance sees a committed prefix or locks it first.
-  SELECT st.settings INTO v_settings FROM public.store_setup st WHERE st.store_id = v_store_id FOR UPDATE;
+  -- Shared lock ordering: store, setup, publication, order, store/FY counter.
+  -- Financial numbering reads only published settings, never draft settings.
+  PERFORM 1 FROM public.store_setup st WHERE st.store_id = v_store_id FOR UPDATE;
+  SELECT p.snapshot->'settings' INTO v_settings FROM public.store_publications p
+    WHERE p.store_id = v_store_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Published invoice settings are required' USING ERRCODE = 'insufficient_privilege'; END IF;
   SELECT o.* INTO v_order FROM public.orders o WHERE o.store_id = v_store_id AND o.id = p_order_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Order is not in the current store' USING ERRCODE = 'insufficient_privilege'; END IF;
   SELECT i.* INTO v_invoice FROM public.invoices i WHERE i.store_id = v_store_id AND i.order_id = p_order_id;
@@ -160,8 +200,6 @@ BEGIN
     INTO v_items FROM public.order_items oi WHERE oi.store_id = v_store_id AND oi.order_id = p_order_id;
   SELECT s.name INTO v_name FROM public.stores s WHERE s.store_id = v_store_id;
   v_prefix := COALESCE(v_settings->>'invoice_prefix',public.default_invoice_prefix(COALESCE(v_settings->>'brand_name',v_name)));
-  UPDATE public.store_setup st SET settings = jsonb_set(st.settings,'{invoice_prefix}',to_jsonb(v_prefix))
-    WHERE st.store_id = v_store_id;
   v_start := extract(year FROM v_now AT TIME ZONE 'Asia/Kolkata')::integer;
   IF extract(month FROM v_now AT TIME ZONE 'Asia/Kolkata') < 4 THEN v_start := v_start - 1; END IF;
   v_fy := v_start::text || '-' || right((v_start + 1)::text,2);
@@ -196,7 +234,10 @@ BEGIN
   IF v_store_id IS NULL THEN RAISE EXCEPTION 'Store context is required' USING ERRCODE = 'insufficient_privilege'; END IF;
   PERFORM 1 FROM public.stores s WHERE s.store_id = v_store_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Store is not in the current context' USING ERRCODE = 'insufficient_privilege'; END IF;
-  SELECT st.settings INTO v_settings FROM public.store_setup st WHERE st.store_id = v_store_id FOR UPDATE;
+  PERFORM 1 FROM public.store_setup st WHERE st.store_id = v_store_id FOR UPDATE;
+  SELECT p.snapshot->'settings' INTO v_settings FROM public.store_publications p
+    WHERE p.store_id = v_store_id FOR UPDATE;
+  IF NOT FOUND THEN RAISE EXCEPTION 'Published invoice settings are required' USING ERRCODE = 'insufficient_privilege'; END IF;
   SELECT o.* INTO v_order FROM public.orders o WHERE o.store_id = v_store_id AND o.id = p_order_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Order is not in the current store' USING ERRCODE = 'insufficient_privilege'; END IF;
   SELECT i.* INTO v_invoice FROM public.invoices i WHERE i.store_id = v_store_id AND i.order_id = p_order_id FOR UPDATE;
@@ -209,7 +250,6 @@ BEGIN
   END IF;
   SELECT s.name INTO v_name FROM public.stores s WHERE s.store_id = v_store_id;
   v_prefix := COALESCE(v_settings->>'invoice_prefix',public.default_invoice_prefix(COALESCE(v_settings->>'brand_name',v_name)));
-  UPDATE public.store_setup st SET settings = jsonb_set(st.settings,'{invoice_prefix}',to_jsonb(v_prefix)) WHERE st.store_id = v_store_id;
   v_start := extract(year FROM v_now AT TIME ZONE 'Asia/Kolkata')::integer;
   IF extract(month FROM v_now AT TIME ZONE 'Asia/Kolkata') < 4 THEN v_start := v_start - 1; END IF;
   v_fy := v_start::text || '-' || right((v_start + 1)::text,2);

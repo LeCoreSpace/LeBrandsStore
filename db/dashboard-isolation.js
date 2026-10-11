@@ -20,6 +20,27 @@ export function dashboardIsolationChecks(getFixtures,transaction,denied) {
   return [
     {name:"dashboard.prefix.fy-lock",reason:"An existing current-FY invoice prevents prefix changes with 42501.",
       fn:()=>{const {a}=getFixtures();return denied(a.storeId,tx=>tx`UPDATE public.store_setup SET settings=jsonb_set(settings,'{invoice_prefix}','\"DIFF\"'::jsonb) WHERE store_id=${a.storeId}`);}},
+    {name:"dashboard.prefix.published-fy-lock",reason:"Current-FY issuance locks the published prefix with 42501.",
+      fn:()=>{const {a}=getFixtures();return denied(a.storeId,tx=>tx`
+        UPDATE public.store_publications SET snapshot=jsonb_set(snapshot,'{settings,invoice_prefix}','"DIFF"'::jsonb)
+        WHERE store_id=${a.storeId}`);}},
+    {name:"dashboard.prefix.republish-draft-denied",reason:"An earlier changed draft cannot bypass the FY lock through INSERT ON CONFLICT republish; 42501.",
+      fn:()=>{const {a}=getFixtures();return denied(a.storeId,tx=>tx`
+        INSERT INTO public.store_publications(store_id,snapshot)
+        SELECT store_id,jsonb_set(snapshot,'{settings,invoice_prefix}','"DIFF"'::jsonb)
+        FROM public.store_publications WHERE store_id=${a.storeId}
+        ON CONFLICT(store_id) DO UPDATE SET snapshot=EXCLUDED.snapshot,published_at=now()`);}},
+    {name:"dashboard.prefix.republish-unchanged-allowed",reason:"Ordinary republish keeps the locked prefix and is not blocked by the INSERT side of an upsert.",
+      fn:()=>{const {a}=getFixtures();return transaction(a.storeId,async tx=>{
+        const rows=await tx`INSERT INTO public.store_publications(store_id,snapshot)
+          SELECT store_id,snapshot FROM public.store_publications WHERE store_id=${a.storeId}
+          ON CONFLICT(store_id) DO UPDATE SET snapshot=EXCLUDED.snapshot,published_at=now()
+          RETURNING store_id`;
+        assert.equal(rows.length,1);
+      });}},
+    {name:"dashboard.prefix.published-delete-locked",reason:"Deleting the publication cannot erase the current-FY prefix lock; 42501.",
+      fn:()=>{const {a}=getFixtures();return denied(a.storeId,tx=>tx`
+        DELETE FROM public.store_publications WHERE store_id=${a.storeId}`);}},
     {name:"dashboard.prefix.delete-locked",reason:"Deleting the settings row cannot bypass the current-FY prefix lock.",
       fn:()=>{const {a}=getFixtures();return denied(a.storeId,tx=>tx`DELETE FROM public.store_setup WHERE store_id=${a.storeId}`);}},
     {name:"dashboard.prefix.cross-store",reason:"Other-store prefixes cannot be read or changed through tenant RLS.",
