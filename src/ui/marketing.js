@@ -1,0 +1,266 @@
+import { MARKETING_MEDIA } from "./marketing-media.js";
+
+const TITLE = "LeBrands.Store | A flagship online store for Indian D2C brands";
+const DESCRIPTION = "A flagship store for Indian D2C brands. Build and publish your storefront with LeBrands.Store.";
+const SIGNUP = "https://app.lebrands.store/signup";
+const LOGIN = "https://app.lebrands.store/login";
+const STORE = "https://stonescence.lebrands.store";
+
+function imageMarkup(media, { eager = false, className = "", alt = media.alt } = {}) {
+  if (!media.available) {
+    return `<div class="m-asset-placeholder${className ? ` ${className}` : ""}" role="img" aria-label="${alt}. Awaiting supplied image at ${media.src}."><span><strong>Image awaiting supply</strong>${media.src}</span></div>`;
+  }
+  const priority = eager
+    ? 'loading="eager" fetchpriority="high"'
+    : 'loading="lazy"';
+  const srcset = media.srcset ? ` srcset="${media.srcset}" sizes="${media.sizes}"` : "";
+  return `<img class="${className}" src="${media.src}"${srcset} width="${media.width}" height="${media.height}" alt="${alt}" ${priority} decoding="async">`;
+}
+
+function videoMarkup(media) {
+  if (!media.available) {
+    return `<div class="m-asset-placeholder" role="img" aria-label="${media.alt}. Awaiting video at ${media.src} and poster at ${media.poster}."><span><strong>Video awaiting supply</strong>${media.src}<br>Poster: ${media.poster}</span></div>`;
+  }
+  return `<video muted playsinline loop preload="none" poster="${media.poster}" aria-label="${media.alt}"><source src="${media.src}" type="video/webm"></video>`;
+}
+
+function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://lebrands.store", pageClass = "", body }) {
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0e0e0e">
+  <title>${title}</title>
+  <meta name="description" content="${description}">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="${canonical}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="LeBrands.Store">
+  <meta property="og:title" content="${title}">
+  <meta property="og:description" content="${description}">
+  <meta property="og:url" content="${canonical}">
+  <meta property="og:image" content="https://lebrands.store/img/stonescence-desktop-1200.webp">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="675">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" as="image" href="${MARKETING_MEDIA.stonescenceDesktop.src}" imagesrcset="${MARKETING_MEDIA.stonescenceDesktop.srcset}" imagesizes="${MARKETING_MEDIA.stonescenceDesktop.sizes}" fetchpriority="high">
+  <link rel="stylesheet" href="/assets/marketing.css">
+  <script src="/assets/marketing.js" defer></script>
+</head>
+<body class="${pageClass}">
+${body}
+</body>
+</html>`;
+}
+
+function nav({ pricing = false } = {}) {
+  return `<header class="m-nav">
+  <div class="m-nav-inner">
+    <a class="m-wordmark" href="${pricing ? "https://lebrands.store" : "#top"}" aria-label="LeBrands.Store home">LeBrands<span>.</span>Store</a>
+    <nav class="m-nav-links" aria-label="Main navigation">
+      <a href="${pricing ? "/#features" : "#features"}">Features</a>
+      <a href="/pricing">Pricing</a>
+      <a href="${pricing ? "/#faq" : "#faq"}">FAQ</a>
+      <a class="m-nav-login" href="${LOGIN}">Log in</a>
+      <a class="m-nav-cta" href="${SIGNUP}">Open your store</a>
+    </nav>
+  </div>
+</header>`;
+}
+
+function footer({ pricing = false } = {}) {
+  const homePrefix = pricing ? "/" : "";
+  return `<footer class="m-footer">
+  <div class="m-wrap">
+    <div class="m-footer-top">
+      <a class="m-wordmark" href="https://lebrands.store">LeBrands<span>.</span>Store</a>
+      <nav class="m-footer-links" aria-label="Footer">
+        <a href="${homePrefix}#features">Features</a>
+        <a href="/pricing">Pricing</a>
+        <a href="${homePrefix}#faq">FAQ</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/terms">Terms</a>
+        <a href="/refund-policy">Refund policy</a>
+        <a href="/contact">Contact</a>
+      </nav>
+    </div>
+    <div class="m-footer-bottom">
+      <span>LeBrandsSpace Digital Private Limited, Chennai.</span>
+      <span>© ${new Date().getFullYear()} LeBrands.Store</span>
+    </div>
+  </div>
+</footer>`;
+}
+
+function detailRow(title, copy, media, extra = "") {
+  return `<article class="m-detail-row m-reveal">
+  <div class="m-detail-media">${imageMarkup(media)}</div>
+  <div class="m-detail-copy">
+    <h3>${title}</h3>
+    <p>${copy}</p>
+    ${extra ? `<p class="m-clarification">${extra}</p>` : ""}
+  </div>
+</article>`;
+}
+
+export function renderHome() {
+  const body = `${nav()}
+<main id="top">
+  <section class="m-hero" aria-labelledby="hero-title">
+    <div class="m-hero-inner">
+      <div class="m-hero-copy">
+        <h1 id="hero-title">A flagship store for your brand.</h1>
+        <p class="m-hero-lede">Live today. Built for Indian D2C brands that intend to be remembered.</p>
+        <div class="m-hero-actions">
+          <a class="m-cta" href="${SIGNUP}">Open your store</a>
+          <a class="m-text-link" href="${STORE}">See a live store <span aria-hidden="true">&rarr;</span></a>
+        </div>
+        <p class="m-hero-note">First publication requires platform approval.</p>
+      </div>
+      <div class="m-hero-visual" aria-label="Stonescence live store shown on laptop and phone">
+        <div class="m-device-laptop">${imageMarkup(MARKETING_MEDIA.stonescenceDesktop, { eager: true })}</div>
+        <div class="m-device-phone">${imageMarkup(MARKETING_MEDIA.stonescenceMobile, { eager: true })}</div>
+      </div>
+    </div>
+    <span class="m-scroll-cue" aria-hidden="true">Scroll to explore</span>
+  </section>
+
+  <section class="m-statement" aria-label="Our approach">
+    <p class="m-wrap m-reveal">Most store builders give you a website. We give you a storefront that looks like you already made it.</p>
+  </section>
+
+  <section class="m-how" id="features">
+    <div class="m-wrap">
+      <div class="m-how-heading m-reveal">
+        <h2 class="m-section-title">In one sitting.</h2>
+      </div>
+      <div class="m-how-grid">
+        <div class="m-wizard-media m-reveal">${videoMarkup(MARKETING_MEDIA.wizardVideo)}</div>
+        <div>
+          <div class="m-steps">
+            <article class="m-step m-reveal"><span class="m-step-no">01</span><div><h3>Tell us about your brand.</h3></div></article>
+            <article class="m-step m-reveal"><span class="m-step-no">02</span><div><h3>Choose your look and watch it build live.</h3></div></article>
+            <article class="m-step m-reveal"><span class="m-step-no">03</span><div><h3>Add your products and publish.</h3><p>Your store is live at yourbrand.lebrands.store.</p></div></article>
+          </div>
+          <p class="m-clarification">First publication requires platform approval. Advanced collections: Coming soon.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="m-details">
+    <div class="m-wrap">
+      <div class="m-details-head m-reveal">
+        <h2 class="m-section-title">Crafted details.</h2>
+        <p>A storefront and the work that keeps it moving, considered together.</p>
+      </div>
+      ${detailRow("The store.", "Product pages, collections, cart and checkout designed to sell, on every screen size.", MARKETING_MEDIA.productPhoto, "Catalogue display is available. Advanced collections: Coming soon.")}
+      ${detailRow("The checkout.", "Cash on delivery with built-in fraud protection, COD limits and order tracking for your customers.", MARKETING_MEDIA.checkout, "Cash on delivery is the only payment option available today.")}
+      ${detailRow("The back office.", "Orders from packed to delivered, customers, and payment collection in one calm dashboard.", MARKETING_MEDIA.dashboard)}
+      ${detailRow("The paperwork.", "GST tax invoices with CGST, SGST or IGST worked out for you, numbered correctly every financial year.", MARKETING_MEDIA.invoice)}
+    </div>
+  </section>
+
+  <section class="m-discovery">
+    <div class="m-wrap m-discovery-inner">
+      <h2 class="m-reveal">Your store, with shoppers already looking.</h2>
+      <div class="m-discovery-copy m-reveal m-reveal-delay">
+        <p>Every LeBrands store is listed on LeBrands.Space, India's D2C brand search engine, with 300,000+ brands across 38 categories.</p>
+        <span class="m-status">Rolling out.</span>
+        <p class="m-discovery-clarification">Discovery is rolling out. Listings are not yet available for every store.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="m-principles" aria-label="Our principles">
+    <div class="m-wrap m-principles-list">
+      <p class="m-principle m-reveal">Zero commission on your sales.</p>
+      <p class="m-principle m-reveal">Your domain, your payments, your customer data.</p>
+      <p class="m-principle m-reveal">We never market to your customers.</p>
+      <p class="m-clarification m-reveal">Your own domain and online payments are coming soon. Cash on delivery is available today.</p>
+    </div>
+  </section>
+
+  <section class="m-coming">
+    <div class="m-wrap m-coming-inner">
+      <h2 class="m-reveal">Coming next.</h2>
+      <div class="m-coming-list m-reveal">
+        <p>Online payments with your own Razorpay account. <span>Coming soon</span></p>
+        <p>Shiprocket shipping. <span>Coming soon</span></p>
+        <p>Your own domain. <span>Coming soon</span></p>
+        <p>Order emails. <span>Coming soon</span></p>
+        <p>Drag-and-drop page editor. <span>Coming soon</span></p>
+        <p>A second theme, Bazaar. <span>Coming soon</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="m-showcase">
+    <div class="m-wrap">
+      <div class="m-showcase-head m-reveal">
+        <h2>Live on LeBrands.Store: Stonescence.</h2>
+        <p>A live example storefront.</p>
+      </div>
+      <div class="m-showcase-frame m-reveal">
+        <div class="m-showcase-desktop">${imageMarkup(MARKETING_MEDIA.stonescenceDesktop)}</div>
+        <div class="m-showcase-mobile">${imageMarkup(MARKETING_MEDIA.stonescenceMobile)}</div>
+      </div>
+      <a class="m-showcase-cta" href="${STORE}">Visit the store <span aria-hidden="true">&rarr;</span></a>
+    </div>
+  </section>
+
+  <section class="m-pricing-tease">
+    <div class="m-wrap m-pricing-inner m-reveal">
+      <h2>Simple monthly pricing. No commission, ever.</h2>
+      <a href="/pricing">See pricing <span aria-hidden="true">&rarr;</span></a>
+    </div>
+  </section>
+
+  <section class="m-faq" id="faq">
+    <div class="m-wrap m-faq-inner">
+      <h2 class="m-reveal">Good to know.</h2>
+      <div class="m-faq-list">
+        <details class="m-faq-item m-reveal"><summary>Do you take a commission?</summary><p>No. Your sales are entirely yours.</p></details>
+        <details class="m-faq-item m-reveal"><summary>Do I need GST registration?</summary><p>Yes. A valid GSTIN is required to publish, so every invoice your store issues is compliant.</p></details>
+        <details class="m-faq-item m-reveal"><summary>How do payments work?</summary><p>Cash on delivery today. Online payments through your own Razorpay account are coming soon, and the money goes straight to you.</p></details>
+        <details class="m-faq-item m-reveal"><summary>Can I use my own domain?</summary><p>Coming soon. Your store starts at yourbrand.lebrands.store.</p></details>
+        <details class="m-faq-item m-reveal"><summary>Who owns my customer data?</summary><p>You do. We never market to your customers.</p></details>
+        <details class="m-faq-item m-reveal"><summary>What does the LeBrands.Space listing mean?</summary><p>Your brand appears on India's D2C brand search engine, where shoppers discover brands by category and niche. Rolling out.</p></details>
+        <details class="m-faq-item m-reveal"><summary>How long does setup take?</summary><p>Most brands finish the guided setup in one sitting.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="m-final">
+    <div class="m-wrap m-final-inner">
+      <h2 class="m-reveal">Your brand is ready. Your store can be too.</h2>
+      <a class="m-cta m-reveal" href="${SIGNUP}">Open your store</a>
+    </div>
+  </section>
+</main>
+${footer()}`;
+  return shell({ body });
+}
+
+export function renderPricing() {
+  const body = `<div class="m-pricing-page">
+  ${nav({ pricing: true })}
+  <main class="m-pricing-content">
+    <section aria-labelledby="pricing-title">
+      <h1 id="pricing-title">Pricing is being finalised.</h1>
+      <p>Pricing is being finalised. Talk to us.</p>
+      <a href="mailto:support@lebrands.store">Talk to us</a>
+    </section>
+  </main>
+  ${footer({ pricing: true })}
+</div>`;
+  return shell({
+    title: "Pricing | LeBrands.Store",
+    description: "Pricing is being finalised. Talk to the LeBrands.Store team.",
+    canonical: "https://lebrands.store/pricing",
+    pageClass: "m-pricing-document",
+    body
+  });
+}

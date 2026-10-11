@@ -3,6 +3,7 @@ import { createDb } from "./db.js";
 import { handleAccounts } from "./auth/routes.js";
 import { SECURITY_HEADERS } from "./auth/security.js";
 import { renderHome, renderLegal } from "./ui/home.js";
+import { renderPricing } from "./ui/marketing.js";
 import { FAVICON_SVG } from "./ui/favicon.js";
 import { serveMedia } from "./store/media.js";
 import { serveStorefront } from "./store/live.js";
@@ -69,7 +70,7 @@ export default {
     if (url.pathname.startsWith("/assets/")) {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
       const filename = url.pathname.slice("/assets/".length);
-      if (!["aura.js", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js"].includes(filename)) return new Response("Not found", { status: 404 });
+      if (!["aura.js", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
       if (!env.ASSETS) return new Response("Assets unavailable", { status: 503 });
       url.pathname = `/${filename}`;
       const asset = await env.ASSETS.fetch(new Request(url, request));
@@ -90,10 +91,22 @@ export default {
     if (hostname === "app.lebrands.store") return handleAccounts(request, env, ctx);
     if (hostname === "lebrands.store") {
       if (!["GET", "HEAD"].includes(request.method)) return page("Method not allowed", "Method not allowed", "", 405);
-      const legal = { "/terms": "terms", "/privacy": "privacy", "/contact": "contact" };
-      if (url.pathname !== "/" && !legal[url.pathname]) return notFound();
-      return new Response(url.pathname === "/" ? renderHome() : renderLegal(legal[url.pathname]), {
-        headers: { ...SECURITY_HEADERS, "cache-control": "public, max-age=300", "content-type": "text/html; charset=utf-8" },
+      if (url.pathname.startsWith("/img/")) {
+        if(!/^\/img\/(?:stonescence-(?:desktop-(?:640|1200)|mobile-(?:260|390))\.webp|REPLACE-[a-z0-9-]+\.(?:jpg|webp|avif|png|webm|mp4))$/.test(url.pathname))return notFound();
+        if(!env.ASSETS)return new Response("Assets unavailable",{status:503});
+        const asset=await env.ASSETS.fetch(request);
+        const headers=new Headers(asset.headers);
+        headers.set("cache-control","public, max-age=86400");
+        headers.set("x-content-type-options","nosniff");
+        return new Response(request.method==="HEAD"?null:asset.body,{status:asset.status,headers});
+      }
+      const legal = { "/terms": "terms", "/privacy": "privacy", "/contact": "contact", "/refund-policy":"refund-policy" };
+      if (url.pathname !== "/" && url.pathname!=="/pricing" && !legal[url.pathname]) return notFound();
+      const marketing=url.pathname==="/" || url.pathname==="/pricing";
+      const headers={ ...SECURITY_HEADERS, "cache-control": "public, max-age=300", "content-type": "text/html; charset=utf-8" };
+      if(marketing)headers["content-security-policy"]=headers["content-security-policy"].replace("font-src https://fonts.gstatic.com","font-src 'self' https://fonts.gstatic.com")+"; media-src 'self'";
+      return new Response(request.method==="HEAD"?null:url.pathname === "/" ? renderHome() : url.pathname==="/pricing"?renderPricing():renderLegal(legal[url.pathname]), {
+        headers,
       });
     }
 

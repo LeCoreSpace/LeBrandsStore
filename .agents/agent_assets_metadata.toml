@@ -14,3 +14,31 @@ mtime_ms = 1791722440621
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/122a8524-3b0d-4955-b905-a8e2193f3ea9/ffc52b37-f3a1-429d-ac77-c389d3b10f7a"
 storage_version_token = "1791722442138607"
 content_type = "text/html"
+
+[[outputs]]
+id = "p7rdC49h6upveHmYv-e62"
+uri = "file://generated-artifacts/homepage/homepage-desktop-full.jpg"
+type = "image"
+title = "Homepage: full desktop screenshot"
+description = "Complete 1440px desktop page with genuine Stonescence storefront captures. Motion disabled for a complete static review."
+logical_id = "92eac93f-f494-40a3-ad02-6fc6b034201e"
+content_hash = "sha256:2d8ffe4660c96552d7ab46f7e499a5e503a2cb9d0f75110c7e196f59a80bb13f"
+size = 654732
+mtime_ms = 1791725589129
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/92eac93f-f494-40a3-ad02-6fc6b034201e/6c916ac2-a14b-4379-9ade-a4dc85e05d32"
+storage_version_token = "1791725867558074"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "Bd529jrhvC5BvnEIsdNEV"
+uri = "file://generated-artifacts/homepage/homepage-mobile-full.jpg"
+type = "image"
+title = "Homepage: full mobile screenshot"
+description = "Complete 375px mobile page, including all sections and footer. Missing original media is clearly marked."
+logical_id = "cb84a9b6-93b8-4fd6-be12-1f6ebacef8b0"
+content_hash = "sha256:aa4987a453053135620c17b1723d69ab390dc38192a2960f39b265da81a28c8a"
+size = 310548
+mtime_ms = 1791725591505
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/cb84a9b6-93b8-4fd6-be12-1f6ebacef8b0/2b5a646e-251c-4ec4-8e8a-80ce91e83715"
+storage_version_token = "1791725868759765"
+content_type = "image/jpeg"

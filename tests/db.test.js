@@ -71,7 +71,7 @@ afterEach(() => mock.restoreAll());
 test("homepage renders without a database and www permanently redirects preserving the path", async () => {
   const response = await worker.fetch(new Request("https://lebrands.store/"), {});
   assert.equal(response.status, 200);
-  assert.match(await response.text(), /Make your online brand/);
+  assert.match(await response.text(), /A flagship store for your brand\./);
   const www = await worker.fetch(new Request("https://www.lebrands.store/terms?from=footer"), {});
   assert.equal(www.status, 308);
   assert.equal(www.headers.get("location"), "https://lebrands.store/terms?from=footer");
