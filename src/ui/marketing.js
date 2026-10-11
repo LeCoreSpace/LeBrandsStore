@@ -36,7 +36,7 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#0e0e0e">
+  <meta name="theme-color" content="#f4efe7" data-m-theme-color>
   <title>${title}</title>
   <meta name="description" content="${description}">
   <meta name="robots" content="index,follow">
@@ -52,8 +52,8 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" as="image" href="${MARKETING_MEDIA.exampleDesktop.src}" imagesrcset="${MARKETING_MEDIA.exampleDesktop.srcset}" imagesizes="${MARKETING_MEDIA.exampleDesktop.sizes}" fetchpriority="high">
+  <script src="/assets/marketing.js"></script>
   <link rel="stylesheet" href="/assets/marketing.css">
-  <script src="/assets/marketing.js" defer></script>
 </head>
 <body class="${pageClass}">
 ${body}
@@ -64,12 +64,13 @@ ${body}
 function nav({ pricing = false } = {}) {
   return `<header class="m-nav">
   <div class="m-nav-inner">
-    <a class="m-wordmark" href="${pricing ? "https://lebrands.store" : "#top"}" aria-label="LeBrands.Store home">LeBrands<span>.</span>Store</a>
+    <a class="m-wordmark" href="${pricing ? "https://lebrands.store" : "#top"}" aria-label="LeBrands.Store home"><img class="m-logo-light" src="/img/REPLACE-lebrands-light-logo.webp" width="186" height="66" alt=""><img class="m-logo-dark" src="/img/REPLACE-lebrands-dark-logo.webp" width="186" height="66" alt=""></a>
     <nav class="m-nav-links" aria-label="Main navigation">
       <a href="${pricing ? "/#features" : "#features"}">Features</a>
       <a href="/pricing">Pricing</a>
       <a href="${pricing ? "/#faq" : "#faq"}">FAQ</a>
       <a class="m-nav-login" href="${LOGIN}">Log in</a>
+      <button class="m-theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false"><span class="m-theme-icon" aria-hidden="true"></span><span data-theme-label>Dark</span></button>
       <a class="m-nav-cta" href="${SIGNUP}">Open your store</a>
     </nav>
   </div>
@@ -80,8 +81,8 @@ function footer({ pricing = false } = {}) {
   const homePrefix = pricing ? "/" : "";
   return `<footer class="m-footer">
   <div class="m-wrap">
-    <div class="m-footer-top">
-      <a class="m-wordmark" href="https://lebrands.store">LeBrands<span>.</span>Store</a>
+    <div class="m-footer-top m-reveal">
+      <a class="m-wordmark" href="https://lebrands.store" aria-label="LeBrands.Store home"><img class="m-logo-light" src="/img/REPLACE-lebrands-light-logo.webp" width="186" height="66" alt=""><img class="m-logo-dark" src="/img/REPLACE-lebrands-dark-logo.webp" width="186" height="66" alt=""></a>
       <nav class="m-footer-links" aria-label="Footer">
         <a href="${homePrefix}#features">Features</a>
         <a href="/pricing">Pricing</a>
@@ -92,7 +93,7 @@ function footer({ pricing = false } = {}) {
         <a href="/contact">Contact</a>
       </nav>
     </div>
-    <div class="m-footer-bottom">
+    <div class="m-footer-bottom m-reveal m-reveal-delay">
       <span>LeBrandsSpace Digital Private Limited, Chennai.</span>
       <span>© ${new Date().getFullYear()} LeBrands.Store</span>
     </div>

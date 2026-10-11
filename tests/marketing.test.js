@@ -175,3 +175,63 @@ test("marketing motion honours reduced motion and automatic video playback only 
   state.preference.matches=true;state.change();
   assert.ok(!state.classes.has("m-motion"));
 });
+
+test("landing theme initializes before DOM readiness, follows OS, and preserves an explicit choice",async()=>{
+  const source=await readFile("src/public/marketing.js","utf8");
+  function setup(saved=null,blocked=false){
+    const attrs={},buttonAttrs={},metaAttrs={},events={},buttonEvents={};
+    const label={textContent:""},classes=new Set();
+    const system={matches:true,addEventListener(_name,cb){this.change=cb;}};
+    let stored=saved;
+    const button={setAttribute(k,v){buttonAttrs[k]=v;},addEventListener(k,cb){buttonEvents[k]=cb;}};
+    const context={
+      URLSearchParams,
+      window:{
+        location:{search:"?motion=off"},
+        localStorage:{getItem(){if(blocked)throw new Error("Disabled");return stored;},setItem(_k,v){if(blocked)throw new Error("Disabled");stored=v;}},
+        matchMedia(query){return query.includes("color-scheme")?system:{matches:true,addEventListener(){}};},
+        addEventListener(){},requestAnimationFrame(cb){cb();}
+      },
+      document:{
+        readyState:"loading",
+        documentElement:{setAttribute(k,v){attrs[k]=v;},classList:{add(k){classes.add(k);},remove(k){classes.delete(k);}}},
+        querySelector(selector){return selector==="[data-m-theme-color]"?{setAttribute(k,v){metaAttrs[k]=v;}}:selector==="[data-theme-label]"?label:null;},
+        querySelectorAll(selector){return selector==="[data-theme-toggle]"?[button]:[];},
+        addEventListener(k,cb){events[k]=cb;}
+      }
+    };
+    runInNewContext(source,context);
+    return {attrs,buttonAttrs,metaAttrs,label,system,classes,click(){buttonEvents.click();},ready(){events.DOMContentLoaded();},get stored(){return stored;}};
+  }
+  const state=setup();
+  assert.equal(state.attrs["data-theme"],"dark","Theme must initialize before DOM ready");
+  state.ready();
+  assert.equal(state.buttonAttrs["aria-label"],"Switch to light mode");
+  assert.equal(state.buttonAttrs["aria-pressed"],"true");
+  state.system.change({matches:false});
+  assert.equal(state.attrs["data-theme"],"light");
+  state.click();
+  assert.equal(state.attrs["data-theme"],"dark");
+  assert.equal(state.stored,"dark");
+  state.system.change({matches:false});
+  assert.equal(state.attrs["data-theme"],"dark","OS changes must not override a selected theme");
+  assert.equal(setup(state.stored).attrs["data-theme"],"dark","Choice survives a reload");
+  const unavailable=setup(null,true);
+  unavailable.ready();unavailable.click();
+  assert.equal(unavailable.attrs["data-theme"],"light","Toggle still works if storage is blocked");
+  assert.ok(!unavailable.classes.has("m-motion"));
+});
+
+test("landing delivers supplied logo variants and distinct reduced-motion-safe section choreography",async()=>{
+  const html=renderHome(),css=await readFile("src/public/marketing.css","utf8");
+  assert.match(html,/data-theme-toggle/);
+  assert.match(html,/<script src="\/assets\/marketing\.js"><\/script>/);
+  for(const variant of ["light","dark"]){
+    assert.match(html,new RegExp(`REPLACE-lebrands-${variant}-logo\\.webp`));
+    assert.ok((await stat(`src/public/img/REPLACE-lebrands-${variant}-logo.webp`)).size<45000);
+  }
+  for(const selector of [".m-hero-visual",".m-statement",".m-step",".m-detail-row",".m-discovery",".m-principle",".m-coming-list",".m-showcase-frame",".m-pricing-inner",".m-faq-item",".m-final",".m-footer"]){
+    assert.ok(css.includes(`.m-motion ${selector}`),`Missing choreography for ${selector}`);
+  }
+  assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);
+});
