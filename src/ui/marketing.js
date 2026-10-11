@@ -4,7 +4,6 @@ const TITLE = "LeBrands.Store | A flagship online store for Indian D2C brands";
 const DESCRIPTION = "A flagship store for Indian D2C brands. Build and publish your storefront with LeBrands.Store.";
 const SIGNUP = "https://app.lebrands.store/signup";
 const LOGIN = "https://app.lebrands.store/login";
-const STORE = "https://stonescence.lebrands.store";
 
 function imageMarkup(media, { eager = false, className = "", alt = media.alt } = {}) {
   if (!media.available) {
@@ -47,12 +46,12 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
   <meta property="og:url" content="${canonical}">
-  <meta property="og:image" content="https://lebrands.store/img/stonescence-desktop-1200.webp">
-  <meta property="og:image:width" content="1200">
-  <meta property="og:image:height" content="675">
+  <meta property="og:image" content="https://lebrands.store/img/REPLACE-example-desktop.jpg">
+  <meta property="og:image:width" content="2880">
+  <meta property="og:image:height" content="1800">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" as="image" href="${MARKETING_MEDIA.stonescenceDesktop.src}" imagesrcset="${MARKETING_MEDIA.stonescenceDesktop.srcset}" imagesizes="${MARKETING_MEDIA.stonescenceDesktop.sizes}" fetchpriority="high">
+  <link rel="preload" as="image" href="${MARKETING_MEDIA.exampleDesktop.src}" imagesrcset="${MARKETING_MEDIA.exampleDesktop.srcset}" imagesizes="${MARKETING_MEDIA.exampleDesktop.sizes}" fetchpriority="high">
   <link rel="stylesheet" href="/assets/marketing.css">
   <script src="/assets/marketing.js" defer></script>
 </head>
@@ -122,13 +121,13 @@ export function renderHome() {
         <p class="m-hero-lede">Live today. Built for Indian D2C brands that intend to be remembered.</p>
         <div class="m-hero-actions">
           <a class="m-cta" href="${SIGNUP}">Open your store</a>
-          <a class="m-text-link" href="${STORE}">See a live store <span aria-hidden="true">&rarr;</span></a>
+          <a class="m-text-link" href="#showcase">Explore the store concept <span aria-hidden="true">&rarr;</span></a>
         </div>
         <p class="m-hero-note">First publication requires platform approval.</p>
       </div>
-      <div class="m-hero-visual" aria-label="Stonescence live store shown on laptop and phone">
-        <div class="m-device-laptop">${imageMarkup(MARKETING_MEDIA.stonescenceDesktop, { eager: true })}</div>
-        <div class="m-device-phone">${imageMarkup(MARKETING_MEDIA.stonescenceMobile, { eager: true })}</div>
+      <div class="m-hero-visual" aria-label="Example Studio fictional clothing store concept shown on laptop and phone">
+        <div class="m-device-laptop">${imageMarkup(MARKETING_MEDIA.exampleDesktop, { eager: true })}<span class="m-device-caption">Example store concept</span></div>
+        <div class="m-device-phone">${imageMarkup(MARKETING_MEDIA.exampleMobile, { eager: true })}</div>
       </div>
     </div>
     <span class="m-scroll-cue" aria-hidden="true">Scroll to explore</span>
@@ -204,17 +203,17 @@ export function renderHome() {
     </div>
   </section>
 
-  <section class="m-showcase">
+  <section class="m-showcase" id="showcase">
     <div class="m-wrap">
       <div class="m-showcase-head m-reveal">
-        <h2>Live on LeBrands.Store: Stonescence.</h2>
-        <p>A live example storefront.</p>
+        <h2>Example Studio, imagined.</h2>
+        <p>A fictional clothing store concept, built with LeBrands.Store.</p>
       </div>
       <div class="m-showcase-frame m-reveal">
-        <div class="m-showcase-desktop">${imageMarkup(MARKETING_MEDIA.stonescenceDesktop)}</div>
-        <div class="m-showcase-mobile">${imageMarkup(MARKETING_MEDIA.stonescenceMobile)}</div>
+        <div class="m-showcase-desktop">${imageMarkup(MARKETING_MEDIA.exampleDesktop)}<span class="m-device-caption">Example store concept</span></div>
+        <div class="m-showcase-mobile">${imageMarkup(MARKETING_MEDIA.exampleMobile)}</div>
       </div>
-      <a class="m-showcase-cta" href="${STORE}">Visit the store <span aria-hidden="true">&rarr;</span></a>
+      <a class="m-showcase-cta" href="${SIGNUP}">Build a store like this <span aria-hidden="true">&rarr;</span></a>
     </div>
   </section>
 

@@ -1,21 +1,26 @@
 export const MARKETING_MEDIA = Object.freeze({
-  stonescenceDesktop: Object.freeze({
+  exampleDesktop: Object.freeze({
     available: true,
-    src: "/img/stonescence-desktop-1200.webp",
-    srcset: "/img/stonescence-desktop-640.webp 640w, /img/stonescence-desktop-1200.webp 1200w",
+    src: "/img/REPLACE-example-desktop.webp",
+    fallback: "/img/REPLACE-example-desktop.jpg",
+    srcset: "/img/REPLACE-example-desktop-640.webp 640w, /img/REPLACE-example-desktop-1280.webp 1280w",
+    avifSrcset: "/img/REPLACE-example-desktop-640.avif 640w, /img/REPLACE-example-desktop-1280.avif 1280w",
     sizes: "(max-width: 600px) 92vw, (max-width: 900px) 88vw, 58vw",
-    width: 1200,
-    height: 675,
-    alt: "The live Stonescence storefront, shown on a laptop"
+    width: 2880,
+    height: 1800,
+    alt: "A responsive desktop view of the fictional Example Studio clothing storefront, a concept preview"
   }),
-  stonescenceMobile: Object.freeze({
+  exampleMobile: Object.freeze({
     available: true,
-    src: "/img/stonescence-mobile-390.webp",
-    srcset: "/img/stonescence-mobile-260.webp 260w, /img/stonescence-mobile-390.webp 390w",
+    src: "/img/REPLACE-example-mobile.webp",
+    fallback: "/img/REPLACE-example-mobile.jpg",
+    srcset: "/img/REPLACE-example-mobile-260.webp 260w, /img/REPLACE-example-mobile-390.webp 390w",
+    avifSrcset: "/img/REPLACE-example-mobile-260.avif 260w, /img/REPLACE-example-mobile-390.avif 390w",
     sizes: "(max-width: 600px) 111px, 205px",
-    width: 390,
-    height: 844,
-    alt: "The live Stonescence storefront, shown on a phone"
+    width: 780,
+    height: 1688,
+    alt: "A responsive mobile view of the fictional Example Studio clothing storefront, a concept preview",
+    caption: "Example store concept"
   }),
   productPhoto: Object.freeze({
     available: true,

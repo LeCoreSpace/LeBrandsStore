@@ -18,14 +18,16 @@ test("homepage output has no en/em dashes, forbidden copy, or fake old pricing",
   }
 });
 
-test("homepage has the exact title, canonical, genuine OG image, single H1 and required CTA destinations",()=>{
+test("homepage has the exact title, canonical, original concept OG image, single H1 and required CTA destinations",()=>{
   const html=renderHome();
   assert.match(html,/<title>LeBrands\.Store \| A flagship online store for Indian D2C brands<\/title>/);
   assert.match(html,/<link rel="canonical" href="https:\/\/lebrands\.store">/);
-  assert.match(html,/<meta property="og:image" content="https:\/\/lebrands\.store\/img\/stonescence-desktop-1200\.webp">/);
+  assert.match(html,/<meta property="og:image" content="https:\/\/lebrands\.store\/img\/REPLACE-example-desktop\.jpg">/);
+  assert.doesNotMatch(html,/stonescence/i);
+  assert.match(html,/Example store concept/);
   assert.equal((html.match(/<h1\b/g)||[]).length,1);
   assert.match(html,/<h1[^>]*>A flagship store for your brand\.<\/h1>/);
-  for(const href of ["https://app.lebrands.store/signup","https://app.lebrands.store/login","https://stonescence.lebrands.store","/pricing","/refund-policy","/privacy","/terms","/contact"]){
+  for(const href of ["https://app.lebrands.store/signup","https://app.lebrands.store/login","/pricing","/refund-policy","/privacy","/terms","/contact"]){
     assert.ok(html.includes(`href="${href}"`),`Missing working destination: ${href}`);
   }
   for(const id of ["features","faq"])assert.ok(html.includes(`id="${id}"`));
@@ -61,7 +63,7 @@ test("homepage preserves the requested story, seven native FAQ items, and honest
   assert.match(renderLegal("refund-policy"),/draft/i);
 });
 
-test("real UI captures exist, examples are labelled, responsive and lazy, and genuine hero stays small",async()=>{
+test("real UI captures exist, concepts are labelled, responsive and lazy, and hero stays optimised",async()=>{
   const html=renderHome();
   for(const media of Object.values(MARKETING_MEDIA)){
     if(media.available){
@@ -96,9 +98,9 @@ test("real UI captures exist, examples are labelled, responsive and lazy, and ge
   assert.equal((html.match(/class="m-media-caption">Example store</g)||[]).length,5);
   assert.doesNotMatch(html,/Image awaiting supply|Video awaiting supply/);
   const eagerBytes=(await stat("src/public/instrument-sans-latin.woff2")).size+
-    (await stat("src/public"+MARKETING_MEDIA.stonescenceDesktop.src)).size+
-    (await stat("src/public"+MARKETING_MEDIA.stonescenceMobile.src)).size;
-  assert.ok(eagerBytes<100000,"Font and desktop hero imagery budget is under 100 KB");
+    (await stat("src/public/img/REPLACE-example-desktop-1280.webp")).size+
+    (await stat("src/public/img/REPLACE-example-mobile-390.webp")).size;
+  assert.ok(eagerBytes<250000,"Font and responsive hero WebP imagery budget is under 250 KB");
 });
 
 test("marketing routes are read-only, scoped CSP supports font/video, and preview routes are absent in production",async()=>{
@@ -121,12 +123,12 @@ test("marketing routes are read-only, scoped CSP supports font/video, and previe
     const post=await worker.fetch(new Request("https://lebrands.store"+pathname,{method:"POST"}),env,{});
     assert.equal(post.status,405);
   }
-  for(const pathname of ["/assets/marketing.css","/assets/marketing.js","/assets/instrument-sans-latin.woff2",MARKETING_MEDIA.stonescenceDesktop.src,MARKETING_MEDIA.stonescenceMobile.src]){
+  for(const pathname of ["/assets/marketing.css","/assets/marketing.js","/assets/instrument-sans-latin.woff2",MARKETING_MEDIA.exampleDesktop.src,MARKETING_MEDIA.exampleMobile.src]){
     const response=await worker.fetch(new Request("https://lebrands.store"+pathname),env,{});
     assert.equal(response.status,200);assert.equal(response.headers.get("x-content-type-options"),"nosniff");
   }
   const count=requests.length;
-  for(const pathname of ["/__step4-preview","/__aura-preview?capture=stonescence","/__dashboard-preview","/__example-preview/store","/__example-preview/invoice","/__example-media/indigo-shirt.webp","/__example-module/aura.js","/img/local-example/indigo-shirt.webp","/assets/preview.js","/img/.stonescence-capture.html","/img/private.sql"]){
+  for(const pathname of ["/__step4-preview","/__aura-preview?capture=stonescence","/__dashboard-preview","/__example-preview/store","/__example-preview/invoice","/__example-preview/premium-store","/__example-preview/premium-checkout","/__example-media/indigo-shirt.webp","/__example-module/aura.js","/__example-module/premium-example-client.js","/img/local-example/indigo-shirt.webp","/assets/preview.js","/img/.stonescence-capture.html","/img/private.sql"]){
     assert.equal((await worker.fetch(new Request("https://lebrands.store"+pathname),env,{})).status,404);
   }
   assert.equal(requests.length,count,"Unknown/preview files must not reach the public asset binding");

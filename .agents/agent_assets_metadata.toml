@@ -84,3 +84,31 @@ mtime_ms = 1791728067161
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/2307ffb5-1ff4-41a4-b535-09894fe3918a/87be3bbd-21fa-4004-a917-9d8cb88da57a"
 storage_version_token = "1791728976552759"
 content_type = "video/webm"
+
+[[outputs]]
+id = "YAoMMzbIVWUKRFcUmOETe"
+uri = "file://generated-artifacts/premium-clothing/landing-desktop.jpg"
+type = "image"
+title = "Updated landing page: desktop"
+description = "Original Example Studio clothing concept replaces Stonescence. Dashboard, wizard and invoice visuals preserved."
+logical_id = "4cd61bf3-85de-4915-9f6d-3a84f4788324"
+content_hash = "sha256:9bcd3e69515efb256ec108b0c0cf5a75acece943dd3e4c0db59aa50083edc064"
+size = 838706
+mtime_ms = 1791730712997
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/4cd61bf3-85de-4915-9f6d-3a84f4788324/6e2dc2c4-f70c-4283-9e54-5b2f32ac9a8a"
+storage_version_token = "1791730830950670"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "GEKQOuzkDAsEFgDW7Dcr7"
+uri = "file://generated-artifacts/premium-clothing/landing-mobile.jpg"
+type = "image"
+title = "Updated landing page: mobile"
+description = "Full mobile landing page with the new clothing-store showcase and all images loaded."
+logical_id = "1358da8d-0d3a-462c-bd89-228c72a11350"
+content_hash = "sha256:72aaf8c361a8bf32e0ba0d1f191ca52c3999b262e0ee4674f636e8a38fff10fb"
+size = 453278
+mtime_ms = 1791730717341
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/1358da8d-0d3a-462c-bd89-228c72a11350/0719a558-b177-4403-8a98-504048e37246"
+storage_version_token = "1791730832168887"
+content_type = "image/jpeg"

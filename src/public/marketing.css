@@ -11,7 +11,7 @@
   --m-ink: #0e0e0e;
   --m-ivory: #f6f3ee;
   --m-white: #fff;
-  --m-green: #8ab69a;
+  --m-green: #bd7b67;
   --m-muted: #77756f;
   --m-line: rgba(14, 14, 14, .18);
   --m-dark-line: rgba(246, 243, 238, .22);
@@ -59,7 +59,7 @@ button { font: inherit; }
   text-decoration: none;
 }
 .m-wordmark span { color: var(--m-green); }
-.m-nav.is-solid .m-wordmark span { color: #4b815f; }
+.m-nav.is-solid .m-wordmark span { color: #8d4651; }
 .m-nav-links { display: flex; align-items: center; gap: clamp(18px, 2.3vw, 34px); }
 .m-nav-links a {
   color: inherit; text-decoration: none; font-size: 12px; letter-spacing: .005em;
@@ -130,7 +130,9 @@ button { font: inherit; }
   background: linear-gradient(90deg, transparent 2%, #777 12%, #bdbbb5 50%, #777 88%, transparent 98%);
   border-radius: 0 0 50% 50%;
 }
-.m-device-laptop img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+.m-device-laptop img { width: 100%; height: 100%; object-fit: contain; object-position: top center; }
+.m-device-laptop > picture { position: absolute; inset: 0; }
+.m-device-phone > picture, .m-showcase-mobile > picture { display: block; width: 100%; height: 100%; }
 .m-device-phone {
   position: absolute; z-index: 4; width: clamp(126px, 16vw, 205px); right: -3%;
   bottom: -22px; overflow: hidden; aspect-ratio: .49; padding: 7px;
@@ -236,18 +238,24 @@ button { font: inherit; }
 .m-showcase-head h2 { margin: 0; font-size: clamp(42px, 6vw, 72px); font-weight: 400; letter-spacing: -.07em; line-height: 1; }
 .m-showcase-head p { margin: 0 0 6px; color: var(--m-muted); }
 .m-showcase-frame { width: min(100%, 1050px); margin-inline: auto; }
-.m-showcase-desktop { aspect-ratio: 1.72; overflow: hidden; background: #d2cec5; border: 1px solid rgba(14,14,14,.2); box-shadow: 0 24px 65px rgba(25,24,20,.13); }
-.m-showcase-desktop img { width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.m-showcase-desktop { aspect-ratio: 1.6; overflow: hidden; background: #d2cec5; border: 1px solid rgba(14,14,14,.2); box-shadow: 0 24px 65px rgba(25,24,20,.13); }
+.m-showcase-desktop img { width: 100%; height: 100%; object-fit: contain; object-position: top; }
 .m-showcase-mobile { width: clamp(132px, 20vw, 220px); aspect-ratio: .49; overflow: hidden; position: absolute; right: 5%; bottom: -48px; padding: 6px; border-radius: 21px; border: 1px solid rgba(14,14,14,.35); background: #171715; box-shadow: 0 16px 42px rgba(25,24,20,.22); }
 .m-showcase-mobile img { width: 100%; height: 100%; border-radius: 15px; object-fit: cover; }
 .m-showcase-frame { position: relative; padding-bottom: 16px; }
+.m-device-laptop, .m-showcase-desktop { position: relative; }
+.m-device-caption {
+  position: absolute; z-index: 5; left: 16px; bottom: 14px; padding: 7px 10px;
+  color: #f6f3ee; background: rgba(39, 24, 29, .82); font-size: 9px;
+  line-height: 1.2; letter-spacing: .1em; text-transform: uppercase;
+}
 .m-showcase-cta { display: inline-flex; align-items: center; gap: 10px; margin-top: 28px; color: var(--m-ink); font-size: 13px; text-decoration: none; border-bottom: 1px solid var(--m-ink); padding-bottom: 4px; }
-.m-showcase-cta:hover { color: #4b815f; border-color: #4b815f; }
+.m-showcase-cta:hover { color: #8d4651; border-color: #8d4651; }
 .m-pricing-tease { background: var(--m-ivory); padding: 110px 0; }
 .m-pricing-inner { display: flex; justify-content: space-between; gap: 40px; align-items: center; padding: 44px 0; border-top: 1px solid var(--m-line); border-bottom: 1px solid var(--m-line); }
 .m-pricing-inner h2 { max-width: 750px; margin: 0; font-size: clamp(44px, 7vw, 83px); line-height: .98; font-weight: 400; letter-spacing: -.075em; }
 .m-pricing-inner a { flex: none; display: inline-flex; align-items: center; gap: 12px; text-decoration: none; border-bottom: 1px solid var(--m-ink); padding-bottom: 6px; font-size: 13px; }
-.m-pricing-inner a:hover { color: #4b815f; border-color: #4b815f; }
+.m-pricing-inner a:hover { color: #8d4651; border-color: #8d4651; }
 .m-faq { padding: 130px 0 150px; background: #ece8e0; }
 .m-faq-inner { display: grid; grid-template-columns: .7fr 1.3fr; gap: 8vw; }
 .m-faq h2 { max-width: 370px; margin: 0; font-size: clamp(43px, 5.8vw, 72px); font-weight: 400; line-height: .98; letter-spacing: -.07em; }
@@ -279,10 +287,16 @@ button { font: inherit; }
 .m-pricing-page .m-footer { background: transparent; color: var(--m-ink); border-top: 1px solid var(--m-line); }
 .m-pricing-page .m-footer a { color: #5c5a54; }
 
-.m-motion .m-reveal { opacity: 0; transform: translateY(18px); transition: opacity .85s ease, transform .85s cubic-bezier(.2,.7,.2,1); }
+.m-motion .m-reveal { opacity: 0; transform: translateY(22px); transition: opacity .8s ease, transform .8s cubic-bezier(.2,.7,.2,1); }
 .m-motion .m-reveal.is-visible { opacity: 1; transform: translateY(0); }
 .m-motion .m-reveal-delay { transition-delay: .12s; }
-:focus-visible { outline: 2px solid #4b815f; outline-offset: 4px; }
+.m-motion .m-step:nth-child(2) { transition-delay: .08s; }
+.m-motion .m-step:nth-child(3) { transition-delay: .16s; }
+.m-motion .m-detail-row:nth-of-type(3) { transition-delay: .08s; }
+.m-motion .m-detail-row:nth-of-type(4) { transition-delay: .14s; }
+.m-device-laptop { transition: transform .5s cubic-bezier(.2,.7,.2,1); }
+.m-device-laptop:hover { transform: translate3d(var(--hero-shift, 0px),-4px,0); }
+:focus-visible { outline: 2px solid #8d4651; outline-offset: 4px; }
 .m-nav :focus-visible, .m-final :focus-visible, .m-footer :focus-visible { outline-color: var(--m-green); }
 
 @media (max-width: 900px) {
@@ -323,7 +337,7 @@ button { font: inherit; }
   .m-text-link { font-size: 12px; }
   .m-hero-note { margin-top: 22px; font-size: 10px; }
   .m-hero-visual { padding: 14px 17px 30px 0; width: calc(100% + 10px); margin-left: -4px; }
-  .m-device-laptop { aspect-ratio: 1.15; }
+  .m-device-laptop { aspect-ratio: 1.6; }
   .m-device-laptop::before { height: 11px; }
   .m-device-phone { width: 111px; right: 0; bottom: 1px; border-radius: 18px; padding: 5px; }
   .m-device-phone img { border-radius: 13px; }
@@ -358,7 +372,7 @@ button { font: inherit; }
   .m-showcase { padding: 82px 0 95px; }
   .m-showcase-head { display: block; margin-bottom: 32px; }
   .m-showcase-head p { margin-top: 14px; }
-  .m-showcase-desktop { aspect-ratio: .96; }
+  .m-showcase-desktop { aspect-ratio: 1.6; }
   .m-showcase-mobile { width: 105px; right: -8px; bottom: -30px; }
   .m-showcase-cta { margin-top: 25px; }
   .m-pricing-tease { padding: 68px 0; }

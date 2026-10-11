@@ -11,6 +11,7 @@ import { dateFilters } from "./public/dashboard-rules.js";
 import { EXAMPLE_STORE_ID,EXAMPLE_PRODUCTS,exampleFixture,exampleInvoice,exampleMedia } from "./local-example-fixture.js";
 import { renderInvoice } from "./ui/invoice.js";
 import { quoteCart } from "./public/commerce-rules.js";
+import { renderPremiumStore } from "./ui/premium-example.js";
 
 const LOCAL_STORE_ID = "00000000-0000-4000-8000-000000000000";
 function filterDashboardFixture(data, filters) {
@@ -63,8 +64,9 @@ export default {
     }
     if(["GET","HEAD"].includes(request.method) && original.pathname.startsWith("/__example-module/")){
       const name=original.pathname.split("/").pop();
-      if(!["aura.js","wizard.js"].includes(name))return new Response("Not found",{status:404});
+       if(!["aura.js","wizard.js","premium-example-client.js"].includes(name))return new Response("Not found",{status:404});
       const asset=await env.ASSETS.fetch(new Request(new URL("/"+name,original)));
+       if(name==="premium-example-client.js")return new Response(request.method==="HEAD"?null:await asset.text(),{headers:{...exampleHeaders,"content-type":"text/javascript; charset=utf-8"}});
       let source=await asset.text();
       if(name==="aura.js")source=source.replace('const safeImage = (url) =>',
         'const safeImage = (url) => /^\\/__example-media\\/[a-z0-9-]+\\.webp$/.test(String(url || "")) ? String(url) :')
@@ -77,7 +79,45 @@ export default {
       const view=original.pathname.split("/").pop(),data=exampleFixture();
       const banner='<p role="status" style="margin:0;padding:7px 16px;text-align:center;font:12px system-ui;background:#f6f3ee;color:#214a3d">Example store. Fictional brand and customers. Generated demo product photography.</p>';
       let body;
-      if(view==="store"){
+      if(view==="premium-store"){
+        body=renderPremiumStore(data);
+      }else if(view==="premium-checkout"){
+        body=exampleMedia(renderAura(data,{page:"checkout",commerce:true,preview:true,readOnly:false,storeKey:EXAMPLE_STORE_ID}));
+        body=body.replace("</head>",`<style>
+          :root{--accent:#692b43;--accent-ink:#f6eee7;--accent-label:#692b43;--ink:#35282e;--muted:#776b6e;--paper:#f2eee7;--line:#d9cec6;--serif:"Playfair Display",Georgia,serif;--sans:"DM Sans",system-ui,sans-serif;--radius:0}
+          body{background:#f2eee7;color:#35282e;font-family:"DM Sans",system-ui,sans-serif}
+          .aura-header{height:76px;max-width:none;padding:0 max(24px,calc((100vw - 1180px)/2));border-bottom:1px solid #d9cec6}
+          .aura-header nav,.aura-header-actions{display:none}
+          .aura-brand{font:500 24px "Playfair Display",Georgia,serif;letter-spacing:-.04em}
+          .aura-brand:after{content:"Fictional store concept";margin-left:14px;color:#8d706f;font:9px "DM Sans",sans-serif;letter-spacing:.12em;text-transform:uppercase}
+          .aura-page,.commerce-main{max-width:1160px;margin:0 auto;padding:62px 28px 100px}
+          .commerce-heading h1,.commerce-heading h2{color:#462834;font-family:"Playfair Display",Georgia,serif;font-weight:400;letter-spacing:-.055em}
+          .commerce-heading h1{font-size:clamp(48px,7vw,78px)}
+          .commerce-kicker{color:#9a514d;letter-spacing:.17em}
+          .commerce-panel,.commerce-summary{border-color:#d9cec6;background:#faf7f1;box-shadow:0 12px 35px rgba(69,39,48,.045)}
+          .commerce-button{border:0;border-radius:0;background:#692b43;color:#f6eee7;font-family:"DM Sans",sans-serif;letter-spacing:.1em;text-transform:uppercase}
+          .commerce-button:disabled{background:#b4a4a1;color:#f6eee7;cursor:not-allowed}
+          .commerce-field input,.commerce-field select{border-color:#d5c8c0;border-radius:0;background:#fffdfa}
+          .commerce-footer,.aura-footer{display:none}
+          .ps-checkout-bar{margin:0;padding:11px 18px;background:#692b43;color:#f6eee7;text-align:center;font:10px "DM Sans",sans-serif;letter-spacing:.08em}
+          .ps-checkout-head{height:76px;padding:0 max(24px,calc((100vw - 1180px)/2));display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #d9cec6}
+          .ps-checkout-head a{font:500 24px "Playfair Display",Georgia,serif;letter-spacing:-.04em;text-decoration:none}
+          .ps-checkout-head i{color:#a45846;font-weight:400}
+          .ps-checkout-head span{color:#8d706f;font:9px "DM Sans",sans-serif;letter-spacing:.12em;text-transform:uppercase}
+          .ps-checkout-return{color:#692b43!important;font:10px "DM Sans",sans-serif!important;letter-spacing:.12em!important;text-transform:uppercase}
+          @media(max-width:600px){.aura-header{height:65px;padding:0 20px}.aura-page,.commerce-main{padding:40px 20px 70px}.ps-checkout-head{height:65px;padding:0 20px}.ps-checkout-head a{font-size:21px}.ps-checkout-head span{font-size:8px}}
+        </style></head>`)
+          .replace(/<header class="aura-header">[\s\S]*?<\/header>/,`<p class="ps-checkout-bar">Example Studio checkout concept. Totals use the shared GST quote. Order placement is disabled.</p><header class="ps-checkout-head"><a href="/__example-preview/premium-store">Example <i>Studio</i></a><a class="ps-checkout-return" href="/__example-preview/premium-store#collection">Return to collection</a></header>`)
+          .replace(/<footer class="aura-footer">[\s\S]*?<\/footer>/,"")
+          .replace(/<button class="commerce-button commerce-submit" type="submit">[\s\S]*?<\/button>/,'<button class="commerce-button commerce-submit" type="button" disabled aria-disabled="true">Preview only. No orders</button>')
+          .replace("</body>",`<script>
+            const exampleSubmit=document.querySelector(".commerce-submit");
+            if(exampleSubmit){
+              const keepExampleSubmitDisabled=()=>{if(!exampleSubmit.disabled){exampleSubmit.disabled=true;exampleSubmit.setAttribute("aria-disabled","true");}};
+              new MutationObserver(keepExampleSubmitDisabled).observe(exampleSubmit,{attributes:true,attributeFilter:["disabled"]});
+            }
+          </script></body>`);
+      }else if(view==="store"){
         body=exampleMedia(renderAura(data,{preview:true,commerce:true,readOnly:true}));
       }else if(view==="checkout"){
         body=exampleMedia(renderAura(data,{page:"checkout",commerce:true,preview:true,readOnly:false,storeKey:EXAMPLE_STORE_ID}));
@@ -92,7 +132,7 @@ export default {
       }else if(view==="composite"){
         body='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>*{box-sizing:border-box}html,body{overflow:hidden}body{margin:0;background:#f6f3ee;width:1440px;height:550px;display:flex;align-items:center;justify-content:center;gap:60px}.laptop{width:800px;border:10px solid #292923;border-radius:10px;background:#292923;position:relative}.laptop:after{content:"";position:absolute;width:110%;height:9px;background:#b7b5ae;left:-5%;bottom:-18px;border-radius:0 0 12px 12px}.laptop img{display:block;width:100%;height:auto}.phone{height:466px;border:8px solid #292923;border-radius:28px;overflow:hidden;background:#292923}.phone img{display:block;height:100%;width:auto}img{object-fit:contain}</style></head><body><div class="laptop"><img src="/__example-media/store-desktop.png" alt="Example Studio fictional storefront desktop"></div><div class="phone"><img src="/__example-media/store-mobile.png" alt="Example Studio fictional storefront mobile"></div></body></html>';
       }else return new Response("Not found",{status:404});
-      if(view!=="composite")body=body.replace(/<body([^>]*)>/,`<body$1>${banner}`);
+      if(!["composite","premium-store","premium-checkout"].includes(view))body=body.replace(/<body([^>]*)>/,`<body$1>${banner}`);
       return new Response(request.method==="HEAD"?null:body,{headers:{...exampleHeaders,"content-type":"text/html; charset=utf-8"}});
     }
     // Only the local preview adapter serves display fixtures. Every mutation
