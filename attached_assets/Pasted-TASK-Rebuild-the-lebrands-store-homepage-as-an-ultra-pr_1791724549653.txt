@@ -1,0 +1,112 @@
+TASK: Rebuild the lebrands.store homepage as an ultra-premium marketing
+page for brands. It should feel more premium than Shopify's site: the
+flagship store of a luxury brand, not a SaaS template. UI and content
+only: no schema changes, no migrations, no deploy. Signup/login and
+app.lebrands.store keep working. Run pnpm run test:offline.
+
+ABSOLUTE RULES (anything that looks AI-generated is a failure)
+- No em dashes (—) or en dashes (–) anywhere in visible text, alt text or
+  meta tags. Use full stops, commas or line breaks. Add an offline test
+  that fails if either character appears in homepage output.
+- Banned words: unleash, elevate, empower, seamless, seamlessly,
+  supercharge, effortless, effortlessly, revolutionise, game-changer,
+  next-level, cutting-edge, robust, leverage, unlock, journey, tailored,
+  delve, world-class, in today's fast-paced.
+- Banned visuals: eyebrow labels above headings, gradient blobs, glass
+  effects, glowing borders, sparkle icons, emoji, icons in rounded
+  squares, stock or AI-generated illustrations and photos, rows of three
+  identical cards, fake logos, fake testimonials, fake numbers.
+- Every claim must be true today, or clearly marked "Coming soon".
+
+ART DIRECTION
+- Palette: near-black (#0e0e0e), warm ivory (#f6f3ee), pure white,
+  LeBrands green as the only accent, used sparingly (CTAs, one detail).
+- Typography: one refined sans family (Geist or Instrument Sans) at two
+  weights; huge, tightly tracked headlines (clamp 48–96px desktop),
+  generous line height for body, small caps never. Optical alignment.
+- Layout: editorial asymmetric grid, wide margins, very generous vertical
+  space, max two ideas per screen. Full-bleed imagery.
+- Imagery: REAL only. Stonescence product photography and the live
+  Stonescence storefront in clean device frames (phone + laptop), plus
+  real dashboard screenshots. Use placeholders named
+  /img/REPLACE-hero-store.jpg etc. where I must supply photos, and list
+  them for me. No decorative graphics.
+- Motion: subtle and slow only. Fade/slide-up on scroll (once), a gentle
+  parallax on the hero device, a short muted autoplay loop of the wizard
+  live preview. Respect prefers-reduced-motion.
+- Performance: LCP under 2s on 4G, images in AVIF/WebP with sizes, no
+  heavy libraries. Perfect at 375px width.
+
+NAV (transparent over hero, solid on scroll)
+LeBrands.Store · Features · Pricing · FAQ · Log in · [Open your store]
+
+PAGE COPY (use exactly; no dashes)
+1. Hero (dark, full screen, storefront on phone + laptop)
+   H1: A flagship store for your brand.
+   Sub: Live today. Built for Indian D2C brands that intend to be
+   remembered.
+   CTA: Open your store   ·   Link: See a live store →
+   (links to stonescence.lebrands.store)
+2. Statement (ivory, one large line, centred)
+   Most store builders give you a website. We give you a storefront that
+   looks like you already made it.
+3. In one sitting (three steps, laid out as a horizontal story with the
+   wizard loop video, not cards)
+   Tell us about your brand. Choose your look and watch it build live.
+   Add your products and publish. Your store is live at
+   yourbrand.lebrands.store.
+4. Crafted details (alternating full-width image/text rows)
+   a) The store. Product pages, collections, cart and checkout designed
+      to sell, on every screen size.
+   b) The checkout. Cash on delivery with built-in fraud protection,
+      COD limits and order tracking for your customers.
+   c) The back office. Orders from packed to delivered, customers, and
+      payment collection in one calm dashboard.
+   d) The paperwork. GST tax invoices with CGST, SGST or IGST worked out
+      for you, numbered correctly every financial year.
+5. Discovery (dark section)
+   H2: Your store, with shoppers already looking.
+   Body: Every LeBrands store is listed on LeBrands.Space, India's D2C
+   brand search engine, with 300,000+ brands across 38 categories.
+   Small grey tag: Rolling out.
+6. Principles (three short lines, typographic, no icons)
+   Zero commission on your sales.
+   Your domain, your payments, your customer data.
+   We never market to your customers.
+7. Coming next (quiet, small text list)
+   Online payments with your own Razorpay account. Shiprocket shipping.
+   Your own domain. Order emails. Drag-and-drop page editor. A second
+   theme, Bazaar.
+8. Showcase
+   Live on LeBrands.Store: Stonescence. [Visit the store]
+   (presented as a live example, not a testimonial)
+9. Pricing teaser
+   Simple monthly pricing. No commission, ever.  [See pricing]
+   → /pricing placeholder: "Pricing is being finalised. Talk to us." with
+   a contact link.
+10. FAQ (accordion, minimal)
+   Do you take a commission? No. Your sales are entirely yours.
+   Do I need GST registration? Yes. A valid GSTIN is required to publish,
+   so every invoice your store issues is compliant.
+   How do payments work? Cash on delivery today. Online payments through
+   your own Razorpay account are coming soon, and the money goes straight
+   to you.
+   Can I use my own domain? Coming soon. Your store starts at
+   yourbrand.lebrands.store.
+   Who owns my customer data? You do. We never market to your customers.
+   What does the LeBrands.Space listing mean? Your brand appears on India's
+   D2C brand search engine, where shoppers discover brands by category and
+   niche. Rolling out.
+   How long does setup take? Most brands finish the guided setup in one
+   sitting.
+11. Final CTA (dark, full width)
+   Your brand is ready. Your store can be too.  [Open your store]
+12. Footer (minimal): Features, Pricing, FAQ, Privacy, Terms, Refund
+   policy, Contact. LeBrandsSpace Digital Private Limited, Chennai. © year.
+
+SEO: title "LeBrands.Store | A flagship online store for Indian D2C
+brands", meta description without dashes, Open Graph image from the hero,
+canonical https://lebrands.store, one H1.
+
+DELIVER: desktop and mobile full-page screenshots, plus the list of photo
+placeholders I need to supply.
