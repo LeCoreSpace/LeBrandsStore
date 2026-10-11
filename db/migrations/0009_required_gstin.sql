@@ -165,7 +165,7 @@ CREATE OR REPLACE FUNCTION public.issue_invoice(p_order_id uuid)
 RETURNS TABLE(id uuid,invoice_number text)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog,public AS $$
 DECLARE v_store_id uuid; v_order public.orders%ROWTYPE; v_invoice public.invoices%ROWTYPE;
-  v_settings jsonb; v_supplier jsonb; v_items jsonb; v_name text; v_prefix text;
+  v_settings jsonb; v_supplier jsonb; v_items jsonb; v_prefix text;
   v_now timestamptz := now(); v_start integer; v_fy text; v_last bigint; v_number text;
 BEGIN
   BEGIN
@@ -183,6 +183,11 @@ BEGIN
   SELECT p.snapshot->'settings' INTO v_settings FROM public.store_publications p
     WHERE p.store_id = v_store_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Published invoice settings are required' USING ERRCODE = 'insufficient_privilege'; END IF;
+  v_prefix := v_settings->>'invoice_prefix';
+  IF v_prefix IS NULL OR btrim(v_prefix) = '' THEN
+    RAISE EXCEPTION 'Published invoice prefix is missing; republish the store with a valid invoice prefix'
+      USING ERRCODE = 'insufficient_privilege';
+  END IF;
   SELECT o.* INTO v_order FROM public.orders o WHERE o.store_id = v_store_id AND o.id = p_order_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Order is not in the current store' USING ERRCODE = 'insufficient_privilege'; END IF;
   SELECT i.* INTO v_invoice FROM public.invoices i WHERE i.store_id = v_store_id AND i.order_id = p_order_id;
@@ -198,8 +203,6 @@ BEGIN
   END IF;
   SELECT COALESCE(jsonb_agg(to_jsonb(oi) || jsonb_build_object('uqc','NOS') ORDER BY oi.created_at,oi.id),'[]'::jsonb)
     INTO v_items FROM public.order_items oi WHERE oi.store_id = v_store_id AND oi.order_id = p_order_id;
-  SELECT s.name INTO v_name FROM public.stores s WHERE s.store_id = v_store_id;
-  v_prefix := COALESCE(v_settings->>'invoice_prefix',public.default_invoice_prefix(COALESCE(v_settings->>'brand_name',v_name)));
   v_start := extract(year FROM v_now AT TIME ZONE 'Asia/Kolkata')::integer;
   IF extract(month FROM v_now AT TIME ZONE 'Asia/Kolkata') < 4 THEN v_start := v_start - 1; END IF;
   v_fy := v_start::text || '-' || right((v_start + 1)::text,2);
@@ -223,7 +226,7 @@ CREATE OR REPLACE FUNCTION public.cancel_invoice(p_order_id uuid)
 RETURNS TABLE(id uuid,invoice_number text,credit_note_number text,changed boolean)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog,public AS $$
 DECLARE v_store_id uuid; v_order public.orders%ROWTYPE; v_invoice public.invoices%ROWTYPE;
-  v_settings jsonb; v_name text; v_prefix text; v_last bigint; v_credit text; v_fy text;
+  v_settings jsonb; v_prefix text; v_last bigint; v_credit text; v_fy text;
   v_now timestamptz := now(); v_start integer;
 BEGIN
   BEGIN
@@ -238,6 +241,11 @@ BEGIN
   SELECT p.snapshot->'settings' INTO v_settings FROM public.store_publications p
     WHERE p.store_id = v_store_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Published invoice settings are required' USING ERRCODE = 'insufficient_privilege'; END IF;
+  v_prefix := v_settings->>'invoice_prefix';
+  IF v_prefix IS NULL OR btrim(v_prefix) = '' THEN
+    RAISE EXCEPTION 'Published invoice prefix is missing; republish the store with a valid invoice prefix'
+      USING ERRCODE = 'insufficient_privilege';
+  END IF;
   SELECT o.* INTO v_order FROM public.orders o WHERE o.store_id = v_store_id AND o.id = p_order_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Order is not in the current store' USING ERRCODE = 'insufficient_privilege'; END IF;
   SELECT i.* INTO v_invoice FROM public.invoices i WHERE i.store_id = v_store_id AND i.order_id = p_order_id FOR UPDATE;
@@ -248,8 +256,6 @@ BEGIN
   IF v_order.status NOT IN ('cancelled','returned','rto') THEN
     RAISE EXCEPTION 'Cancel or return the order before cancelling its invoice' USING ERRCODE = 'check_violation';
   END IF;
-  SELECT s.name INTO v_name FROM public.stores s WHERE s.store_id = v_store_id;
-  v_prefix := COALESCE(v_settings->>'invoice_prefix',public.default_invoice_prefix(COALESCE(v_settings->>'brand_name',v_name)));
   v_start := extract(year FROM v_now AT TIME ZONE 'Asia/Kolkata')::integer;
   IF extract(month FROM v_now AT TIME ZONE 'Asia/Kolkata') < 4 THEN v_start := v_start - 1; END IF;
   v_fy := v_start::text || '-' || right((v_start + 1)::text,2);

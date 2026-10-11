@@ -76,7 +76,12 @@ They lock the store row first, matching the Worker's outer transaction, then
 the draft settings row, published snapshot, order rows and counter. Invoice
 and credit-note numbering read **only the published snapshot's Settings**.
 Draft edits do not change the issued prefix. The shared settings row lock
-serializes prefix editing/republishing with issuance. Both sides of an
+serializes prefix editing/republishing with issuance. A missing publication
+raises `42501` with "Published invoice settings are required"; a missing/null
+or blank published prefix raises `42501` with "Published invoice prefix is
+missing; republish the store with a valid invoice prefix", before counter
+allocation. Neither function substitutes a draft or fallback prefix.
+Both sides of an
 `INSERT ... ON CONFLICT` republish check the existing published prefix, so
 unchanged-prefix republish succeeds but an earlier draft prefix cannot be
 published after current-FY issuance. Failed issuance/cancellation rolls back allocation.
@@ -96,6 +101,9 @@ The existing 0008 invoice/counter immutability triggers remain unchanged.
 - `published_invoice_prefix_valid`: the same CHECK on the published prefix.
 - Existing stores without a prefix receive the default independently in
   their draft Settings and published snapshots, based on each one's brand name.
+  Both backfills execute before any prefix guard trigger is created, so
+  historical current-FY documents do not block initialization. The backfills
+  do not rewrite historic invoice numbers, including long legacy serials.
   This pins their default against later brand renames. No issued invoice,
   credit note or counter is renumbered/reset.
 

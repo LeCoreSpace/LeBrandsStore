@@ -15,6 +15,8 @@ never an unpublished draft. Protect publication upserts and deletion as well
 as draft edits: a prefix drafted before issuance must not bypass the FY lock
 when republished. Unchanged-prefix republish must remain allowed. Every
 prefix lock/context denial uses SQLSTATE 42501.
+Missing or blank published prefixes must also fail clearly with 42501, never
+silently regenerate a prefix during invoice or credit-note issuance.
 
 Invoice and credit series are independent; reject overflow
 instead of truncating or reusing serials. Four digits is minimum padding, not

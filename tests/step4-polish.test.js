@@ -116,7 +116,10 @@ test("financial numbering reads published settings and republish guards cover up
     assert.match(body,/SELECT p\.snapshot->'settings' INTO v_settings FROM public\.store_publications p\s+WHERE p\.store_id = v_store_id FOR UPDATE/);
     assert.doesNotMatch(body,/SELECT st\.settings INTO v_settings/);
     assert.doesNotMatch(body,/UPDATE public\.store_setup/);
-    assert.match(body,/v_prefix := COALESCE\(v_settings->>'invoice_prefix'/);
+    assert.match(body,/v_prefix := v_settings->>'invoice_prefix'/);
+    assert.doesNotMatch(body,/default_invoice_prefix/);
+    assert.match(body,/IF v_prefix IS NULL OR btrim\(v_prefix\) = '' THEN\s+RAISE EXCEPTION 'Published invoice prefix is missing; republish the store with a valid invoice prefix'\s+USING ERRCODE = 'insufficient_privilege'/);
+    assert.ok(body.indexOf("Published invoice prefix is missing") < body.indexOf("INSERT INTO public.invoice_sequences"));
   }
   const guard=sql.split("CREATE FUNCTION public.guard_invoice_prefix()")[1].split("END $$;")[0];
   assert.match(guard,/TG_TABLE_NAME = 'store_publications'/);
@@ -135,4 +138,19 @@ test("financial numbering reads published settings and republish guards cover up
   const probes=readFileSync(new URL("../db/dashboard-isolation.js",import.meta.url),"utf8");
   assert.match(probes,/dashboard\.prefix\.republish-draft-denied/);
   assert.match(probes,/dashboard\.prefix\.republish-unchanged-allowed/);
+});
+test("0009 backfills draft and published prefixes before enabling FY guards without touching historical numbers",()=>{
+  const sql=readFileSync(new URL("../db/migrations/0009_required_gstin.sql",import.meta.url),"utf8");
+  const draft=sql.indexOf("UPDATE public.store_setup st SET settings = jsonb_set");
+  const published=sql.indexOf("UPDATE public.store_publications p SET snapshot = jsonb_set");
+  assert.ok(draft >= 0 && published > draft);
+  for (const trigger of ["guard_invoice_prefix BEFORE","guard_invoice_prefix_delete BEFORE",
+    "guard_published_invoice_prefix BEFORE","guard_published_invoice_prefix_delete BEFORE"]) {
+    assert.ok(sql.indexOf(`CREATE TRIGGER ${trigger}`)>published);
+  }
+  const backfills=sql.slice(draft,sql.indexOf("CREATE FUNCTION public.guard_invoice_prefix()"));
+  assert.match(backfills,/st\.settings->>'invoice_prefix' IS NULL/);
+  assert.match(backfills,/p\.snapshot->'settings'->>'invoice_prefix' IS NULL/);
+  assert.match(backfills,/p\.snapshot->'settings'->>'brand_name'/);
+  assert.doesNotMatch(backfills,/UPDATE public\.(?:invoices|invoice_sequences)/);
 });
