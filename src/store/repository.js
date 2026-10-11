@@ -18,7 +18,7 @@ const mediaRecord = (m) => ({
   size: Number(m.size_bytes), width: m.width, height: m.height, alt: m.alt_text,
 });
 export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
-  // to_jsonb is compatible both before and after the staged 0010 migration.
+  // to_jsonb is compatible both before and after the staged approval migration.
   const [store] = await tx`SELECT store_id, name, subdomain, status, subdomain_changed_at,
     to_jsonb(s) ? 'approved_at' AS approval_enabled,
     to_jsonb(s)->>'approved_at' AS approved_at,
@@ -232,6 +232,11 @@ export async function publish(tx, id, live) {
       throw badInput("Confirm your store address in Brand basics before publishing.");
     }
     if (checklist.some((item) => !item.complete)) throw badInput("Complete every item in the publish checklist.", Object.fromEntries(checklist.filter((v) => !v.complete).map((v) => [v.label, "Not complete"])));
+    // Merge before INSERT: PostgreSQL's BEFORE INSERT guard also runs for an
+    // ON CONFLICT republish. Retain the published prefix if an older draft
+    // omitted it; an explicitly edited draft prefix still wins and is guarded.
+    const [publication] = await tx`SELECT snapshot FROM public.store_publications WHERE store_id = ${id}`;
+    data.settings = { ...publication?.snapshot?.settings, ...data.settings };
     // Before 0010 is applied, keep the 0009-era workflow intact. After 0010,
     // every first go-live awaits a platform-only approval, never a brand action.
     status = data.store.approval_enabled && (!data.store.approved_at || data.store.approval_revoked_at)

@@ -18,6 +18,14 @@ prefix lock/context denial uses SQLSTATE 42501.
 Missing or blank published prefixes must also fail clearly with 42501, never
 silently regenerate a prefix during invoice or credit-note issuance.
 
+Merge settings in every snapshot/fixture rewrite. Explicit prefix key removal
+must be denied even when its computed default would remain the same.
+Merge republish candidates before INSERT, since BEFORE INSERT also runs on
+the insert side of an ON CONFLICT upsert.
+
+**Why:** Pre-numbering checkout fixtures replaced the whole snapshot and
+dropped the pinned prefix, correctly triggering 42501 before checkout ran.
+
 Invoice and credit series are independent; reject overflow
 instead of truncating or reusing serials. Four digits is minimum padding, not
 an instruction to truncate a longer counter. Prefix editing and issuance must

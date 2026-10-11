@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { listOrders,listCustomers,listInvoices,invoiceDetail,overview,exportRows,changeOrderStatus,issueInvoice } from "../src/dashboard/repository.js";
 import { handleDashboard } from "../src/dashboard/routes.js";
 import { financialYear,invoiceNumber } from "../src/public/dashboard-rules.js";
+import { saveSetup, publish, regeneratePolicies } from "../src/store/repository.js";
 
 async function shippedInvoiceFixture(tx,store) {
   const id = randomUUID();
@@ -20,6 +21,38 @@ export function dashboardIsolationChecks(getFixtures,transaction,denied) {
   return [
     {name:"dashboard.prefix.fy-lock",reason:"An existing current-FY invoice prevents prefix changes with 42501.",
       fn:()=>{const {a}=getFixtures();return denied(a.storeId,tx=>tx`UPDATE public.store_setup SET settings=jsonb_set(settings,'{invoice_prefix}','\"DIFF\"'::jsonb) WHERE store_id=${a.storeId}`);}},
+    {name:"dashboard.prefix.other-settings-and-wizard-republish",reason:"After current-FY issuance, the real wizard save and republish preserve the prefix while allowing other Settings edits.",
+      fn:()=>{const {a}=getFixtures();return transaction(a.storeId,async tx=>{
+        const [before]=await tx`SELECT settings->>'invoice_prefix' AS prefix
+          FROM public.store_setup WHERE store_id=${a.storeId}`;
+        assert.equal(before.prefix,"RLS");
+        await saveSetup(tx,a.storeId,{
+          brand_name:"RLS Fixture Updated Brand",description:"Thoughtfully made everyday essentials for the RLS fixture catalogue.",
+          address:"RLS Fixture Address, Mumbai, Maharashtra, 400001",
+          support_email:"rls-fixture@isolation.invalid",support_phone:"+919000000000",category:"home-decor",
+        });
+        const [saved]=await tx`SELECT settings FROM public.store_setup WHERE store_id=${a.storeId}`;
+        assert.equal(saved.settings.invoice_prefix,before.prefix);
+        assert.equal(saved.settings.brand_name,"RLS Fixture Updated Brand");
+        await tx`UPDATE public.products SET description='Thoughtfully made everyday essentials for fixture isolation tests.',
+          hsn_code='4202',gst_rate=18 WHERE store_id=${a.storeId}`;
+        for (const productId of a.productIds) await tx`INSERT INTO public.product_media(store_id,product_id,media_id)
+          VALUES (${a.storeId},${productId},${a.mediaId}) ON CONFLICT DO NOTHING`;
+        await regeneratePolicies(tx,a.storeId);
+        await tx`UPDATE public.policy_pages SET reviewed_at=now() WHERE store_id=${a.storeId}`;
+        await publish(tx,a.storeId,true);
+        const [published]=await tx`SELECT snapshot FROM public.store_publications WHERE store_id=${a.storeId}`;
+        assert.equal(published.snapshot.settings.invoice_prefix,before.prefix);
+        assert.equal(published.snapshot.settings.brand_name,"RLS Fixture Updated Brand");
+      });}},
+    {name:"dashboard.prefix.remove-key-denied",reason:"Removing the draft or published prefix remains rejected with 42501 in a locked FY.",
+      fn:async()=>{const {a}=getFixtures();
+        await denied(a.storeId,tx=>tx`UPDATE public.store_setup SET settings=settings-'invoice_prefix'
+          WHERE store_id=${a.storeId}`);
+        await denied(a.storeId,tx=>tx`UPDATE public.store_publications
+          SET snapshot=jsonb_set(snapshot,'{settings}',(snapshot->'settings')-'invoice_prefix')
+          WHERE store_id=${a.storeId}`);
+      }},
     {name:"dashboard.prefix.published-fy-lock",reason:"Current-FY issuance locks the published prefix with 42501.",
       fn:()=>{const {a}=getFixtures();return denied(a.storeId,tx=>tx`
         UPDATE public.store_publications SET snapshot=jsonb_set(snapshot,'{settings,invoice_prefix}','"DIFF"'::jsonb)

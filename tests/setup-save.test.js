@@ -34,11 +34,17 @@ function database() {
       ...p, tags: query.includes("to_json(tags)") ? [...p.tags] : '{"cotton, linen","size \\"small\\"","back\\\\slash"}',
     }));
     if (query.includes("FROM public.product_media") || query.includes("FROM public.policy_pages")) return [];
+    if (query.includes("FROM public.invoices")) return [{locked:Boolean(state.currentFyInvoice)}];
     if (query.includes("FROM public.media")) return [{
       id: LOGO, object_key: `stores/${ID}/${LOGO}.png`, upload_type: "logo",
     }];
     if (query.includes("SET name =")) state.store.name = values[0];
-    if (query.includes("SET settings =")) Object.assign(state.settings, jsonValue(values[0]));
+    if (query.includes("SET settings =")) {
+      const next={...state.settings,...jsonValue(values[0])};
+      if (state.currentFyInvoice && next.invoice_prefix!==state.settings.invoice_prefix)
+        throw Object.assign(new Error("Invoice prefix is locked until the next Indian financial year"),{code:"42501"});
+      Object.assign(state.settings,next);
+    }
     if (query.includes("SET logo_media_id =")) state.logo = values[0];
     if (query.includes("SET step =")) {
       assert.match(query, /ARRAY\(SELECT jsonb_array_elements_text\(\?\)::integer\)/);
@@ -120,6 +126,27 @@ test("product tag arrays cross the JSON boundary on both reads and writes", asyn
   const db = database();
   await saveProduct(db.tx, ID, PRODUCT, { description: "Draft update" });
   assert.deepEqual((await loadDraft(db.tx, ID)).products[0].tags, ['cotton, linen', 'size "small"', "back\\slash"]);
+});
+test("wizard PATCH merges other Settings fields and preserves a locked current-FY invoice prefix", async () => {
+  const db = database();
+  db.state.settings.invoice_prefix = "RLS";
+  db.state.currentFyInvoice = true;
+  const response = await patch(db, {tagline:"Updated without changing numbering"});
+  assert.equal(response.status,200);
+  const body = await response.json();
+  assert.equal(db.state.settings.invoice_prefix,"RLS");
+  assert.equal(body.settings.invoice_prefix,"RLS");
+  assert.equal(body.invoice_prefix_locked,true);
+  assert.ok(db.state.queries.some(({query})=>query.includes("SET settings = settings ||")));
+});
+test("wizard PATCH does not hide an intentional locked prefix change from the DB guard", async () => {
+  const db = database();
+  db.state.settings.invoice_prefix = "RLS";
+  db.state.currentFyInvoice = true;
+  const response = await patch(db, {invoice_prefix:"DIFF"});
+  assert.equal(response.status,409);
+  assert.equal(db.state.settings.invoice_prefix,"RLS");
+  assert.match((await response.json()).errors.invoice_prefix,/financial year/);
 });
 test("database diagnostics include SQLSTATE and names, never raw values or SQL context", () => {
   const sensitive = "private@example.invalid +91-9000000000 33ABCDE1234F1Z5\nPrivate Address token-value";

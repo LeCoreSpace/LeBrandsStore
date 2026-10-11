@@ -74,8 +74,13 @@ test("admin approval requires postgres and writes audit in the same transaction"
   assert.doesNotMatch(source("../src/store/routes.js"),/admin-approve|approval\/approve/);
 });
 
-test("publishing first goes to awaiting approval after 0010, but does not require 0010 during the 0009 rollout", async () => {
-  for (const enabled of [false, true]) {
+test("publication merging preserves locked prefixes and intentional edits, with approval rollout compatibility", async () => {
+  for (const {enabled,oldPrefix,draftPrefix,locked} of [
+    {enabled:false}, {enabled:true},
+    {enabled:false,oldPrefix:"RLS",locked:true},
+    {enabled:false,oldPrefix:"RLS",draftPrefix:"RLS",locked:true},
+    {enabled:false,oldPrefix:"RLS",draftPrefix:"DIFF",locked:true},
+  ]) {
     let status="draft", snapshot;
     const imageId="22222222-2222-4222-8222-222222222222";
     const media={id:imageId,store_id:ID,object_key:`stores/${ID}/${imageId}.png`,upload_type:"logo",
@@ -85,6 +90,7 @@ test("publishing first goes to awaiting approval after 0010, but does not requir
       legal_name:"Example Business",address:"10 Example Street, Mumbai, Maharashtra, 400001",
       support_email:"hello@example.invalid",support_phone:"+919000000000",category:"home-decor",
       gstin:"27AAPFU0939F1ZV",business_state:"27"};
+    if (draftPrefix) settings.invoice_prefix=draftPrefix;
     const product={id:"33333333-3333-4333-8333-333333333333",store_id:ID,title:"Example Cotton Tote",
       description:"A thoughtfully made reusable cotton tote for daily shopping and carrying essentials.",
       price_paise:10000,compare_at_price_paise:12000,tags:["cotton"],sku:"SYN-1",track_inventory:false,
@@ -100,18 +106,33 @@ test("publishing first goes to awaiting approval after 0010, but does not requir
       }];
       if (q.includes("SELECT *, to_json(completed)")) return [{settings,logo_media_id:imageId,step:4,completed:[1,2,3,4]}];
       if (q.includes("SELECT * FROM public.media")) return [media];
-      if (q.includes("SELECT EXISTS(SELECT 1 FROM public.invoices")) return [{locked:false}];
+      if (q.includes("SELECT EXISTS(SELECT 1 FROM public.invoices")) return [{locked:!!locked}];
+      if (q.startsWith("SELECT snapshot FROM public.store_publications")) return oldPrefix
+        ? [{snapshot:{settings:{invoice_prefix:oldPrefix,published_only:"retained"}}}] : [];
       if (q.includes("SELECT *, to_json(tags)")) return [product];
       if (q.includes("SELECT pm.product_id")) return [{...media,product_id:product.id}];
       if (q.includes("SELECT slug, title, content, reviewed_at")) return policies;
       if (q.includes("UPDATE public.stores SET status")) status=params[0];
-      if (q.includes("INSERT INTO public.store_publications")) snapshot=params[1];
+      if (q.includes("INSERT INTO public.store_publications")) {
+        snapshot=params[1];
+        if (locked && snapshot.settings.invoice_prefix!==oldPrefix)
+          throw Object.assign(new Error("Invoice prefix is locked until the next Indian financial year"),{code:"42501"});
+      }
       return [];
     };
     tx.json=value=>value;
+    if (locked && draftPrefix && draftPrefix!==oldPrefix) {
+      await assert.rejects(publish(tx,ID,true),{code:"42501"});
+      assert.equal(snapshot.settings.invoice_prefix,draftPrefix,"Explicit changes reach the guard, not a silent fallback");
+      continue;
+    }
     const result=await publish(tx,ID,true);
     assert.equal(status, enabled ? "awaiting_approval" : "live");
     assert.equal(result.store.status,status);
     assert.equal(snapshot.store.status,status);
+    if (oldPrefix) {
+      assert.equal(snapshot.settings.invoice_prefix,oldPrefix);
+      assert.equal(snapshot.settings.published_only,"retained");
+    }
   }
 });

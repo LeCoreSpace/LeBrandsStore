@@ -3,15 +3,22 @@ import { randomUUID } from "node:crypto";
 import { placeCodOrder, checkoutQuote } from "../src/checkout/repository.js";
 import { sha256 } from "../src/auth/passwords.js";
 
+export async function prepareCheckoutFixture(tx,a) {
+  await tx`UPDATE public.products SET stock = 5,track_inventory = true WHERE store_id = ${a.storeId}`;
+  const [publication] = await tx`SELECT snapshot FROM public.store_publications WHERE store_id = ${a.storeId}`;
+  assert.ok(publication,"Checkout fixture must already have a published snapshot.");
+  const previous = publication.snapshot;
+  await tx`UPDATE public.store_publications SET snapshot = ${tx.json({
+    ...previous,
+    products:a.productIds.map((id) => ({id,title:"RLS Test Product",price_paise:10000,gst_rate:18,hsn_code:"4202",images:[]})),
+    settings:{...previous.settings,gstin:"27ABCDE1234F1Z5"},
+    store:{...previous.store,store_id:a.storeId},
+  })} WHERE store_id = ${a.storeId}`;
+}
+
 export function checkoutIsolationChecks(getFixtures,appTransaction,denied) {
   const tables = ["checkout_settings","checkout_attempts"];
-  const prepare = async (tx,a) => {
-    await tx`UPDATE public.products SET stock = 5,track_inventory = true WHERE store_id = ${a.storeId}`;
-    await tx`UPDATE public.store_publications SET snapshot = ${tx.json({
-      products:a.productIds.map((id) => ({id,title:"RLS Test Product",price_paise:10000,gst_rate:18,hsn_code:"4202",images:[]})),
-      settings:{gstin:"27ABCDE1234F1Z5"},store:{store_id:a.storeId},
-    })} WHERE store_id = ${a.storeId}`;
-  };
+  const prepare = prepareCheckoutFixture;
   const input = (productId) => ({
     items:[{product_id:productId,quantity:1}],contact:{name:"RLS Checkout Fixture",phone:"+919000000000",email:""},
     address:{line1:"RLS Test Address",line2:"",landmark:"",city:"Mumbai",state:"27",pincode:"400001"},
