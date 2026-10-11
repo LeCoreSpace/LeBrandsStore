@@ -1,0 +1,156 @@
+TASK: Final polish + premium motion for the lebrands.store marketing
+homepage. UI only. Do NOT run migrations or deploy. Do NOT change
+signup/login, app.lebrands.store, checkout or any storefront code.
+
+======================================================================
+PART A. HARD BOUNDARY: MARKETING vs STOREFRONTS
+======================================================================
+- Everything in this task applies ONLY to the marketing site
+  (lebrands.store, /pricing, /features, /faq).
+- Storefronts ({sub}.lebrands.store), the wizard and the dashboard must
+  NOT load any library added here (React, React Three Fiber, GSAP,
+  Lenis, Spline, Motion, video players). Keep marketing code in its own
+  bundle/folder. Add an offline test that fails if any storefront
+  response references these libraries or the marketing bundle.
+- Storefront performance budget is unchanged.
+
+======================================================================
+PART B. POLISH FIXES
+======================================================================
+1. Brand colour: plum/ivory is the brand. Apply the same colour tokens
+   to the wizard and dashboard accent, then recapture the wizard
+   screenshot/video so no old green "L" logo or green UI appears
+   anywhere on the homepage.
+2. Logo: transparent SVG on all backgrounds (no white box). Light and
+   dark versions. Nav logo height 32 to 36px.
+3. Remove ALL eyebrow labels above headings, all "01 / 04" style
+   counters (slider controls may keep plain numbered buttons), and the
+   small pink accent lines above sections.
+4. Hero: remove the empty band under the nav; hero content starts within
+   about 120px of the nav on desktop.
+5. Primary buttons: deep plum background, ivory text, WCAG AA.
+6. Screenshots and video: no overlay or reduced opacity, full contrast.
+   Crop the wizard capture tighter so the UI is readable.
+7. Remove the Dark/Light toggle from the marketing nav.
+8. Principles section: all three lines left-aligned on one edge.
+9. Discovery section: one "Rolling out" note only.
+10. Remove "Razorpay payments and integrations with any logistics
+    partner can be added for your brand. Contact us to discuss your
+    setup." unless I confirm otherwise.
+11. WCAG AA for every text/background pair; darken grey body text where
+    it fails.
+12. Example Studio hero copy: replace the italic coloured phrase with a
+    plain headline in one colour and weight.
+13. Copy rules still apply: no em or en dashes anywhere (keep the
+    existing no-dash test passing), no banned words, every claim true
+    today or marked "Coming soon" / "Rolling out", every generated or
+    fictional visual labelled "Example store".
+
+======================================================================
+PART C. MOTION AND INTERACTION
+======================================================================
+Libraries allowed on the marketing site: React (as isolated islands if
+the page stays server-rendered HTML), React Three Fiber + drei, GSAP +
+ScrollTrigger, Lenis, Motion (motion.dev), Spline runtime if useful.
+No JS size budget for the marketing site.
+
+C1. HERO
+- If /img/REPLACE-hero-film.webm (+ .mp4) exists: full-bleed cinematic
+  video hero, muted, autoplay, loop, playsinline. 4K source for desktop,
+  1080p for mobile.
+- Else if /img/REPLACE-hero-loop.webm (+ .mp4) exists: cinemagraph of the
+  Example Studio hero photo inside the device frames.
+- Else: the still photo with a very slow push-in (5% over 20s).
+- The still photo is always the poster and the LCP image. Video loads
+  after first paint and pauses when off-screen.
+- Desktop only: mouse-reactive depth parallax on the hero photo (WebGL
+  displacement using a depth map you generate for the image; max shift
+  12px; eases back when the mouse leaves).
+
+C2. LIVE MINI-DEMO (in the hero, below the subline)
+- One input "Your brand name" + three preset swatches: Ivory, Stone,
+  Midnight.
+- Typing updates the brand name in the storefront inside the device
+  frames live, rendered from the real Aura template (not an image).
+  Swatches recolour it with a 400ms crossfade.
+- CTA below: "Open [typed name]'s store" → signup with the name
+  prefilled. Nothing is stored or sent until signup. Max 40 characters,
+  escaped output.
+
+C3. "STORE BUILDS ITSELF" (the "In one sitting" section)
+- Desktop (≥1024px): a React Three Fiber scene with a laptop and a phone
+  in soft studio light. Their screens show live Aura renders. The
+  section pins for about 2.5 screen heights; as the user scrolls:
+  (a) devices rotate gently into view,
+  (b) brand name and logo appear,
+  (c) theme colours fill in,
+  (d) three products slide into the grid,
+  (e) a quiet "Live" status appears with yourbrand.lebrands.store.
+  Scroll-scrubbed with GSAP ScrollTrigger. Slight mouse tilt (max 4°).
+- Mobile/tablet: a pre-rendered video of the same sequence (record it
+  from the desktop scene), autoplay when in view, no pinning.
+
+C4. CRAFTED DETAILS
+- Convert to a horizontal scroll section on desktop (vertical scroll
+  moves the four panels sideways), each panel's screenshot revealing
+  with a clip-path wipe. Mobile: stacked panels with reveals.
+- In the checkout panel, clicking a product in the example store
+  expands it smoothly into its product page inside the device frame.
+
+C5. TYPOGRAPHY AND REVEALS
+- Headlines: line-by-line rise from a mask, 700ms, once per element.
+- Images: clip-path wipe reveal, 900ms, once.
+- Statement band: words brighten from 30% to 100% opacity as the
+  sentence scrolls through the viewport.
+- "300,000+ brands" counts up once when visible.
+
+C6. PAGE FEEL
+- Lenis smooth scrolling on desktop; native scrolling on touch devices.
+- Nav shrinks and turns solid after 40px of scroll.
+- Buttons: 150ms colour transition; text links: underline draws in.
+- View Transitions API for Home ↔ Pricing ↔ FAQ where supported.
+
+MOTION STYLE
+- Easing cubic-bezier(0.22, 1, 0.36, 1). Durations 600 to 1200ms for
+  reveals. Nothing bounces, nothing flashes. Nothing loops except hero
+  video/cinemagraph.
+- One big moment per screen at most.
+
+======================================================================
+PART D. LOADING AND DEVICE TIERS
+======================================================================
+- First screen (nav, headline, subline, CTA, poster image) renders fast:
+  LCP < 2.5s on 4G, CLS < 0.05. All heavy assets load after first paint
+  or when their section nears the viewport.
+- Tiers chosen at runtime by screen width, navigator.hardwareConcurrency,
+  deviceMemory, Save-Data and prefers-reduced-motion:
+  - Full: desktop, all effects.
+  - Lite: phones/tablets and low-end devices, videos instead of WebGL/3D,
+    no pinning, 1080p video.
+  - Static: prefers-reduced-motion or Save-Data, still images, no
+    autoplay video, no scroll-jacking.
+- WebGL failure or any script error falls back to the static version
+  without breaking the page. The page must be fully readable with
+  JavaScript disabled (add an offline test).
+- 60fps on a mid-range laptop; no jank while scrolling the 3D section.
+
+======================================================================
+PART E. ASSETS
+======================================================================
+- I will supply (optional): REPLACE-hero-film.webm/.mp4 and/or
+  REPLACE-hero-loop.webm/.mp4. Build everything so these drop in without
+  code changes; list exact sizes/codecs you want.
+- You generate: the depth map for the hero photo, the pre-rendered
+  mobile video of C3, and any recaptured screenshots.
+- All images AVIF/WebP + JPG fallback with srcset.
+
+======================================================================
+PART F. DELIVER
+======================================================================
+- pnpm run test:offline passing (including the no-dash test, the
+  storefront-isolation test and the no-JS render test).
+- Screen recordings: desktop (full experience) and mobile (lite).
+- Lighthouse/PageSpeed numbers for desktop and mobile from the local
+  preview.
+- A list of every new dependency and confirmation that no storefront,
+  wizard or dashboard bundle includes them.
