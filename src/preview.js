@@ -217,8 +217,6 @@ export default {
     if (account) body = body.replaceAll('href="/"', 'href="/dashboard"');
     body = body.replaceAll('href="https://lebrands.store"', 'href="/"')
       .replaceAll("https://app.lebrands.store", "").replaceAll("https://lebrands.store", "");
-    // Local-only entry point; never part of the production homepage or app.
-    body = body.replace("</body>", '<a href="/__app-preview" target="_top" style="position:fixed;right:16px;bottom:16px;z-index:10000;padding:10px 16px;border-radius:6px;background:#6b1735;color:#fffdf4;font:600 12px system-ui;text-decoration:none;box-shadow:0 3px 15px #0002">Browse application preview</a></body>');
     return new Response(body, { status: response.status, headers });
   },
 };

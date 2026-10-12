@@ -1,15 +1,24 @@
 ---
 name: Replit application preview boundary
-description: Safe application-wide browsing in Replit without live-data operations
+description: Native Preview tab entry versus optional sample browser and live-data operations
 ---
-The Replit application preview is a labelled, read-only demonstration using
-fictional data, not a signed-in session for a real brand.
+The user wants the actual application to appear directly in Replit's native
+Preview tab, like other web applications. A separate sample-screen browser is
+not a substitute for that entry point.
 
-**Why:** Application-wide browsing should not implicitly connect preview pages
-to the live Supabase database or authorise store writes, publishing, orders or
-password changes. The user requested preview access, not a live-data environment.
+**Why:** The user repeated the request after a sample browser was delivered and
+showed the Preview tab's "Nothing to preview yet" screen.
 
-**How to apply:** Keep preview navigation and fixtures local-only and excluded
-from the production dependency graph. State the read-only limitation clearly.
-Treat authenticated preview with persistent saves as separate environment work,
-requiring an explicit decision about database isolation.
+**How to apply:** Preserve the existing Cloudflare application and expose it
+through a registered web entry. Do not rebuild it as a second React frontend.
+The sample browser may remain optional, but the default entry is the real site.
+
+Preview registration alone does not authorise attaching the live database or
+enabling real brand writes, publishing, orders or password changes.
+
+**Why:** Fixing Preview visibility is distinct from choosing which database a
+working local login and persistent changes should use.
+
+**How to apply:** State database-backed limitations clearly. Treat authenticated
+preview with persistent saves as separate environment work requiring an explicit
+decision about database isolation. Keep fictional fixtures local-only.

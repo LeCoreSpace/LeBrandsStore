@@ -1,0 +1,19 @@
+kind = "web"
+previewPath = "/"
+title = "LeBrands.Store"
+description = "Web preview entry for the existing LeBrands.Store Cloudflare Worker application. Development-only forwarding, no replacement UI or database."
+version = "1.0.0"
+id = "artifacts/lebrands-web"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22992
+
+[services.development]
+run = "pnpm --filter @workspace/lebrands-web run dev"
+
+[services.env]
+PORT = "22992"
+BASE_PATH = "/"
