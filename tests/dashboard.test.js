@@ -23,6 +23,7 @@ test("live catalogue sync publishes only its target, never other wizard drafts",
   let saved;
   const tx = async (parts,...values) => {
     const sql = parts.join("?").replace(/\s+/g," ").trim();
+    if (sql === "SELECT to_regclass('public.store_pages') IS NOT NULL AS pages_enabled") return [{ pages_enabled: false }];
     if (sql.startsWith("SELECT EXISTS")) return [{locked:false}];
     if (sql.startsWith("SELECT status FROM public.stores")) return [{status:"live"}];
     if (sql.startsWith("UPDATE public.products SET status")) {

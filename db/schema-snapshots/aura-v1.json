@@ -1,0 +1,26 @@
+{
+  "pages": ["home","collection","product","about","contact","policy-privacy","policy-terms","policy-shipping","policy-cancellation-refund","policy-contact","policy-pricing","cart","checkout","track","confirmation","404"],
+  "sections": {
+    "announcement": {"pages":"*","fields":{"enabled":{"type":"toggle","default":false},"text":{"type":"text","maxLength":200},"url":{"type":"link"}}},
+    "header": {"pages":"*","required":"*","fields":{"logo_position":{"type":"select","values":["left","center"]},"links":{"type":"list","minItems":0,"maxItems":5,"itemFields":{"label":{"type":"text","maxLength":80,"required":true},"url":{"type":"link","required":true}}}}},
+    "hero": {"pages":["home","about"],"fields":{"title":{"type":"text","maxLength":240,"required":true},"description":{"type":"richtext","maxLength":2000},"image":{"type":"image"},"poster":{"type":"image"},"video":{"type":"video"},"variant":{"type":"select","values":["split","fullbleed","video"]},"button_label":{"type":"text","maxLength":80},"button_url":{"type":"link","default":"/collections/all"}}},
+    "statement": {"pages":["home","about"],"fields":{"text":{"type":"text","maxLength":500,"required":true}}},
+    "featured-collection": {"pages":["home","about"],"fields":{"title":{"type":"text","maxLength":160},"collection":{"type":"collection"},"limit":{"type":"select","values":[3,6,9]}}},
+    "spotlight": {"pages":["home","collection"],"fields":{"product":{"type":"product","required":true}}},
+    "lookbook": {"pages":["home","about"],"min":1,"max":3,"blocks":{"image":{"type":"image","required":true},"title":{"type":"text","maxLength":200},"text":{"type":"richtext","maxLength":2000},"url":{"type":"link"},"label":{"type":"text","maxLength":80}}},
+    "founder": {"pages":["home","about"],"fields":{"portrait":{"type":"image","required":true},"story":{"type":"richtext","maxLength":4000},"name":{"type":"text","maxLength":160,"required":true}}},
+    "craft": {"pages":["home","about","product"],"fields":{"title":{"type":"text","maxLength":160}},"min":1,"max":8,"blocks":{"image":{"type":"image","required":true},"caption":{"type":"text","maxLength":240}}},
+    "reviews": {"pages":["home","product"],"fields":{"title":{"type":"text","maxLength":160},"limit":{"type":"select","values":[3,6,9]}}},
+    "press": {"pages":["home","about"],"fields":{"title":{"type":"text","maxLength":160}},"min":1,"max":12,"blocks":{"name":{"type":"text","maxLength":160,"required":true},"logo":{"type":"image"},"url":{"type":"link"}}},
+    "gallery": {"pages":["home","about","product"],"min":4,"max":8,"blocks":{"image":{"type":"image","required":true}}},
+    "trust": {"pages":["home","collection","product","cart","checkout"]},
+    "footer": {"pages":"*","required":"*","fields":{"brand_line":{"type":"text","maxLength":500},"links":{"type":"list","minItems":0,"maxItems":8,"itemFields":{"label":{"type":"text","maxLength":80,"required":true},"url":{"type":"link","required":true}}},"social_links":{"type":"list","minItems":0,"maxItems":8,"itemFields":{"label":{"type":"text","maxLength":80,"required":true},"url":{"type":"link","required":true}}}}},
+    "product-grid": {"pages":["collection"],"required":["collection"],"fields":{"title":{"type":"text","maxLength":160},"collection":{"type":"collection"}}},
+    "product-details": {"pages":["product"],"required":["product"]},
+    "about": {"pages":["about"],"fields":{"title":{"type":"text","maxLength":240},"body":{"type":"richtext","maxLength":10000}}},
+    "contact": {"pages":["contact"],"required":["contact"],"fields":{"title":{"type":"text","maxLength":160}}},
+    "policy": {"pages":["policy-privacy","policy-terms","policy-shipping","policy-cancellation-refund","policy-contact","policy-pricing"],"required":["policy-privacy","policy-terms","policy-shipping","policy-cancellation-refund","policy-contact","policy-pricing"]},
+    "commerce": {"pages":["cart","checkout","track","confirmation"],"required":["cart","checkout","track","confirmation"]},
+    "not-found": {"pages":["404"],"required":["404"],"fields":{"title":{"type":"text","maxLength":160,"default":"This page isn't here.","required":true},"text":{"type":"text","maxLength":500,"default":"Browse the collection or contact the store for help."}}}
+  }
+}

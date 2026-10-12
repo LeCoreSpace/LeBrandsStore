@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { readFile, readdir } from "node:fs/promises";
 import postgres from "postgres";
 import { clearPgEnvironment, logDatabaseFailure, printConnectionTarget, validateSupabaseUrl } from "./connection.js";
+import { preparePageMigration } from "./page-schema-migration.js";
 
 clearPgEnvironment();
 try {
@@ -43,7 +44,7 @@ try {
     await tx`REVOKE ALL ON TABLE public.schema_migrations FROM PUBLIC`;
 
     for (const filename of filenames) {
-      const source = await readFile(new URL(filename, directory), "utf8");
+      const source = await preparePageMigration(filename, await readFile(new URL(filename, directory), "utf8"));
       const checksum = createHash("sha256").update(source).digest("hex");
       const [applied] = await tx`
         SELECT checksum FROM public.schema_migrations WHERE filename = ${filename}

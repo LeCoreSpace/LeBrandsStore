@@ -2,6 +2,7 @@ import { renderAura } from "../public/aura.js";
 import { POLICY_KINDS, UUID } from "../public/validation.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import { handleCheckout, isCheckoutPath } from "../checkout/routes.js";
+import { pagesEnabled, pageLayouts } from "./pages.js";
 
 export function storefrontPage(path, data) {
   if (path === "/") return { page: "home", status: 200 };
@@ -20,10 +21,17 @@ export async function serveStorefront(request, db, store, env = {}) {
     url.hostname = `${store.subdomain}.lebrands.store`;
     return new Response(null, { status: 307, headers: { ...SECURITY_HEADERS, location: url.href } });
   }
-  const [publication] = await db.withStore(store.store_id, (tx) => tx`
+  const [publication] = await db.withStore(store.store_id, async tx => {
+    const [row] = await tx`
     SELECT p.snapshot FROM public.store_publications p JOIN public.stores s ON s.store_id = p.store_id
     WHERE p.store_id = ${store.store_id} AND s.status = 'live'
-  `);
+    `;
+    if (row?.snapshot && await pagesEnabled(tx)) {
+      const pages = await pageLayouts(tx, store.store_id, { published: true });
+      row.snapshot = { ...row.snapshot, layouts: pages.layouts };
+    }
+    return row ? [row] : [];
+  });
   if (!publication?.snapshot) return null;
   const data = { ...publication.snapshot,
     store: { ...publication.snapshot.store, ...store },

@@ -1,5 +1,7 @@
 import { formatPhone } from "/assets/commerce-rules.js";
 import { renderAura } from "/assets/aura.js";
+import { mergeSettingsToLayouts } from "/assets/aura-layout.js";
+import { prepareAuraPhoto } from "/assets/aura-upload.js";
 import { CATEGORIES, validateBasics, validateTheme, validateProduct, publishChecklist, resumeStep } from "/assets/validation.js";
 import { INDIAN_STATES, registeredBusinessState, businessGSTINErrors } from "/assets/commerce-rules.js";
 
@@ -49,7 +51,8 @@ let policyQueue = Promise.resolve();
 const SETTING_FIELDS = new Set([
   "brand_name", "subdomain", "description", "tagline", "logo_media_id",
   "legal_name", "address", "support_email", "support_phone", "gstin", "business_state",
-  "category", "theme", "accent_color", "font_preset", "button_style",
+  "category", "theme", "accent_color", "font_preset", "button_style", "color_preset",
+  "hero_image", "hero_video", "hero_poster", "statement", "founder_story", "founder_name", "founder_portrait", "craft_images", "gallery_images",
 ]);
 
 function responseEnvelope(result) {
@@ -85,7 +88,9 @@ function currentProduct(){return data.products?.find((p)=>String(p.id)===String(
 function changedSetting(field,value){
   delete formErrors[field];
   for(const error of document.querySelectorAll("[data-error]"))if(error.dataset.error===field)error.remove();
-  currentSettings()[field]=value;revision++;fieldRevision.set(field,revision);queueSave();schedulePreview();
+  currentSettings()[field]=value;
+  if(typeof data!=="undefined"&&data.layouts)data.layouts=mergeSettingsToLayouts(data.layouts,currentSettings(),data,[field]);
+  revision++;fieldRevision.set(field,revision);queueSave();schedulePreview();
 }
 function changedProduct(field,value){const p=currentProduct();if(!p)return;p[field]=value;revision++;p._revision=revision;queueSave();schedulePreview()}
 async function api(path,options={}){
@@ -128,6 +133,11 @@ function setDataFromResponse(result, sentRevision, options={}){
     data.products=next;
   }
   if(incoming.store)data.store={...data.store,...incoming.store};
+  if(incoming.layouts){
+    const dirtyKeys=[...fieldRevision].filter(([,value])=>value>sentRevision).map(([key])=>key);
+    data.layouts=mergeSettingsToLayouts(incoming.layouts,currentSettings(),data,dirtyKeys);
+    data.page_versions=incoming.page_versions||data.page_versions;
+  }
   if(Array.isArray(incoming.policies)){
     const local=data.policies||[];
     data.policies=incoming.policies.map((serverPolicy)=>{
@@ -232,6 +242,84 @@ function renderBasics(){
    ${field("business_state","Registered business state",registeredBusinessState(s),{select:true,placeholder:"Choose the registered address state",options:INDIAN_STATES.map(s=>({value:s.code,label:s.name}))})}
    <div class="field-grid">${field("support_email","Support email",s.support_email||"",{type:"email",max:254,autocomplete:"email"})}${field("support_phone","Support phone / WhatsApp",formatPhone(s.support_phone),{type:"tel",max:20,autocomplete:"tel"})}</div>
    ${field("category","What best describes your brand?",s.category||"",{select:true,options:cats})}`);
+}
+
+const PRESET_LABELS=[["ivory","Ivory & Ink","#f6f0e6","#2a251d"],["stone","Stone","#e9e8e4","#1f2020"],["midnight","Midnight","#12151d","#eeeef2"],["white","Pure White","#ffffff","#1c1c1b"]];
+const PRESET_ALIAS={porcelain:"ivory",sand:"ivory",ink:"midnight"};
+const MEDIA_LIMITS={craft_images:8,gallery_images:8};
+const OWNED_VIDEO=()=>new RegExp(`^https://media\\.lebrands\\.store/stores/${storeId}/[0-9a-f-]{36}\\.(?:mp4|webm)$`,"i");
+function mediaSlot(key,label,help){
+  const m=currentSettings()[key];const url=safeMediaUrl(key==="hero_video"?currentSettings().hero_poster?.url:m?.url);
+  return `<div class="field"><span class="field-label">${esc(label)}</span><div class="upload-zone">${url?`<img class="upload-thumb" src="${esc(url)}" alt="">`:`<span class="upload-thumb" aria-hidden="true"></span>`}<div class="upload-actions"><input type="text" maxlength="180" id="alt-${key}" aria-label="${esc(label)} description (required)" placeholder="Describe this media (required)" value="${esc(m?.alt||"")}" data-content-alt="${key}:"><label for="file-${key}">${m?"Replace":"Upload"}</label><input class="file-input" id="file-${key}" type="file" accept="${key==="hero_video"?"video/mp4,video/webm":"image/png,image/jpeg,image/webp"}" data-content-upload="${key}">${m?`<button type="button" class="btn-quiet" data-content-remove="${key}:">Remove</button>`:""}</div></div>${help?`<span class="field-help">${esc(help)}</span>`:""}${fields(formErrors[key]?{[key]:formErrors[key]}:null)}</div>`;
+}
+function mediaList(key,label,help){
+  const list=currentSettings()[key]||[];const max=MEDIA_LIMITS[key];
+  return `<div class="field"><span class="field-label">${esc(label)}</span><div class="image-list">${list.map((m,i)=>`<div class="image-item">${safeMediaUrl(m.url)?`<img src="${esc(safeMediaUrl(m.url))}" alt="">`:""}<input type="text" maxlength="180" aria-label="${esc(label)} ${i+1} description (required)" placeholder="Describe this image (required)" value="${esc(m.alt||"")}" data-content-alt="${key}:${i}"><span class="image-actions"><button type="button" data-content-remove="${key}:${i}" aria-label="Remove image">×</button></span></div>`).join("")}</div>${list.length<max?`<input type="text" maxlength="180" id="alt-${key}" aria-label="Description for the next ${esc(label)} image (required)" placeholder="Describe the next image (required)" data-content-alt="${key}:new"><label class="btn btn-secondary" for="file-${key}" style="display:inline-flex;margin-top:8px">Upload image</label><input class="file-input" id="file-${key}" type="file" accept="image/png,image/jpeg,image/webp" data-content-upload="${key}">`:""}<span class="field-help">${list.length}/${max} images. ${esc(help||"")}</span>${fields(formErrors[key]?{[key]:formErrors[key]}:null)}</div>`;
+}
+function contentControls(s){
+  const cur=PRESET_ALIAS[s.color_preset]||s.color_preset||"ivory";
+  const video=s.hero_video?.url||"";
+  return `<div class="field"><span class="field-label">Colour</span><div class="theme-grid">${PRESET_LABELS.map(([v,l,bg,fg])=>`<button type="button" class="theme-card" data-color-preset="${v}" aria-pressed="${cur===v}"><span class="theme-swatch" style="background:${bg};color:${fg}"><span>${esc(s.brand_name||"Your brand")}</span></span><strong>${l}</strong></button>`).join("")}</div>${fields(formErrors.color_preset?{color_preset:formErrors.color_preset}:null)}</div>
+  ${mediaSlot("hero_image","Hero image","Large, well lit image for the top of the home page.")}
+  ${mediaSlot("hero_poster","Video poster image","Required if you add a hero video.")}
+  ${mediaSlot("hero_video","Hero video (optional)","Upload an MP4 or WebM up to 10 MB. Add a poster image and description first.")}
+  ${field("statement","Brand statement (optional)",s.statement||"",{textarea:true,max:500,rows:2,placeholder:"One sentence that sums up your brand."})}
+  ${field("founder_name","Founder name (optional)",s.founder_name||"",{max:160})}
+  ${field("founder_story","Founder story (optional)",s.founder_story||"",{textarea:true,max:4000,rows:4,help:"The founder section shows only when name, story and portrait are all added."})}
+  ${mediaSlot("founder_portrait","Founder portrait")}
+  ${mediaList("craft_images","Craft and materials images","Up to 8.")}
+  ${mediaList("gallery_images","Gallery images","Add at least 4 for the gallery to appear.")}`;
+}
+function altFor(key){return String(document.getElementById(`alt-${key}`)?.value||"").trim()}
+async function contentUpload(input){
+  if(visualOnly){showReadOnly("upload images");return}
+  if(uploadBusy)return;
+  const key=input.dataset.contentUpload;const file=input.files?.[0];input.value="";if(!file)return;
+  const alt=altFor(key);
+  if(!alt){formErrors={...formErrors,[key]:"Describe the image first. A description is required."};renderPanel();return}
+  if(file.size>10*1024*1024||!["image/png","image/jpeg","image/webp"].includes(file.type)){formErrors={...formErrors,[key]:"Choose a JPG, PNG or WebP image under 10 MB."};renderPanel();return}
+  if(MEDIA_LIMITS[key]&&(currentSettings()[key]||[]).length>=MEDIA_LIMITS[key])return;
+  delete formErrors[key];uploadBusy=true;setStatus("saving","Uploading");
+  try{
+    if(key==="hero_video"&&!currentSettings().hero_poster?.url)throw new Error("Add a video poster image first.");
+    const upload=key==="hero_video"?file:await prepareAuraPhoto(file);
+    const form=new FormData();form.append("file",upload);form.append("type",key==="hero_video"?"video":"image");form.append("alt",alt);
+    const result=await api(`${API}/media`,{method:"POST",body:form});
+    const m=result.media;if(!m?.url)throw new Error("Upload did not return media details.");
+    const obj={url:m.url,alt,...(m.width?{width:m.width}:{}),...(m.height?{height:m.height}:{})};
+    changedSetting(key,MEDIA_LIMITS[key]?[...(currentSettings()[key]||[]),obj]:obj);
+    await saveNow();
+  }catch(error){formErrors={...formErrors,[key]:error.message}}
+  uploadBusy=false;renderPanel();schedulePreview();setStatus(formErrors[key]?"error":"saved",formErrors[key]||"Saved",null);
+}
+function contentClick(button){
+  if(button.dataset.colorPreset){changedSetting("color_preset",button.dataset.colorPreset);renderPanel();return true}
+  if(button.dataset.contentRemove){
+    const [key,idx]=button.dataset.contentRemove.split(":");
+    if(MEDIA_LIMITS[key])changedSetting(key,(currentSettings()[key]||[]).filter((_,i)=>i!==Number(idx)));else changedSetting(key,null);
+    renderPanel();return true;
+  }
+  return false;
+}
+function contentInput(el){
+  if(el.matches("[data-content-alt]")){
+    const [key,idx]=el.dataset.contentAlt.split(":");
+    if(idx==="new")return;
+    if(idx===""){const m=currentSettings()[key];if(m)changedSetting(key,{...m,alt:el.value});return true}
+    const list=currentSettings()[key];
+    if(Array.isArray(list)&&list[Number(idx)])changedSetting(key,list.map((m,i)=>i===Number(idx)?{...m,alt:el.value}:m));
+    return true;
+  }
+  return false;
+}
+function contentVideo(el){
+  const v=el.value.trim();
+  if(!v){delete formErrors.hero_video;changedSetting("hero_video",null);renderPanel();return}
+  const s=currentSettings();
+  if(!OWNED_VIDEO().test(v))formErrors={...formErrors,hero_video:"Use an MP4 or WebM stored for your store on media.lebrands.store."};
+  else if(!s.hero_poster?.url)formErrors={...formErrors,hero_video:"Add a poster image first. A video needs a poster."};
+  else{delete formErrors.hero_video;changedSetting("hero_video",{url:v,alt:s.hero_poster.alt||s.brand_name||"Brand video"});return}
+  renderPanel();
 }
 function renderTheme(){
  const s=currentSettings();
@@ -572,6 +660,7 @@ async function generatePolicies(){
 function toPaise(value){if(value===""||value==null)return null;const amount=Number(value);return Number.isFinite(amount)?Math.round(amount*100):null}
 function onInput(event){
  const el=event.target;
+ if(contentInput(el))return;
   if((busy||uploadBusy)&&(el.matches("[data-settings],[data-product],[data-image-alt],[data-policy],[data-policy-reviewed]")))return;
  if(el.matches("[data-settings]")){
    const name=el.dataset.settings;let value=el.value;
@@ -626,6 +715,7 @@ function onClick(event){
   textarea.setRangeText(wrapped,start,end,"select");
   textarea.dispatchEvent(new Event("input",{bubbles:true}));textarea.focus();return;
  }
+ if(contentClick(button))return;
  if(button.dataset.step){goStep(Number(button.dataset.step));return}
  if(button.dataset.action==="next"){goStep(step+1);return}
  if(button.dataset.action==="back"){goStep(step-1);return}
@@ -684,7 +774,7 @@ async function loadSetup(){
   }catch(error){loadError=error.message;setStatus("error","Couldn't load","retry-load");renderPanel()}
 }
 panel?.addEventListener("input",onInput);
-panel?.addEventListener("change",(event)=>{onInput(event);onChange(event);if(event.target.matches("[data-upload]"))uploadFiles(event.target)});
+panel?.addEventListener("change",(event)=>{onInput(event);onChange(event);if(event.target.matches("[data-upload]"))uploadFiles(event.target);if(event.target.matches("[data-content-upload]"))contentUpload(event.target);if(event.target.matches("[data-content-video]"))contentVideo(event.target)});
 panel?.addEventListener("click",onClick);
 panel?.addEventListener("keydown",onKeydown);
 previewPanel?.addEventListener("click",onClick);

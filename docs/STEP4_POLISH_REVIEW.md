@@ -25,7 +25,7 @@ The manual isolation suite must still pass against the migrated database.
 
 Do not run `db:migrate` without the user's approval of this security section.
 The current runner applies **all** pending SQL files atomically, not just the
-next file. Keep 0010 out of the active migrations directory until 0009 has
+next file. Keep the GSTIN approval work (now staged as 0011) out of the active migrations directory until 0009 has
 been migrated and deployed, so one invocation cannot apply both.
 This review does not authorize deployment.
 

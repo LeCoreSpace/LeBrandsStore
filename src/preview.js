@@ -80,12 +80,17 @@ export default {
     }
     if(["GET","HEAD"].includes(request.method) && original.pathname.startsWith("/__example-module/")){
       const name=original.pathname.split("/").pop();
-       if(!["aura.js","wizard.js","premium-example-client.js"].includes(name))return new Response("Not found",{status:404});
+       if(!["aura.js","aura-sections.js","wizard.js","premium-example-client.js"].includes(name))return new Response("Not found",{status:404});
       const asset=await env.ASSETS.fetch(new Request(new URL("/"+name,original)));
        if(name==="premium-example-client.js")return new Response(request.method==="HEAD"?null:await asset.text(),{headers:{...exampleHeaders,"content-type":"text/javascript; charset=utf-8"}});
       let source=await asset.text();
-      if(name==="aura.js")source=source.replace('const safeImage = (url) =>',
-        'const safeImage = (url) => /^\\/__example-media\\/[a-z0-9-]+\\.webp$/.test(String(url || "")) ? String(url) :')
+      if(name==="aura.js")source=source
+        .replace('renderSection, safeImage, policyTitle','renderSection, safeImage as realSafeImage, policyTitle')
+        .replace('const esc =','const safeImage = (url) => /^\\/__example-media\\/[a-z0-9-]+\\.webp$/.test(String(url || "")) ? String(url) : realSafeImage(url);\nconst esc =')
+        .replace('from "./aura-sections.js"','from "/__example-module/aura-sections.js"')
+        .replaceAll('from "./','from "/assets/');
+      else if(name==="aura-sections.js")source=source
+        .replace('export const safeImage = (u) =>','export const safeImage = (u) => /^\\/__example-media\\/[a-z0-9-]+\\.webp$/.test(String(u || "")) ? String(u) :')
         .replaceAll('from "./','from "/assets/');
       else source=source.replace('from "/assets/aura.js"','from "/__example-module/aura.js"');
       return new Response(request.method==="HEAD"?null:source,{headers:{...exampleHeaders,"content-type":"text/javascript; charset=utf-8"}});
@@ -93,6 +98,9 @@ export default {
     if(original.pathname.startsWith("/__example-preview/")){
       if(!["GET","HEAD"].includes(request.method))return new Response("Example store is read-only",{status:405});
       const view=original.pathname.split("/").pop(),data=exampleFixture();
+      const preset=original.searchParams.get("preset"),font=original.searchParams.get("font");
+      if(["ivory","stone","midnight","white"].includes(preset))data.settings.color_preset=preset;
+      if(["serif","modern","classic"].includes(font))data.settings.font_preset=font;
       const banner='<p role="status" style="margin:0;padding:7px 16px;text-align:center;font:12px system-ui;background:#f6f3ee;color:#214a3d">Example store. Fictional brand and customers. Generated demo product photography.</p>';
       let body;
       if(view==="premium-store"){

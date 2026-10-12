@@ -40,9 +40,9 @@ test("pending and revoked stores show clear, escaped offline notices, not approv
 });
 
 test("staged approval schema protects APP writes and legacy live stores", () => {
-  const sql=source("../db/staged/0010_gstin_approval.sql");
+  const sql=source("../db/staged/0011_gstin_approval.sql");
   assert.match(sql,/WHERE status = 'live';/);
-  assert.match(sql,/approved_by = 'migration-0010'/);
+  assert.match(sql,/approved_by = 'migration-0011'/);
   assert.match(sql,/status IN \('draft','awaiting_approval','live','paused'\)/);
   assert.match(sql,/current_user <> 'postgres'/);
   assert.match(sql,/NEW\.approved_at IS DISTINCT FROM OLD\.approved_at/);

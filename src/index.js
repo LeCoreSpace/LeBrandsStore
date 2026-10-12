@@ -5,6 +5,7 @@ import { SECURITY_HEADERS } from "./auth/security.js";
 import { renderHome, renderLegal } from "./ui/home.js";
 import { renderPricing } from "./ui/marketing.js";
 import { FAVICON_SVG, FAVICON_CSP } from "./ui/favicon.js";
+import { SECTION_SCHEMAS } from "./public/aura-layout.js";
 import { LE_BRANDS_LOGO } from "./ui/brand.js";
 import { serveMedia } from "./store/media.js";
 import { serveStorefront } from "./store/live.js";
@@ -73,7 +74,8 @@ export default {
     if (url.pathname.startsWith("/assets/")) {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
       const filename = url.pathname.slice("/assets/".length);
-      if (!["aura.js", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
+      const sectionAsset = ["sections/index.js", "sections/schema-helpers.js"].includes(filename) || Object.keys(SECTION_SCHEMAS).some(type => filename === `sections/${type}.schema.js`);
+      if (!sectionAsset && !["aura.js", "aura.css", "aura-sections.js", "aura-layout.js", "aura-ui.js", "aura-upload.js", "aura-editorial.ttf", "aura-classic.ttf", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
       if (!env.ASSETS) return new Response("Assets unavailable", { status: 503 });
       url.pathname = `/${filename}`;
       const asset = await env.ASSETS.fetch(new Request(url, request));

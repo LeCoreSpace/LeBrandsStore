@@ -116,5 +116,5 @@ export function renderAppSample(view, searchParams) {
     .replace(/<form\b([^>]*)>([\s\S]*?)<\/form>/g, (form, attrs, contents) =>
       /method="post"|data-(?:settings|product)-form/.test(attrs)
         ? `<form${attrs}>${contents.replace(/<button\b/g, "<button disabled")}</form>` : form);
-  return body.replace("<body>", '<body><p role="status" style="margin:0;padding:8px;text-align:center;font:12px system-ui;background:#f1e5ea;color:#6b1735">Read-only application preview. Fictional sample data. Nothing is saved.</p>');
+  return body.replace(/<body\b[^>]*>/i, match => `${match}<p role="status" style="margin:0;padding:8px;text-align:center;font:12px system-ui;background:#f1e5ea;color:#6b1735">Read-only application preview. Fictional sample data. Nothing is saved.</p>`);
 }

@@ -9,6 +9,7 @@ import { accountIsolationChecks } from "./account-isolation.js";
 import { wizardIsolationChecks } from "./wizard-isolation.js";
 import { checkoutIsolationChecks } from "./checkout-isolation.js";
 import { dashboardIsolationChecks } from "./dashboard-isolation.js";
+import { pageIsolationChecks } from "./page-isolation.js";
 
 clearPgEnvironment();
 let admin;
@@ -212,6 +213,8 @@ try {
     assert.ok(role && !Object.values(role).some(Boolean), "APP must not have privileged role attributes.");
   });
   fixtures = await setupFixtures(admin);
+  const [pageSupport] = await admin`SELECT to_regclass('public.store_pages') IS NOT NULL AS enabled`;
+  if(pageSupport.enabled)checks.push(...pageIsolationChecks(fixtures,appTransaction,denied));
   record("setup", true, "Created only marked rls-test fixtures; cleanup permission verified.");
   const [approvalSchema] = await admin`SELECT to_regclass('public.store_gstin_verifications') IS NOT NULL AS enabled`;
   if (approvalSchema.enabled) {

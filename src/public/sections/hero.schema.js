@@ -1,0 +1,2 @@
+import { section, text, rich, image, select, field } from "./schema-helpers.js";
+export default section("hero", "Hero", ["home", "about"], { title: text(240, { required: true }), description: rich(2000), image: image(), poster: image(), video: field("video", { default: null }), variant: select(["split", "fullbleed", "video"]), button_label: text(80), button_url: field("link", { default: "/collections/all" }) });

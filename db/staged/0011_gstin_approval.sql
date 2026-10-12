@@ -1,6 +1,6 @@
 -- STAGED ONLY: do not place this file in db/migrations until 0009 has been
 -- manually migrated and deployed. db:migrate applies ALL pending migrations.
--- This is the approval/verification storage foundation for the 0010 flow.
+-- This is the approval/verification storage foundation for the 0011 flow.
 ALTER TABLE public.stores DROP CONSTRAINT stores_status_check;
 ALTER TABLE public.stores ADD CONSTRAINT stores_status_check
   CHECK (status IN ('draft','awaiting_approval','live','paused'));
@@ -16,13 +16,13 @@ ALTER TABLE public.stores
 
 -- Preserve every existing live storefront. Do not require a current provider
 -- result for stores that were already live at migration time.
-UPDATE public.stores SET approved_at = now(), approved_by = 'migration-0010',
+UPDATE public.stores SET approved_at = now(), approved_by = 'migration-0011',
   approval_note = 'Already live before the approval rollout'
   WHERE status = 'live';
 INSERT INTO public.audit_log (store_id,actor_type,action,entity_type,entity_id,metadata)
 SELECT store_id,'system','store.approved','store',store_id,
-  '{"approved_by":"migration-0010","reason":"already_live"}'::jsonb
-FROM public.stores WHERE status = 'live' AND approved_by = 'migration-0010';
+  '{"approved_by":"migration-0011","reason":"already_live"}'::jsonb
+FROM public.stores WHERE status = 'live' AND approved_by = 'migration-0011';
 
 CREATE TABLE public.store_gstin_verifications (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -1,9 +1,9 @@
-# Store approval, staged 0010 work
+# Store approval, staged 0011 work
 
-**Do not apply this staged SQL yet.** `db/staged/0010_gstin_approval.sql` is
+**Do not apply this staged SQL yet.** `db/staged/0011_gstin_approval.sql` is
 deliberately outside `db/migrations/`. The current `db:migrate` runner applies
 every pending migration together. First review, manually migrate, test and
-deploy 0009. Finish the rest of the GSTIN verification flow and review 0010
+deploy 0009. Migration 0010 is now the Aura page architecture. Finish the rest of the GSTIN verification flow and review 0011
 before copying its finished SQL into `db/migrations/`.
 
 No migrations, provider calls or deployments were run during this work.
@@ -11,7 +11,7 @@ No migrations, provider calls or deployments were run during this work.
 
 ## Approval boundary
 
-- After 0010, first publish saves the publication snapshot but sets
+- After 0011, first publish saves the publication snapshot but sets
   `stores.status = 'awaiting_approval'`. The existing public router serves
   its not-found page until the store has become `live`.
 - The authenticated wizard and Settings/other dashboard pages explain
@@ -34,13 +34,13 @@ No migrations, provider calls or deployments were run during this work.
   records the reviewer, revocation reason and timestamp, and leaves data
   intact. Resubmitting goes back to awaiting approval, not directly live.
 - Existing live stores are grandfathered in the migration with
-  `approved_by = 'migration-0010'`, an approval timestamp/note and a system
+  `approved_by = 'migration-0011'`, an approval timestamp/note and a system
   audit event. They are **not** taken offline. The migration does not
   retroactively claim their GSTIN was provider verified.
-- Before 0010, the application retains the 0009-era publication behavior
+- Before 0011, the application retains the existing publication behavior
   because the new status/columns do not yet exist.
 
-## Script, only after the finished 0010 migration is manually applied
+## Script, only after the finished 0011 migration is manually applied
 
 ```text
 node db/admin-approve-store.js --store-id STORE_UUID --approved-by STAFF_ID
@@ -67,13 +67,13 @@ EXECUTE grants. Isolation probes for APP self-approval, going live without
 approval, and evidence isolation are conditional on the staged schema
 existing; they expect **42501** and roll back all probes.
 
-## Work still needed before 0010 rollout
+## Work still needed before 0011 rollout
 
 The Worker has a tested provider adapter but **no live verification route or
 automated provider call**. A browser cannot yet confirm an address, store
 the raw response, run 30-day rechecks, or display all provider outcomes.
 The current script will therefore require a documented manual review for
-stores without evidence. Do not apply this staged 0010 foundation as the
+stores without evidence. Do not apply this staged 0011 foundation as the
 finished feature: existing live stores would remain public, but its new
 invoice gate would block new invoices until live evidence is stored.
 Complete the original verification prompt, including UI, retries, rate

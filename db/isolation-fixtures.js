@@ -19,6 +19,7 @@ const STORES = [
 
 // Children before parents; this covers all 25 tenant child tables.
 const CLEANUP_TABLES = [
+  "store_page_versions", "store_pages",
   "refunds", "invoices", "order_items", "shipments", "payments", "orders",
   "store_gstin_verifications",
   "customer_addresses", "customers", "product_media", "collection_products",
@@ -30,8 +31,8 @@ const CLEANUP_TABLES = [
 
 export async function assertCleanupPermission(admin) {
   await admin.begin(async (tx) => {
-    const [approval] = await tx`SELECT to_regclass('public.store_gstin_verifications') IS NOT NULL AS enabled`;
-    const tables = approval.enabled ? CLEANUP_TABLES : CLEANUP_TABLES.filter(table => table !== "store_gstin_verifications");
+    const [approval] = await tx`SELECT to_regclass('public.store_gstin_verifications') IS NOT NULL AS enabled, to_regclass('public.store_pages') IS NOT NULL AS pages`;
+    const tables = CLEANUP_TABLES.filter(table => (approval.enabled || table !== "store_gstin_verifications") && (approval.pages || !["store_page_versions","store_pages"].includes(table)));
     const [role] = await tx`
       SELECT rolsuper, rolbypassrls FROM pg_catalog.pg_roles WHERE rolname = current_user
     `;
@@ -85,7 +86,7 @@ async function ownedFixtures(tx) {
 
 export async function cleanupFixtures(admin) {
   await admin.begin(async (tx) => {
-    const [approval] = await tx`SELECT to_regclass('public.store_gstin_verifications') IS NOT NULL AS enabled`;
+    const [approval] = await tx`SELECT to_regclass('public.store_gstin_verifications') IS NOT NULL AS enabled, to_regclass('public.store_pages') IS NOT NULL AS pages`;
     const { brands, stores } = await ownedFixtures(tx);
     const users = await tx`
       SELECT id, external_user_id, email, name FROM public.users
@@ -111,7 +112,7 @@ export async function cleanupFixtures(admin) {
       // Replica mode is session-local and automatically resets on commit/rollback.
       // Only verified, marked fixture stores are targeted; no global DDL is used.
       await tx`SET LOCAL session_replication_role = replica`;
-      for (const table of CLEANUP_TABLES.filter(table => approval.enabled || table !== "store_gstin_verifications")) {
+      for (const table of CLEANUP_TABLES.filter(table => (approval.enabled || table !== "store_gstin_verifications") && (approval.pages || !["store_page_versions","store_pages"].includes(table)))) {
         await tx`DELETE FROM public.${tx(table)} WHERE store_id = ANY(${ids}::uuid[])`;
       }
       await tx`DELETE FROM public.stores WHERE store_id = ANY(${ids}::uuid[])`;

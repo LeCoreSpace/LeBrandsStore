@@ -1,0 +1,46 @@
+TASK: Step 5. Section-based visual editor for brand stores, using the
+Aura section schemas and store_pages from 0010. No new migration unless
+required (ask first). No deploy.
+
+EDITOR LAYOUT (app.lebrands.store/editor)
+- Left: page picker (Home, Collection, Product, About, policy pages) and
+  the page's section list. Drag to reorder; hide/show; duplicate;
+  delete (with undo); "Add section" opens a gallery of section types
+  with thumbnails, showing only types allowed on that page.
+- Centre: live preview rendered with the real Aura templates. Click any
+  section or text in the preview to select it. Toggle desktop, tablet,
+  mobile.
+- Right: the selected section's settings, generated from its schema
+  (text inputs, image picker, product/collection picker, colour, toggles,
+  item lists with drag-to-reorder).
+
+EDITING
+- Inline text editing directly in the preview for headings and short
+  text; longer text in the side panel.
+- Images and video from a media library: upload once, reuse anywhere
+  (R2, existing upload rules, tenant-scoped), with alt text required,
+  focal-point selection for cropping, and replace/remove.
+- Theme settings panel: type preset, colour preset, accent colour (auto
+  contrast check), button style.
+- Undo/redo (keyboard shortcuts too); autosave of the draft every few
+  seconds with a "Saved" indicator; conflict warning if the page was
+  changed in another tab.
+- Publish button: shows what changed, then publishes. Version history:
+  restore any of the last 20 published versions.
+
+GUARDRAILS
+- Brands can only edit content inside section slots; no custom HTML,
+  CSS or scripts. All content validated server-side by the schemas.
+- Required sections (header, footer, product buy box, checkout) cannot
+  be deleted; checkout layout is not editable.
+- Performance warnings: too many sections, oversized images, video
+  without poster.
+- Accessibility warnings: missing alt text, low-contrast accent.
+- Mobile: the editor itself works on tablet; on phones show a read-only
+  preview with a message to use a larger screen.
+
+ROLES: owner and admin can edit and publish; staff can edit drafts only.
+
+TESTS: offline tests for schema validation, reorder, undo/redo, publish
+and restore; isolation tests that another store cannot read or change
+pages or media. Report results and every schema/grant change.

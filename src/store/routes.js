@@ -3,6 +3,7 @@ import { SECURITY_HEADERS } from "../auth/security.js";
 import { UUID, validateProduct } from "../public/validation.js";
 import { settingsPatch, progressPatch, productPatch, readJson, readBody, badInput } from "./input.js";
 import { validateUpload } from "./media.js";
+import { pagesEnabled } from "./pages.js";
 import { setupFieldNames, storeFailureDetails } from "./diagnostics.js";
 import {
   loadDraft, saveSetup, saveProduct, deleteProduct, insertMedia,
@@ -46,7 +47,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         const body = await readJson(request);
         fieldNames = setupFieldNames(body);
         if (!Object.keys(body).length || Object.keys(body).some((k) => !["settings", "progress"].includes(k))) throw badInput("Use the setup form.");
-        const saved = await saveSetup(tx, id, body.settings === undefined ? undefined : settingsPatch(body.settings),
+        const saved = await saveSetup(tx, id, body.settings === undefined ? undefined : settingsPatch(body.settings, { storeId: id }),
           body.progress === undefined ? undefined : progressPatch(body.progress));
         await audit(tx,id,user.id,"store.setup_changed","store",id,{fields:fieldNames});
         return saved;
@@ -93,6 +94,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         if ([...form.keys()].some((key) => !["file", "type", "alt"].includes(key)) ||
           ["file", "type", "alt"].some((key) => form.getAll(key).length > 1)) throw badInput("Upload one file at a time.");
         const file = form.get("file"), type = form.get("type"), alt = form.get("alt") ?? "";
+        if(type==="video"&&!await pagesEnabled(tx))throw badInput("Video uploads require the store-page migration first.");
         if (!file || typeof file.arrayBuffer !== "function" || typeof alt !== "string" || alt.length > 200) throw badInput("Choose an image and keep its alt text within 200 characters.");
         const data = new Uint8Array(await file.arrayBuffer()), metadata = validateUpload(data, type);
         uploadedKey = `stores/${id}/${crypto.randomUUID()}.${metadata.ext}`;
@@ -111,7 +113,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         await audit(tx,id,user.id,"store.policy_edited","store",id,{kind:child});
         return result;
       }
-      await dashboardAccess(tx,id,user.id,false,true);
+      await dashboardAccess(tx,id,user.id,true);
       const result = await publish(tx,id,action === "publish");
       await audit(tx,id,user.id,action === "publish" ? "store.published" : "store.unpublished","store",id);
       return result;

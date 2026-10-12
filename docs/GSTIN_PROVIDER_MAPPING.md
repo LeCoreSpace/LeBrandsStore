@@ -69,14 +69,14 @@ remain server-side; future store-scoped persistence must use forced RLS.
 Offline tests inject fictional credentials and mocked fetch implementations.
 No paid/live provider calls were made.
 
-## Still pending for 0010
+## Still pending for 0011
 
 Wizard/Settings integration, verification persistence, quotas, cache, retries,
 30-day rechecks, admin approval and invoice verification gates are not yet
 implemented. Admin approval needs an explicit authorization and override
 policy; it was not in the originally attached verification prompt.
 Existing schema, grants, policies, Wrangler configs and migrations are unchanged.
-0009 must be separately reviewed, migrated and deployed before applying 0010.
+0009 must be separately reviewed, migrated and deployed before applying 0011.
 The current migration runner applies every pending migration in one transaction;
-do not put 0010 in the active migrations folder before the 0009 rollout.
+do not put 0011 in the active migrations folder before the 0009 rollout. Migration 0010 is now reserved for the Aura page architecture.
 Do not run migrations or deploy automatically.

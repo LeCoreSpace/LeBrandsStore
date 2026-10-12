@@ -1,5 +1,6 @@
 import { CATEGORIES, UUID, validateTheme } from "../public/validation.js";
 import { CURRENT_GST_RATES, LEGACY_GST_RATES, INDIAN_STATES, gstinError, validInvoicePrefix } from "../public/commerce-rules.js";
+import { validateLayoutMedia } from "../public/aura-layout.js";
 
 export const badInput = (message, errors) => Object.assign(new Error(message), { status: 400, errors });
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -7,15 +8,25 @@ const string = (value, max, field) => {
   if (typeof value !== "string" || [...value].length > max || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value)) throw badInput(`Check ${field}.`, { [field]: `Use no more than ${max} characters and no control characters.` });
   return value.trim();
 };
-export function settingsPatch(value) {
+export function settingsPatch(value, context = {}) {
   if (!object(value)) throw badInput("Use the setup form.");
   const result = {}, limits = {
     brand_name: 40, subdomain: 30, tagline: 60, description: 500,
     legal_name: 120, address: 500, support_email: 254, support_phone: 25,
     business_line1:150,business_line2:150,business_city:80,business_pincode:6,invoice_prefix:4,
     gstin: 15, business_state: 2, category: 30, theme: 20, accent_color: 7, font_preset: 20, button_style: 20,
+    color_preset: 20, statement: 500, founder_name: 160, founder_story: 4000,
   };
   for (const [key, val] of Object.entries(value)) {
+    if (["hero_image", "hero_video", "hero_poster", "founder_portrait"].includes(key)) {
+      result[key] = val == null ? null : validateLayoutMedia(val, key === "hero_video" ? "video" : "image", context);
+      continue;
+    }
+    if (["craft_images", "gallery_images"].includes(key)) {
+      if (!Array.isArray(val) || val.length > 8) throw badInput("Use no more than 8 images.", { [key]: "Use up to 8 images." });
+      result[key] = val.map(image => validateLayoutMedia(image, "image", context));
+      continue;
+    }
     if (["logo_media_id","signature_media_id"].includes(key)) {
       if (val != null && !UUID.test(val)) throw badInput("Choose an uploaded image.", { [key]: "Choose an image uploaded to this store." });
       result[key] = val; continue;
@@ -43,7 +54,7 @@ export function settingsPatch(value) {
   if (result.support_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result.support_email)) formatErrors.support_email = "Enter a valid email.";
   if (result.support_phone && !/^\+?[0-9 ()-]{7,25}$/.test(result.support_phone)) formatErrors.support_phone = "Enter a valid phone number, such as +91 followed by your number.";
   if (Object.keys(formatErrors).length) throw badInput("Check the highlighted fields.", formatErrors);
-  const themeFields = ["theme", "accent_color", "font_preset", "button_style"];
+  const themeFields = ["theme", "accent_color", "font_preset", "button_style", "color_preset"];
   const errors = validateTheme({ theme: "aura", accent_color: "#214a3d", font_preset: "serif", button_style: "rounded", ...result });
   if (themeFields.some((key) => key in result && errors[key])) throw badInput("Check your theme settings.", errors);
   return result;

@@ -4,6 +4,8 @@ import { validateBasics, validateTheme, validateProduct, publishChecklist, POLIC
 import { badInput } from "./input.js";
 import { validateSubdomain } from "../auth/security.js";
 import { CURRENT_GST_RATES, businessGSTINErrors } from "../public/commerce-rules.js";
+import { pagesEnabled, pageLayouts } from "./pages.js";
+import { mergeSettingsToLayouts, validateLayout, defaultPageLayouts } from "../public/aura-layout.js";
 
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
@@ -65,6 +67,15 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
     progress: { step: setup?.step ?? 1, completed: setup?.completed ?? [] },
   };
   data.progress.completed = completion(data, data.progress);
+  if (await pagesEnabled(tx)) {
+    const collections = await tx`SELECT id,title,slug FROM public.collections WHERE store_id=${storeId} ORDER BY created_at,id`;
+    const memberships = await tx`SELECT collection_id,product_id FROM public.collection_products WHERE store_id=${storeId}`;
+    data.collections = collections.map(c => ({ ...c, product_ids: memberships.filter(m => m.collection_id === c.id).map(m => m.product_id) }));
+    for (const product of data.products) product.collection_ids = memberships.filter(m => m.product_id === product.id).map(m => m.collection_id);
+    const pages = await pageLayouts(tx, storeId);
+    data.layouts = { ...defaultPageLayouts(data), ...pages.layouts };
+    data.page_versions = pages.page_versions;
+  }
   return data;
 }
 async function ensureSetup(tx, id) {
@@ -196,10 +207,14 @@ export async function deleteProduct(tx, id, productId) {
   return loadDraft(tx, id);
 }
 export async function insertMedia(tx, id, key, type, size, metadata, alt) {
-  const [row] = await tx`INSERT INTO public.media
+  const query=type==="video"?tx`INSERT INTO public.media
+    (store_id, object_key, kind, upload_type, content_type, size_bytes, width, height, alt_text)
+    VALUES (${id}, ${key}, 'video', ${type}, ${metadata.contentType}, ${size},
+      ${metadata.width}, ${metadata.height}, ${alt}) RETURNING *`:tx`INSERT INTO public.media
     (store_id, object_key, kind, upload_type, content_type, size_bytes, width, height, alt_text)
     VALUES (${id}, ${key}, 'image', ${type}, ${metadata.contentType}, ${size},
       ${metadata.width}, ${metadata.height}, ${alt}) RETURNING *`;
+  const [row]=await query;
   return mediaRecord(row);
 }
 export async function regeneratePolicies(tx, id) {
@@ -237,14 +252,20 @@ export async function publish(tx, id, live) {
     // omitted it; an explicitly edited draft prefix still wins and is guarded.
     const [publication] = await tx`SELECT snapshot FROM public.store_publications WHERE store_id = ${id}`;
     data.settings = { ...publication?.snapshot?.settings, ...data.settings };
-    // Before 0010 is applied, keep the 0009-era workflow intact. After 0010,
+    // Before 0011 is applied, keep the existing workflow intact. After 0011,
     // every first go-live awaits a platform-only approval, never a brand action.
     status = data.store.approval_enabled && (!data.store.approved_at || data.store.approval_revoked_at)
       ? "awaiting_approval" : "live";
     data.store.status = status;
     data.progress = { step: 4, completed: [1, 2, 3, 4] };
+    if (data.layouts) {
+      for (const [page, layout] of Object.entries(data.layouts)) validateLayout(page, layout, { storeId: id,
+        productIds: new Set(data.products.map(product => product.id)), collectionIds: new Set((data.collections || []).map(collection => collection.id)) });
+      await tx`SELECT set_config('app.publish_pages','true',true)`;
+    }
+    const { layouts, page_versions, ...publicationData } = data;
     await tx`INSERT INTO public.store_publications (store_id, snapshot)
-      VALUES (${id}, ${tx.json(data)}) ON CONFLICT (store_id) DO UPDATE
+      VALUES (${id}, ${tx.json(publicationData)}) ON CONFLICT (store_id) DO UPDATE
       SET snapshot = EXCLUDED.snapshot, published_at = now()`;
     await tx`UPDATE public.products SET status = 'active' WHERE store_id = ${id} AND status = 'draft'`;
     await tx`UPDATE public.policy_pages SET published_at = now() WHERE store_id = ${id}`;

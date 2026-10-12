@@ -2,6 +2,7 @@ import { createDb } from "../db.js";
 import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
 import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
+import { handlePageRoutes, isPageRoute } from "../store/page-routes.js";
 import { isMerchantCheckoutPath, merchantCheckout } from "../checkout/merchant.js";
 import { isDashboardPath, handleDashboard } from "../dashboard/routes.js";
 import { assertPasswordPepper, hashPassword, needsPasswordRehash, randomToken, sha256, validatePassword, verifyPassword } from "./passwords.js";
@@ -25,8 +26,9 @@ const nameValue = (value) => typeof value === "string" && value.trim().length >=
 export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
+  const storeRoute = isStoreRoute(path) || isPageRoute(path);
   const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password" };
-  if (!["GET", "POST", "HEAD", ...(isStoreRoute(path) ? ["PATCH", "PUT", "DELETE"] : [])].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
+  if (!["GET", "POST", "HEAD", ...(storeRoute ? ["PATCH", "PUT", "DELETE"] : [])].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
   if (!["GET", "HEAD"].includes(request.method) && !isValidOrigin(request)) {
     return html("error", { error: "This request did not come from the account website." }, 403);
   }
@@ -40,10 +42,10 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   if (!token && ["/", "/account", "/stores/new", "/api/subdomain-check", "/logout"].includes(path)) {
     return path.startsWith("/api/") ? json({ available: false, error: "Sign in to check an address." }, 401) : redirect("/login");
   }
-  if (!token && isStoreRoute(path)) {
+  if (!token && storeRoute) {
     return path.startsWith("/api/") ? json({ error: "Sign in to manage your store." }, 401) : redirect("/login");
   }
-  if (!isStoreRoute(path) && !["/", "/account", "/stores/new", "/api/subdomain-check", "/logout", ...Object.keys(publicViews)].includes(path)) {
+  if (!storeRoute && !["/", "/account", "/stores/new", "/api/subdomain-check", "/logout", ...Object.keys(publicViews)].includes(path)) {
     return html("error", { error: "Page not found." }, 404);
   }
 
@@ -61,6 +63,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     if (user?.must_change_password && path !== "/account" && path !== "/logout") {
       return path.startsWith("/api/") ? json({ available: false, error: "Change your password first." }, 403) : redirect("/account");
     }
+    if (isPageRoute(path)) return await handlePageRoutes(request, env, db, user, tokenHash);
     if (isDashboardPath(path,request.method)) return await handleDashboard(request,db,user,tokenHash);
     if (isMerchantCheckoutPath(path)) return await merchantCheckout(request,db,user,tokenHash);
     if (isStoreRoute(path)) return await handleStoreRoutes(request, env, db, user, tokenHash);

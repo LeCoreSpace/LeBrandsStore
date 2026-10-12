@@ -46,6 +46,22 @@ function svgMetadata(data) {
   return { ext: "svg", contentType: "image/svg+xml", ...dimensions(width, height) };
 }
 export function validateUpload(data, type) {
+  if(type==="video"){
+    if(!data.length||data.length>10*1024*1024)fail("Use an MP4 or WebM video no larger than 10 MB.");
+    const text=new TextDecoder("latin1").decode(data);
+    if(signature(data,[0x1a,0x45,0xdf,0xa3])&&text.includes("webm")){
+      if(!text.includes("\x16\x54\xae\x6b")||!text.includes("\x1f\x43\xb6\x75"))fail("Use a complete WebM video.");
+      return{ext:"webm",contentType:"video/webm",width:null,height:null};
+    }
+    const view=new DataView(data.buffer,data.byteOffset,data.byteLength);const boxes=new Set();
+    for(let at=0;at+8<=data.length;){
+      const size=view.getUint32(at),box=text.slice(at+4,at+8);
+      if(size<8||at+size>data.length)fail("Use a complete, standard MP4 video.");
+      boxes.add(box);at+=size;
+    }
+    if(boxes.has("ftyp")&&boxes.has("moov")&&boxes.has("mdat")&&/\b(?:isom|iso2|mp41|mp42|avc1)\b/.test(text.slice(8,40)))return{ext:"mp4",contentType:"video/mp4",width:null,height:null};
+    fail("Use a valid MP4 or WebM video.");
+  }
   if (!(data instanceof Uint8Array) || !["logo", "image"].includes(type)) fail("Choose a logo or product image.");
   const limit = type === "logo" ? 5 * 1024 * 1024 : 10 * 1024 * 1024;
   if (!data.length || data.length > limit) fail(`Use a ${type === "logo" ? "logo up to 5 MB" : "product image up to 10 MB"}.`);
@@ -84,7 +100,7 @@ export function validateUpload(data, type) {
   if (type === "logo" && (data[0] === 60 || data[0] === 32 || data[0] === 10 || data[0] === 239)) return svgMetadata(data);
   fail(type === "logo" ? "Upload a PNG, JPEG, WebP or safe SVG logo." : "Upload a PNG, JPEG or WebP image.");
 }
-export const MEDIA_KEY = /^stores\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:png|jpg|webp|svg)$/;
+export const MEDIA_KEY = /^stores\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(?:png|jpg|webp|svg|mp4|webm)$/;
 export const mediaUrl = (key) => MEDIA_KEY.test(key ?? "") ? `https://media.lebrands.store/${key}` : "";
 export async function serveMedia(request, env) {
   if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
@@ -92,7 +108,7 @@ export async function serveMedia(request, env) {
   if (!MEDIA_KEY.test(key)) return new Response("Not found", { status: 404 });
   if (!env.MEDIA) return new Response("Media is temporarily unavailable", { status: 503 });
   let object;
-  try { object = request.method === "HEAD" ? await env.MEDIA.head(key) : await env.MEDIA.get(key); }
+   try { object = request.method === "HEAD" ? await env.MEDIA.head(key) : await env.MEDIA.get(key,request.headers.has("range")?{range:request.headers}:undefined); }
   catch { return new Response("Media is temporarily unavailable", { status: 503 }); }
   if (!object) return new Response("Not found", { status: 404 });
   const headers = new Headers({
@@ -104,7 +120,9 @@ export async function serveMedia(request, env) {
   });
   object.writeHttpMetadata(headers);
   // Do not permit uploaded SVGs to inherit arbitrary object metadata.
-  headers.set("content-type", ({ png: "image/png", jpg: "image/jpeg", webp: "image/webp", svg: "image/svg+xml" })[key.split(".").at(-1)]);
+  headers.set("content-type", ({ png: "image/png", jpg: "image/jpeg", webp: "image/webp", svg: "image/svg+xml",mp4:"video/mp4",webm:"video/webm" })[key.split(".").at(-1)]);
+  headers.set("accept-ranges","bytes");
+  if(object.range){headers.set("content-range",`bytes ${object.range.offset}-${object.range.offset+object.range.length-1}/${object.size}`);headers.set("content-length",String(object.range.length));}
   if (request.headers.get("if-none-match") === object.httpEtag) return new Response(null, { status: 304, headers });
-  return new Response(request.method === "HEAD" ? null : object.body, { headers });
+  return new Response(request.method === "HEAD" ? null : object.body, { headers,status:object.range?206:200 });
 }

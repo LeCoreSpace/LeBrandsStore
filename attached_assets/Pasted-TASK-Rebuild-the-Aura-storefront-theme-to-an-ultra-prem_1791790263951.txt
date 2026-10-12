@@ -1,0 +1,93 @@
+TASK: Rebuild the Aura storefront theme to an ultra-premium standard, as
+a library of distinct, data-driven sections. Applies to the live store
+AND the wizard preview (shared templates, identical output). No schema
+migrations unless unavoidable (ask first). No deploy. Checkout logic,
+totals, Turnstile, COD rules and order flow must not change.
+
+PERFORMANCE (storefronts stay light)
+- No React, GSAP, Lenis, Three.js or other marketing-site libraries in
+  storefronts. Plain HTML/CSS + minimal vanilla JS.
+- LCP < 2.5s on 4G for a store home, CLS < 0.05, AVIF/WebP + srcset,
+  lazy-load below the fold. Motion via CSS only (subtle fades/reveals),
+  off under prefers-reduced-motion.
+
+DESIGN STANDARD
+- Reference level: flagship sites of premium D2C and luxury fashion
+  brands. Editorial, image-led, generous space, confident type.
+- No AI tells: no eyebrow labels by default (an optional per-section
+  "kicker" field, off by default), no italic coloured accent words, no
+  em/en dashes in theme copy, no generic filler ("Made for you", "A
+  little something special"), no decorative icons or patterns.
+- LeBrands' plum branding never appears in a brand's store except a
+  small "Powered by LeBrands.Store" in the footer.
+
+BRAND CHOICES (in the wizard)
+- Type presets (3): Editorial (refined serif display + clean sans body,
+  no italics for emphasis), Modern (one geometric sans), Classic (book
+  serif + sans).
+- Colour presets (4): Ivory & Ink, Stone, Midnight, Pure White, plus the
+  brand's own accent colour (buttons and links only, contrast-checked
+  automatically; auto-darken if it fails AA).
+- Hero size: generous product titles 28 to 40px, hero 56 to 96px
+  desktop.
+
+SECTIONS (self-contained components with fixed slots and settings,
+mobile-first; render nothing when required content is empty)
+1. Announcement bar (off by default)
+2. Header: logo (left or centred), up to 5 links, search, bag; compact
+   and solid on scroll; full-screen mobile menu.
+3. Hero, 3 variants: full-bleed image with text overlay; split image and
+   text; muted autoplay video with poster.
+4. Brand statement: one large line of type.
+5. Featured collection, editorial grid: one large tile + two small, hover
+   swaps to the second product photo.
+6. Product spotlight: one hero product, large imagery, price, inline Add
+   to bag.
+7. Lookbook rows: image + text, alternating, 1 to 3 rows.
+8. Founder story: portrait, short story, name line.
+9. Craft and materials: horizontal image strip with short captions.
+10. Reviews: ONLY real reviews from the database; hidden if none.
+11. As featured in: ONLY brand-entered entries; hidden if none.
+12. Gallery: 4 to 8 images, offset layout.
+13. Trust strip from real settings only: COD available (if enabled),
+    returns window from policies, secure checkout.
+14. Footer: brand line, links, policies, contact, social links, small
+    "Powered by LeBrands.Store".
+
+PAGES
+- Home default order: 1, 3, 4, 5, 7, 8, 9, 10, 13, 14 (empty ones
+  disappear).
+- Collection: large image grid (2 columns mobile, 3 to 4 desktop), sort,
+  filter by price and availability, hover swap, sale and sold-out tags.
+- Product: large gallery (swipe on mobile, zoom on desktop), sticky buy
+  box on desktop, variants, quantity, Add to bag, COD badge, accordions
+  (Description, Fabric and care, Shipping and returns from policies, Size
+  guide if provided), "You may also like".
+- Cart drawer + cart page, checkout, policy pages, /track and order
+  confirmation restyled to match.
+
+WIZARD
+- Add optional fields/uploads for the new slots: hero image or video,
+  statement line, founder story and portrait, craft images, gallery,
+  type and colour preset, accent colour.
+- Live preview updates instantly, as now.
+
+IMAGERY
+- Generate premium images ONLY for theme demo content (Example Studio)
+  and replaceable default banner/texture images used when a brand hasn't
+  uploaded its own. Natural light, real textures, no faces in defaults,
+  no text, no logos; regenerate anything distorted.
+- NEVER use generated images as a real brand's product photos.
+
+QUALITY
+- WCAG AA, keyboard navigation, visible focus, Indian price format
+  (₹1,299), clean empty, sold-out and error states.
+- Run test:offline; update UI tests where markup changed without
+  weakening assertions; existing checkout and isolation tests must pass.
+
+DELIVER
+- Desktop and mobile screenshots of Home (each type and colour preset at
+  least once), Collection, Product, Cart and Checkout, using Example
+  Studio.
+- Stonescence's store as it will look with its current content, plus the
+  list of what Stonescence should upload to look its best.
