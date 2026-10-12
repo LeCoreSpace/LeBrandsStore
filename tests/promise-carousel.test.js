@@ -23,7 +23,7 @@ test("three promises remain unique slides after the storefront and discovery hig
   assert.match(css, /\.m-promise:not\(\.is-enhanced\) \.m-promise-controls \{ display: none/);
   assert.match(css, /section\.m-hero \{[^}]*background-image: var\(--m-dark-grad\)/);
   assert.match(css, /\.m-footer, \.m-pricing-page \.m-footer \{[^}]*background-image: var\(--m-dark-grad\)/);
-  assert.match(css, /:root\[data-theme="dark"\] #top > section\.m-band-light \{[^}]*#f5f0e8/);
+  assert.match(css, /:root\[data-theme="dark"\] #top > section\.m-band-light \{[^}]*#ffffff/);
 });
 
 async function setup({ reduced = false, disabled = false } = {}) {

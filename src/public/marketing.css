@@ -9,8 +9,8 @@
 :root {
   color-scheme: light;
   --m-ink: #38282b;
-  --m-ivory: #f5f0e8;
-  --m-paper: #eee7dd;
+  --m-ivory: #ffffff;
+  --m-paper: #ffffff;
   --m-dark: #292124;
   --m-dark-ink: #f3ebe2;
   --m-muted: #796c6c;
@@ -108,8 +108,8 @@ button { font: inherit; }
 }
 :root[data-theme="dark"] #top > section:nth-of-type(even) {
   color-scheme: light;
-  --band-bg: #f5f0e8; --band-fg: #38282b; --band-muted: #796c6c; --band-line: rgba(56, 40, 43, .19);
-  --m-accent: #874353; --m-paper: #eee7dd;
+  --band-bg: #ffffff; --band-fg: #38282b; --band-muted: #796c6c; --band-line: rgba(56, 40, 43, .19);
+  --m-accent: #874353; --m-paper: #ffffff;
 }
 .m-kicker {
   display: inline-block; margin: 0 0 19px; color: var(--m-accent); font-size: 10px;
@@ -839,9 +839,9 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
   background-color: #0c090b; background-image: var(--m-dark-grad); color: #f3ebe2;
 }
 :root[data-theme="dark"] #top > section.m-band-light {
-  color-scheme: light; --band-bg: #f5f0e8; --band-fg: #38282b; --band-muted: #796c6c; --band-line: rgba(56, 40, 43, .19);
-  --m-accent: #874353; --m-paper: #eee7dd; --m-ink: #38282b;
-  background: #f5f0e8; color: #38282b;
+  color-scheme: light; --band-bg: #ffffff; --band-fg: #38282b; --band-muted: #796c6c; --band-line: rgba(56, 40, 43, .19);
+  --m-accent: #874353; --m-paper: #ffffff; --m-ink: #38282b;
+  background: #ffffff; color: #38282b;
 }
 .m-footer, .m-pricing-page .m-footer { background-color: #0c090b; background-image: var(--m-dark-grad); }
 

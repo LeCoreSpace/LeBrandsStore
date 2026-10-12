@@ -1,0 +1,71 @@
+1. COD & Returns centre (every plan)
+
+A dedicated menu in the dashboard:
+
+COD orders
+
+All COD orders in one view: pending, shipped, delivered, payment collected, payment remitted by the courier.
+COD verification before shipping: an automatic WhatsApp or SMS confirmation (“Confirm your order: Yes / Cancel”). Unconfirmed orders are flagged before you spend money shipping them.
+Risk flags: first-time customer, high order value, pincode with high past RTO, repeated failed deliveries for this phone number.
+Remittance tracking: what the courier has collected vs paid out to you.
+
+Returns and RTO
+
+Every return or RTO needs a reason chosen from a fixed list: customer refused, not reachable, wrong address, ordered by mistake, delivery delayed, size/fit, damaged, quality not as expected, other (with a note).
+Two separate types, because they’re different problems: customer returns (after delivery) and RTO (never delivered, returned to you).
+Restock decision per item (back to stock or damaged).
+Cost of each RTO: forward shipping, return shipping and packaging.
+
+RTO analysis
+
+RTO rate overall and by pincode, state, product, order value, new vs returning customer, day of week.
+Top reasons for returns and RTOs.
+Money lost to RTO each month.
+Practical suggestions: “Pincode 6xxxxx: 38% RTO, consider prepaid-only there”, with one click to apply that rule.
+
+This becomes part of the core pitch: “Know exactly why every COD order came back.”
+
+2. Built-in components instead of paid apps
+
+The most-installed Shopify app categories, built natively as Aura sections and blocks:
+
+Product page
+
+Real reviews with photos (collected by asking customers after delivery)
+Size guide and size chart
+“Frequently bought together” bundles
+Delivery date estimate by pincode, plus a COD availability check
+Trust badges, return policy summary
+Product video, 360° view, zoom
+“Notify me when back in stock”
+Wishlist
+Sticky add-to-cart on mobile
+FAQ / “How to use” / “How it works” blocks
+
+Cart
+
+Free-shipping progress bar (“Add ₹200 more for free delivery”)
+Cart upsells (“Complete the look”)
+Discount code field and automatic offers
+Gift wrap and gift message
+
+Checkout
+
+Prepaid discount (“Save ₹50 by paying online”), which reduces COD and RTO
+Address autocomplete from pincode (city and state filled in automatically)
+Order notes, delivery instructions
+
+After purchase
+
+One-click upsell on the thank-you page
+Order tracking page with your branding (already built)
+Review request after delivery
+Reorder reminders for consumables
+Referral programme (“Give ₹100, get ₹100”)
+
+Marketing
+
+Abandoned cart reminders (WhatsApp/email)
+Announcement bar, pop-up for first-order discount
+Instagram feed section
+Loyalty points (later)

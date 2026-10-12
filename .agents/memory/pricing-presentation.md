@@ -19,7 +19,9 @@ saved site preference or browser theme is dark.
 **Why:** The user requested this for the pricing page and repeated it when a
 dark-theme override left the page dark.
 
-**How to apply:** Keep this pricing-specific; do not recolour the homepage or merchant themes.
+**How to apply:** Pricing stays white in both modes. The user's later
+platform-wide instruction also replaces beige homepage and application
+backgrounds with white; it does not change merchant theme presets.
 
 ## Billing terms
 

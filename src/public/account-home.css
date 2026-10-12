@@ -34,7 +34,7 @@
 .store-actions .primary-link:hover{background:var(--green-dark);border-color:var(--green-dark);color:#fffaf0}
 .ah-arrow{transition:transform .25s ease}
 .primary-link:hover .ah-arrow{transform:translateX(3px)}
-.empty-card{padding:72px 24px;border:1px dashed #cfa9b6;border-radius:12px;background:linear-gradient(180deg,#fffcf5,#f6ecee);animation:ah-in .6s both}
+.empty-card{padding:72px 24px;border:1px dashed #cfa9b6;border-radius:12px;background:#ffffff;animation:ah-in .6s both}
 .empty-mark{width:60px;height:60px;border-color:#d9b6c2;background:var(--white);box-shadow:0 10px 24px -14px rgba(77,16,38,.5)}
 .empty-card h2{font-size:32px;letter-spacing:-.03em}
 .empty-card .button{border-radius:999px;padding:0 26px}

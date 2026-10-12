@@ -39,7 +39,7 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f4efe7" data-m-theme-color>
+  <meta name="theme-color" content="#ffffff" data-m-theme-color>
   ${FAVICON_LINKS}
   <title>${title}</title>
   <meta name="description" content="${description}">

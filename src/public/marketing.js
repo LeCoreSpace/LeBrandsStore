@@ -13,7 +13,7 @@
     : systemTheme.matches ? "dark" : "light";
   if (typeof root.setAttribute === "function") root.setAttribute("data-theme", initialTheme);
   const colorMeta = document.querySelector("[data-m-theme-color]");
-  if (colorMeta) colorMeta.setAttribute("content", initialTheme === "dark" ? "#21191b" : "#f4efe7");
+  if (colorMeta) colorMeta.setAttribute("content", initialTheme === "dark" ? "#21191b" : "#ffffff");
 
   function installThemeToggle() {
     const buttons = [...document.querySelectorAll("[data-theme-toggle]")];
@@ -23,7 +23,7 @@
     function paintTheme(theme) {
       activeTheme = theme;
       if (typeof root.setAttribute === "function") root.setAttribute("data-theme", theme);
-      if (colorMeta) colorMeta.setAttribute("content", theme === "dark" ? "#21191b" : "#f4efe7");
+      if (colorMeta) colorMeta.setAttribute("content", theme === "dark" ? "#21191b" : "#ffffff");
       const nextTheme = theme === "dark" ? "light" : "dark";
       for (const button of buttons) {
         button.setAttribute("aria-label", `Switch to ${nextTheme} mode`);
