@@ -1,5 +1,5 @@
 // Development-only adapter. Production always uses src/index.js.
-// No database binding, credential, simulated account, or persistent data.
+// Optional explicitly enabled, restricted live-database bridge for real testing.
 import worker from "./index.js";
 import { renderWizard } from "./ui/wizard.js";
 import {renderEditor} from "./ui/editor.js";
@@ -17,6 +17,7 @@ import { quoteCart } from "./public/commerce-rules.js";
 import { renderPremiumStore } from "./ui/premium-example.js";
 import { previewShell, renderAppSample } from "./local-app-preview.js";
 import { ACCOUNT_ROBOTS } from "./ui/platform-seo.js";
+import { isLivePreview, livePreviewEnv, previewAccountRequest, livePreviewHeaders, previewDatabaseStatus } from "./preview-live.js";
 
 const LOCAL_STORE_ID = "00000000-0000-4000-8000-000000000000";
 function filterDashboardFixture(data, filters) {
@@ -43,6 +44,11 @@ function dashboardPreviewLink(path) {
 export default {
   async fetch(request, env, ctx) {
     const original = new URL(request.url);
+    if (original.pathname === "/__database-status") {
+      if (!isLivePreview(env)) return Response.json({ connected: false }, { status: 503 });
+      if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
+      return previewDatabaseStatus(env);
+    }
     if (original.pathname === "/robots.txt") {
       const allowed = ["GET", "HEAD"].includes(request.method);
       return new Response(allowed && request.method !== "HEAD" ? ACCOUNT_ROBOTS : null, {
@@ -242,12 +248,17 @@ export default {
     target.hostname = account ? "app.lebrands.store" : "lebrands.store";
     target.port = "";
     if (target.pathname === "/dashboard") target.pathname = "/";
-    const forwarded = new Request(target.href, request);
-    const response = await worker.fetch(forwarded, env, ctx);
+    const forwarded = account ? previewAccountRequest(request, target.href, env) : new Request(target.href, request);
+    if (!forwarded) return Response.json({ error: "This request did not come from this preview website." }, { status: 403 });
+    let workerEnv;
+    try { workerEnv = livePreviewEnv(env); }
+    catch { return Response.json({ error: "The live preview connection is not configured." }, { status: 503 }); }
+    const response = await worker.fetch(forwarded, workerEnv, ctx);
     const headers = new Headers(response.headers);
     // Allow only the development preview iframe to display the static pages.
     headers.delete("x-frame-options");
     headers.set("content-security-policy", headers.get("content-security-policy")?.replace("frame-ancestors 'none'", "frame-ancestors *") ?? "default-src 'self'");
+    livePreviewHeaders(headers, env);
     if (response.status === 303 && headers.get("location") === "/") headers.set("location", "/dashboard");
     headers.set("x-robots-tag", "noindex, nofollow");
     if (!headers.get("content-type")?.includes("text/html")) {
@@ -258,6 +269,8 @@ export default {
     // must not reuse old markup after edits or workflow restarts.
     headers.set("cache-control", "no-store");
     let body = await response.text();
+    if (account && isLivePreview(env)) body = body.replace(/<body([^>]*)>/,
+      '<body$1><aside role="status" style="padding:10px 16px;background:#f7e7cf;color:#452416;font:13px/1.5 sans-serif;text-align:center">Live database preview. Saves and publishing affect real stores. Media uploads are local and are not available on live storefronts.</aside>');
     if (account) body = body.replaceAll('href="/"', 'href="/dashboard"');
     body = body.replaceAll('href="https://lebrands.store"', 'href="/"')
       .replaceAll("https://app.lebrands.store", "").replaceAll("https://lebrands.store", "");

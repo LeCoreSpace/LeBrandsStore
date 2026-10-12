@@ -206,8 +206,8 @@ test("media metadata keeps valid sources and drops oversize ones", async () => {
   assert.deepEqual(media.sources, [{ url: "https://m/x-640.webp", width: 640, height: 360 }]);
   assert.equal(S.mediaFromRecord({ url: "u", width: 10, height: 10 }, "a").sources, undefined);
   const up = await import("../src/public/aura-upload.js");
-  assert.deepEqual(up.renditionWidths(1024), [640]);
-  assert.deepEqual(up.renditionWidths(500), []);
+  assert.deepEqual(up.renditionWidths(1024), [480, 768]);
+  assert.deepEqual(up.renditionWidths(500), [480]);
   assert.deepEqual(up.scaledSize(1600, 900, 640), { width: 640, height: 360 });
   const dto = up.mediaWithSources({ url: "p", width: 1600, height: 900 }, [{ url: "b", width: 1024, height: 576 }, { url: "a", width: 640, height: 360 }, { url: "huge", width: 3000, height: 1 }], "Alt");
   assert.deepEqual(dto.sources.map(item => item.url), ["a", "b"]);

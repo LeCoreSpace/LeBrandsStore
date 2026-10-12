@@ -19,6 +19,28 @@ enabling real brand writes, publishing, orders or password changes.
 **Why:** Fixing Preview visibility is distinct from choosing which database a
 working local login and persistent changes should use.
 
+The user has now explicitly authorised connecting Replit Preview to the live
+Supabase database, using the existing secrets, so they can create and test stores.
+
+**Why:** The user wants persistent application testing here, not just fictional
+screens. Their authorisation is for the connection and their own testing, not
+automatic migrations or agent-created live records.
+
+**How to apply:** Use only the restricted application connection in the preview
+Worker. Keep administrator credentials out of its bindings, retain tenant and
+session checks, and clearly identify that user-initiated saves affect live data.
+
+A successful native Node database probe does not prove the connection works
+inside the local Worker runtime.
+
+**Why:** Direct Supabase TCP/TLS returned `Network connection lost` in local
+Workerd while the same restricted connection succeeded in Node. This is a
+runtime connection limitation, not evidence that the credentials are wrong.
+
+**How to apply:** Confirm connectivity through the actual browser-facing
+preview route. Keep the production Hyperdrive path intact; do not weaken the
+database role checks or expose administrative credentials as a workaround.
+
 **How to apply:** State database-backed limitations clearly. Treat authenticated
 preview with persistent saves as separate environment work requiring an explicit
 decision about database isolation. Keep fictional fixtures local-only.

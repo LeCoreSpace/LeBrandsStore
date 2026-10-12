@@ -1,4 +1,6 @@
 import { defineConfig } from "vite";
+import { fileURLToPath } from "node:url";
+import { createNativePreview } from "../../src/preview-node.js";
 
 const port = Number(process.env.PORT);
 if (!Number.isInteger(port) || port <= 0) {
@@ -9,6 +11,14 @@ if (!Number.isInteger(port) || port <= 0) {
 // The existing Wrangler workflow serves every page, asset and API response.
 // Keep the Worker port in sync with its artifact service allocation.
 export default defineConfig({
+  plugins: [{
+    name: "native-worker-live-preview",
+    configureServer(server) {
+      const middleware = createNativePreview(fileURLToPath(new URL("../../", import.meta.url)));
+      server.middlewares.use(middleware);
+      server.httpServer?.once("close", () => { void middleware.close(); });
+    },
+  }],
   base: process.env.BASE_PATH || "/",
   // No client bundle is served: every request goes to Wrangler.
   optimizeDeps: { noDiscovery: true, entries: [] },
