@@ -64,8 +64,9 @@ test("homepage preserves the requested story, six native FAQ items, and honest a
   assert.equal((html.match(/<details\b/g)||[]).length,6);
   assert.match(copy,/valid GSTIN is required to publish/i);
   assert.match(copy,/First publication requires platform approval/);
-  assert.match(copy,/Razorpay payments and integrations with any logistics partner can be added for your brand/);
-  assert.match(html,/href="\/contact">Contact us to discuss your setup/);
+  assert.doesNotMatch(html,/id="integrations"|m-coming|Integrations and what's next/);
+  assert.match(copy,/Online payments with your own Razorpay account\. Contact us to discuss your setup\./);
+  assert.match(copy,/Shiprocket or any partner you choose can be connected for your brand/);
   assert.match(html, /Free discovery for your store\./);
   assert.match(html, /Help shoppers find your brand through the LeBrands\.Space virtual mall, at no extra cost\./);
   for(const page of [html,renderPricing()]){
@@ -73,10 +74,10 @@ test("homepage preserves the requested story, six native FAQ items, and honest a
     assert.match(page,/LeBrandsSpace Digital Private Limited/);
   }
   assert.doesNotMatch(renderPricing(), /LeBrands\.Space|\bdiscovery\b|\bmall\b/i);
-  for(const feature of ["Razorpay","Shiprocket","Your own domain","Order emails","Drag-and-drop page editor","Bazaar"]){
+  for(const feature of ["Razorpay","Shiprocket"]){
     assert.ok(html.includes(feature));
   }
-  assert.equal((html.match(/<p>[^<]*<span>Coming soon<\/span><\/p>/g)||[]).length,4);
+  assert.equal((html.match(/<p>[^<]*<span>Coming soon<\/span><\/p>/g)||[]).length,0);
   assert.match(renderPricing(),/Pricing is being finalised\. Talk to us\./);
   assert.match(renderPricing(),/href="mailto:support@lebrands\.store"/);
   assert.match(renderLegal("refund-policy"),/Refund policy/);

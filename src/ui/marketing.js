@@ -325,21 +325,6 @@ export function renderHome() {
     </div>
   </section>
 
-  <section class="m-coming m-band-dark" id="integrations">
-    <div class="m-wrap m-coming-inner">
-      <h2 class="m-reveal">Integrations and what's next.</h2>
-      <div class="m-coming-list m-reveal">
-        <p>Online payments with your own Razorpay account. <span>Integration setup</span></p>
-        <p>Shiprocket or your chosen logistics partner. <span>Integration setup</span></p>
-        <p>Your own domain. <span>Coming soon</span></p>
-        <p>Order emails. <span>Coming soon</span></p>
-        <p>Drag-and-drop page editor. <span>Coming soon</span></p>
-        <p>A second theme, Bazaar. <span>Coming soon</span></p>
-        <p class="m-integration-note">Razorpay payments and integrations with any logistics partner can be added for your brand. <a href="/contact">Contact us to discuss your setup.</a></p>
-      </div>
-    </div>
-  </section>
-
   <section class="m-pricing-tease m-band-dark">
     <div class="m-wrap m-pricing-inner m-reveal">
       <h2>Simple monthly pricing. No commission, ever.</h2>

@@ -88,6 +88,5 @@ test("scroll motion has distinct 3D transitions, readable rest and an explicit p
   assert.match(html, /class="m-reveal m-craft-reveal">\s*<div class="m-craft-carousel"/);
   assert.match(html, /class="m-showcase-cta m-reveal"/);
   assert.match(html, /class="m-clarification m-reveal">First publication requires platform approval/);
-  assert.match(html, /class="m-integration-note">/);
-  assert.doesNotMatch(html, /class="m-integration-note m-reveal"/, "integration copy moves with its parent, not a second transform");
+  assert.doesNotMatch(html, /class="m-integration-note/, "the removed integrations section must not return");
 });
