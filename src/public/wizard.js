@@ -1,9 +1,10 @@
 import { formatPhone } from "/assets/commerce-rules.js";
 import { renderAura } from "/assets/aura.js";
+import { attachAuraSearch } from "/assets/aura-ui.js";
 import { mergeSettingsToLayouts } from "/assets/aura-layout.js";
 import { uploadAuraImage } from "/assets/aura-upload.js";
 import {observeGSTINForms} from "/assets/gstin-ui.js";
-import { CATEGORIES, validateBasics, validateTheme, validateProduct, publishChecklist, resumeStep } from "/assets/validation.js";
+import { CATEGORIES, validateBasics, validateTheme, validateProduct, productGSTWarning, publishChecklist, resumeStep } from "/assets/validation.js";
 import { INDIAN_STATES, registeredBusinessState, businessGSTINErrors } from "/assets/commerce-rules.js";
 
 const root = document.getElementById("wizard");
@@ -203,7 +204,7 @@ async function saveNow(){
 }
 function productForSave(product){
   const {title,price_paise,compare_at_paise,description,images,tags,sku,stock,hsn_code,gst_rate}=product;
-  return {title:title||"",price_paise:Number.isInteger(price_paise)?price_paise:Number(price_paise)||0,compare_at_paise:compare_at_paise===""||compare_at_paise==null?null:(Number.isInteger(compare_at_paise)?compare_at_paise:Number(compare_at_paise)||0),description:description||"",images:(images||[]).map(({id,alt})=>({id,alt:alt||""})),tags:Array.isArray(tags)?tags.slice(0,10):[],sku:sku||"",stock:stock===""||stock==null?null:Number(stock),hsn_code:hsn_code||"",gst_rate:Number(gst_rate)||0};
+  return {title:title||"",price_paise:Number.isInteger(price_paise)?price_paise:Number(price_paise)||0,compare_at_paise:compare_at_paise===""||compare_at_paise==null?null:(Number.isInteger(compare_at_paise)?compare_at_paise:Number(compare_at_paise)||0),description:description||"",images:(images||[]).map(({id,alt})=>({id,alt:alt||""})),tags:Array.isArray(tags)?tags.slice(0,10):[],sku:sku||"",stock:stock===""||stock==null?null:Number(stock),hsn_code:hsn_code||"",gst_rate:gst_rate==null||gst_rate===""?null:Number(gst_rate)};
 }
 function updateHeading(){const h=document.querySelector(".wizard-heading p");if(h)h.textContent=`Setup for ${currentSettings().brand_name||data.store?.name||"your store"}`}
 function schedulePreview(){clearTimeout(previewTimer);previewTimer=window.setTimeout(renderPreview,250)}
@@ -350,7 +351,7 @@ function renderProduct(){
     <div class="field"><span class="field-label">Product images</span><div class="image-list">${(product.images||[]).map((img,i)=>`<div class="image-item">${safeMediaUrl(img.url)?`<img src="${esc(safeMediaUrl(img.url))}" alt="">`:`<span class="upload-thumb" aria-hidden="true"></span>`}<input type="text" maxlength="180" aria-label="Image ${i+1} alt text" placeholder="Describe this image" value="${esc(img.alt||"")}" data-image-alt="${i}"><span class="image-actions"><button type="button" data-image-move="${i}" data-direction="-1" aria-label="Move image up" ${i===0?"disabled":""}>↑</button><button type="button" data-image-move="${i}" data-direction="1" aria-label="Move image down" ${i===product.images.length-1?"disabled":""}>↓</button><button type="button" data-image-remove="${i}" aria-label="Remove image">×</button></span></div>`).join("")}</div><label class="btn btn-secondary" for="product-image-file" style="display:inline-flex;align-items:center;margin-top:9px">Upload image<input class="file-input" id="product-image-file" type="file" accept="image/png,image/jpeg,image/webp" data-upload="image" multiple></label><span class="field-help">${(product.images||[]).length}/8 images · JPG, PNG or WebP · up to 10 MB each</span>${fields(formErrors.images?{images:formErrors.images}:null)}</div>
     <div class="field"><label for="tags">Tags (optional)</label><div class="tag-input-row"><input id="tags" type="text" data-tag-input placeholder="Add a tag, then press Enter" maxlength="24"><button class="btn btn-secondary" type="button" data-action="add-tag">Add</button></div><div class="tag-chips">${(product.tags||[]).map((tag,i)=>`<span class="tag-chip">${esc(tag)}<button type="button" data-tag-remove="${i}" aria-label="Remove ${esc(tag)}">×</button></span>`).join("")}</div><span class="field-help">Up to 10 tags.</span>${fields(formErrors.tags?{tags:formErrors.tags}:null)}</div>
     <div class="field-grid">${field("sku","SKU (optional)",product.sku||"",{scope:"product",max:80,placeholder:"Assigned automatically if left blank"})}${field("stock","Stock (optional)",product.stock==null?"":product.stock,{scope:"product",type:"number",min:"0",step:"1",placeholder:"Leave blank for always in stock"})}</div>
-     <div class="field-grid">${field("hsn_code","HSN code",product.hsn_code||"",{scope:"product",max:8,placeholder:"4, 6 or 8 digits"})}<div class="field"><label for="gst-rate">GST rate</label><select id="gst-rate" data-product="gst_rate">${[...new Set([...MONEY_RATE, ...(MONEY_RATE.includes(Number(product.gst_rate))?[]:[Number(product.gst_rate)])])].sort((a,b)=>a-b).map(rate=>`<option value="${rate}" ${Number(product.gst_rate)===rate?"selected":""}>${rate}%${MONEY_RATE.includes(rate)?"":" · legacy rate"}</option>`).join("")}</select>${![...MONEY_RATE].includes(Number(product.gst_rate))?`<span class="field-help" role="status">This product has a legacy ${esc(product.gst_rate)}% rate. Confirm the correct GST slab before publishing.</span>`:""}${fields(formErrors.gst_rate?{gst_rate:formErrors.gst_rate}:null)}</div></div>
+     <div class="field-grid">${field("hsn_code","HSN code",product.hsn_code||"",{scope:"product",max:8,placeholder:"4, 6 or 8 digits"})}<div class="field"><label for="gst-rate">GST rate</label><select id="gst-rate" data-product="gst_rate" required><option value="" ${product.gst_rate==null?"selected":""}>Choose a GST rate</option>${[...new Set([...MONEY_RATE, ...(product.gst_rate!=null&&!MONEY_RATE.includes(Number(product.gst_rate))?[Number(product.gst_rate)]:[])])].sort((a,b)=>a-b).map(rate=>`<option value="${rate}" ${product.gst_rate!=null&&Number(product.gst_rate)===rate?"selected":""}>${rate===0?"0% / Exempt":`${rate}%`}${MONEY_RATE.includes(rate)?"":" · legacy rate"}</option>`).join("")}</select>${product.gst_rate!=null&&!MONEY_RATE.includes(Number(product.gst_rate))?`<span class="field-help" role="status">This product has a legacy ${esc(product.gst_rate)}% rate. Confirm the correct GST slab before publishing.</span>`:""}<span class="field-help" data-wizard-gst-warning role="status" ${productGSTWarning(product)?"":"hidden"}>${esc(productGSTWarning(product))}</span>${fields(formErrors.gst_rate?{gst_rate:formErrors.gst_rate}:null)}</div></div>
    `}</div></div>`);
 }
 function checklistItems(){
@@ -391,7 +392,7 @@ function renderPreview(){
  const draft=clone(data);
  draft.settings={...(draft.settings||{}),brand_name:draft.settings?.brand_name||draft.store?.name,subdomain:draft.settings?.subdomain||draft.store?.subdomain};
  const title=previewPage==="product"?currentProduct()?.id||data.products?.[0]?.id:null;
- const html=renderAura(draft,{page:previewPage,productId:title,preview:true});
+ const html=renderAura(draft,{page:previewPage,productId:title,preview:true,embeddedPreview:true});
  const body=`<div class="preview-bar"><div class="preview-label">Live preview<small>Preview · not yet live</small></div><div class="preview-controls"><div class="segmented" aria-label="Preview size"><button type="button" data-device="mobile" aria-pressed="${device==="mobile"}">Mobile</button><button type="button" data-device="desktop" aria-pressed="${device==="desktop"}">Desktop</button></div></div></div><nav class="preview-tabs" aria-label="Preview page">${[["home","Home"],["collection","Collection"],["product","Product"]].map(([p,l])=>`<button type="button" data-preview-page="${p}" aria-selected="${previewPage===p}">${l}</button>`).join("")}</nav><div class="preview-stage"><div class="preview-frame" data-device="${device}"><iframe title="Aura storefront preview" sandbox="allow-same-origin" srcdoc="${esc(html)}"></iframe></div></div>`;
  previewPanel.innerHTML=body;
  const frame=previewPanel.querySelector("iframe");
@@ -400,6 +401,7 @@ function renderPreview(){
 function wirePreviewFrame(frame){
  try{
    const doc=frame.contentDocument;if(!doc)return;
+    attachAuraSearch(doc,{products:data.products||[]});
    doc.addEventListener("click",(event)=>{
      const anchor=event.target.closest("a");if(!anchor)return;
      event.preventDefault();const url=new URL(anchor.getAttribute("href")||"/","https://preview.invalid");
@@ -491,10 +493,13 @@ async function goStep(next){
 }
 async function makeProduct(){
   if(visualOnly){showReadOnly("add products");return}
-  if(busy||uploadBusy)return;busy=true;renderPanel();setStatus("saving","Adding product");
+  if(busy||uploadBusy)return;
+  const gstRate = await chooseNewProductGST();
+  if (gstRate === null) return;
+  busy=true;renderPanel();setStatus("saving","Adding product");
  try{
   await saveNow();
-  const result=await api(`${API}/products`,{method:"POST",body:JSON.stringify({title:"",price_paise:0,compare_at_paise:null,description:"",images:[],tags:[],sku:"",stock:null,hsn_code:"",gst_rate:0})});
+   const result=await api(`${API}/products`,{method:"POST",body:JSON.stringify({title:"",price_paise:0,compare_at_paise:null,description:"",images:[],tags:[],sku:"",stock:null,hsn_code:"",gst_rate:gstRate})});
    const beforeIds=new Set((data.products||[]).map((product)=>String(product.id)));
    const envelope=responseEnvelope(result);
     setDataFromResponse(envelope,revision,{invalidatePolicyReviews:true});
@@ -506,6 +511,19 @@ async function makeProduct(){
    activeProductId=created.id;formErrors={};previewPage="product";renderPanel();schedulePreview();setStatus("saved","Saved");
   }catch(error){formErrors={_general:error.message};renderPanel();setStatus("error",error.message,null)}
   finally{busy=false}
+}
+function chooseNewProductGST() {
+  return new Promise(resolve => {
+    const dialog = document.createElement("dialog");
+    dialog.className = "wizard-gst-dialog";
+    dialog.setAttribute("aria-labelledby","new-product-gst-title");
+    dialog.innerHTML = `<form method="dialog"><h2 id="new-product-gst-title">Choose this product's GST rate</h2><p class="field-help">Choose the applicable rate. You can update it in the product editor.</p><div class="field"><label for="new-product-gst">GST rate</label><select id="new-product-gst" required><option value="" selected>Choose a GST rate</option>${MONEY_RATE.map(rate=>`<option value="${rate}">${rate===0?"0% / Exempt":`${rate}%`}</option>`).join("")}</select></div><div class="wizard-gst-actions"><button type="button" data-gst-cancel>Cancel</button><button type="submit">Add product</button></div></form>`;
+    let selected = null;
+    dialog.querySelector("form").addEventListener("submit", () => { selected = Number(dialog.querySelector("select").value); });
+    dialog.querySelector("[data-gst-cancel]").addEventListener("click",()=>dialog.close());
+    dialog.addEventListener("close",()=>{dialog.remove();resolve(selected);},{once:true});
+    document.body.append(dialog);dialog.showModal();dialog.querySelector("select").focus();
+  });
 }
 async function deleteProduct(){
   if(visualOnly){showReadOnly("remove products");return}
@@ -675,11 +693,15 @@ function onInput(event){
    if(name==="accent_color"){const other=[...document.querySelectorAll('[data-settings="accent_color"]')].find(x=>x!==el);if(other)other.value=value}
  }else if(el.matches("[data-product]")){
    const name=el.dataset.product;let value=el.value;
-   if(name==="gst_rate")value=Number(value);
+    if(name==="gst_rate")value=value===""?null:Number(value);
    if(name==="price_rupees")changedProduct("price_paise",toPaise(value));
    else if(name==="compare_rupees")changedProduct("compare_at_paise",toPaise(value));
    else if(name==="stock")changedProduct("stock",value===""?null:Number(value));
-   else changedProduct(name,value);
+    else changedProduct(name,value);
+    if (["gst_rate","hsn_code"].includes(name)) {
+      const warning = document.querySelector("[data-wizard-gst-warning]");
+      if (warning) { warning.textContent = productGSTWarning(currentProduct()); warning.hidden = !warning.textContent; }
+    }
  }
  else if(el.matches("[data-image-alt]")){const p=currentProduct(),i=Number(el.dataset.imageAlt);if(p?.images?.[i]){p.images[i].alt=el.value;revision++;p._revision=revision;queueSave();schedulePreview()}}
   else if(el.matches("[data-policy]")){

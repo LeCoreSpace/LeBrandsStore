@@ -1,0 +1,40 @@
+Fixes from live testing of a new store (FunStyle). No migrations
+unless required (ask first). No deploy.
+
+BUGS
+1. Editor: the Publish button renders as a blank dark box. Fix contrast
+   so its label is visible in all states (idle, saving, disabled).
+2. Dashboard Home: "Sales over time" and "Invoices issued today" stay on
+   "Loading..." forever. Fix the data loading; show a proper empty state
+   when there is no data, and an error state if the request fails.
+3. Account menu shows "N nny" for "Anny": fix initials and name
+   rendering (first letter is being dropped).
+4. Storefront header: replace the search text box + "Search" button with
+   a search icon that opens a search overlay; always show a bag icon with
+   item count. Apply in Aura, wizard preview and editor.
+5. Product GST: GST rate must be a required explicit choice in the
+   wizard and product editor (no 0% default). Show a warning when 0% or
+   Exempt is chosen for an apparel HSN (chapters 61, 62, 63, 64).
+
+CHECK AND REPORT
+6. Is "Made for you" a default/fallback tagline? If so, remove all
+   default copy: empty tagline/hero text must not render at all.
+7. Does drag-and-drop reordering work via the section handle? If not,
+   implement it (keyboard-accessible, with Up/Down kept as fallback).
+
+POLISH
+8. All captions/helper text use the muted text token, never link blue
+   (dashboard, setup guide, sidebar store card).
+9. Replace developer wording with plain text: e.g. "Last 7 days",
+   remove "Summary figures use the official 7-day overview totals" and
+   "Chart is based on loaded orders, not a complete sales ledger".
+10. Hide unavailable controls (timeline comment box) instead of showing
+    them disabled.
+11. Editor: hidden sections show an eye-off icon and a faded name, not
+    strikethrough.
+12. Order confirmation page: heading "Thank you, [first name]. Your
+    order is confirmed.", a proper check icon (SVG), no eyebrow label,
+    store header and footer present.
+13. Consistent capitalisation: "Cash on Delivery" everywhere.
+Run test:offline; send screenshots of the editor top bar, dashboard
+Home, store header (desktop + mobile) and order confirmation.

@@ -140,3 +140,73 @@ mtime_ms = 1791736151847
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/7d28ea56-b2de-4456-a234-9c670fcb7791/e70197ec-5fc7-4c17-aed1-453d568f59e1"
 storage_version_token = "1791736196805242"
 content_type = "video/mp4"
+
+[[outputs]]
+id = "8xXop2QyJTrKiYFz8QPQJ"
+uri = "file://generated-artifacts/funstyle-review/editor-topbar-only.jpg"
+type = "image"
+title = "Editor top bar"
+description = "Visible Publish label in the fictional local preview."
+logical_id = "5dc6e2e1-d798-49f2-9b62-e59db31ceba9"
+content_hash = "sha256:338bbcf6f2a279199628475acd0c520074454debaae065994a1a071b40d0a09c"
+size = 27753
+mtime_ms = 1791810974505
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/5dc6e2e1-d798-49f2-9b62-e59db31ceba9/9b6bd090-6e25-4011-842c-f14922b6b1d9"
+storage_version_token = "1791811058255815"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "H5qhiDEtBFc40v_ugFpO-"
+uri = "file://generated-artifacts/funstyle-review/dashboard-home.jpg"
+type = "image"
+title = "Dashboard Home"
+description = "Loaded sales chart and updated helper text using fictional data."
+logical_id = "2d5a2d57-2448-4a72-8816-51f5707aaa3a"
+content_hash = "sha256:b11240f2e21d44035b1606c5f2f2d1205b7db799f77dcc58e4eca3b208381206"
+size = 90203
+mtime_ms = 1791810823293
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/2d5a2d57-2448-4a72-8816-51f5707aaa3a/fb9a0732-bdae-421b-8587-a5890682edb2"
+storage_version_token = "1791811059493142"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "avg94UN-kCxjel3ODGRT3"
+uri = "file://generated-artifacts/funstyle-review/store-header-desktop.jpg"
+type = "image"
+title = "Store header: desktop"
+description = "Search icon and bag with item count."
+logical_id = "17632587-f640-473e-8c0a-a8875cdac93b"
+content_hash = "sha256:f74f068d3aba0da74df4d8d5da9cce22962a095eeba7a81a80115232ea750fc1"
+size = 15199
+mtime_ms = 1791809788389
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/17632587-f640-473e-8c0a-a8875cdac93b/ca6ee959-cde3-41e2-b047-cb5b3d4d03f5"
+storage_version_token = "1791811060702725"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "LPbyRvwJca8ra1vFMxUwB"
+uri = "file://generated-artifacts/funstyle-review/store-header-mobile.jpg"
+type = "image"
+title = "Store header: mobile"
+description = "Search, bag count and menu fit the phone viewport."
+logical_id = "4466770f-e621-4b21-8164-7c7718601b01"
+content_hash = "sha256:7bbd37fdb551b3d5ab798d25378c6b8301030dcb3ea325544cf9bbe0500e4ae3"
+size = 11485
+mtime_ms = 1791810824902
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/4466770f-e621-4b21-8164-7c7718601b01/1781081e-3725-4d86-a2f8-761be37b85c4"
+storage_version_token = "1791811061939410"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "dnLWQtlaabItOx9YcNJOD"
+uri = "file://generated-artifacts/funstyle-review/order-confirmation.jpg"
+type = "image"
+title = "Order confirmation"
+description = "First-name thank-you, SVG check, storefront header and footer."
+logical_id = "5084b69e-c533-47d4-a040-8b70507c30a6"
+content_hash = "sha256:b0d00c0e7474db4b14d5b320f07d847c3dd6e8a9ed641cfbbdc9db51a1479255"
+size = 54334
+mtime_ms = 1791810826473
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/5084b69e-c533-47d4-a040-8b70507c30a6/7273415c-9070-407b-81fd-b3807e4da8f3"
+storage_version_token = "1791811063165273"
+content_type = "image/jpeg"

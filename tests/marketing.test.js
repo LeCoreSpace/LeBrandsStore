@@ -54,7 +54,7 @@ test("homepage preserves the requested story, six native FAQ items, and honest a
     "Tell us about your brand.","Choose your look and watch it build live.",
     "Add your products and publish.","Your store is live at yourbrand.lebrands.store.",
     "Product pages, collections, cart and checkout designed to sell, on every screen size.",
-    "Cash on delivery with built-in fraud protection, COD limits and order tracking for your customers.",
+    "Cash on Delivery with built-in fraud protection, COD limits and order tracking for your customers.",
     "Orders from packed to delivered, customers, and payment collection in one calm dashboard.",
     "GST tax invoices with CGST, SGST or IGST worked out for you, numbered correctly every financial year.",
     "Zero commission on your sales.","Your domain, your payments, your customer data.",

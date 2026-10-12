@@ -48,7 +48,7 @@ export function exampleFixture(){
     shipping:"Example store policy. Standard delivery within India is free. Handmade apparel is dispatched within three working days in this fictional example.",
     "cancellation-refund":"Example store policy. Unshipped orders may be cancelled. Returns of unworn garments are accepted within seven days in this fictional example.",
     contact:"Example store contact. Example Studio, 12 Example Studio Lane, Chennai 600001. Email hello@example-studio.invalid. These are fictional details.",
-    pricing:"Example store pricing. Product prices include GST. Cash on delivery is the payment option shown in this fictional local demonstration."
+    pricing:"Example store pricing. Product prices include GST. Cash on Delivery is the payment option shown in this fictional local demonstration."
   };
   const policies=Object.entries(policyBodies).map(([kind,body])=>({kind,body,reviewed:true}));
   const checkout={...DEFAULT_CHECKOUT_SETTINGS,store_state:"33",cod_enabled:true,cod_max_paise:1500000,shipping_flat_paise:0};

@@ -13,6 +13,48 @@ if(photos.length){
  for(const photo of photos){photo.tabIndex=0;photo.setAttribute("role","button");photo.setAttribute("aria-label",`Enlarge ${photo.alt||"product photo"}`);photo.addEventListener("click",()=>open(photo));photo.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();open(photo);}});}
 }
 const menu = document.getElementById("au-menu");
+// Trusted parent code also binds these controls in sandboxed editor/wizard frames.
+// No scripts or form submissions need to be enabled inside those frames.
+export function attachAuraSearch(doc, {products} = {}) {
+  const searchOpener = doc.querySelector("[data-search-open]");
+  const searchDialog = doc.getElementById(searchOpener?.getAttribute("aria-controls") || "");
+  if (!searchOpener || !searchDialog || searchOpener.dataset.searchBound) return;
+  searchOpener.dataset.searchBound = "true";
+  let overflow = "";
+  searchOpener.addEventListener("click", () => {
+    if (searchDialog.open) return;
+    const frameMenu = doc.getElementById("au-menu");
+    if (frameMenu && !frameMenu.hidden) {
+      frameMenu.hidden = true;
+      doc.querySelector("[data-menu-open]")?.setAttribute("aria-expanded","false");
+      doc.body.style.overflow = "";
+    }
+    overflow = doc.body.style.overflow;doc.body.style.overflow = "hidden";
+    searchDialog.showModal();searchDialog.querySelector("input")?.focus();
+  });
+  searchDialog.querySelector("[data-search-close]")?.addEventListener("click",()=>searchDialog.close());
+  searchDialog.addEventListener("click",event=>{if(event.target===searchDialog)searchDialog.close();});
+  searchDialog.addEventListener("close",()=>{doc.body.style.overflow=overflow;searchOpener.focus();});
+  if (Array.isArray(products)) {
+    const results = doc.createElement("ul");
+    results.className="au-search-results";results.setAttribute("aria-live","polite");
+    searchDialog.append(results);
+    const search = ()=>{
+      results.replaceChildren();
+      const query=searchDialog.querySelector("input").value.trim().toLocaleLowerCase();
+      const matches=products.filter(product=>String(product.title||"").toLocaleLowerCase().includes(query));
+      for(const product of matches.slice(0,30)){const item=doc.createElement("li");item.textContent=String(product.title||"");results.append(item);}
+      if(!matches.length){const item=doc.createElement("li");item.textContent="No matching products.";results.append(item);}
+    };
+    const form=searchDialog.querySelector("form"), button=form?.querySelector('[type="submit"]'), input=searchDialog.querySelector("input");
+    // Sandboxed forms are blocked before a submit event is dispatched.
+    // Use explicit controls in previews; live stores retain their native GET form.
+    if(button){button.type="button";button.addEventListener("click",search);}
+    input?.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();search();}});
+    form?.addEventListener("submit",event=>event.preventDefault());
+  }
+}
+attachAuraSearch(document);
 const opener = document.querySelector("[data-menu-open]");
 function setMenu(open) {
   if (!menu) return;

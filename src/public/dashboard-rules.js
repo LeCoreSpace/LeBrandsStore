@@ -1,4 +1,9 @@
 import { INDIAN_STATES, commerceError } from "./commerce-rules.js";
+export function accountIdentity(user = {}) {
+  const name = String(user?.name || user?.email || "Account").replace(/[\u200B-\u200D\uFEFF]/g,"").trim().normalize("NFC");
+  const initial = [...new Intl.Segmenter(undefined,{granularity:"grapheme"}).segment(name)][0]?.segment || "A";
+  return {name, initial:initial.toLocaleUpperCase()};
+}
 
 export const stateName = (code) => INDIAN_STATES.find((s) => s.code === String(code))?.name || String(code || "");
 export function indianDate(value) {

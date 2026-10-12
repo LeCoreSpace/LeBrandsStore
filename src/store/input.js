@@ -76,8 +76,8 @@ export function productPatch(value) {
       throw badInput("Enter a valid whole amount.", { [key]: "Use a valid amount. Prices must have no more than two decimal places." });
     }
     if (key === "gst_rate") {
-      if (val === null || [...CURRENT_GST_RATES,...LEGACY_GST_RATES].includes(val)) { result[key] = val; continue; }
-      throw badInput("Choose a GST rate.");
+      if ([...CURRENT_GST_RATES,...LEGACY_GST_RATES].includes(val)) { result[key] = val; continue; }
+      throw badInput("Choose a GST rate explicitly.", {gst_rate:"Choose a GST rate explicitly."});
     }
     if (key === "tags") {
       if (!Array.isArray(val) || val.length > 10) throw badInput("Use at most 10 tags.");

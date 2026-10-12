@@ -150,9 +150,9 @@ export function renderHome() {
             </div>
             <div class="m-hs-copy"><strong>Catalogue and collections.</strong><p>Add products with photos and prices, and group them into collections on your storefront. Catalogue display is available. Advanced collections: Coming soon.</p></div>
           </article>
-          <article class="m-hs-slide" data-hs-slide data-hs-line="COD orders, from placed to delivered." role="group" aria-roledescription="slide" aria-label="2 of 6: Cash on delivery orders" hidden>
+          <article class="m-hs-slide" data-hs-slide data-hs-line="COD orders, from placed to delivered." role="group" aria-roledescription="slide" aria-label="2 of 6: Cash on Delivery orders" hidden>
             <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
-              <div class="m-hs-order"><span>Order 1042 <em>Sample</em></span><span>Rs. 1,852.20</span><span class="m-pill">Cash on delivery</span></div>
+              <div class="m-hs-order"><span>Order 1042 <em>Sample</em></span><span>Rs. 1,852.20</span><span class="m-pill">Cash on Delivery</span></div>
               <svg viewBox="0 0 300 40" class="m-hs-art m-hs-track" fill="none"><path class="m-draw" pathLength="1" d="M30 20H150H270"/><circle cx="30" cy="20" r="6"/><circle cx="150" cy="20" r="6"/><circle cx="270" cy="20" r="6"/><circle class="m-dot" cx="30" cy="20" r="3.5"/></svg>
               <div class="m-hs-steps"><span>Placed</span><span>Packed</span><span>Delivered</span></div>
             </div>
@@ -194,7 +194,7 @@ export function renderHome() {
         </div>
         <p class="m-hs-live" data-hs-live aria-live="polite" aria-atomic="true"></p>
         <div class="m-hs-notifications" aria-hidden="true">
-          <div class="m-hs-toast m-hs-toast-a"><i></i><span><b>New order</b>Cash on delivery, Rs. 1,852.20. Sample.</span></div>
+          <div class="m-hs-toast m-hs-toast-a"><i></i><span><b>New order</b>Cash on Delivery, Rs. 1,852.20. Sample.</span></div>
           <div class="m-hs-toast m-hs-toast-b"><i></i><span><b>Invoice ready</b>CGST and SGST split. Sample.</span></div>
         </div>
       </div>
@@ -253,7 +253,7 @@ export function renderHome() {
         </div>
         <p class="m-craft-live" data-promise-live aria-live="polite" aria-atomic="true"></p>
       </div>
-      <p class="m-clarification m-reveal">Your own domain is coming soon. Cash on delivery is available today.</p>
+      <p class="m-clarification m-reveal">Your own domain is coming soon. Cash on Delivery is available today.</p>
     </div>
   </section>
 
@@ -292,7 +292,7 @@ export function renderHome() {
           </article>
           <article class="m-craft-slide" data-craft-slide role="group" aria-roledescription="slide" aria-label="2 of 4: The checkout">
             <div class="m-craft-media">${imageMarkup(MARKETING_MEDIA.checkout)}${MARKETING_MEDIA.checkout.caption ? `<span class="m-media-caption">${MARKETING_MEDIA.checkout.caption}</span>` : ""}</div>
-            <div class="m-craft-copy"><span class="m-craft-count">02 <i>/ 04</i></span><h3>The checkout.</h3><p>Cash on delivery with built-in fraud protection, COD limits and order tracking for your customers.</p><p class="m-clarification">Cash on delivery is the only payment option available today.</p></div>
+            <div class="m-craft-copy"><span class="m-craft-count">02 <i>/ 04</i></span><h3>The checkout.</h3><p>Cash on Delivery with built-in fraud protection, COD limits and order tracking for your customers.</p><p class="m-clarification">Cash on Delivery is the only payment option available today.</p></div>
           </article>
           <article class="m-craft-slide" data-craft-slide role="group" aria-roledescription="slide" aria-label="3 of 4: The back office">
             <div class="m-craft-media">${imageMarkup(MARKETING_MEDIA.dashboard)}${MARKETING_MEDIA.dashboard.caption ? `<span class="m-media-caption">${MARKETING_MEDIA.dashboard.caption}</span>` : ""}</div>

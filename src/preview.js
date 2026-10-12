@@ -170,6 +170,8 @@ export default {
         body=exampleMedia(renderAura(data,{preview:true,commerce:true,readOnly:true}));
       }else if(["collection","product","cart"].includes(view)){
         body=exampleMedia(renderAura(data,{page:view,productId:data.products[0]?.id,preview:true,commerce:true,readOnly:true}));
+      }else if(view==="confirmation"){
+        body=exampleMedia(renderAura(data,{page:"confirmation",commerce:true,readOnly:true,order:data.orders[0]}));
       }else if(view==="checkout"){
         body=exampleMedia(renderAura(data,{page:"checkout",commerce:true,preview:true,readOnly:false,storeKey:EXAMPLE_STORE_ID}));
       }else if(view==="dashboard"){

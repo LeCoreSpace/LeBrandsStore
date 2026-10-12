@@ -1,3 +1,7 @@
+.lb-app small:not(.lb-status),.lb-app .lb-data-note,.lb-app .lb-chart-scope,.lb-app .lb-form-hint,.lb-app .lb-store-switch-copy small,.lb-app .lb-muted{color:var(--lb-muted)}
+.lb-account-menu .lb-account{display:inline-flex;align-items:center;gap:8px;min-width:0}
+.lb-account-menu .lb-account-avatar{flex:0 0 28px;overflow:visible;text-indent:0;line-height:1}
+.lb-account-menu .lb-user{display:block;min-width:0;padding:2px 0;text-indent:0;line-height:1.4}
 .lb-app [hidden] { display:none !important; }
 .lb-order-form select { min-height:40px; padding:8px; border:1px solid #d1d4c9; }
 :root {

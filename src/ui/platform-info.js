@@ -24,7 +24,7 @@ export const PLATFORM_INFO = {
       ] },
       { title: "Pricing, payments and integrations", paragraphs: [
         'LeBrands.Store markets zero commission on sales. Platform subscription pricing is being finalised; contact us through the <a href="/pricing">pricing page</a> for the terms applicable to your brand.',
-        "Cash on delivery is available. Razorpay payments with your own account and logistics partner integrations can be discussed with the team. Payment and logistics providers have their own terms and may charge their own fees.",
+        "Cash on Delivery is available. Razorpay payments with your own account and logistics partner integrations can be discussed with the team. Payment and logistics providers have their own terms and may charge their own fees.",
         "Do not assume that an integration is connected until its setup has been confirmed for your store.",
       ] },
       { title: "Responsible use", paragraphs: [

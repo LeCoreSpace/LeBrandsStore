@@ -2,7 +2,7 @@ import { escapeHtml, layout } from "./layout.js";
 import { LE_BRANDS_LOGO, LE_BRANDS_MARK } from "./brand.js";
 import { validateProduct } from "../public/validation.js";
 import { CURRENT_GST_RATES, INDIAN_STATES, registeredBusinessState, registeredSupplierErrors, defaultInvoicePrefix, formatPhone } from "../public/commerce-rules.js";
-import { statusLabel, stateName, indianDate, allowedTransitions, timelineSentence } from "../public/dashboard-rules.js";
+import { statusLabel, stateName, indianDate, allowedTransitions, timelineSentence, accountIdentity } from "../public/dashboard-rules.js";
 import { paymentState, fulfilmentState } from "../public/dashboard-view-model.js";
 import { dashboardIcon } from "./dashboard-icons.js";
 
@@ -53,6 +53,7 @@ function documentPage(view, data, user, body) {
 }
 
 function header(data, user, view) {
+  const identity = accountIdentity(user);
   // Inline navigation icons use Lucide path data. Lucide is ISC licensed, copyright Lucide Contributors.
   const store = obj(data.store);
   const id = encodeURIComponent(store.store_id || "");
@@ -84,7 +85,7 @@ function header(data, user, view) {
       <header class="lb-header">
         <button type="button" class="lb-icon-button lb-menu-toggle" data-menu-toggle aria-label="Open navigation" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
         <form class="lb-global-search" role="search" data-global-search><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" role="combobox" aria-label="Search orders, products and customers" aria-controls="global-search-results" aria-expanded="false" aria-autocomplete="list" placeholder="Search orders, products, customers…" autocomplete="off" data-search-input><kbd>⌘ K</kbd><div id="global-search-results" class="lb-search-results" data-search-results role="region" aria-label="Search results" hidden></div></form>
-        <div class="lb-header-right"><button type="button" class="lb-icon-button" data-help-button aria-label="Help" title="Help"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3m.1 4h.01"/></svg></button><details class="lb-account-menu" data-account-menu><summary class="lb-account"><span class="lb-account-avatar">${esc(String(user?.name || user?.email || "A").trim().slice(0,1).toUpperCase())}</span><span class="lb-user">${esc(user?.name || user?.email || "Account")}</span></summary><div class="lb-account-panel"><strong>${esc(user?.name || user?.email || "Account")}</strong><form method="post" action="/logout"><button type="submit" class="lb-logout">Log out</button></form></div></details></div>
+        <div class="lb-header-right"><button type="button" class="lb-icon-button" data-help-button aria-label="Help" title="Help"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3m.1 4h.01"/></svg></button><details class="lb-account-menu" data-account-menu><summary class="lb-account"><span class="lb-account-avatar" aria-hidden="true">${esc(identity.initial)}</span><span class="lb-user">${esc(identity.name)}</span></summary><div class="lb-account-panel"><strong>${esc(identity.name)}</strong><form method="post" action="/logout"><button type="submit" class="lb-logout">Log out</button></form></div></details></div>
       </header>
       <div class="lb-help-popover" data-help-popover hidden><strong>LeBrands support</strong><span>For workspace help, contact your store administrator.</span></div>`;
 }
@@ -129,7 +130,7 @@ function overview(data) {
   }).join("") : `<div class="lb-clear-state"><strong>Nothing needs attention</strong><p>Orders awaiting your next step will be listed here.</p></div>`;
   const periodControl = `<div class="lb-period-switch" data-home-range><label><span>Date range</span><select data-chart-range aria-label="Date range"><option value="today">Today</option><option value="7" ${period === 7 ? "selected" : ""}>Last 7 days</option><option value="30" ${period === 30 ? "selected" : ""}>Last 30 days</option><option value="custom">Custom range</option></select></label><label data-custom-date hidden><span>From</span><input type="date" data-chart-from></label><label data-custom-date hidden><span>To</span><input type="date" data-chart-to></label><button type="button" class="lb-button lb-button-small lb-button-outline" data-chart-apply hidden>Apply</button></div>`;
   const metrics = [
-    ["Total sales", money(o.revenue_paise), `Authoritative last ${period} days`],
+     ["Total sales", money(o.revenue_paise), `Last ${period} days`],
     ["Orders", Number(o.orders || 0).toLocaleString("en-IN"), `Last ${period} days`],
     ["Average order value", Number(o.orders || 0) ? money(o.aov_paise) : "–", "Based on recorded orders"],
     ["Online store sessions", `<span title="Session analytics are not available yet">–</span>`, "Session data unavailable"],
@@ -137,9 +138,9 @@ function overview(data) {
   return `${pageHeading("", "Home", "", buttonLink(`/stores/${storeId}/orders`, "View orders"))}
     ${actionError(data)}
     <section class="lb-card lb-setup-card"><div class="lb-card-heading lb-card-heading-toggle"><span><h2>Set up your store</h2><small>${setupDone} of ${checks.length} complete</small></span><button type="button" data-setup-toggle aria-expanded="true">Collapse</button></div><div data-setup-content>${setup}</div></section>
-    <div class="lb-home-toolbar">${periodControl}<small class="lb-data-note" data-summary-scope>Summary figures use the official ${period}-day overview totals. Sales exclude cancelled, refunded and returned orders.</small></div>
+    <div class="lb-home-toolbar">${periodControl}<small class="lb-data-note" data-summary-scope>Last ${period} days. Sales exclude cancelled, refunded and returned orders.</small></div>
     <div class="lb-metric-grid">${metrics.map(([label, value, note], i) => `<article class="lb-metric"><div class="lb-metric-label">${esc(label)}</div><strong data-home-metric="${i}">${value}</strong><small data-home-metric-note="${i}">${esc(note)}</small></article>`).join("")}</div>
-    <section class="lb-card lb-chart-card"><div class="lb-card-heading"><div><h2>Sales over time</h2><small data-chart-caption>Loading sales from recorded orders</small></div></div><div class="lb-chart" data-sales-chart aria-label="Sales over time chart"><div class="lb-chart-skeleton" aria-hidden="true"></div></div><div class="lb-chart-table" data-chart-table></div><p class="lb-chart-scope" data-chart-scope>Chart is based on loaded orders, not a complete sales ledger.</p></section>
+    <section class="lb-card lb-chart-card"><div class="lb-card-heading"><div><h2>Sales over time</h2><small data-chart-caption>Loading sales…</small></div></div><div class="lb-chart" data-sales-chart aria-label="Sales over time chart"><div class="lb-chart-skeleton" aria-hidden="true"></div></div><div class="lb-chart-table" data-chart-table></div><p class="lb-chart-scope" data-chart-scope>Sales exclude cancelled, returned and refunded orders.</p></section>
     <h2 class="lb-section-heading">Things to do</h2>
     <div class="lb-overview-grid"><div class="lb-overview-main">
       <div class="lb-split">${card("Top products", `<div class="lb-rank-list">${rankRows}</div>`)}${card("Orders by source", `<div class="lb-source-list">${sourceRows}</div>`)}</div>
@@ -197,7 +198,7 @@ function orderDetail(data) {
     const actor = t.actor_name || (t.actor_type === "system" ? "Customer checkout" : "Team member");
     return `<li><span class="lb-timeline-dot"></span><div><strong>${esc(action)}</strong><small>${esc(actor)} · ${esc(date(t.created_at))}</small></div></li>`;
   }).join("") : `<li class="lb-muted">No timeline events recorded.</li>`;
-  const timelineMarkup = `<ol class="lb-timeline">${events}</ol><div class="lb-timeline-comment"><label for="order-timeline-comment">Add a timeline comment</label><textarea id="order-timeline-comment" rows="2" disabled placeholder="Timeline comments are not available"></textarea><button type="button" class="lb-button lb-button-outline lb-button-small" disabled title="Comments are not supported by the current dashboard API">Add comment</button><small>Comments cannot be saved in the current dashboard.</small></div>`;
+  const timelineMarkup = `<ol class="lb-timeline">${events}</ol>`;
   return `${pageHeading("", esc(o.order_number || "Order details"), `Placed ${date(o.created_at)}`, buttonLink(`/stores/${id}/orders`, "Back to orders", "quiet"))}
     ${actionError(data)}<div class="lb-detail-head">${statusPill(o.status, o.payment_method)}${payment}${statusActions}</div>
     <div class="lb-detail-grid"><div class="lb-detail-primary">${card("Items", `<div class="lb-table-wrap"><table class="lb-table lb-items"><thead><tr><th>Product</th><th>Qty</th><th>Unit price</th><th>Line total</th></tr></thead><tbody>${itemRows}</tbody></table></div>`)}${card("Payment summary",tax)}
@@ -224,7 +225,7 @@ function productEditor(data, isNew) {
   const storeId = encodeURIComponent(data.store?.store_id || "");
   const paramsId = data.product?.id || data.id || data.product_id || "";
   const products = list(data.draft?.products || data.products);
-  const product = obj(data.product || products.find(p => String(p.id) === String(paramsId)));
+  const product = isNew ? {} : obj(data.product || products.find(p => String(p.id) === String(paramsId)));
   const id = isNew ? "" : String(product.id || paramsId);
   const isArchived = product.status === "archived" || Boolean(product.archived_at);
   const errors = product.title || product.id ? validateProduct(product) : {};
@@ -244,7 +245,7 @@ function productEditor(data, isNew) {
        <section class="lb-side-box"><h2>Inventory</h2><label class="lb-field">SKU<input name="sku" maxlength="80" value="${esc(product.sku || "")}"></label><label class="lb-field">Stock quantity<input name="stock" type="number" min="0" step="1" value="${product.stock == null ? "" : esc(product.stock)}" placeholder="Leave blank for always in stock"></label></section>
     </div><aside class="lb-form-side">
        <section class="lb-side-box"><h2>Status &amp; category</h2><label class="lb-field">Listing status<input value="${esc(isArchived ? "Archived" : product.status || (isNew ? "New listing" : "Active"))}" disabled></label><label class="lb-field">Product category<input value="Unavailable" disabled><small>Product categories are not supported by the current dashboard API.</small></label></section>
-      <section class="lb-side-box"><h2>Tax</h2><label class="lb-field">HSN code<input name="hsn_code" maxlength="8" value="${esc(product.hsn_code || "")}" placeholder="4, 6 or 8 digits"></label><label class="lb-field">GST rate<select name="gst_rate">${rates.map(rate => `<option value="${rate}" ${Number(product.gst_rate) === rate ? "selected" : ""}>${rate}%${CURRENT_GST_RATES.includes(rate) ? "" : " · legacy rate"}</option>`).join("")}</select></label>${legacy ? `<p class="lb-legacy-notice">This product uses a legacy ${esc(product.gst_rate)}% GST rate. Confirm the correct slab before updating.</p>` : ""}</section>
+      <section class="lb-side-box"><h2>Tax</h2><label class="lb-field">HSN code<input name="hsn_code" maxlength="8" value="${esc(product.hsn_code || "")}" placeholder="4, 6 or 8 digits"></label><label class="lb-field">GST rate<select name="gst_rate" required><option value="" ${product.gst_rate==null?"selected":""}>Choose a GST rate</option>${rates.map(rate => `<option value="${rate}" ${product.gst_rate!=null&&Number(product.gst_rate) === rate ? "selected" : ""}>${rate===0?"0% / Exempt":`${rate}%`}${CURRENT_GST_RATES.includes(rate) ? "" : " · legacy rate"}</option>`).join("")}</select></label><p class="lb-muted" data-product-gst-warning role="status" hidden></p>${legacy ? `<p class="lb-legacy-notice">This product uses a legacy ${esc(product.gst_rate)}% GST rate. Confirm the correct slab before updating.</p>` : ""}</section>
        ${!isNew && !isArchived ? `<section class="lb-side-box"><h2>Stock adjustment</h2><label class="lb-field">Quantity change<input type="number" step="1" name="stock_delta" value="1"></label><label class="lb-field">Reason<input name="stock_reason" maxlength="200" placeholder="Stock count correction"></label><button type="button" class="lb-button lb-button-outline lb-full" data-stock-adjust>Adjust stock</button></section>` : ""}
     </aside></div>
     <div class="lb-form-error" role="alert" data-form-error ${Object.keys(errors).length ? "" : "hidden"}>${Object.values(errors).map(esc).join(" ")}</div>

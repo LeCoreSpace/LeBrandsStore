@@ -1,4 +1,4 @@
-import { validateProduct } from "/assets/validation.js";
+import { validateProduct, productGSTWarning } from "/assets/validation.js";
 import { statusLabel, stateName, indianDate, allowedTransitions } from "/assets/dashboard-rules.js";
 import { registeredSupplierErrors, validInvoicePrefix, INDIAN_STATES } from "/assets/commerce-rules.js";
 import { matchesOrderTab, loadedSalesSummary, paymentState } from "/assets/dashboard-view-model.js";
@@ -205,10 +205,22 @@ function productPayload(form) {
     tags: String(fd.get("tags") || "").split(",").map(tag => tag.trim()).filter(Boolean).slice(0, 10),
     sku: String(fd.get("sku") || "").trim(),
     hsn_code: String(fd.get("hsn_code") || "").trim(),
-    gst_rate: Number(fd.get("gst_rate")),
+    gst_rate: fd.get("gst_rate") === "" || fd.get("gst_rate") == null ? null : Number(fd.get("gst_rate")),
     ...(!isNewForm(form) ? { expected_stock: form.dataset.expectedStock === "null" ? null : Number(form.dataset.expectedStock) } : {}),
   };
 }
+function updateGSTWarning(form) {
+  const warning = form.querySelector("[data-product-gst-warning]");
+  if (!warning) return;
+  const rate = form.querySelector('[name="gst_rate"]')?.value;
+  warning.textContent = productGSTWarning({gst_rate:rate === "" ? null : Number(rate),hsn_code:form.querySelector('[name="hsn_code"]')?.value});
+  warning.hidden = !warning.textContent;
+}
+document.querySelectorAll("[data-product-form]").forEach(form => {
+  updateGSTWarning(form);
+  form.addEventListener("input", () => updateGSTWarning(form));
+  form.addEventListener("change", () => updateGSTWarning(form));
+});
 function isNewForm(form) { return form.dataset.new === "true"; }
 function updateSaveForUploads(form) {
   const submit = form?.querySelector('button[type="submit"]');
@@ -547,7 +559,8 @@ function drawSalesChart(orders,from,to,hitLimit){
   const points=Array.from({length:count},(_,index)=>({date:shiftIsoDate(from,index),total:0,orders:0}));
   const indexByDate=new Map(points.map((point,index)=>[point.date,index]));
   for(const order of orders){
-    const datePart=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(order.created_at));
+    const parts=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(order.created_at)).map(part=>[part.type,part.value]));
+    const datePart=`${parts.year}-${parts.month}-${parts.day}`;
     const index=indexByDate.get(datePart);
     if(index===undefined||["cancelled","returned","rto","refunded"].includes(order.status))continue;
     points[index].total+=Number(order.total_paise||0);points[index].orders+=1;
@@ -563,7 +576,7 @@ function drawSalesChart(orders,from,to,hitLimit){
   chart.innerHTML=orders.length?`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Daily recorded order sales from ${esc(chartLabel(from,true))} to ${esc(chartLabel(to,true))}">${grid}<path class="lb-chart-line" d="${path}"/>${dots}${labels}</svg>`:`<div class="lb-chart-empty">No recorded orders in this date range.</div>`;
   table.innerHTML=`<table><caption class="lb-sr-only">Daily recorded sales and order counts</caption><thead><tr><th>Date</th><th>Sales</th><th>Orders</th></tr></thead><tbody>${points.map(point=>`<tr><th scope="row">${esc(chartLabel(point.date,true))}</th><td>${esc(chartMoney(point.total))}</td><td>${point.orders.toLocaleString("en-IN")}</td></tr>`).join("")}</tbody></table>`;
   if(caption)caption.textContent=`${chartLabel(from,true)} to ${chartLabel(to,true)} · ${orders.length.toLocaleString("en-IN")} orders loaded`;
-  if(scope)scope.textContent=hitLimit?"The chart is based on the 500 most recent orders returned for this range. Older orders may be omitted; this is not a complete sales ledger.":"The chart is derived from orders returned by the dashboard list API; it is not an accounting ledger. Revenue omits cancelled, returned and refunded orders.";
+  if(scope)scope.textContent=hitLimit?"Showing the 500 most recent orders. Older orders are not included.":"Sales exclude cancelled, returned and refunded orders.";
 }
 const rangeSelect=document.querySelector("[data-chart-range]");
 if(rangeSelect){
@@ -581,9 +594,11 @@ if(rangeSelect){
     const daysInRange=Math.floor((new Date(`${to}T12:00:00+05:30`)-new Date(`${from}T12:00:00+05:30`))/86400000)+1;
     if(daysInRange>366){if(chart)chart.innerHTML='<div class="lb-chart-empty">Choose a custom range of 366 days or less.</div>';const table=document.querySelector("[data-chart-table]"),caption=document.querySelector("[data-chart-caption]"),scope=document.querySelector("[data-chart-scope]");if(table)table.replaceChildren();if(caption)caption.textContent="Daily chart unavailable for this range.";if(scope)scope.textContent="Choose a smaller date range to review daily order activity.";return;}
     try{
-      const response=await fetch(`${api}/orders?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,{credentials:"same-origin",headers:{Accept:"application/json"}});
+      const response=await fetch(`${api}/orders?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,{credentials:"same-origin",headers:{Accept:"application/json"},signal:AbortSignal.timeout(15000)});
       if(!response.ok)throw new Error("Sales chart could not load.");
-      const data=await response.json(),orders=Array.isArray(data.orders)?data.orders:[];
+      const data=await response.json();
+      if (!Array.isArray(data.orders)) throw new Error("Sales could not be loaded. Please retry.");
+      const orders=data.orders;
       if(requestId!==activeChartRequest)return;
       drawSalesChart(orders,from,to,orders.length>=500);
        if(["today","custom"].includes(rangeSelect.value)){
@@ -601,7 +616,7 @@ if(rangeSelect){
            ?"Summary and chart cover only the 500 most recent orders in this range, not all sales."
            :"Summary covers the selected range from recorded orders. Sales exclude cancelled, refunded and returned orders.";
        }
-    }catch(error){if(requestId!==activeChartRequest)return;if(chart)chart.innerHTML=`<div class="lb-chart-empty">${esc(error.message||"Sales chart could not load.")} <button type="button" data-chart-retry>Retry</button></div>`;}
+    }catch(error){if(requestId!==activeChartRequest)return;if(chart)chart.innerHTML=`<div class="lb-chart-empty" role="alert">Sales could not be loaded. Please retry. <button type="button" data-chart-retry>Retry</button></div>`;const caption=document.querySelector("[data-chart-caption]");if(caption)caption.textContent="Sales unavailable";}
   };
   rangeSelect.addEventListener("change",()=>{
     showCustom();
@@ -623,14 +638,15 @@ if(rangeSelect){
 
 const todayInvoices=document.querySelector("[data-today-invoices]");
 if(todayInvoices){
-  fetch(`${api}/invoices`,{credentials:"same-origin",headers:{Accept:"application/json"}})
+  fetch(`${api}/invoices`,{credentials:"same-origin",headers:{Accept:"application/json"},signal:AbortSignal.timeout(15000)})
     .then(response=>{if(!response.ok)throw new Error("Invoice records could not be loaded.");return response.json();})
     .then(data=>{
+      if (!Array.isArray(data.invoices)) throw new Error("Invoice records could not be loaded.");
       const today=indiaToday();
       const issued=(Array.isArray(data.invoices)?data.invoices:[]).filter(invoice=>{
         if(!invoice.issued_at)return false;
-        const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(invoice.issued_at));
-        return parts===today&&["issued","active"].includes(String(invoice.status||"issued").toLowerCase());
+        const values=Object.fromEntries(new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Kolkata",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date(invoice.issued_at)).map(part=>[part.type,part.value]));
+        return `${values.year}-${values.month}-${values.day}`===today&&["issued","active"].includes(String(invoice.status||"issued").toLowerCase());
       });
       const target=dashboardHref("Invoices");
       todayInvoices.innerHTML=`<p>Invoices issued today</p>${issued.length?issued.slice(0,5).map(invoice=>`<a href="${esc(target)}"><strong>${esc(invoice.invoice_number||"Invoice")}</strong><small>${esc(invoice.order_number||"Order")} · ${esc(chartMoney(invoice.total_paise))}</small></a>`).join(""):`<span>No invoices issued today</span>`}`;

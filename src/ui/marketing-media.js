@@ -43,7 +43,7 @@ export const MARKETING_MEDIA = Object.freeze({
     sizes: "(max-width: 600px) 92vw, 44vw",
     width: 780,
     height: 1688,
-    alt: "Fictional Example Studio cash on delivery checkout, a demo store screen and not an actual customer.",
+    alt: "Fictional Example Studio Cash on Delivery checkout, a demo store screen and not an actual customer.",
     caption: "Example store"
   }),
   dashboard: Object.freeze({

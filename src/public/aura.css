@@ -1,3 +1,22 @@
+.au-search-results{list-style:none;padding:0;margin:18px 0 0}
+.au-search-results li{padding:12px 0;border-bottom:1px solid var(--line);font:14px/1.5 var(--body)}
+@media(max-width:640px){
+  .aura-header.au-header,.aura-header.au-header.is-center{display:flex;width:100%;box-sizing:border-box;gap:8px;padding:0 16px}
+  .aura-header.au-header .au-brand:is(a){order:0;flex:1 1 0;min-width:0;overflow:hidden}
+  .aura-header.au-header .au-actions:is(div){order:1;flex:0 0 auto;gap:4px}
+  .aura-header.au-header .au-brand .au-wordmark{display:block;max-width:100%;font-size:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .aura-header.au-header .au-icon-button{min-width:40px;padding:8px}
+  .aura-header.au-header .au-menu-btn{padding:8px;min-height:44px}
+  .aura-header.au-header .au-nav{display:none}
+}
+.au-icon-button{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:8px;border:0;background:transparent;color:inherit;cursor:pointer}
+.au-icon-button svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.au-search-dialog{width:min(620px,calc(100% - 32px));border:1px solid var(--line);border-radius:14px;padding:24px;background:var(--paper);color:var(--ink);box-shadow:0 24px 80px #0003}
+.au-search-dialog::backdrop{background:#0008;backdrop-filter:blur(5px)}
+.au-search-head{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}
+.au-search-head h2{margin:0;font-size:24px}
+.au-search-dialog .au-search{display:flex!important;width:100%;gap:10px}
+.au-search-dialog .au-search input{flex:1;min-width:0;width:auto}
 @font-face{font-family:"Instrument Sans";src:url(/assets/instrument-sans-latin.woff2) format("woff2");font-weight:400 700;font-display:swap}
 @font-face{font-family:"Aura Editorial";src:url(/assets/aura-editorial.ttf) format("truetype");font-weight:100 900;font-style:normal;font-display:swap}
 @font-face{font-family:"Aura Classic";src:url(/assets/aura-classic.ttf) format("truetype");font-weight:400;font-style:normal;font-display:swap}

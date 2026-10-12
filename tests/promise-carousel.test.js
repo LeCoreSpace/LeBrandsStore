@@ -18,7 +18,7 @@ test("three promises remain unique slides after the storefront and discovery hig
     "We never market to your customers.",
   ]);
   assert.match(html, /id="promises"/);
-  assert.match(html, /Your own domain is coming soon\. Cash on delivery is available today\./);
+  assert.match(html, /Your own domain is coming soon\. Cash on Delivery is available today\./);
   assert.match(css, /\.m-promise:not\(\.is-enhanced\) \.m-promise-stage \{ display: block/);
   assert.match(css, /\.m-promise:not\(\.is-enhanced\) \.m-promise-controls \{ display: none/);
   assert.match(css, /section\.m-hero \{[^}]*background-image: var\(--m-dark-grad\)/);

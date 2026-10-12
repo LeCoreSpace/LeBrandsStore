@@ -1,4 +1,5 @@
 import { renderAura } from "/assets/aura.js";
+import { attachAuraSearch } from "/assets/aura-ui.js";
 import { SECTION_SCHEMAS, defaultPageLayouts, safeLayoutLink } from "/assets/aura-layout.js";
 import { uploadAuraImage } from "/assets/aura-upload.js";
 import * as S from "/assets/editor-state.js";
@@ -208,8 +209,8 @@ function renderSections() {
     const required = S.isRequired(section.type, current), hidden = section.settings.enabled === false;
     const btn = (act, label, text, disabled) => `<button type="button" class="ed-ico" data-act="${act}" data-id="${esc(section.id)}" aria-label="${esc(label)} ${esc(S.sectionName(section))}" ${disabled || ro ? "disabled" : ""}>${text}</button>`;
     return `<li class="ed-sec ${hidden ? "is-hidden" : ""}" data-drag-group="sections" data-drag-index="${i}" ${ro ? "" : 'draggable="true"'} aria-current="${section.id === selectedId}">
-      <span class="ed-grip" aria-hidden="true" title="Drag to reorder">::</span>
-      <button type="button" class="ed-sec-name" data-select="${esc(section.id)}">${esc(S.sectionName(section))}<small>${hidden ? "Hidden" : esc(sectionSummary(section))}</small></button>
+      <button type="button" class="ed-grip" data-reorder-handle="${esc(section.id)}" draggable="${!ro}" ${ro ? "disabled" : ""} aria-label="Reorder ${esc(S.sectionName(section))}" title="Drag to reorder, or use Arrow Up and Arrow Down">::</button>
+      <button type="button" class="ed-sec-name" data-select="${esc(section.id)}">${hidden ? '<svg class="ed-eye-off" viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10 5c5-1 9 3 12 7-1 2-2 3-4 5M6 6c-2 1-4 3-5 6 3 5 7 8 12 7 1 0 2 0 3-1M9 9a4 4 0 0 0 6 6"/></svg>' : ""}${esc(S.sectionName(section))}<small>${hidden ? "Hidden" : esc(sectionSummary(section))}</small></button>
       <div class="ed-sec-actions">${btn("sec-up", "Move up", "Up", !S.canMoveSection(layout, i, -1))}${btn("sec-down", "Move down", "Down", !S.canMoveSection(layout, i, 1))}${required ? '<span class="ed-lock">Required</span>' : `${btn("sec-toggle", hidden ? "Show" : "Hide", hidden ? "Show" : "Hide", false)}${btn("sec-dup", "Duplicate", "Copy", ["announcement", "commerce"].includes(section.type) || layout.length >= S.MAX_SECTIONS)}${btn("sec-del", "Delete", "Delete", false)}`}</div></li>`;
   }).join("") || `<li class="ed-empty">This page has no sections.</li>`;
 }
@@ -437,6 +438,16 @@ function wireDrag(container) {
   });
 }
 wireDrag($("#ed-sections")); wireDrag($("#ed-props"));
+$("#ed-sections").addEventListener("keydown", event => {
+  const handle = event.target.closest("[data-reorder-handle]");
+  if (!handle || readOnly() || !["ArrowUp", "ArrowDown"].includes(event.key)) return;
+  event.preventDefault();
+  const id = handle.dataset.reorderHandle, from = layoutNow().findIndex(section => section.id === id);
+  const to = from + (event.key === "ArrowUp" ? -1 : 1);
+  if (!mutate(layout => S.moveSection(layout, from, to))) toast("That section cannot go there. Header and footer frame the page.");
+  else toast(`Moved ${S.sectionName(layoutNow()[to])} to position ${to + 1}.`);
+  $("#ed-sections").querySelector(`[data-reorder-handle="${CSS.escape(id)}"]`)?.focus();
+});
 
 // ---------- add section ----------
 const THUMB_KIND = { hero: "hero", gallery: "grid", craft: "grid", lookbook: "grid", "product-grid": "grid", "featured-collection": "grid", spotlight: "hero", press: "logos", trust: "logos", reviews: "quote" };
@@ -684,7 +695,7 @@ function renderPreview() {
   const layouts = Object.fromEntries(S.EDITABLE_PAGES.map(key => [key, S.pageLayout(pages[key])]));
   const settings = { ...(data.settings || {}) }; settings.brand_name = settings.brand_name || data.store?.name; settings.subdomain = settings.subdomain || data.store?.subdomain;
   let html;
-  try { html = renderAura({ ...data, settings, layouts }, { ...S.previewOptions(current), productId: data.products?.[0]?.id, preview: true, editorAnnotate: true, readOnly: true }); }
+  try { html = renderAura({ ...data, settings, layouts }, { ...S.previewOptions(current), productId: data.products?.[0]?.id, preview: true, embeddedPreview: true, editorAnnotate: true, readOnly: true }); }
   catch (error) { html = `<!doctype html><body style="font-family:sans-serif;padding:24px">Preview could not be drawn: ${esc(error.message)}</body>`; }
   frame.srcdoc = html.replace("</head>", `${PREVIEW_STYLE}</head>`);
 }
@@ -717,6 +728,7 @@ function startInline(el, info, section) {
 }
 function wirePreview() {
   const frame = $("#ed-preview"), doc = frame.contentDocument; if (!doc) return;
+  attachAuraSearch(doc,{products:data.products||[]});
   if (lastScroll) doc.scrollingElement.scrollTop = lastScroll;
   doc.querySelectorAll("[data-lb-section]").forEach(el => {
     const section = layoutNow().find(item => item.id === el.dataset.lbSection);
@@ -724,6 +736,7 @@ function wirePreview() {
   });
   markPreviewSelection(false);
   doc.addEventListener("click", event => {
+    if (event.target.closest("[data-search-open], .au-search-dialog")) return;
     const anchor = event.target.closest("a,button,form"); if (anchor) event.preventDefault();
     if (inlineActive && event.target.isContentEditable) return;
     const host = event.target.closest("[data-lb-section]"); if (!host || phone.matches) return;
