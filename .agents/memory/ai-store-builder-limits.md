@@ -48,3 +48,18 @@ and collection content. Progressive AI generation builds the shared templates
 once, while each page resolves its own entity data. Keep the template model and
 editor selection extensible so additional templates can be added later without
 replacing the default-template architecture.
+
+## Existing stores: no bulk backfill
+
+Upgrade the existing Aura template implementation. Do not bulk backfill
+existing stores to add the new sections or replace their layouts.
+Existing brands can access the new sections in the editor, use AI once
+when that phase is completed, then publish their updated draft.
+
+**Why:** The user explicitly requested no backfill for the existing brands.
+
+**How to apply:** Preserve existing store content and published layouts. New
+section availability is distinct from inserting sections into saved layouts.
+If template tables are introduced, existing stores must continue to work
+without pre-populated template rows; create store-specific draft records
+only through an explicit save or build action.
