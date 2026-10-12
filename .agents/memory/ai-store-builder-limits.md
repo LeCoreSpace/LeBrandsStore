@@ -37,9 +37,14 @@ collections follow the default collection template. Creating additional
 product/collection templates and assigning templates individually are
 scoped for later implementation.
 
+Reserve space/options for future template additions from the start, even
+though only the default product and collection templates are initially available.
+
 **Why:** The user proposed shared default templates rather than separately
 building the structure of every product and collection page.
 
 **How to apply:** Keep shared layout settings separate from individual product
 and collection content. Progressive AI generation builds the shared templates
-once, while each page resolves its own entity data.
+once, while each page resolves its own entity data. Keep the template model and
+editor selection extensible so additional templates can be added later without
+replacing the default-template architecture.
