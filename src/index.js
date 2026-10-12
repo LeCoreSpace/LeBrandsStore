@@ -75,7 +75,7 @@ export default {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
       const filename = url.pathname.slice("/assets/".length);
       const sectionAsset = ["sections/index.js", "sections/schema-helpers.js"].includes(filename) || Object.keys(SECTION_SCHEMAS).some(type => filename === `sections/${type}.schema.js`);
-      if (!sectionAsset && !["aura.js", "aura.css", "aura-sections.js", "aura-layout.js", "aura-ui.js", "aura-upload.js", "aura-editorial.ttf", "aura-classic.ttf", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
+      if (!sectionAsset && !["editor.js","editor.css","editor-state.js","gstin-ui.js","aura.js", "aura.css", "aura-sections.js", "aura-layout.js", "aura-ui.js", "aura-upload.js", "aura-editorial.ttf", "aura-classic.ttf", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
       if (!env.ASSETS) return new Response("Assets unavailable", { status: 503 });
       url.pathname = `/${filename}`;
       const asset = await env.ASSETS.fetch(new Request(url, request));

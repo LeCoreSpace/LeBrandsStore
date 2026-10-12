@@ -31,6 +31,7 @@ CREATE TABLE public.store_gstin_verifications (
   state text NOT NULL CHECK (state IN ('verified','unverified','blocked')),
   normalized jsonb,
   raw_response jsonb,
+  error_code text,
   verified_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
@@ -41,6 +42,40 @@ CREATE TABLE public.store_gstin_verifications (
 );
 CREATE INDEX store_gstin_verified_idx ON public.store_gstin_verifications
   (store_id,gstin,created_at DESC);
+CREATE TABLE public.gstin_lookup_attempts(
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(),store_id uuid NOT NULL REFERENCES public.stores(store_id),
+ created_at timestamptz NOT NULL DEFAULT now());
+CREATE INDEX gstin_lookup_quota_idx ON public.gstin_lookup_attempts(store_id,created_at);
+ALTER TABLE public.gstin_lookup_attempts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.gstin_lookup_attempts FORCE ROW LEVEL SECURITY;
+ALTER TABLE public.gstin_lookup_attempts OWNER TO postgres;
+REVOKE ALL ON public.gstin_lookup_attempts FROM PUBLIC,lebrands_app;
+GRANT SELECT ON public.gstin_lookup_attempts TO lebrands_app;
+CREATE POLICY gstin_quota_read ON public.gstin_lookup_attempts FOR SELECT TO lebrands_app
+ USING(store_id=NULLIF(current_setting('app.store_id',true),'')::uuid);
+CREATE FUNCTION public.reserve_gstin_lookup(p_store uuid) RETURNS jsonb
+ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
+ DECLARE minute_count integer;day_count integer;day_start timestamptz;
+ BEGIN
+  IF NULLIF(current_setting('app.store_id',true),'')::uuid IS DISTINCT FROM p_store THEN
+   RAISE EXCEPTION 'Store access denied' USING ERRCODE='42501';
+  END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('gstin:'||p_store::text,0));
+  day_start:=date_trunc('day',now() AT TIME ZONE 'Asia/Kolkata') AT TIME ZONE 'Asia/Kolkata';
+  SELECT count(*) FILTER(WHERE created_at>now()-interval '60 seconds'),
+   count(*) FILTER(WHERE created_at>=day_start) INTO minute_count,day_count
+   FROM public.gstin_lookup_attempts WHERE store_id=p_store;
+  IF minute_count>=3 OR day_count>=10 THEN
+   RETURN jsonb_build_object('allowed',false,'retry_after',
+    CASE WHEN day_count>=10 THEN ceil(extract(epoch FROM day_start+interval '1 day'-now())) ELSE 60 END);
+  END IF;
+  DELETE FROM public.gstin_lookup_attempts WHERE store_id=p_store AND created_at<now()-interval '2 days';
+  INSERT INTO public.gstin_lookup_attempts(store_id) VALUES(p_store);
+  RETURN '{"allowed":true}'::jsonb;
+ END $$;
+ALTER FUNCTION public.reserve_gstin_lookup(uuid) OWNER TO postgres;
+REVOKE ALL ON FUNCTION public.reserve_gstin_lookup(uuid) FROM PUBLIC,lebrands_app;
+GRANT EXECUTE ON FUNCTION public.reserve_gstin_lookup(uuid) TO lebrands_app;
 ALTER TABLE public.store_gstin_verifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.store_gstin_verifications FORCE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.store_gstin_verifications FROM PUBLIC,lebrands_app;
@@ -92,6 +127,8 @@ BEGIN
   FOR role_name IN SELECT rolname FROM pg_catalog.pg_roles
     WHERE rolname IN ('anon','authenticated','service_role') LOOP
     EXECUTE format('REVOKE ALL ON TABLE public.store_gstin_verifications FROM %I', role_name);
+    EXECUTE format('REVOKE ALL ON TABLE public.gstin_lookup_attempts FROM %I', role_name);
+    EXECUTE format('REVOKE ALL ON FUNCTION public.reserve_gstin_lookup(uuid) FROM %I', role_name);
     EXECUTE format('REVOKE ALL ON FUNCTION public.guard_store_approval() FROM %I', role_name);
   END LOOP;
 END $$;
@@ -103,12 +140,12 @@ CREATE OR REPLACE FUNCTION public.invoice_supplier(p_store_id uuid) RETURNS json
 LANGUAGE plpgsql SET search_path = pg_catalog,public AS $$
 DECLARE v_settings jsonb; v_supplier jsonb; v_signature text; v_status text;
 BEGIN
-  SELECT st.settings INTO v_settings FROM public.store_setup st WHERE st.store_id = p_store_id;
+  SELECT p.snapshot->'settings' INTO v_settings FROM public.store_publications p WHERE p.store_id = p_store_id;
   SELECT s.status INTO v_status FROM public.stores s WHERE s.store_id = p_store_id;
   IF v_status IS DISTINCT FROM 'live' OR NOT EXISTS (
     SELECT 1 FROM (
       SELECT * FROM public.store_gstin_verifications
-      WHERE store_id = p_store_id ORDER BY created_at DESC,id DESC LIMIT 1
+      WHERE store_id = p_store_id AND gstin=v_settings->>'gstin' ORDER BY created_at DESC,id DESC LIMIT 1
     ) v
     WHERE v.gstin = v_settings->>'gstin'
       AND v.state = 'verified' AND v.verified_at >= now() - interval '30 days'
@@ -116,17 +153,15 @@ BEGIN
       AND v.normalized->'principal_address'->>'state_code' = v_settings->>'business_state'
       AND v_settings->>'business_state' = left(v.gstin,2)
       AND v_settings->>'legal_name' = v.normalized->>'legal_name'
-      AND (
-        (v_settings->>'business_line1' = v.normalized->'principal_address'->>'line1'
-          AND v_settings->>'business_city' = v.normalized->'principal_address'->>'city'
-          AND v_settings->>'business_pincode' = v.normalized->'principal_address'->>'pin')
-        OR EXISTS (
-          SELECT 1 FROM jsonb_array_elements(COALESCE(v.normalized->'additional_addresses','[]'::jsonb)) a(value)
-          WHERE v_settings->>'business_line1' = a.value->>'line1'
+      AND COALESCE(v_settings->>'trade_name','') = COALESCE(v.normalized->>'trade_name','')
+      AND EXISTS (
+          SELECT 1 FROM jsonb_array_elements(jsonb_build_array(v.normalized->'principal_address')||
+           COALESCE(v.normalized->'additional_addresses','[]'::jsonb)) a(value)
+          WHERE v_settings->>'business_line1' = COALESCE(NULLIF(a.value->>'line1',''),a.value->>'line2')
+            AND COALESCE(v_settings->>'business_line2','') = CASE WHEN a.value->>'line1'<>'' THEN a.value->>'line2' ELSE '' END
             AND v_settings->>'business_city' = a.value->>'city'
             AND v_settings->>'business_pincode' = a.value->>'pin'
             AND v_settings->>'business_state' = a.value->>'state_code'
-        )
       )
   ) THEN
     RAISE EXCEPTION 'Verify the active Regular GSTIN and registered supplier details in Settings before shipping'
@@ -135,7 +170,7 @@ BEGIN
   SELECT 'https://media.lebrands.store/' || m.object_key INTO v_signature FROM public.media m
     WHERE m.store_id = p_store_id AND m.id::text = v_settings->>'signature_media_id' AND m.upload_type = 'logo'
       AND m.object_key LIKE 'stores/' || p_store_id::text || '/%';
-  v_supplier := jsonb_build_object('legal_name',v_settings->>'legal_name',
+  v_supplier := jsonb_build_object('legal_name',v_settings->>'legal_name','trade_name',v_settings->>'trade_name',
     'line1',v_settings->>'business_line1','line2',v_settings->>'business_line2',
     'city',v_settings->>'business_city','pincode',v_settings->>'business_pincode',
     'state',v_settings->>'business_state','gstin',v_settings->>'gstin','signature_url',v_signature,

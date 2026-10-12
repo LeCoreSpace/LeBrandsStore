@@ -3,6 +3,7 @@ import { renderInvoice } from "../ui/invoice.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import { UUID } from "../public/validation.js";
 import { readJson } from "../store/input.js";
+import {refreshVerification} from "../gstin/service.js";
 import { loadDraft } from "../store/repository.js";
 import { commerceError } from "../public/commerce-rules.js";
 import { dateFilters, csv } from "../public/dashboard-rules.js";
@@ -17,7 +18,7 @@ export function isDashboardPath(path,method = "GET") {
   if (/^\/api\/stores\/[^/]+\/products(?:\/[^/]+)?$/.test(path) && ["GET","HEAD"].includes(method)) return true;
   return /^\/api\/stores\/[^/]+\/(?:products\/[^/]+\/(?:archive|stock)|exports\/(?:customers|orders|products))$/.test(path);
 }
-export async function handleDashboard(request,db,user,tokenHash) {
+export async function handleDashboard(request,db,user,tokenHash,env={}) {
   const url = new URL(request.url), api = url.pathname.startsWith("/api/");
   const match = url.pathname.match(/^\/(?:api\/)?stores\/([^/]+)(?:\/([^/]+)(?:\/([^/]+)(?:\/([^/]+))?)?)?$/);
   const headers = {...SECURITY_HEADERS,"cache-control":"no-store","referrer-policy":"no-referrer","x-robots-tag":"noindex, nofollow"};
@@ -33,6 +34,16 @@ export async function handleDashboard(request,db,user,tokenHash) {
       (section === "products" && child && ["stock","archive"].includes(action)) || (section === "exports" && child && !action));
     if ((!read && !mutation) || (read && (action || section === "exports"))) throw commerceError("Method not allowed.",undefined,405);
     const filters = dateFilters(url.searchParams);
+    if(section==="settings"&&read || mutation&&section==="orders"&&action==="status"){
+      const shipping=!read&&(await readJson(request.clone())).status==="shipped";
+      if(section==="settings"||shipping){
+        const verification=await db.withMemberStore(id,tokenHash,async tx=>{
+          await dashboardAccess(tx,id,user.id,shipping);
+          return refreshVerification(tx,env,id,{published:shipping});
+        });
+        if(shipping&&!verification.ready)throw commerceError("Verify and confirm the active Regular GSTIN in Settings, then republish, before issuing an invoice.",undefined,409);
+      }
+    }
     const result = await db.withMemberStore(id,tokenHash,async (tx) => {
       const role = await dashboardAccess(tx,id,user.id,!read && section === "orders",section === "exports");
       if (mutation) {

@@ -1,7 +1,8 @@
 import { formatPhone } from "/assets/commerce-rules.js";
 import { renderAura } from "/assets/aura.js";
 import { mergeSettingsToLayouts } from "/assets/aura-layout.js";
-import { prepareAuraPhoto } from "/assets/aura-upload.js";
+import { uploadAuraImage } from "/assets/aura-upload.js";
+import {observeGSTINForms} from "/assets/gstin-ui.js";
 import { CATEGORIES, validateBasics, validateTheme, validateProduct, publishChecklist, resumeStep } from "/assets/validation.js";
 import { INDIAN_STATES, registeredBusinessState, businessGSTINErrors } from "/assets/commerce-rules.js";
 
@@ -282,11 +283,15 @@ async function contentUpload(input){
   delete formErrors[key];uploadBusy=true;setStatus("saving","Uploading");
   try{
     if(key==="hero_video"&&!currentSettings().hero_poster?.url)throw new Error("Add a video poster image first.");
-    const upload=key==="hero_video"?file:await prepareAuraPhoto(file);
-    const form=new FormData();form.append("file",upload);form.append("type",key==="hero_video"?"video":"image");form.append("alt",alt);
-    const result=await api(`${API}/media`,{method:"POST",body:form});
-    const m=result.media;if(!m?.url)throw new Error("Upload did not return media details.");
-    const obj={url:m.url,alt,...(m.width?{width:m.width}:{}),...(m.height?{height:m.height}:{})};
+    let obj;
+    if(key==="hero_video"){
+      const form=new FormData();form.append("file",file);form.append("type","video");form.append("alt",alt);
+      const result=await api(`${API}/media`,{method:"POST",body:form});
+      const m=result.media;if(!m?.url)throw new Error("Upload did not return media details.");
+      obj={url:m.url,alt,...(m.width?{width:m.width}:{}),...(m.height?{height:m.height}:{})};
+    }else{
+      obj=(await uploadAuraImage(file,{api,base:API,alt})).media;
+    }
     changedSetting(key,MEDIA_LIMITS[key]?[...(currentSettings()[key]||[]),obj]:obj);
     await saveNow();
   }catch(error){formErrors={...formErrors,[key]:error.message}}
@@ -781,3 +786,7 @@ previewPanel?.addEventListener("click",onClick);
 fullscreen?.addEventListener("click",onClick);
   window.addEventListener("beforeunload",(event)=>{if(hasPendingWork()){event.preventDefault();event.returnValue=""}});
 renderPanel();renderPreview();loadSetup();
+if(!visualOnly) observeGSTINForms(root,storeId,{
+ beforeConfirm:async()=>{await saveNow();return revision},
+ onConfirmed:(saved,stamp)=>{setDataFromResponse(saved,stamp);renderPanel();renderPreview()}
+});

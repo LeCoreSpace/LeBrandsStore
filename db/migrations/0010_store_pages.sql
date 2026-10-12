@@ -116,11 +116,18 @@ BEGIN
       END IF;
     ELSIF kind IN ('image','video') THEN
       url := v->>'url';
-      IF jsonb_typeof(v) <> 'object' OR EXISTS (SELECT 1 FROM jsonb_object_keys(v) x WHERE x NOT IN ('url','alt','width','height','focalX','focalY'))
+      IF jsonb_typeof(v) <> 'object' OR EXISTS (SELECT 1 FROM jsonb_object_keys(v) x WHERE x NOT IN ('url','alt','width','height','focalX','focalY','sources'))
         OR url IS NULL OR url !~* ('^https://media\.lebrands\.store/stores/'||p_store::text||'/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.'||
           CASE WHEN kind='video' THEN '(mp4|webm)$' ELSE '(png|jpe?g|svg|webp|avif)$' END)
         OR jsonb_typeof(v->'alt') IS DISTINCT FROM 'string' OR length(btrim(v->>'alt'))=0 OR length(v->>'alt')>500 OR v->>'alt' ~ '[<>]' THEN
         RAISE EXCEPTION 'Invalid media or media belongs to another store' USING ERRCODE='22023';
+      END IF;
+      IF v ? 'sources' THEN
+        IF kind<>'image' OR jsonb_typeof(v->'sources')<>'array' OR jsonb_array_length(v->'sources')>3
+          OR NOT(v ? 'width' AND v ? 'height') THEN
+          RAISE EXCEPTION 'Invalid responsive image sources' USING ERRCODE='22023';
+        END IF;
+        PERFORM public.aura_validate_sources(v,p_store);
       END IF;
       FOREACH token IN ARRAY ARRAY['width','height'] LOOP
         IF v ? token AND (jsonb_typeof(v->token) <> 'number' OR (v->>token) !~ '^[0-9]+$' OR (v->>token)::numeric NOT BETWEEN 1 AND 20000) THEN
@@ -151,6 +158,61 @@ BEGIN
     END IF;
   END LOOP;
 END $$;
+
+CREATE FUNCTION public.aura_validate_sources(p_image jsonb,p_store uuid) RETURNS void
+LANGUAGE plpgsql SET search_path=pg_catalog,public AS $$
+DECLARE s jsonb; widths jsonb; urls jsonb;
+BEGIN
+ IF jsonb_typeof(p_image->'sources') IS DISTINCT FROM 'array' OR jsonb_array_length(p_image->'sources')>3
+  OR jsonb_typeof(p_image->'width') IS DISTINCT FROM 'number' OR jsonb_typeof(p_image->'height') IS DISTINCT FROM 'number'
+  OR p_image->>'width' !~ '^[0-9]+$' OR p_image->>'height' !~ '^[0-9]+$' THEN
+  RAISE EXCEPTION 'Invalid responsive image dimensions' USING ERRCODE='22023';
+ END IF;
+ IF (p_image->>'width')::numeric NOT BETWEEN 1 AND 20000 OR (p_image->>'height')::numeric NOT BETWEEN 1 AND 20000 THEN
+  RAISE EXCEPTION 'Invalid responsive image dimensions' USING ERRCODE='22023';
+ END IF;
+ widths:=jsonb_build_array(p_image->'width');urls:=jsonb_build_array(p_image->'url');
+ FOR s IN SELECT value FROM jsonb_array_elements(p_image->'sources') LOOP
+  IF jsonb_typeof(s)<>'object' OR NOT(s ? 'width' AND s ? 'height' AND s ? 'url')
+   OR EXISTS(SELECT 1 FROM jsonb_object_keys(s) k WHERE k NOT IN('url','width','height')) THEN
+   RAISE EXCEPTION 'Invalid responsive image source' USING ERRCODE='22023';
+  END IF;
+  PERFORM public.aura_validate_fields('{"image":{"type":"image"}}'::jsonb,
+    jsonb_build_object('image',s||jsonb_build_object('alt',p_image->'alt')),p_store);
+  IF (s->>'width')::numeric>=(p_image->>'width')::numeric OR widths @> jsonb_build_array(s->'width')
+    OR urls @> jsonb_build_array(s->'url')
+    OR abs((s->>'width')::numeric/(s->>'height')::numeric-(p_image->>'width')::numeric/(p_image->>'height')::numeric)>.025 THEN
+    RAISE EXCEPTION 'Responsive image source must be a distinct smaller size with the same aspect ratio' USING ERRCODE='22023';
+  END IF;
+  widths:=widths||jsonb_build_array(s->'width');urls:=urls||jsonb_build_array(s->'url');
+ END LOOP;
+END $$;
+
+ALTER TABLE public.media ADD COLUMN renditions jsonb NOT NULL DEFAULT '[]'::jsonb
+ CHECK(jsonb_typeof(renditions)='array' AND jsonb_array_length(renditions)<=3);
+GRANT UPDATE(renditions) ON public.media TO lebrands_app;
+CREATE FUNCTION public.aura_guard_media_sources() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
+DECLARE s jsonb;
+BEGIN
+ IF NEW.renditions='[]'::jsonb THEN RETURN NEW; END IF;
+ IF NULLIF(current_setting('app.store_id',true),'')::uuid IS DISTINCT FROM NEW.store_id THEN
+  RAISE EXCEPTION 'Store access denied' USING ERRCODE='42501';
+ END IF;
+ IF NEW.upload_type<>'image' THEN RAISE EXCEPTION 'Only images have responsive sources' USING ERRCODE='22023'; END IF;
+ PERFORM public.aura_validate_sources(jsonb_build_object('url','https://media.lebrands.store/'||NEW.object_key,
+  'alt',NEW.alt_text,'width',NEW.width,'height',NEW.height,'sources',NEW.renditions),NEW.store_id);
+ FOR s IN SELECT value FROM jsonb_array_elements(NEW.renditions) LOOP
+  IF NOT EXISTS(SELECT 1 FROM public.media m WHERE m.store_id=NEW.store_id AND m.upload_type='image'
+   AND 'https://media.lebrands.store/'||m.object_key=s->>'url'
+   AND m.width=(s->>'width')::integer AND m.height=(s->>'height')::integer) THEN
+   RAISE EXCEPTION 'Responsive source must reference an uploaded image in this store' USING ERRCODE='42501';
+  END IF;
+ END LOOP;
+ RETURN NEW;
+END $$;
+CREATE TRIGGER guard_media_sources BEFORE INSERT OR UPDATE ON public.media
+ FOR EACH ROW EXECUTE FUNCTION public.aura_guard_media_sources();
 
 CREATE FUNCTION public.aura_validate_layout(p_store uuid,p_page text,p_layout jsonb)
 RETURNS void LANGUAGE plpgsql SET search_path = pg_catalog,public AS $$
@@ -338,6 +400,34 @@ END $$;
 CREATE TRIGGER sync_wizard_page_slots AFTER UPDATE OF settings ON public.store_setup
 FOR EACH ROW EXECUTE FUNCTION public.sync_wizard_page_slots();
 
+-- Seed only an untouched default hero from the merchant's first actual photo.
+CREATE FUNCTION public.initialize_aura_product_image() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
+DECLARE image jsonb;
+BEGIN
+  IF NEW.store_id IS DISTINCT FROM NULLIF(current_setting('app.store_id',true),'')::uuid THEN
+    RAISE EXCEPTION 'Store media access denied' USING ERRCODE='42501';
+  END IF;
+  SELECT jsonb_strip_nulls(jsonb_build_object('url','https://media.lebrands.store/'||m.object_key,
+    'alt',COALESCE(NULLIF(m.alt_text,''),p.title),'width',m.width,'height',m.height,
+    'sources',CASE WHEN jsonb_array_length(m.renditions)>0 THEN m.renditions ELSE NULL END)) INTO image
+    FROM public.media m JOIN public.products p ON p.id=NEW.product_id AND p.store_id=NEW.store_id
+    WHERE m.id=NEW.media_id AND m.store_id=NEW.store_id AND m.upload_type='image';
+  IF image IS NULL THEN RETURN NEW; END IF;
+  UPDATE public.store_pages p SET draft_layout=(SELECT jsonb_agg(
+    CASE WHEN part->>'type'='hero' AND COALESCE(part#>>'{settings,image,url}','')=''
+      THEN part||jsonb_build_object('settings',part->'settings'||jsonb_build_object('image',image))
+      ELSE part END ORDER BY ord)
+    FROM jsonb_array_elements(p.draft_layout) WITH ORDINALITY e(part,ord)),
+    version=version+1,updated_at=now()
+    WHERE p.store_id=NEW.store_id AND p.page_key='home' AND p.updated_by IS NULL
+      AND EXISTS(SELECT 1 FROM jsonb_array_elements(p.draft_layout) part WHERE part->>'type'='hero' AND COALESCE(part#>>'{settings,image,url}','')='')
+      AND NOT EXISTS(SELECT 1 FROM public.store_setup s WHERE s.store_id=NEW.store_id AND COALESCE(s.settings#>>'{hero_image,url}','')<>'');
+  RETURN NEW;
+END $$;
+CREATE TRIGGER initialize_aura_product_image AFTER INSERT ON public.product_media
+FOR EACH ROW EXECUTE FUNCTION public.initialize_aura_product_image();
+
 CREATE FUNCTION public.store_page_actor(p_store uuid,p_token text) RETURNS uuid
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
 DECLARE actor uuid;
@@ -345,6 +435,8 @@ BEGIN
   IF p_store IS DISTINCT FROM NULLIF(current_setting('app.store_id',true),'')::uuid OR
     NOT public.authorize_store_session(p_token,p_store) THEN RAISE EXCEPTION 'Store access denied' USING ERRCODE='42501'; END IF;
   SELECT user_id INTO actor FROM public.sessions WHERE token_hash=p_token;
+  IF NOT EXISTS(SELECT 1 FROM public.store_members WHERE store_id=p_store AND user_id=actor AND role IN('owner','admin','staff','editor'))
+    THEN RAISE EXCEPTION 'Page editing permission denied' USING ERRCODE='42501'; END IF;
   RETURN actor;
 END $$;
 CREATE FUNCTION public.save_store_page(p_store uuid,p_page text,p_layout jsonb,p_expected integer,p_token text)
@@ -352,6 +444,7 @@ RETURNS public.store_pages LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_
 DECLARE actor uuid; row public.store_pages;
 BEGIN
   IF p_expected IS NULL OR p_expected<0 THEN RAISE EXCEPTION 'Invalid page revision' USING ERRCODE='22023'; END IF;
+  IF p_page='checkout' THEN RAISE EXCEPTION 'Checkout layout is not editable' USING ERRCODE='42501'; END IF;
   actor:=public.store_page_actor(p_store,p_token);
   PERFORM 1 FROM public.stores WHERE store_id=p_store FOR UPDATE;
   PERFORM public.aura_validate_layout(p_store,p_page,p_layout);
@@ -402,8 +495,8 @@ FOR EACH ROW EXECUTE FUNCTION public.publish_store_page_layouts();
 DO $$ DECLARE fn record; r text;
 BEGIN
   FOR fn IN SELECT oid::regprocedure AS signature FROM pg_proc WHERE pronamespace='public'::regnamespace AND
-    proname IN ('aura_section_schemas','aura_validate_fields','aura_validate_layout','aura_section','aura_default_layout',
-      'guard_store_page_layout','store_page_actor','save_store_page','restore_store_page','publish_store_page_layouts','initialize_store_page_layouts','sync_wizard_page_slots') LOOP
+    proname IN ('aura_section_schemas','aura_validate_fields','aura_validate_layout','aura_validate_sources','aura_guard_media_sources','aura_section','aura_default_layout',
+      'guard_store_page_layout','store_page_actor','save_store_page','restore_store_page','publish_store_page_layouts','initialize_store_page_layouts','sync_wizard_page_slots','initialize_aura_product_image') LOOP
     EXECUTE format('ALTER FUNCTION %s OWNER TO postgres',fn.signature);
     EXECUTE format('REVOKE ALL ON FUNCTION %s FROM PUBLIC,lebrands_app',fn.signature);
     FOREACH r IN ARRAY ARRAY['anon','authenticated','service_role'] LOOP

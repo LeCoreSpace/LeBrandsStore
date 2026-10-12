@@ -12,7 +12,7 @@ export function settingsPatch(value, context = {}) {
   if (!object(value)) throw badInput("Use the setup form.");
   const result = {}, limits = {
     brand_name: 40, subdomain: 30, tagline: 60, description: 500,
-    legal_name: 120, address: 500, support_email: 254, support_phone: 25,
+    legal_name: 120, trade_name:120, address: 500, support_email: 254, support_phone: 25,
     business_line1:150,business_line2:150,business_city:80,business_pincode:6,invoice_prefix:4,
     gstin: 15, business_state: 2, category: 30, theme: 20, accent_color: 7, font_preset: 20, button_style: 20,
     color_preset: 20, statement: 500, founder_name: 160, founder_story: 4000,

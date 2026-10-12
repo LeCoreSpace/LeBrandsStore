@@ -3,6 +3,9 @@ import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
 import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
 import { handlePageRoutes, isPageRoute } from "../store/page-routes.js";
+import {handleGSTINRoutes,isGSTINRoute} from "../gstin/routes.js";
+import {renderEditor} from "../ui/editor.js";
+import {loadDraft} from "../store/repository.js";
 import { isMerchantCheckoutPath, merchantCheckout } from "../checkout/merchant.js";
 import { isDashboardPath, handleDashboard } from "../dashboard/routes.js";
 import { assertPasswordPepper, hashPassword, needsPasswordRehash, randomToken, sha256, validatePassword, verifyPassword } from "./passwords.js";
@@ -26,7 +29,8 @@ const nameValue = (value) => typeof value === "string" && value.trim().length >=
 export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
-  const storeRoute = isStoreRoute(path) || isPageRoute(path);
+  const editorMatch=path.match(/^\/stores\/([0-9a-f-]{36})\/editor$/i);
+  const storeRoute = isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || !!editorMatch || path==="/editor";
   const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password" };
   if (!["GET", "POST", "HEAD", ...(storeRoute ? ["PATCH", "PUT", "DELETE"] : [])].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
   if (!["GET", "HEAD"].includes(request.method) && !isValidOrigin(request)) {
@@ -64,7 +68,22 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       return path.startsWith("/api/") ? json({ available: false, error: "Change your password first." }, 403) : redirect("/account");
     }
     if (isPageRoute(path)) return await handlePageRoutes(request, env, db, user, tokenHash);
-    if (isDashboardPath(path,request.method)) return await handleDashboard(request,db,user,tokenHash);
+    if (isGSTINRoute(path)) return await handleGSTINRoutes(request,env,db,user,tokenHash);
+    if (path==="/editor") {
+      if(request.method!=="GET")return html("error",{error:"Method not allowed."},405);
+      const store=session.stores?.[0];
+      return redirect(store?`/stores/${store.store_id}/editor`:"/");
+    }
+    if(editorMatch){
+      if(request.method!=="GET")return html("error",{error:"Method not allowed."},405);
+      const data=await db.withMemberStore(editorMatch[1],tokenHash,async tx=>{
+        const draft=await loadDraft(tx,editorMatch[1]);
+        const[member]=await tx`SELECT role FROM public.store_members WHERE store_id=${editorMatch[1]} AND user_id=${user.id}`;
+        return{...draft,role:member?.role};
+      });
+      return new Response(renderEditor(data,user),{headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
+    }
+    if (isDashboardPath(path,request.method)) return await handleDashboard(request,db,user,tokenHash,env);
     if (isMerchantCheckoutPath(path)) return await merchantCheckout(request,db,user,tokenHash);
     if (isStoreRoute(path)) return await handleStoreRoutes(request, env, db, user, tokenHash);
     if (request.method !== "POST") {

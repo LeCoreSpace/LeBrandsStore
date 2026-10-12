@@ -20,9 +20,10 @@ test("0010 compiles, backfills safely and enforces real PostgreSQL page isolatio
       CREATE TABLE public.stores(store_id uuid PRIMARY KEY,name text,settings jsonb DEFAULT '{}',status text);
       CREATE TABLE public.store_setup(store_id uuid PRIMARY KEY,settings jsonb DEFAULT '{}');
       CREATE TABLE public.store_publications(store_id uuid PRIMARY KEY,snapshot jsonb);
-      CREATE TABLE public.products(id uuid PRIMARY KEY,store_id uuid);
+      CREATE TABLE public.products(id uuid PRIMARY KEY,store_id uuid,title text DEFAULT 'Example product');
       CREATE TABLE public.collections(id uuid PRIMARY KEY,store_id uuid);
-      CREATE TABLE public.media(upload_type text CHECK(upload_type IN('logo','image')));
+      CREATE TABLE public.media(id uuid DEFAULT gen_random_uuid(),store_id uuid,object_key text,width integer,height integer,alt_text text,upload_type text CHECK(upload_type IN('logo','image')));
+      CREATE TABLE public.product_media(store_id uuid,product_id uuid,media_id uuid,sort_order integer DEFAULT 0);
       GRANT USAGE ON SCHEMA public TO lebrands_app;
       GRANT SELECT,UPDATE,INSERT ON public.store_publications TO lebrands_app;
       GRANT SELECT,UPDATE ON public.store_setup TO lebrands_app;`);

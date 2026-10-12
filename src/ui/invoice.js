@@ -7,7 +7,8 @@ export function renderInvoice(invoice,back = "") {
   const tax = invoice.document_type === "tax_invoice", totals = data.totals || {};
   const items = data.items || [], sum = (key) => items.reduce((n,i) => n + Number(i[key] || 0),0);
   const intra=supplier.state===customer.state;
-  const supplierAddress=supplier.line1 ? [supplier.line1,supplier.line2,`${supplier.city || ""}, ${stateName(supplier.state)} ${supplier.pincode || ""}`].filter(Boolean).join("\n") : supplier.address;
+  const registeredAddress=supplier.line1 ? [supplier.line1,supplier.line2,`${supplier.city || ""}, ${stateName(supplier.state)} ${supplier.pincode || ""}`].filter(Boolean).join("\n") : supplier.address;
+  const supplierAddress=[supplier.trade_name&&supplier.trade_name!==supplier.legal_name?`Trading as: ${supplier.trade_name}`:"",registeredAddress].filter(Boolean).join("\n");
   const signature=/^https:\/\/media\.lebrands\.store\/stores\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(png|jpe?g|webp|svg)$/i.test(supplier.signature_url || "") ? `<img src="${escape(supplier.signature_url)}" alt="Authorised signature" style="max-width:180px;max-height:80px"><br>` : "";
   const rate=(item,divisor=1)=>item.gst_rate == null ? "Not recorded" : Number(item.gst_rate)===0 ? "Exempt" : `${Number(item.gst_rate)/divisor}%`;
   const address = [customer.name,customer.line1,customer.line2,customer.landmark,customer.city,stateName(customer.state),customer.pincode].filter(Boolean).map(escape).join("<br>");

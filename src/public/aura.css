@@ -1,6 +1,7 @@
 @font-face{font-family:"Instrument Sans";src:url(/assets/instrument-sans-latin.woff2) format("woff2");font-weight:400 700;font-display:swap}
 @font-face{font-family:"Aura Editorial";src:url(/assets/aura-editorial.ttf) format("truetype");font-weight:100 900;font-style:normal;font-display:swap}
 @font-face{font-family:"Aura Classic";src:url(/assets/aura-classic.ttf) format("truetype");font-weight:400;font-style:normal;font-display:swap}
+@media(max-width:640px){.au-header,.au-header.is-center{gap:12px}.au-header .au-brand{min-width:0;flex:1}.au-header .au-wordmark{display:block;max-width:100%;font-size:22px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.au-header .au-actions{flex-shrink:0}.au-header .au-brand img{max-width:100%;object-fit:contain}}
 .au-zoom{max-width:96vw;max-height:96vh;padding:12px;border:1px solid var(--line);background:var(--paper);color:var(--ink)}.au-zoom::backdrop{background:#000b}.au-zoom img{display:block;width:auto;max-width:90vw;height:auto;max-height:80vh;object-fit:contain}.au-zoom button{display:block;margin-left:auto;border:1px solid var(--line);padding:8px 16px;background:var(--surface);color:var(--ink)}[data-gallery-image]{cursor:zoom-in}
 /* Aura storefront. Neutral presets; brand accent only on buttons and links. */
 :root{--paper:#faf8f4;--surface:#f1eee7;--ink:#1f1d1a;--muted:#6a655d;--line:#dcd7cc;--radius:6px;--display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;--body:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif}

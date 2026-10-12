@@ -31,13 +31,23 @@ export function sanitizeRichText(value, maxLength = 5000) {
   }).replace(/$/, () => { if (stack.length) fail("Rich text tags are not balanced."); return ""; });
 }
 export function validateLayoutMedia(value, type, context = {}) {
-  if (!plain(value) || Object.keys(value).some(key => !["url", "alt", "width", "height", "focalX", "focalY"].includes(key))) fail("Invalid media object.");
+   if (!plain(value) || Object.keys(value).some(key => !["url", "alt", "width", "height", "focalX", "focalY","sources"].includes(key))) fail("Invalid media object.");
   const extension = type === "video" ? "(?:mp4|webm)" : "(?:png|jpe?g|svg|webp|avif)";
   const match = String(value.url || "").match(new RegExp(`^https://media\\.lebrands\\.store/stores/(${UUID.source.slice(1, -1)})/${UUID.source.slice(1, -1)}\\.${extension}$`, "i"));
   if (!match || (context.storeId && match[1].toLowerCase() !== context.storeId.toLowerCase())) fail("Media must belong to this store.");
   if (typeof value.alt !== "string" || !value.alt.trim() || value.alt.length > 500 || /[<>]/.test(value.alt)) fail("Media alt text is required.");
   for (const key of ["width", "height"]) if (own(value, key) && (!Number.isInteger(value[key]) || value[key] < 1 || value[key] > 20000)) fail("Invalid image dimensions.");
   for (const key of ["focalX", "focalY"]) if (own(value, key) && (typeof value[key] !== "number" || value[key] < 0 || value[key] > 1)) fail("Invalid focal point.");
+  if(own(value,"sources")){
+    if(type!=="image"||!Array.isArray(value.sources)||value.sources.length>3||!value.width||!value.height)fail("Invalid responsive image sources.");
+    const widths=new Set([value.width]),urls=new Set([value.url]);
+    for(const source of value.sources){
+      if(!plain(source)||Object.keys(source).some(k=>!["url","width","height"].includes(k))||!source.width||!source.height)fail("Invalid responsive image source.");
+      validateLayoutMedia({...source,alt:value.alt},"image",context);
+      if(source.width>=value.width||widths.has(source.width)||urls.has(source.url)||Math.abs(source.width/source.height-value.width/value.height)>.025)fail("Responsive images must retain the original aspect ratio and use distinct smaller sizes.");
+      widths.add(source.width);urls.add(source.url);
+    }
+  }
   return structuredClone(value);
 }
 function validateFields(values, fields, context, enabled = true) {

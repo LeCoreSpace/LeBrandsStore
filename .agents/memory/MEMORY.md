@@ -4,6 +4,7 @@
 - [GST choices and legacy values](gst-choices.md) — use current slabs for new edits, but never silently replace previously saved 12%/28% product rates.
 - [GST registration and exempt invoices](gstin-registration-boundary.md) — publication requires valid checksum/state-matched GSTIN; zero-rate lines are Exempt, not a new Bill of Supply flow.
 - [Invoice permission boundary](invoice-privilege-boundary.md) — APP financial writes must use tenant-checked functions; preserve strict 42501 isolation denials.
+- [GSTIN transaction boundary](gstin-transaction-boundary.md) — approve/invoice published suppliers; commit paid lookup evidence before a financial transaction can fail.
 - [Document numbering boundary](document-numbering-boundary.md) — short new-document serials, DB prefix locks and overflow rejection; never renumber historical documents.
 - [Platform approval boundary](platform-approval-boundary.md) — staff-only script reviews every first go-live; manual review does not grant invoice verification.
 - [Dashboard visual boundary](dashboard-design-boundary.md) — professional commerce admin is separate from Aura; visual-only work must not invent backend capabilities.

@@ -15,6 +15,7 @@ export async function handlePageRoutes(request, env, db, user, tokenHash) {
   if (page && !PAGE_KEYS.includes(page)) return json({ error: "Page not found." }, 404);
   const read = request.method === "GET", save = request.method === "PUT" && page && !action, restore = request.method === "POST" && action === "restore";
   if (!read && !save && !restore) return json({ error: "Method not allowed." }, 405);
+  if(!read&&page==="checkout")return json({error:"Checkout layout is not editable."},403);
   try {
     // Account routing has already applied the same exact-origin and session
     // protection used by the existing wizard API.

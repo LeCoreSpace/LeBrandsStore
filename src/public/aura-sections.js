@@ -18,7 +18,7 @@ function img(image, { eager = false, cls = "", label = "" } = {}) {
   if (!url) return "";
   const w = Number(image.width) > 0 ? ` width="${Math.round(image.width)}"` : "";
   const h = Number(image.height) > 0 ? ` height="${Math.round(image.height)}"` : "";
-  const responsive=Number(image.width)>0?` srcset="${esc(url)} ${Math.round(image.width)}w" sizes="(max-width: 680px) 100vw, 50vw"`:"";
+  const responsive=Number(image.width)>0?` srcset="${[...(image.sources||[]).filter(s=>safeImage(s.url)).map(s=>`${esc(safeImage(s.url))} ${Math.round(s.width)}w`),`${esc(url)} ${Math.round(image.width)}w`].join(", ")}" sizes="(max-width: 680px) 100vw, 50vw"`:"";
   return `<img class="${cls}" src="${esc(url)}"${responsive} alt="${esc(image.alt || label)}"${w}${h} ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`;
 }
 function card(p, ctx, eager = false, index = 0) {
@@ -174,7 +174,9 @@ const alias = (h) => h.replace(/class="au-hero /, 'class="aura-hero au-hero ').r
 export function renderSection(section, ctx) {
   const fn = Object.hasOwn(SECTION_RENDERERS,section?.type)?SECTION_RENDERERS[section.type]:null;
   if (!fn) return "";
-  const html = alias(fn(section, ctx) || "");
+  let html = alias(fn(section, ctx) || "");
+  // Editor-only selection hook. Never set on the live storefront.
+  if (html && ctx.options?.editorAnnotate && /^[A-Za-z0-9_-]{1,64}$/.test(section.id)) html = html.replace(/^(\s*<[a-z0-9]+)/i, `$1 data-lb-section="${section.id}"`);
   return section.type === "hero" && ctx.products?.length === 1
     ? html.replace('class="aura-hero ', 'class="aura-hero aura-hero-spotlight ')
     : html;

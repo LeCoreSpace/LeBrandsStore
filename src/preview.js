@@ -2,6 +2,9 @@
 // No database binding, credential, simulated account, or persistent data.
 import worker from "./index.js";
 import { renderWizard } from "./ui/wizard.js";
+import {renderEditor} from "./ui/editor.js";
+import {defaultPageLayouts} from "./public/aura-layout.js";
+import {publicStonescence} from "./local-stonescence-fixture.js";
 import { renderAura } from "./public/aura.js";
 import { DEFAULT_SETTINGS } from "./store/repository.js";
 import { SECURITY_HEADERS } from "./auth/security.js";
@@ -95,6 +98,22 @@ export default {
       else source=source.replace('from "/assets/aura.js"','from "/__example-module/aura.js"');
       return new Response(request.method==="HEAD"?null:source,{headers:{...exampleHeaders,"content-type":"text/javascript; charset=utf-8"}});
     }
+    if(original.pathname==="/__editor-preview"){
+      if(!["GET","HEAD"].includes(request.method))return new Response("Preview route is read-only",{status:405});
+      const data=exampleFixture();data.role="owner";
+      data.layouts=defaultPageLayouts(data);
+      data.page_versions=Object.fromEntries(Object.keys(data.layouts).map(key=>[key,{version:1}]));
+      return new Response(request.method==="HEAD"?null:renderEditor(data,{name:"Example reviewer",email:"example@example.invalid"}),{
+        headers:{...exampleHeaders,"content-type":"text/html; charset=utf-8"}
+      });
+    }
+    if(original.pathname==="/__stonescence-aura-preview"){
+      if(!["GET","HEAD"].includes(request.method))return new Response("Public-content preview is read-only",{status:405});
+      const data=structuredClone(publicStonescence);data.layouts=defaultPageLayouts(data);
+      return new Response(request.method==="HEAD"?null:renderAura(data,{page:"home",preview:true,readOnly:true}),{
+        headers:{...exampleHeaders,"content-type":"text/html; charset=utf-8"}
+      });
+    }
     if(original.pathname.startsWith("/__example-preview/")){
       if(!["GET","HEAD"].includes(request.method))return new Response("Example store is read-only",{status:405});
       const view=original.pathname.split("/").pop(),data=exampleFixture();
@@ -143,6 +162,8 @@ export default {
           </script></body>`);
       }else if(view==="store"){
         body=exampleMedia(renderAura(data,{preview:true,commerce:true,readOnly:true}));
+      }else if(["collection","product","cart"].includes(view)){
+        body=exampleMedia(renderAura(data,{page:view,productId:data.products[0]?.id,preview:true,commerce:true,readOnly:true}));
       }else if(view==="checkout"){
         body=exampleMedia(renderAura(data,{page:"checkout",commerce:true,preview:true,readOnly:false,storeKey:EXAMPLE_STORE_ID}));
       }else if(view==="dashboard"){

@@ -4,6 +4,7 @@ import { UUID, validateProduct } from "../public/validation.js";
 import { settingsPatch, progressPatch, productPatch, readJson, readBody, badInput } from "./input.js";
 import { validateUpload } from "./media.js";
 import { pagesEnabled } from "./pages.js";
+import {protectSupplier} from "../gstin/service.js";
 import { setupFieldNames, storeFailureDetails } from "./diagnostics.js";
 import {
   loadDraft, saveSetup, saveProduct, deleteProduct, insertMedia,
@@ -36,19 +37,42 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
     const route = `${verb} ${action}${child ? "/child" : ""}`;
     const supported = [
       "GET setup", "PATCH setup", "POST products", "PATCH products/child", "DELETE products/child",
-      "POST media", "PUT policies/child", "POST policies/child", "POST publish", "POST unpublish",
+      "GET media", "POST media", "PATCH media/child", "PUT policies/child", "POST policies/child", "POST publish", "POST unpublish",
     ];
     if (!supported.includes(route) || (action === "products" && child && !UUID.test(child)) ||
       (action === "policies" && verb === "POST" && child !== "generate")) return json({ error: "Method or page not available." }, 405);
     // Authorize before reading or storing an upload. No bytes reach R2 for outsiders.
     const result = await db.withMemberStore(id, tokenHash, async (tx) => {
       if (route === "GET setup") return loadDraft(tx, id);
+      if(route==="GET media"){
+        const offset=Number(new URL(request.url).searchParams.get("offset")||0);
+        if(!Number.isInteger(offset)||offset<0||offset>100000)throw badInput("Invalid media page.");
+        const rows=await tx`SELECT id,object_key,upload_type,size_bytes,width,height,alt_text,to_jsonb(m)->'renditions' AS sources FROM public.media m WHERE store_id=${id} ORDER BY created_at DESC,id DESC LIMIT 201 OFFSET ${offset}`;
+        return{media:rows.slice(0,200).map(m=>({id:m.id,url:`https://media.lebrands.store/${m.object_key}`,type:m.upload_type,size:Number(m.size_bytes),width:m.width,height:m.height,alt:m.alt_text,sources:m.sources||[]})),nextCursor:rows.length>200?offset+200:null};
+      }
+      if(route==="PATCH media/child"){
+        if(!UUID.test(child)||!await pagesEnabled(tx))throw badInput("Image optimization is unavailable.");
+        const body=await readJson(request),ids=body.rendition_ids;
+        if(Object.keys(body).length!==1||!Array.isArray(ids)||ids.length>3||new Set(ids).size!==ids.length||ids.some(value=>!UUID.test(value)||value===child))throw badInput("Choose up to three different uploaded renditions.");
+        const[parent]=await tx`SELECT * FROM public.media WHERE store_id=${id} AND id=${child} AND upload_type='image'`;
+        if(!parent)throw Object.assign(new Error("Image not found."),{status:404});
+        const rows=await tx`SELECT * FROM public.media WHERE store_id=${id} AND upload_type='image' AND id IN(SELECT value::uuid FROM jsonb_array_elements_text(${JSON.stringify(ids)}::jsonb) x(value))`;
+        if(rows.length!==ids.length)throw Object.assign(new Error("An image does not belong to this store."),{status:403});
+        const sources=rows.map(m=>({url:`https://media.lebrands.store/${m.object_key}`,width:m.width,height:m.height})).sort((a,b)=>a.width-b.width);
+        await tx`UPDATE public.media SET renditions=${JSON.stringify(sources)}::jsonb WHERE store_id=${id} AND id=${child}`;
+        return{media:{id:parent.id,url:`https://media.lebrands.store/${parent.object_key}`,type:"image",alt:parent.alt_text,width:parent.width,height:parent.height,size:Number(parent.size_bytes),sources}};
+      }
       if (route === "PATCH setup") {
         const body = await readJson(request);
         fieldNames = setupFieldNames(body);
         if (!Object.keys(body).length || Object.keys(body).some((k) => !["settings", "progress"].includes(k))) throw badInput("Use the setup form.");
-        const saved = await saveSetup(tx, id, body.settings === undefined ? undefined : settingsPatch(body.settings, { storeId: id }),
-          body.progress === undefined ? undefined : progressPatch(body.progress));
+        const parsedSettings=body.settings===undefined?undefined:settingsPatch(body.settings,{storeId:id});
+        const parsedProgress=body.progress===undefined?undefined:progressPatch(body.progress);
+        if(parsedSettings &&["gstin","legal_name","trade_name","address","business_line1","business_line2","business_city","business_state","business_pincode"].some(k=>k in parsedSettings)){
+          const current=await loadDraft(tx,id);
+          if(current.store.approval_enabled)await protectSupplier(tx,id,parsedSettings,current.settings);
+        }
+        const saved = await saveSetup(tx,id,parsedSettings,parsedProgress);
         await audit(tx,id,user.id,"store.setup_changed","store",id,{fields:fieldNames});
         return saved;
       }

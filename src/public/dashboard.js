@@ -2,10 +2,12 @@ import { validateProduct } from "/assets/validation.js";
 import { statusLabel, stateName, indianDate, allowedTransitions } from "/assets/dashboard-rules.js";
 import { registeredSupplierErrors, validInvoicePrefix, INDIAN_STATES } from "/assets/commerce-rules.js";
 import { matchesOrderTab, loadedSalesSummary, paymentState } from "/assets/dashboard-view-model.js";
+import {observeGSTINForms} from "/assets/gstin-ui.js";
 
 const root = document.querySelector(".lb-app");
 const storeId = root?.dataset.storeId || "";
 const role = root?.dataset.role || "editor";
+observeGSTINForms(root,storeId,{readOnly:!["owner","admin"].includes(role)});
 const api = `/api/stores/${encodeURIComponent(storeId)}`;
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]);
 const moneyToPaise = value => {

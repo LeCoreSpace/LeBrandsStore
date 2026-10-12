@@ -6,6 +6,7 @@ import { validateSubdomain } from "../auth/security.js";
 import { CURRENT_GST_RATES, businessGSTINErrors } from "../public/commerce-rules.js";
 import { pagesEnabled, pageLayouts } from "./pages.js";
 import { mergeSettingsToLayouts, validateLayout, defaultPageLayouts } from "../public/aura-layout.js";
+import {verificationState} from "../gstin/service.js";
 
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
@@ -18,6 +19,7 @@ const conflict = (message) => Object.assign(new Error(message), { status: 409 })
 const mediaRecord = (m) => ({
   id: m.id, key: m.object_key, url: mediaUrl(m.object_key), type: m.upload_type,
   size: Number(m.size_bytes), width: m.width, height: m.height, alt: m.alt_text,
+  ...(m.upload_type==="image"&&m.renditions?.length?{sources:m.renditions}:{}),
 });
 export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
   // to_jsonb is compatible both before and after the staged approval migration.
@@ -68,6 +70,8 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
   };
   data.progress.completed = completion(data, data.progress);
   if (await pagesEnabled(tx)) {
+    const[publication]=await tx`SELECT snapshot->'settings' AS settings FROM public.store_publications WHERE store_id=${storeId}`;
+    data.published_settings=publication?.settings||null;
     const collections = await tx`SELECT id,title,slug FROM public.collections WHERE store_id=${storeId} ORDER BY created_at,id`;
     const memberships = await tx`SELECT collection_id,product_id FROM public.collection_products WHERE store_id=${storeId}`;
     data.collections = collections.map(c => ({ ...c, product_ids: memberships.filter(m => m.collection_id === c.id).map(m => m.product_id) }));
@@ -76,6 +80,7 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
     data.layouts = { ...defaultPageLayouts(data), ...pages.layouts };
     data.page_versions = pages.page_versions;
   }
+  if(store.approval_enabled)data.gstinVerification=await verificationState(tx,storeId,data.settings);
   return data;
 }
 async function ensureSetup(tx, id) {
@@ -241,6 +246,8 @@ export async function publish(tx, id, live) {
   let status = "draft";
   if (live) {
     const data = await loadDraft(tx, id), checklist = publishChecklist(data);
+    if(data.gstinVerification?.state==="blocked")throw badInput("An inactive or Composition GSTIN cannot publish.",{gstin:"Verify an active Regular registration."});
+    if(data.gstinVerification?.state==="verified"&&!data.gstinVerification.confirmed)throw badInput("Confirm your verified registered supplier details before publishing.",{gstin:"Choose and confirm a registered address."});
     const gstErrors = businessGSTINErrors(data.settings);
     if (Object.keys(gstErrors).length) throw badInput("A valid GSTIN and registered business state are required to publish.",gstErrors);
     if (!validateSubdomain(data.settings.subdomain) || data.settings.subdomain !== data.store.subdomain) {
@@ -263,7 +270,8 @@ export async function publish(tx, id, live) {
         productIds: new Set(data.products.map(product => product.id)), collectionIds: new Set((data.collections || []).map(collection => collection.id)) });
       await tx`SELECT set_config('app.publish_pages','true',true)`;
     }
-    const { layouts, page_versions, ...publicationData } = data;
+    const { layouts, page_versions, gstinVerification, published_settings, ...publicationData } = data;
+    publicationData.store={store_id:data.store.store_id,name:data.store.name,subdomain:data.store.subdomain,status:data.store.status};
     await tx`INSERT INTO public.store_publications (store_id, snapshot)
       VALUES (${id}, ${tx.json(publicationData)}) ON CONFLICT (store_id) DO UPDATE
       SET snapshot = EXCLUDED.snapshot, published_at = now()`;
