@@ -1,0 +1,83 @@
+Pricing and limits
+	Launch	Grow	Scale	Flagship
+Monthly price	₹1,499	₹3,499	₹7,999	From ₹19,999
+LeBrands.Space plan included	Starter (worth ₹1,500/mo)	Premium (worth ₹2,500/mo)	Freedom (worth ₹3,500/mo)	Freedom + extras
+Effective value	₹2,999	₹5,999	₹11,499	Custom
+Annual billing	2 months free	2 months free	2 months free	Custom
+Orders a month (soft band, never blocks checkout)	Up to 300	Up to 1,500	Up to 7,500	Unlimited
+Staff accounts	2	5	15	Unlimited
+Commission on sales	0%	0%	0%	0%
+Discovery (LeBrands.Space)
+	Launch	Grow	Scale	Flagship
+Brand listed on LeBrands.Space	✓	✓	✓	✓
+LeBrands.Space plan benefits	Starter	Premium	Freedom	Freedom
+Feature in “Top 300” blog series	—	—	—	✓
+Instagram showcase + newsletter mention	—	—	—	✓
+Store and design
+	Launch	Grow	Scale	Flagship
+Aura theme + drag-and-drop editor, version history	✓	✓	✓	✓
+Bazaar theme	—	✓	✓	✓
+Brand logo on all pages through checkout + favicon	✓	✓	✓	✓
+Fully branded, customisable checkout	✓	✓	✓	✓
+Custom domain with SSL	✓	✓	✓	✓
+Media library	✓	✓	✓	✓
+SEO basics (titles, sitemap, product data)	✓	✓	✓	✓
+Custom sections and design work	—	—	—	✓
+Product page, cart and checkout components
+	Launch	Grow	Scale	Flagship
+Real reviews, size guide, trust badges, FAQ / How it works	✓	✓	✓	✓
+Delivery estimate + COD check by pincode (via your logistics partner)	✓	✓	✓	✓
+Sticky add-to-cart, free-shipping progress bar	✓	✓	✓	✓
+Pincode autofill, prepaid discount at checkout	✓	✓	✓	✓
+Discount codes	Basic	Advanced	Advanced	Advanced
+Bundles (“frequently bought together”)	—	✓	✓	✓
+Cart and post-purchase upsells	—	✓	✓	✓
+Back-in-stock alerts, gift wrap, referral programme	—	✓	✓	✓
+Loyalty points, upsell A/B testing	—	—	✓	✓
+Payments
+	Launch	Grow	Scale	Flagship
+Razorpay integration with your own account	✓	✓	✓	✓
+COD with built-in protection (bot check, COD limits, per-phone limits)	✓	✓	✓	✓
+
+Payment links, partial COD, COD fees and other payment features are available through your Razorpay account.
+
+Shipping and logistics
+	Launch	Grow	Scale	Flagship
+Manual tracking	✓	✓	✓	✓
+One logistics partner by API (Shiprocket: shipments, labels, AWB, tracking sync)	✓	✓	✓	✓
+Branded order tracking page	✓	✓	✓	✓
+Multiple logistics partners at once	—	—	—	✓
+
+Courier selection, shipping rates, serviceability, pickup locations and failed-delivery handling are managed in your logistics partner’s account.
+
+COD and returns
+	Launch	Grow	Scale	Flagship
+COD & Returns centre (COD orders, risk flags, remittance)	✓	✓	✓	✓
+Reason tracked for every return and RTO	✓	✓	✓	✓
+RTO analysis (pincode, product, value, customer type, cost)	✓	✓	✓	✓
+Automatic RTO rules (prepaid-only pincodes, risk-based COD)	—	—	✓	✓
+Communication (brand’s own partner accounts, connected by API)
+	Launch	Grow	Scale	Flagship
+Order emails sent by LeBrands.Store	✓	✓	✓	✓
+WhatsApp order updates + COD confirmation	—	Option	✓	✓
+Email marketing (ZeptoMail / Brevo)	—	—	✓	✓
+WhatsApp automation and campaigns (Interakt / AiSensy / Gupshup)	—	—	✓	✓
+Calling: click-to-call, call logs (TeleCMI)	—	—	✓	✓
+Abandoned cart across channels, customer segments	—	—	✓	✓
+Reports and analytics
+	Launch	Grow	Scale	Flagship
+Sales and order reports	✓	✓	✓	✓
+GST invoices, credit notes, GSTIN verification	✓	✓	✓	✓
+GST reports for your CA (GSTR-1 style, HSN summary)	—	✓	✓	✓
+Funnel, cohort and product analytics	—	—	✓	✓
+Data export (CSV + media)	✓	✓	✓	✓
+Support
+	Launch	Grow	Scale	Flagship
+Support	Email	WhatsApp, priority	Account manager	Dedicated team + SLA
+Add-ons (any plan)
+Add-on	Price (proposal)
+Extra brand/store	₹999/month
+Extra staff accounts	Per account
+Done-for-you setup	₹4,999 (free on annual)
+Store design, product photography, catalogue upload	Quoted
+LeBrands.Space plan on its own (no store)	Starter ₹1,500, Premium ₹2,500, Freedom ₹3,500
