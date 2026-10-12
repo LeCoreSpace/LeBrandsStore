@@ -60,13 +60,18 @@ as the story; label illustrative UI and future integrations honestly. Preserve
 the separate clothing concept and all operational screens. The hero's black
 background is an exception to the page's mode-dependent alternating bands.
 
-Keep the existing animated hero story. Its left side should use one short
-sentence synchronized to the active animation, rather than stacked explanatory
-paragraphs and feature chips.
+Keep the existing animated hero story and its exact animation sequence. Present
+it as a realistic moving 3D dashboard. Its left side should use one short sentence
+synchronized to the active animation, rather than stacked explanatory paragraphs
+and feature chips.
 
 **Why:** The user confirmed "animation is nice .keep it" and said there was too
 much text on the left. They requested a changing line, a transparent hero logo
-and larger header menu text.
+and larger header menu text, then a realistic 3D dashboard look without replacing
+the animation.
 
 **How to apply:** Preserve the visible SVG, slide and ambient motion when making
-future revisions. Keep payment and delivery integration availability honest.
+future revisions. For Razorpay and logistics, use integration setup/contact
+wording instead of "Coming soon"; the user explicitly removed that wording for
+those integrations. A marketing copy change does not enable backend integrations
+or authorise changes to the real dashboard.

@@ -124,13 +124,21 @@ export function renderHome() {
         <p class="m-hero-note">First publication requires platform approval.</p>
       </div>
       <div class="m-hs" data-hero-story role="region" aria-roledescription="carousel" aria-label="What LeBrands.Store does">
+        <span class="m-hs-sheen" aria-hidden="true"></span>
+        <div class="m-hs-chrome"><span class="m-hs-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="m-hs-url">app.lebrands.store</span></div>
+        <div class="m-hs-kpis" role="group" aria-label="Illustrative sample figures">
+          <div class="m-hs-kpi"><small>Orders today</small><b>24</b><span class="m-hs-bars" aria-hidden="true"><s style="--h:40%"></s><s style="--h:65%"></s><s style="--h:50%"></s><s style="--h:85%"></s><s style="--h:60%"></s><s style="--h:95%"></s><s style="--h:72%"></s></span></div>
+          <div class="m-hs-kpi"><small>COD to collect</small><b>Rs. 38,420</b></div>
+          <div class="m-hs-kpi"><small>Invoices issued</small><b>21</b></div>
+          <em class="m-hs-sample">Sample data, illustrative</em>
+        </div>
         <div class="m-hs-tabs" role="group" aria-label="Choose a feature">
           <button type="button" class="m-hs-tab" data-hs-tab="0" aria-current="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8"/></svg><span>Catalogue</span><i class="m-hs-prog"></i></button>
           <button type="button" class="m-hs-tab" data-hs-tab="1" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v10H3zM3 11h18M7 15h3"/></svg><span>COD orders</span><i class="m-hs-prog"></i></button>
           <button type="button" class="m-hs-tab" data-hs-tab="2" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><span>Customers</span><i class="m-hs-prog"></i></button>
           <button type="button" class="m-hs-tab" data-hs-tab="3" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></svg><span>GST invoice</span><i class="m-hs-prog"></i></button>
-          <button type="button" class="m-hs-tab is-soon" data-hs-tab="4" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span>Razorpay</span><i class="m-hs-prog"></i></button>
-          <button type="button" class="m-hs-tab is-soon" data-hs-tab="5" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7h11v9H2zM13 10h4l3 3v3h-7zM6 19a1.5 1.5 0 100-.01M17 19a1.5 1.5 0 100-.01"/></svg><span>Logistics</span><i class="m-hs-prog"></i></button>
+          <button type="button" class="m-hs-tab" data-hs-tab="4" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span>Razorpay</span><i class="m-hs-prog"></i></button>
+          <button type="button" class="m-hs-tab" data-hs-tab="5" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7h11v9H2zM13 10h4l3 3v3h-7zM6 19a1.5 1.5 0 100-.01M17 19a1.5 1.5 0 100-.01"/></svg><span>Logistics</span><i class="m-hs-prog"></i></button>
         </div>
         <div class="m-hs-slides">
           <article class="m-hs-slide is-active" data-hs-slide data-hs-line="Your products. Your flagship store." role="group" aria-roledescription="slide" aria-label="1 of 6: Catalogue and collections">
@@ -162,19 +170,19 @@ export function renderHome() {
             </div>
             <div class="m-hs-copy"><strong>GST invoices.</strong><p>Tax invoices with CGST, SGST or IGST worked out for you, numbered correctly every financial year. A valid GSTIN is required to publish.</p></div>
           </article>
-          <article class="m-hs-slide m-hs-soon" data-hs-slide data-hs-line="Razorpay payments. Coming soon." role="group" aria-roledescription="slide" aria-label="5 of 6: Razorpay payments, coming soon" hidden>
-            <div class="m-hs-card"><span class="m-hs-tag">Coming soon, not enabled yet</span>
+          <article class="m-hs-slide m-hs-soon" data-hs-slide data-hs-line="Razorpay payments, with your own account." role="group" aria-roledescription="slide" aria-label="5 of 6: Razorpay payments" hidden>
+            <div class="m-hs-card"><span class="m-hs-tag">Integration setup, illustrative</span>
               <svg viewBox="0 0 300 40" class="m-hs-art m-hs-track" fill="none"><path class="m-draw" pathLength="1" d="M30 20H150H270"/><circle cx="30" cy="20" r="6"/><circle cx="150" cy="20" r="6"/><circle cx="270" cy="20" r="6"/><circle class="m-dot" cx="30" cy="20" r="3.5"/></svg>
               <div class="m-hs-steps"><span>Customer pays</span><span>Razorpay</span><span>Your account</span></div>
             </div>
-            <div class="m-hs-copy"><strong>Razorpay payments. <em class="m-soon">Coming soon</em></strong><p>Online payments through your own Razorpay account. Cash on delivery is the only option today.</p></div>
+            <div class="m-hs-copy"><strong>Razorpay payments. <em class="m-soon">Integration setup</em></strong><p>Online payments with your own Razorpay account. Contact us to discuss your setup.</p></div>
           </article>
-          <article class="m-hs-slide m-hs-soon" data-hs-slide data-hs-line="Your logistics partner. Coming soon." role="group" aria-roledescription="slide" aria-label="6 of 6: Logistics partners, coming soon" hidden>
-            <div class="m-hs-card"><span class="m-hs-tag">Coming soon, not enabled yet</span>
+          <article class="m-hs-slide m-hs-soon" data-hs-slide data-hs-line="Your logistics partner, set up with you." role="group" aria-roledescription="slide" aria-label="6 of 6: Logistics partners" hidden>
+            <div class="m-hs-card"><span class="m-hs-tag">Integration setup, illustrative</span>
               <svg viewBox="0 0 300 40" class="m-hs-art m-hs-track" fill="none"><path class="m-draw" pathLength="1" d="M30 20H150H270"/><circle cx="30" cy="20" r="6"/><circle cx="150" cy="20" r="6"/><circle cx="270" cy="20" r="6"/><circle class="m-dot" cx="30" cy="20" r="3.5"/></svg>
               <div class="m-hs-steps"><span>Dispatch</span><span>Your partner</span><span>Customer</span></div>
             </div>
-            <div class="m-hs-copy"><strong>Logistics partners. <em class="m-soon">Coming soon</em></strong><p>Shiprocket or any partner you choose can be connected for your brand. Contact us to discuss your setup.</p></div>
+            <div class="m-hs-copy"><strong>Logistics partners. <em class="m-soon">Integration setup</em></strong><p>Shiprocket or any partner you choose can be connected for your brand. Contact us to discuss your setup.</p></div>
           </article>
         </div>
         <div class="m-hs-controls">
@@ -183,6 +191,8 @@ export function renderHome() {
           <button type="button" class="m-hs-toggle" data-hs-toggle aria-pressed="false" aria-label="Pause hero animation">Pause</button>
         </div>
         <p class="m-hs-live" data-hs-live aria-live="polite" aria-atomic="true"></p>
+        <div class="m-hs-toast m-hs-toast-a" aria-hidden="true"><i></i><span><b>New order</b>Cash on delivery, Rs. 1,852.20. Sample.</span></div>
+        <div class="m-hs-toast m-hs-toast-b" aria-hidden="true"><i></i><span><b>Invoice ready</b>CGST and SGST split. Sample.</span></div>
       </div>
     </div>
     <span class="m-scroll-cue" aria-hidden="true">Scroll to explore <span></span></span>
@@ -258,16 +268,16 @@ export function renderHome() {
       <p class="m-principle m-reveal">Zero commission on your sales.</p>
       <p class="m-principle m-reveal">Your domain, your payments, your customer data.</p>
       <p class="m-principle m-reveal">We never market to your customers.</p>
-      <p class="m-clarification m-reveal">Your own domain and online payments are coming soon. Cash on delivery is available today.</p>
+      <p class="m-clarification m-reveal">Your own domain is coming soon. Cash on delivery is available today.</p>
     </div>
   </section>
 
   <section class="m-coming" id="integrations">
     <div class="m-wrap m-coming-inner">
-      <h2 class="m-reveal">Coming next.</h2>
+      <h2 class="m-reveal">Integrations and what's next.</h2>
       <div class="m-coming-list m-reveal">
-        <p>Online payments with your own Razorpay account. <span>Coming soon</span></p>
-        <p>Shiprocket or your chosen logistics partner. <span>Coming soon</span></p>
+        <p>Online payments with your own Razorpay account. <span>Integration setup</span></p>
+        <p>Shiprocket or your chosen logistics partner. <span>Integration setup</span></p>
         <p>Your own domain. <span>Coming soon</span></p>
         <p>Order emails. <span>Coming soon</span></p>
         <p>Drag-and-drop page editor. <span>Coming soon</span></p>
@@ -304,7 +314,7 @@ export function renderHome() {
       <div class="m-faq-list">
         <details class="m-faq-item m-reveal"><summary>Do you take a commission?</summary><p>No. Your sales are entirely yours.</p></details>
         <details class="m-faq-item m-reveal"><summary>Do I need GST registration?</summary><p>Yes. A valid GSTIN is required to publish, so every invoice your store issues is compliant.</p></details>
-        <details class="m-faq-item m-reveal"><summary>How do payments work?</summary><p>Cash on delivery today. Online payments through your own Razorpay account are coming soon, and the money goes straight to you.</p></details>
+        <details class="m-faq-item m-reveal"><summary>How do payments work?</summary><p>Cash on delivery today. Razorpay payments with your own account can be set up for your brand, so the money goes straight to you. Contact us to discuss your setup.</p></details>
         <details class="m-faq-item m-reveal"><summary>Can I use my own domain?</summary><p>Coming soon. Your store starts at yourbrand.lebrands.store.</p></details>
         <details class="m-faq-item m-reveal"><summary>Who owns my customer data?</summary><p>You do. We never market to your customers.</p></details>
         <details class="m-faq-item m-reveal"><summary>How long does setup take?</summary><p>Most brands finish the guided setup in one sitting.</p></details>

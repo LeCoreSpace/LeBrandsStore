@@ -12,7 +12,7 @@ test("black hero explains current features and keeps all slides readable without
   assert.equal((html.match(/\bdata-hero-line\b/g) || []).length, 1);
   assert.doesNotMatch(html, /class="m-hero-(?:lede|summary|points|soon)"/);
   assert.equal((html.match(/data-hs-line="/g) || []).length, 6);
-  assert.equal((html.match(/<span class="m-hs-tag">Coming soon, not enabled yet<\/span>/g) || []).length, 2);
+  assert.equal((html.match(/<span class="m-hs-tag">Integration setup, illustrative<\/span>/g) || []).length, 2);
   assert.match(html, /Razorpay/);
   assert.match(html, /logistics partners/i);
   assert.match(renderHome(), /src="\/img\/REPLACE-lebrands-hero-transparent\.png"/);
@@ -21,6 +21,19 @@ test("black hero explains current features and keeps all slides readable without
   assert.match(css, /section\.m-hero\s*\{[\s\S]*?background:\s*#09090a/);
   assert.match(css, /\.m-hs:not\(\.is-enhanced\) \.m-hs-slide\[hidden\]\s*\{\s*display: block/);
   assert.match(css, /\.m-hero\.is-paused \*, \.m-page-hidden \.m-hero \*[\s\S]*?animation-play-state: paused/);
+  assert.match(html, /m-hs-chrome/);
+  assert.match(html, /Sample data, illustrative/);
+  assert.match(css, /transform-style:\s*preserve-3d/);
+  assert.match(css, /m-hs-progress 6\.5s linear forwards/);
+  assert.match(css, /m-hs-draw 1\.6s ease-out \.15s forwards/);
+  assert.match(css, /m-hs-dot 3\.2s ease-in-out 1s infinite/);
+  assert.match(css, /\.m-hero\.is-paused \*::before, \.m-hero\.is-paused \*::after \{ animation-play-state: paused/);
+  const integrationSlides=[...html.matchAll(/<article\b[^>]*data-hs-slide\b[^>]*>[\s\S]*?<\/article>/g)]
+    .map(([slide])=>slide).slice(4);
+  for(const slide of integrationSlides) {
+    assert.doesNotMatch(slide,/Coming soon|not enabled yet/i);
+    assert.match(slide,/Contact us to discuss your setup/);
+  }
 });
 
 test("hero slides advance, wrap, select and pause; autoplay respects visibility and motion preferences", async () => {

@@ -61,7 +61,7 @@ test("homepage preserves the requested story, six native FAQ items, and honest a
   for(const feature of ["Razorpay","Shiprocket","Your own domain","Order emails","Drag-and-drop page editor","Bazaar"]){
     assert.ok(html.includes(feature));
   }
-  assert.equal((html.match(/<p>[^<]*<span>Coming soon<\/span><\/p>/g)||[]).length,6);
+  assert.equal((html.match(/<p>[^<]*<span>Coming soon<\/span><\/p>/g)||[]).length,4);
   assert.match(renderPricing(),/Pricing is being finalised\. Talk to us\./);
   assert.match(renderPricing(),/href="mailto:support@lebrands\.store"/);
   assert.match(renderLegal("refund-policy"),/Refund policy/);
