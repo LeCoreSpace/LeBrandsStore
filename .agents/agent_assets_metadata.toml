@@ -210,3 +210,31 @@ mtime_ms = 1791810826473
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/5084b69e-c533-47d4-a040-8b70507c30a6/7273415c-9070-407b-81fd-b3807e4da8f3"
 storage_version_token = "1791811063165273"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "soXSOMNjrH5f-2OXFI81c"
+uri = "file://generated-artifacts/account-home/desktop.jpg"
+type = "image"
+title = "Account page: desktop"
+description = "Read-only example showing the redesigned store list."
+logical_id = "a462d4e4-b034-4dff-8412-fcfa788e48c7"
+content_hash = "sha256:12474570d6158ac07898acfb8ee3444987703340f831f2f23e8e61305febd5ed"
+size = 50369
+mtime_ms = 1791811672144
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/a462d4e4-b034-4dff-8412-fcfa788e48c7/e546bcb4-caf6-4d75-94bd-5cc652bd01ce"
+storage_version_token = "1791811687580592"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "rENb-dyMdxolrxlh7eSix"
+uri = "file://generated-artifacts/account-home/mobile.jpg"
+type = "image"
+title = "Account page: mobile"
+description = "Read-only example showing the responsive layout."
+logical_id = "8cb50a76-d65f-4c63-9a83-220205d77b9a"
+content_hash = "sha256:7b05a71726e43e4f8df2912bb51e05adaadd7603e764818cddee38729d3d8f30"
+size = 35884
+mtime_ms = 1791811673679
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/8cb50a76-d65f-4c63-9a83-220205d77b9a/35ba351c-64ff-4d28-9bf6-486e781d68f0"
+storage_version_token = "1791811688814772"
+content_type = "image/jpeg"

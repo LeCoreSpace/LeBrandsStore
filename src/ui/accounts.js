@@ -2,7 +2,7 @@ import { escapeHtml, layout, brandMark, accountHeader, footer } from "./layout.j
 
 const APP_ORIGIN = "https://app.lebrands.store";
 
-function accountDoc(title, body) {
+function accountDoc(title, body, extraHead = "") {
   const routes = {
     "Your stores": "/",
     "Create account": "/signup",
@@ -18,6 +18,7 @@ function accountDoc(title, body) {
     canonical: `${APP_ORIGIN}${routes[title] || "/"}`,
     noindex: true,
     body,
+    extraHead,
   });
 }
 
@@ -94,23 +95,28 @@ function dashboard(data) {
   const user = data.user || {};
   const stores = Array.isArray(data.stores) ? data.stores : [];
   const name = user.name || user.email || "there";
-  const rows = stores.map((store) => {
+  const arrow = '<svg class="ah-arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M3 8h9M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  const rows = stores.map((store, i) => {
     const subdomain = escapeHtml(store.subdomain || "");
     const host = `${subdomain}.lebrands.store`;
-    return `<article class="store-row"><div><div class="store-name">${escapeHtml(store.name || "Untitled store")}</div><div class="store-url">${subdomain ? `<a href="https://${subdomain}.lebrands.store">${host}</a>` : "Store address unavailable"}</div></div>
-      <span class="status-pill">${escapeHtml(store.status || "unknown")}</span><div class="store-role">${escapeHtml(store.role || "member")}<br><a class="inline-link" href="/stores/${escapeHtml(store.store_id)}">Open dashboard</a><br><a class="inline-link" href="/stores/${escapeHtml(store.store_id)}/setup">Continue setup</a>${store.role === "owner" ? `<br><a class="inline-link" href="/stores/${escapeHtml(store.store_id)}/settings/checkout">Checkout settings</a>` : ""}${store.status === "live" ? `<br><a class="inline-link" href="https://${subdomain}.lebrands.store" target="_blank" rel="noopener">View store</a>` : ""}</div></article>`;
+    const id = escapeHtml(store.store_id);
+    const status = escapeHtml(store.status || "unknown");
+    const initial = escapeHtml(String(store.name || "U").trim().charAt(0).toUpperCase() || "U");
+    return `<article class="store-row" style="--i:${i}"><div class="store-main"><span class="store-initial" aria-hidden="true">${initial}</span><div class="store-id"><div class="store-name">${escapeHtml(store.name || "Untitled store")}</div><div class="store-url">${subdomain ? `<a href="https://${subdomain}.lebrands.store">${host}</a>` : "Store address unavailable"}</div></div></div>
+      <div class="store-meta"><span class="status-pill" data-status="${status}">${status}</span><span class="store-role">${escapeHtml(store.role || "member")}</span></div>
+      <nav class="store-actions" aria-label="Store links"><a class="inline-link primary-link" href="/stores/${id}">Open dashboard ${arrow}</a><a class="inline-link" href="/stores/${id}/setup">Continue setup</a>${store.role === "owner" ? `<a class="inline-link" href="/stores/${id}/settings/checkout">Checkout settings</a>` : ""}${store.status === "live" ? `<a class="inline-link" href="https://${subdomain}.lebrands.store" target="_blank" rel="noopener">View store</a>` : ""}</nav></article>`;
   }).join("");
   return accountDoc("Your stores", `${accountHeader(user)}<main class="wrap dashboard-main">
     ${forcedNotice(data)}
     <div class="dashboard-title"><div><div class="eyebrow">Your LeBrands account</div><h1>Good to see you, ${escapeHtml(name)}.</h1><p>Your stores, gathered in one place.</p></div>
-      <div class="dashboard-actions">${!user.must_change_password ? '<a class="button" href="/stores/new">Create a store <span aria-hidden="true">+</span></a>' : ""}<form method="post" action="/logout"><button class="quiet-button" type="submit">Sign out</button></form></div>
+      <div class="dashboard-actions">${!user.must_change_password ? '<a class="button" href="/stores/new">Create a store <span aria-hidden="true">+</span></a>' : ""}</div>
     </div>
     ${alertBlock(data.error, data.notice)}
     ${user.must_change_password ? "" : stores.length
       ? `<section aria-label="Your stores" class="store-list">${rows}</section>`
       : `<section class="empty-card"><div class="empty-mark" aria-hidden="true">+</div><h2>Your first store starts here.</h2><p>Claim a store address for your brand and start shaping its home online.</p><a class="button" href="/stores/new">Create your store <span aria-hidden="true">↗</span></a></section>`}
     <div class="form-foot" style="text-align:left;margin-top:27px"><a href="/account">Account and password</a></div>
-  </main>${footer()}`);
+  </main>${footer()}`, '<link rel="stylesheet" href="/assets/account-home.css">');
 }
 
 function newStore(data) {

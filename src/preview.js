@@ -13,6 +13,7 @@ import { localDashboardFixture } from "./local-dashboard-fixture.js";
 import { dateFilters } from "./public/dashboard-rules.js";
 import { EXAMPLE_STORE_ID,EXAMPLE_PRODUCTS,EXAMPLE_IMAGE_WIDTHS,exampleFixture,exampleInvoice,exampleMedia } from "./local-example-fixture.js";
 import { renderInvoice } from "./ui/invoice.js";
+import { renderAccount } from "./ui/accounts.js";
 import { quoteCart } from "./public/commerce-rules.js";
 import { renderPremiumStore } from "./ui/premium-example.js";
 import { previewShell, renderAppSample } from "./local-app-preview.js";
@@ -44,6 +45,13 @@ function dashboardPreviewLink(path) {
 export default {
   async fetch(request, env, ctx) {
     const original = new URL(request.url);
+    if (original.pathname === "/__account-preview" && request.method === "GET") {
+      const html = renderAccount("dashboard", {
+        user: { name: "Sample owner" },
+        stores: [{ store_id: EXAMPLE_STORE_ID, name: "Example Studio", subdomain: "example-studio", status: "live", role: "owner" }],
+      }).replace("<body>", '<body><p role="status" style="margin:0;padding:8px;text-align:center;background:#f1e5ea;color:#4d1026;font:12px system-ui">Read-only example. No account or database is attached.</p>');
+      return new Response(html, { headers: { ...SECURITY_HEADERS, "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
+    }
     if (original.pathname === "/__database-status") {
       if (!isLivePreview(env)) return Response.json({ connected: false }, { status: 503 });
       if (request.method !== "GET") return new Response("Method not allowed", { status: 405 });
