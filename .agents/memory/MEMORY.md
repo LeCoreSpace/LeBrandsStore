@@ -18,3 +18,4 @@
 - [Platform information boundary](platform-information-boundary.md) — verified company details only; distinguish merchant records and require legal review before publication.
 - [Platform crawler boundary](platform-crawler-boundary.md) — public platform URLs only; keep private and preview routes out, with truthful schema and AI-facing claims.
 - [Sandboxed storefront previews](sandboxed-store-previews.md) — bind preview controls from the trusted parent; blocked forms need explicit click/Enter handlers.
+- [Pricing presentation](pricing-presentation.md) — plan cards above a separate comparison; use provider-neutral integration descriptions and defer billing.

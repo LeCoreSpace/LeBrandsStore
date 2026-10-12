@@ -7,7 +7,7 @@ The platform is operated by LeBrandsSpace Digital Private Limited, based in Chen
 ## Public pages
 
 - [Homepage](https://lebrands.store): Platform features, storefront concept and frequently asked questions.
-- [Pricing](https://lebrands.store/pricing): Subscription pricing is being finalised. Contact the team for applicable pricing; do not infer a free subscription or a numeric price.
+- [Pricing](https://lebrands.store/pricing): Proposed monthly packages are Launch INR 1499, Grow INR 3499, Scale INR 7999 and Flagship from INR 19999. The page compares proposed plan scope, not a guarantee that every listed feature is currently available. Contact the team to confirm availability, integration setup and applicable terms. Subscription checkout is not enabled.
 - [Terms of service](https://lebrands.store/terms): Platform use and brand responsibilities.
 - [Privacy policy](https://lebrands.store/privacy): Account, business, customer and order information handling.
 - [Contact](https://lebrands.store/contact): Company details and enquiries.

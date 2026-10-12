@@ -100,7 +100,8 @@ test("FAQ schema is identical to each visible answer and contains no hidden ques
 
 test("llms guide states boundaries and never fabricates commercial or private data", () => {
   assert.match(files["/llms.txt"], /# LeBrands.Store/);
-  assert.match(files["/llms.txt"], /pricing is being finalised/);
+  assert.match(files["/llms.txt"], /Proposed monthly packages are Launch INR 1499/);
+  assert.match(files["/llms.txt"], /Subscription checkout is not enabled/);
   assert.match(files["/llms.txt"], /first go-live requires platform approval/);
   assert.match(files["/llms.txt"], /separate service/);
   assert.doesNotMatch(files["/llms.txt"], /300[,\s]?000|₹|Rs\.|SESSION_SECRET|SUPABASE_DB_URL|GSTIN_KEY|[\u2013\u2014]/);

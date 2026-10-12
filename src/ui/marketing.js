@@ -1,3 +1,4 @@
+import { pricingMain } from "./pricing.js";
 import { MARKETING_MEDIA } from "./marketing-media.js";
 import { FAVICON_LINKS } from "./favicon.js";
 import { platformSeoHead, PLATFORM_DESCRIPTION, PLATFORM_FAQ } from "./platform-seo.js";
@@ -335,18 +336,12 @@ ${footer()}`;
 export function renderPricing() {
   const body = `<div class="m-pricing-page">
   ${nav({ pricing: true })}
-  <main class="m-pricing-content">
-    <section aria-labelledby="pricing-title">
-      <h1 id="pricing-title">Pricing is being finalised.</h1>
-      <p>Pricing is being finalised. Talk to us.</p>
-      <a href="mailto:support@lebrands.store">Talk to us</a>
-    </section>
-  </main>
+  ${pricingMain()}
   ${footer({ pricing: true })}
 </div>`;
   return shell({
     title: "Pricing | LeBrands.Store",
-    description: "Pricing is being finalised. Talk to the LeBrands.Store team.",
+    description: "Proposed LeBrands.Store plans for Indian D2C brands. Talk to our team to confirm scope before subscribing.",
     canonical: "https://lebrands.store/pricing",
     pageClass: "m-pricing-document",
     body
