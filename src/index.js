@@ -4,7 +4,7 @@ import { handleAccounts } from "./auth/routes.js";
 import { SECURITY_HEADERS } from "./auth/security.js";
 import { renderHome, renderLegal } from "./ui/home.js";
 import { renderPricing } from "./ui/marketing.js";
-import { FAVICON_SVG } from "./ui/favicon.js";
+import { FAVICON_SVG, FAVICON_CSP } from "./ui/favicon.js";
 import { LE_BRANDS_LOGO } from "./ui/brand.js";
 import { serveMedia } from "./store/media.js";
 import { serveStorefront } from "./store/live.js";
@@ -84,7 +84,7 @@ export default {
     }
     if (["GET", "HEAD"].includes(request.method) && ["/favicon.svg", "/favicon.ico"].includes(url.pathname) && ["lebrands.store", "app.lebrands.store"].includes(hostname)) {
       if (url.pathname === "/favicon.svg") {
-        return new Response(request.method === "HEAD" ? null : FAVICON_SVG, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
+        return new Response(request.method === "HEAD" ? null : FAVICON_SVG, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400", "content-security-policy": FAVICON_CSP, "x-content-type-options": "nosniff" } });
       }
       if (!env.ASSETS) return new Response("Favicon asset unavailable", { status: 503 });
       const iconUrl = new URL(url);

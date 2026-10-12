@@ -19,3 +19,23 @@ did not serve that image path.
 
 **How to apply:** Verify shared artwork requests against the production
 handler with the account hostname, not only against local asset serving.
+
+Browser icons need their own contrasting background, not just a transparent
+plum logo.
+
+**Why:** The user reported that the transparent favicon became diluted against
+dark browser tabs. Browser chrome can be dark even when the website is light.
+
+**How to apply:** Keep the supplied sign mark on a high-contrast tile. Support
+the browser's colour preference independently of the website's theme toggle,
+retain a clear multi-size ICO fallback and refresh icon URLs when changing art.
+
+Self-contained SVG favicons with embedded PNGs and theme CSS need a resource
+policy that permits those data images and the exact inline stylesheet.
+
+**Why:** The preview's fallback `default-src 'self'` blocked both despite the
+SVG returning 200, producing a broken icon instead of theme adaptation.
+
+**How to apply:** Use a favicon-specific restrictive CSP with `img-src data:`
+and the stylesheet hash. Check the hash against actual SVG content and render
+both colour preferences in a browser. Do not loosen the application-page CSP.

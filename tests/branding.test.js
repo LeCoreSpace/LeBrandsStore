@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import worker from "../src/index.js";
-import { FAVICON_LINKS, FAVICON_SVG } from "../src/ui/favicon.js";
+import { FAVICON_LINKS, FAVICON_SVG, FAVICON_CSP } from "../src/ui/favicon.js";
 import { LE_BRANDS_LOGO, LE_BRANDS_MARK } from "../src/ui/brand.js";
 import { layout, brandMark } from "../src/ui/layout.js";
 import { renderHome, renderPricing } from "../src/ui/marketing.js";
@@ -44,10 +45,31 @@ test("SVG favicon embeds the exact supplied-artwork PNG with no external depende
   }
 });
 
+test("browser favicon adapts to dark preference with exact high-contrast artwork and refreshed URLs", async () => {
+  const images = [...FAVICON_SVG.matchAll(/data:image\/png;base64,([^"]+)/g)];
+  assert.equal(images.length, 2);
+  const dark = await readFile("src/public/img/REPLACE-lebrands-favicon-dark.png");
+  assert.deepEqual(Buffer.from(images[1][1], "base64"), dark);
+  assert.match(FAVICON_SVG, /prefers-color-scheme:\s*dark/);
+  const style = FAVICON_SVG.match(/<style>([\s\S]*?)<\/style>/)[1];
+  assert.ok(FAVICON_CSP.includes(`'sha256-${createHash("sha256").update(style).digest("base64")}'`));
+  assert.match(FAVICON_CSP, /default-src 'none'; img-src data:/);
+  const svgResponse = await worker.fetch(new Request("https://app.lebrands.store/favicon.svg"), {});
+  assert.equal(svgResponse.headers.get("content-security-policy"), FAVICON_CSP);
+  assert.match(FAVICON_SVG, /icon-light/);
+  assert.match(FAVICON_SVG, /icon-dark/);
+  assert.doesNotMatch(FAVICON_SVG, /href="https?:|<script|<filter|animation/);
+  assert.match(FAVICON_LINKS, /favicon\.svg\?v=contrast-light-dark/);
+  assert.match(FAVICON_LINKS, /favicon\.ico\?v=contrast-light-dark/);
+  const ico = await readFile("src/public/img/REPLACE-lebrands-favicon.ico");
+  assert.equal(ico.readUInt16LE(4), 4);
+  assert.deepEqual([0, 1, 2, 3].map(n => ico[6 + 16 * n]), [16, 32, 48, 64]);
+});
+
 test("browser ICO fallback serves real multi-size artwork and supports HEAD", async () => {
   const icon = await readFile("src/public/img/REPLACE-lebrands-favicon.ico");
   assert.equal(icon.readUInt16LE(2), 1);
-  assert.equal(icon.readUInt16LE(4), 3);
+  assert.equal(icon.readUInt16LE(4), 4);
   for (const host of ["lebrands.store", "app.lebrands.store"]) {
     for (const method of ["GET", "HEAD"]) {
       const response = await worker.fetch(new Request(`https://${host}/favicon.ico?v=hanging-sign`, { method }), {
