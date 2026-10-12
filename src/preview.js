@@ -4,6 +4,7 @@ import worker from "./index.js";
 import { renderWizard } from "./ui/wizard.js";
 import {renderEditor} from "./ui/editor.js";
 import {defaultPageLayouts} from "./public/aura-layout.js";
+import {starterLayouts} from "./public/aura-skeleton.js";
 import {publicStonescence} from "./local-stonescence-fixture.js";
 import { renderAura } from "./public/aura.js";
 import { DEFAULT_SETTINGS } from "./store/repository.js";
@@ -92,16 +93,32 @@ export default {
       if(!["GET","HEAD"].includes(request.method))return new Response("Read-only example assets",{status:405});
       const filename=original.pathname.slice("/__example-media/".length);
       if(![...EXAMPLE_PRODUCTS.flatMap(p=>[p[0]+".webp",...EXAMPLE_IMAGE_WIDTHS.map(w=>`${p[0]}-${w}.webp`)]),"store-desktop.png","store-mobile.png"].includes(filename))return new Response("Not found",{status:404});
-      const asset=await env.ASSETS.fetch(new Request(new URL(`/img/local-example/${filename}`,original)));
+      let asset=await env.ASSETS.fetch(new Request(new URL(`/img/local-example/${filename}`,original)));
+      // Fictional responsive previews may reference sizes not checked into Git.
+      // Local-only fallback to the original, never a production media fallback.
+      if (asset.status === 404 && /-\d+\.webp$/.test(filename)) {
+        asset = await env.ASSETS.fetch(new Request(new URL(`/img/local-example/${filename.replace(/-\d+\.webp$/, ".webp")}`, original)));
+      }
       return new Response(request.method==="HEAD"?null:asset.body,{status:asset.status,headers:asset.headers});
     }
     if(["GET","HEAD"].includes(request.method) && original.pathname.startsWith("/__example-module/")){
       const name=original.pathname.split("/").pop();
-       if(!["aura.js","aura-sections.js","wizard.js","premium-example-client.js"].includes(name))return new Response("Not found",{status:404});
+       if(!["aura.js","aura-sections.js","wizard.js","editor.js","premium-example-client.js"].includes(name))return new Response("Not found",{status:404});
       const asset=await env.ASSETS.fetch(new Request(new URL("/"+name,original)));
        if(name==="premium-example-client.js")return new Response(request.method==="HEAD"?null:await asset.text(),{headers:{...exampleHeaders,"content-type":"text/javascript; charset=utf-8"}});
       let source=await asset.text();
-      if(name==="aura.js")source=source
+      if (name === "editor.js") {
+        const pairs = [];
+        const collect = value => {
+          if (typeof value === "string") {
+            const local = exampleMedia(value);
+            if (local !== value) pairs.push([value, local]);
+          } else if (value && typeof value === "object") Object.values(value).forEach(collect);
+        };
+        collect(exampleFixture());
+        source = `const fictionalMediaPairs=${JSON.stringify(pairs)};\nconst fictionalMedia=html=>{for(const [remote,local] of fictionalMediaPairs)html=html.replaceAll(remote,local);return html;};\n` +
+          source.replace("frame.srcdoc = html.replace", "frame.srcdoc = fictionalMedia(html).replace");
+      } else if(name==="aura.js")source=source
         .replace('renderSection, safeImage, policyTitle','renderSection, safeImage as realSafeImage, policyTitle')
         .replace('const esc =','const safeImage = (url) => /^\\/__example-media\\/[a-z0-9-]+\\.webp$/.test(String(url || "")) ? String(url) : realSafeImage(url);\nconst esc =')
         .replace('from "./aura-sections.js"','from "/__example-module/aura-sections.js"')
@@ -114,12 +131,21 @@ export default {
     }
     if(original.pathname==="/__editor-preview"){
       if(!["GET","HEAD"].includes(request.method))return new Response("Preview route is read-only",{status:405});
-      const data=exampleFixture();data.role="owner";
+      const data=exampleFixture();data.role="owner";data.aura_skeleton_enabled=true;
       data.layouts=defaultPageLayouts(data);
       data.page_versions=Object.fromEntries(Object.keys(data.layouts).map(key=>[key,{version:1}]));
-      return new Response(request.method==="HEAD"?null:renderEditor(data,{name:"Example reviewer",email:"example@example.invalid"}),{
+      return new Response(request.method==="HEAD"?null:renderEditor(data,{name:"Example reviewer",email:"example@example.invalid"}).replace('src="/assets/editor.js"', 'src="/__example-module/editor.js"'),{
         headers:{...exampleHeaders,"content-type":"text/html; charset=utf-8"}
       });
+    }
+    if (original.pathname === "/__aura-skeleton-preview") {
+      if (!["GET", "HEAD"].includes(request.method)) return new Response("Preview route is read-only", { status: 405 });
+      const data = exampleFixture();
+      const page = ["home", "collection", "product", "cart", "checkout"].includes(original.searchParams.get("page")) ? original.searchParams.get("page") : "home";
+      data.layouts = starterLayouts(data);
+      return new Response(request.method === "HEAD" ? null : exampleMedia(renderAura(data, {
+        page, productId: data.products[0]?.id, preview: true, readOnly: true, commerce: true,
+      })), { headers: { ...exampleHeaders, "content-type": "text/html; charset=utf-8" } });
     }
     if(original.pathname==="/__stonescence-aura-preview"){
       if(!["GET","HEAD"].includes(request.method))return new Response("Public-content preview is read-only",{status:405});

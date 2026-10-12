@@ -1,0 +1,2 @@
+import { section, text, rich, field, select } from "./schema-helpers.js";
+export default section("size-guide", "Size guide", ["product"], { title: text(160, { default: "Size guide" }), heading_a: text(40, { default: "Size" }), heading_b: text(40, { default: "Measurement" }), note: rich(1500) }, { minItems: 1, maxItems: 16, blockLabel: "Sizes", blockFields: { size: text(40, { required: true }), measurement: text(160) } });

@@ -34,7 +34,7 @@ function img(image, { eager = false, cls = "", label = "", sizes = HERO_IMAGE_SI
 }
 function card(p, ctx, eager = false, index = 0) {
   const im = img(p.images?.[0], { label: p.title, sizes:"(max-width: 680px) 50vw, (max-width: 1024px) 33vw, 25vw" });
-  return `<a class="au-card" data-title="${esc(String(p.title || "").toLowerCase())}" data-price="${Number(p.price_paise) || 0}" data-available="${available(p) ? 1 : 0}" data-index="${index}" href="/products/${encodeURIComponent(p.id || "")}"><span class="au-card-media">${im || `<span class="au-card-blank">${esc((p.title || "").slice(0, 1))}</span>`}</span><span class="au-card-name">${esc(p.title || "Untitled product")}</span><span class="au-card-price">${money(p.price_paise)}${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}${available(p) ? "" : " · Sold out"}</span></a>`;
+  return `<a class="au-card" data-title="${esc(String(p.title || "").toLowerCase())}" data-price="${Number(p.price_paise) || 0}" data-available="${available(p) ? 1 : 0}" data-index="${index}"${Array.isArray(p.collection_ids) ? ` data-collections="${esc(p.collection_ids.join(" "))}"` : ""} href="/products/${encodeURIComponent(p.id || "")}"><span class="au-card-media">${im || `<span class="au-card-blank">${esc((p.title || "").slice(0, 1))}</span>`}</span><span class="au-card-name">${esc(p.title || "Untitled product")}</span><span class="au-card-price">${money(p.price_paise)}${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}${available(p) ? "" : " · Sold out"}</span></a>`;
 }
 const heading = (t, extra = "") => t ? `<div class="au-head"><h2>${esc(t)}</h2>${extra}</div>` : "";
 
@@ -145,7 +145,7 @@ export const SECTION_RENDERERS = {
     const cid = s.settings?.collection;
     if (cid && list.some((p) => Array.isArray(p.collection_ids))) list = list.filter((p) => (p.collection_ids || []).includes(cid));
     const title = str(s.settings?.title) || "Collection";
-    const tools = list.length > 1 ? `<div class="au-tools"><p class="au-count" data-catalog-count role="status"></p><label class="au-sr" for="au-sort">Sort products</label><select id="au-sort" data-catalog-sort><option value="">Featured</option><option value="price-asc">Price, low to high</option><option value="price-desc">Price, high to low</option><option value="available">Availability</option></select></div>` : "";
+    const tools = list.length > 1 ? `<div class="au-tools"><p class="au-count" data-catalog-count role="status"></p>${list.some((p) => !available(p)) ? '<label class="au-check"><input type="checkbox" data-catalog-stock> In stock only</label>' : ""}<label class="au-sr" for="au-sort">Sort products</label><select id="au-sort" data-catalog-sort><option value="">Featured</option><option value="price-asc">Price, low to high</option><option value="price-desc">Price, high to low</option><option value="available">Availability</option></select></div>` : "";
     return `<section class="au-page"><h1>${esc(title)}</h1>${c.settings.description ? `<p class="au-lede">${esc(c.settings.description)}</p>` : ""}${tools}${list.length ? `<div class="au-grid" data-catalog>${list.map((p, i) => card(p, c, false, i)).join("")}</div><p class="au-noresult" data-catalog-empty hidden>No products match your search.</p>` : `<div class="au-empty"><h2>The collection is taking shape.</h2></div>`}</section>`;
   },
   "product-details"(s, c) {
@@ -154,10 +154,11 @@ export const SECTION_RENDERERS = {
     const o = c.options;
     const imgs = (p.images || []).map((im, i) => img(im, { eager: i === 0, label: p.title }).replace("<img ", `<img data-gallery-image="${i}" `)).join("");
     const buy = o.commerce && !o.readOnly
-      ? `<div class="au-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="99" value="1" inputmode="numeric" aria-label="Quantity"><button class="au-btn" type="button" data-add-product="${esc(p.id)}">Add to cart</button></div><p class="au-feedback" data-commerce-feedback role="status"></p>`
+      ? `<div class="au-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="${p.stock == null ? 99 : Math.max(1, Math.min(99, Number(p.stock)))}" value="1" inputmode="numeric" aria-label="Quantity"><button class="au-btn" type="button" data-add-product="${esc(p.id)}"${available(p) ? "" : ' disabled aria-disabled="true"'}>${available(p) ? "Add to cart" : "Sold out"}</button></div><p class="au-feedback" data-commerce-feedback role="status"></p>`
       : o.commerce ? `<div class="au-buy"><button class="au-btn" type="button" disabled aria-disabled="true">Add to cart on the live store</button></div><p class="au-feedback" role="status">Read-only preview. Shopping is available on the live store.</p>`
-        : `<button class="au-btn" disabled aria-disabled="true">Checkout opening soon</button>`;
-    return `<section class="au-product"><div class="au-pgallery">${imgs}</div><div class="au-pdetail"><h1>${esc(p.title || "Untitled product")}</h1><p class="au-price"><strong>${money(p.price_paise)}</strong>${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}</p><div class="aura-description au-desc">${c.renderDescription(p.description || "")}</div>${buy}</div></section>`;
+        : `<button class="au-btn" disabled aria-disabled="true">Shopping unavailable</button>`;
+    const sticky = o.commerce ? `<div class="au-sticky-buy"><span>${esc(p.title || "Product")}<strong>${money(p.price_paise)}</strong></span><button class="au-btn" type="button"${o.readOnly || !available(p) ? ' disabled aria-disabled="true"' : ` data-add-product="${esc(p.id)}"`}>${!available(p) ? "Sold out" : o.readOnly ? "Preview only" : "Add to cart"}</button></div>` : "";
+    return `<section class="au-product"><div class="au-pgallery">${imgs}</div><div class="au-pdetail"><h1>${esc(p.title || "Untitled product")}</h1><p class="au-price"><strong>${money(p.price_paise)}</strong>${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}</p><div class="aura-description au-desc">${c.renderDescription(p.description || "")}</div>${buy}</div>${sticky}</section>`;
   },
   about(s, c) {
     const x = s.settings || {};
@@ -181,6 +182,72 @@ export const SECTION_RENDERERS = {
     return renderCommerceBody(c.data, c.options);
   },
 };
+
+const plainText = (v) => str(v).replace(/<[^>]*>/g, "").trim();
+const cardsOf = (list, c) => `<div class="au-grid">${list.map((p) => card(p, c)).join("")}</div>`;
+Object.assign(SECTION_RENDERERS, {
+  faq(s) {
+    const items = blocks(s).filter((b) => str(b.question) && plainText(b.answer));
+    if (off(s) || !items.length) return "";
+    return `<section class="au-section au-faq">${heading(str(s.settings?.title))}<div class="au-faq-list">${items.map((b) => `<details><summary>${esc(b.question)}</summary><div class="au-rich">${rich(b.answer)}</div></details>`).join("")}</div></section>`;
+  },
+  "material-care"(s) {
+    if (off(s) || !plainText(s.settings?.body)) return "";
+    return `<section class="au-section au-info">${heading(str(s.settings.title) || "Materials and care")}<div class="au-rich">${rich(s.settings.body)}</div></section>`;
+  },
+  "how-to-use"(s) {
+    const items = blocks(s).filter((b) => str(b.title));
+    if (off(s) || !items.length) return "";
+    return `<section class="au-section au-info">${heading(str(s.settings?.title) || "How to use")}<ol class="au-steps">${items.map((b) => `<li><strong>${esc(b.title)}</strong>${str(b.text) ? `<span>${esc(b.text)}</span>` : ""}</li>`).join("")}</ol></section>`;
+  },
+  "product-specs"(s, c) {
+    const rows = blocks(s).filter((b) => str(b.label) && str(b.value)).map((b) => [b.label, b.value]);
+    if (s.settings?.show_sku !== false && str(c.product?.sku)) rows.push(["SKU", c.product.sku]);
+    if (off(s) || !rows.length) return "";
+    return `<section class="au-section au-info">${heading(str(s.settings?.title) || "Specifications")}<dl class="au-specs">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl></section>`;
+  },
+  "size-guide"(s) {
+    const rows = blocks(s).filter((b) => str(b.size));
+    if (off(s) || !rows.length) return "";
+    const x = s.settings || {};
+    return `<section class="au-section au-info">${heading(str(x.title) || "Size guide")}<table class="au-size"><thead><tr><th scope="col">${esc(str(x.heading_a) || "Size")}</th><th scope="col">${esc(str(x.heading_b) || "Measurement")}</th></tr></thead><tbody>${rows.map((b) => `<tr><th scope="row">${esc(b.size)}</th><td>${esc(b.measurement || "")}</td></tr>`).join("")}</tbody></table>${plainText(x.note) ? `<div class="au-rich">${rich(x.note)}</div>` : ""}</section>`;
+  },
+  "shipping-info"(s, c) {
+    if (off(s)) return "";
+    const x = s.settings || {};
+    const policies = Array.isArray(c.data.policies) ? c.data.policies : [];
+    const links = x.show_policy_links === false ? [] : [["shipping", "Shipping policy"], ["cancellation-refund", "Cancellation and refund policy"]].filter(([k]) => policies.some((p) => p.kind === k && p.body)).map(([k, l]) => `<a class="au-link" href="/policies/${k}">${l}</a>`);
+    if (!plainText(x.body) && !links.length) return "";
+    return `<section class="au-section au-info">${heading(str(x.title) || "Shipping and returns")}${plainText(x.body) ? `<div class="au-rich">${rich(x.body)}</div>` : ""}${links.length ? `<p class="au-info-links">${links.join("")}</p>` : ""}</section>`;
+  },
+  "related-products"(s, c) {
+    if (off(s) || !c.product) return "";
+    const mine = c.product.collection_ids || [];
+    const shared = (p) => (p.collection_ids || []).some((id) => mine.includes(id)) ? 0 : 1;
+    const others = c.products.filter((p) => String(p.id) !== String(c.product.id)).map((p, i) => [p, i]).sort((a, b) => shared(a[0]) - shared(b[0]) || a[1] - b[1]).map((e) => e[0]);
+    const n = [3, 4, 6].includes(Number(s.settings?.limit)) ? Number(s.settings.limit) : 4;
+    return others.length ? `<section class="au-section">${heading(str(s.settings?.title) || "You may also like")}${cardsOf(others.slice(0, n), c)}</section>` : "";
+  },
+  "featured-products"(s, c) {
+    const list = blocks(s).map((b) => c.products.find((p) => String(p.id) === String(b.product))).filter(Boolean);
+    if (off(s) || !list.length) return "";
+    return `<section class="au-section">${heading(str(s.settings?.title))}${cardsOf(list, c)}</section>`;
+  },
+  "collection-heading"(s) {
+    const x = s.settings || {};
+    if (off(s) || (!str(x.kicker) && !str(x.intro))) return "";
+    return `<section class="au-section au-collection-head">${str(x.kicker) ? `<p class="au-eyebrow">${esc(x.kicker)}</p>` : ""}${str(x.intro) ? `<p class="au-lede">${esc(x.intro)}</p>` : ""}</section>`;
+  },
+  "collection-nav"(s, c) {
+    const cols = (Array.isArray(c.data.collections) ? c.data.collections : []).filter((k) => k?.id && (k.title || k.name) && c.products.some((p) => (p.collection_ids || []).includes(k.id)));
+    if (off(s) || !cols.length) return "";
+    return `<nav class="au-section au-collection-nav" aria-label="${esc(str(s.settings?.title) || "Browse")}"><button type="button" class="au-chip" data-catalog-collection="" aria-pressed="true">All</button>${cols.map((k) => `<button type="button" class="au-chip" data-catalog-collection="${esc(k.id)}" aria-pressed="false">${esc(k.title || k.name)}</button>`).join("")}</nav>`;
+  },
+  "collection-description"(s) {
+    if (off(s) || !plainText(s.settings?.body)) return "";
+    return `<section class="au-section au-info">${heading(str(s.settings.title))}<div class="au-rich">${rich(s.settings.body)}</div></section>`;
+  },
+});
 
 const alias = (h) => h.replace(/class="au-hero /, 'class="aura-hero au-hero ').replace(/class="au-(section|statement|spotlight|founder|trust|page)\b/g, 'class="aura-$1 au-$1').replace(/class="aura-section au-section au-/g, 'class="aura-section au-section au-');
 export function renderSection(section, ctx) {

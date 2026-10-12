@@ -77,6 +77,7 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
     data.collections = collections.map(c => ({ ...c, product_ids: memberships.filter(m => m.collection_id === c.id).map(m => m.product_id) }));
     for (const product of data.products) product.collection_ids = memberships.filter(m => m.product_id === product.id).map(m => m.collection_id);
     const pages = await pageLayouts(tx, storeId);
+    data.aura_skeleton_enabled = pages.aura_skeleton_enabled;
     data.layouts = { ...defaultPageLayouts(data), ...pages.layouts };
     data.page_versions = pages.page_versions;
   }

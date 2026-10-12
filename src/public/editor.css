@@ -126,3 +126,4 @@ body{margin:0;background:var(--ed-bg);color:var(--ed-ink);font-size:14px}
   .ed{height:auto;min-height:100dvh}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+.ed-preview-pick{margin:10px 0}.ed-starter-banner p{margin:0 0 8px}

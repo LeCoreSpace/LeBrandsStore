@@ -14,7 +14,10 @@ test("all canonical pages validate and registry matches the immutable migration 
   const snapshot=JSON.parse(await readFile(new URL("../db/schema-snapshots/aura-v1.json",import.meta.url),"utf8"));
   const sections=Object.fromEntries(Object.entries(SECTION_SCHEMAS).map(([id,s])=>[id,{pages:s.allowedPages,fields:s.fields,min:s.minItems,max:s.maxItems,blocks:s.blockFields,required:s.requiredOn}]));
   const packed=compilePageSchemaSnapshot({sections,pages:PAGE_KEYS});
-  assert.deepEqual(compilePageSchemaSnapshot(snapshot),packed);
+  const old = compilePageSchemaSnapshot(snapshot);
+  assert.deepEqual(old,Object.fromEntries(Object.keys(old).map(key=>[key,packed[key]])), "Legacy schemas must remain unchanged");
+  const additions = JSON.parse(await readFile(new URL("../db/schema-snapshots/aura-skeleton-v1.json",import.meta.url),"utf8"));
+  assert.deepEqual({...old,...compilePageSchemaSnapshot(additions)},packed, "New catalogue must match its separate immutable snapshot");
 });
 for(const [name,mutate] of [
   ["unknown section",x=>x[1].type="foreign"],

@@ -1,4 +1,9 @@
 import { defaultPageLayouts, validateLayout, PAGE_KEYS } from "../public/aura-layout.js";
+import { AURA_SKELETON_TYPES } from "../public/sections/index.js";
+export async function skeletonEnabled(tx) {
+  const [row] = await tx`SELECT to_regprocedure('public.aura_skeleton_available()') IS NOT NULL AS enabled`;
+  return row?.enabled === true;
+}
 export async function pagesEnabled(tx) {
   const [row] = await tx`SELECT to_regclass('public.store_pages') IS NOT NULL AS pages_enabled`;
   return row?.pages_enabled === true;
@@ -8,6 +13,7 @@ export async function pageLayouts(tx, storeId, { published = false } = {}) {
     ? await tx`SELECT page_key,published_layout AS layout,version,updated_at,updated_by FROM public.store_pages WHERE store_id=${storeId} AND published_layout IS NOT NULL ORDER BY page_key`
     : await tx`SELECT page_key,draft_layout AS layout,version,updated_at,updated_by FROM public.store_pages WHERE store_id=${storeId} ORDER BY page_key`;
   return {
+    aura_skeleton_enabled: await skeletonEnabled(tx),
     layouts: Object.fromEntries(rows.map(row => [row.page_key, row.layout])),
     page_versions: Object.fromEntries(rows.map(row => [row.page_key, { version: row.version, updated_at: row.updated_at, updated_by: row.updated_by }])),
   };
@@ -19,6 +25,12 @@ export function layoutContext(data) {
 export async function savePage(tx, id, page, layout, expected, tokenHash, data) {
   if (!PAGE_KEYS.includes(page) || !Number.isInteger(expected) || expected < 0) throw Object.assign(new Error("Invalid page revision."), { status: 400 });
   const normalized = validateLayout(page, layout, layoutContext(data));
+  if (!data.aura_skeleton_enabled && normalized.some(section => AURA_SKELETON_TYPES.includes(section.type))) {
+    throw Object.assign(new Error("The Aura section catalogue update is required before saving this layout."), { status: 409 });
+  }
+  if (page === "checkout" && normalized.some(section => !["header", "commerce", "trust", "footer"].includes(section.type))) {
+    throw Object.assign(new Error("Checkout only supports the protected checkout flow, header, reassurance and footer."), { status: 400 });
+  }
   const [row] = await tx`SELECT * FROM public.save_store_page(${id},${page},${tx.json(normalized)},${expected},${tokenHash})`;
   return row;
 }
@@ -33,5 +45,5 @@ export async function pageHistory(tx, id, page) {
 }
 export function draftPageResponse(data) {
   const defaults = defaultPageLayouts(data);
-  return { layouts: { ...defaults, ...data.layouts }, revisions: Object.fromEntries(PAGE_KEYS.map(key => [key, data.page_versions?.[key] || { version: 0 }])) };
+  return { aura_skeleton_enabled: data.aura_skeleton_enabled === true, layouts: { ...defaults, ...data.layouts }, revisions: Object.fromEntries(PAGE_KEYS.map(key => [key, data.page_versions?.[key] || { version: 0 }])) };
 }

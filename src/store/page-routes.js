@@ -15,7 +15,6 @@ export async function handlePageRoutes(request, env, db, user, tokenHash) {
   if (page && !PAGE_KEYS.includes(page)) return json({ error: "Page not found." }, 404);
   const read = request.method === "GET", save = request.method === "PUT" && page && !action, restore = request.method === "POST" && action === "restore";
   if (!read && !save && !restore) return json({ error: "Method not allowed." }, 405);
-  if(!read&&page==="checkout")return json({error:"Checkout layout is not editable."},403);
   try {
     // Account routing has already applied the same exact-origin and session
     // protection used by the existing wizard API.
@@ -23,8 +22,15 @@ export async function handlePageRoutes(request, env, db, user, tokenHash) {
       if (!await pagesEnabled(tx)) throw Object.assign(new Error("The page architecture migration has not been applied."), { status: 503 });
       if (read && action === "history") return pageHistory(tx, id, page);
       const data = await loadDraft(tx, id);
+      if (!read && page === "checkout" && !data.aura_skeleton_enabled) {
+        throw Object.assign(new Error("Checkout layout is not editable."), { status: 403 });
+      }
       if (read) return page ? { layout: draftPageResponse(data).layouts[page], revision: data.page_versions?.[page] || { version: 0 } } : draftPageResponse(data);
       const body = await readJson(request);
+      if (restore && page === "checkout") {
+        // Restore cannot bypass the same restricted checkout schema as Save.
+        throw Object.assign(new Error("Checkout restoration is not supported. Edit and save its protected layout."), { status: 403 });
+      }
       const keys = restore ? ["version", "expected_version"] : ["layout", "expected_version"];
       if (!body || Object.keys(body).some(key => !keys.includes(key))) throw Object.assign(new Error("Unknown page field."), { status: 400 });
       const row = restore

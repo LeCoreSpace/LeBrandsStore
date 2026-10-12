@@ -1,0 +1,16 @@
+{
+  "pages": ["home","collection","product","about","contact","policy-privacy","policy-terms","policy-shipping","policy-cancellation-refund","policy-contact","policy-pricing","cart","checkout","track","confirmation","404"],
+  "sections": {
+    "faq": {"pages":["home","collection","product","cart"],"fields":{"title":{"type":"text","maxLength":160,"default":"Frequently asked questions"}},"min":1,"max":12,"blocks":{"question":{"type":"text","required":true,"maxLength":240},"answer":{"type":"richtext","maxLength":2000}}},
+    "material-care": {"pages":["product"],"fields":{"title":{"type":"text","maxLength":160,"default":"Materials and care"},"body":{"type":"richtext","maxLength":3000}}},
+    "how-to-use": {"pages":["product"],"fields":{"title":{"type":"text","maxLength":160,"default":"How to use"}},"min":1,"max":10,"blocks":{"title":{"type":"text","required":true,"maxLength":120},"text":{"type":"text","maxLength":500}}},
+    "product-specs": {"pages":["product"],"fields":{"title":{"type":"text","maxLength":160,"default":"Specifications"},"show_sku":{"type":"toggle","default":true}},"min":1,"max":20,"blocks":{"label":{"type":"text","required":true,"maxLength":80},"value":{"type":"text","maxLength":240}}},
+    "size-guide": {"pages":["product"],"fields":{"title":{"type":"text","maxLength":160,"default":"Size guide"},"heading_a":{"type":"text","maxLength":40,"default":"Size"},"heading_b":{"type":"text","maxLength":40,"default":"Measurement"},"note":{"type":"richtext","maxLength":1500}},"min":1,"max":16,"blocks":{"size":{"type":"text","required":true,"maxLength":40},"measurement":{"type":"text","maxLength":160}}},
+    "shipping-info": {"pages":["product","cart"],"fields":{"title":{"type":"text","maxLength":160,"default":"Shipping and returns"},"body":{"type":"richtext","maxLength":1500},"show_policy_links":{"type":"toggle","default":true}}},
+    "related-products": {"pages":["product"],"fields":{"title":{"type":"text","maxLength":160,"default":"You may also like"},"limit":{"type":"select","values":["3","4","6"],"default":"4"}}},
+    "featured-products": {"pages":["home","collection"],"fields":{"title":{"type":"text","maxLength":160,"default":"Featured products"}},"min":1,"max":8,"blocks":{"product":{"type":"product","required":true}}},
+    "collection-heading": {"pages":["collection"],"fields":{"intro":{"type":"text","maxLength":240}}},
+    "collection-nav": {"pages":["collection"],"fields":{"title":{"type":"text","maxLength":80,"default":"Browse"}}},
+    "collection-description": {"pages":["collection"],"fields":{"title":{"type":"text","maxLength":160},"body":{"type":"richtext","maxLength":3000}}}
+  }
+}

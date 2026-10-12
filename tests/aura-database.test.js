@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { PGlite } from "@electric-sql/pglite";
 import { preparePageMigration } from "../db/page-schema-migration.js";
 import { defaultPageLayouts } from "../src/public/aura-layout.js";
+import { starterLayouts } from "../src/public/aura-skeleton.js";
 
 test("0010 compiles, backfills safely and enforces real PostgreSQL page isolation and publication",async()=>{
   const pg=new PGlite();
@@ -88,5 +89,22 @@ test("0010 compiles, backfills safely and enforces real PostgreSQL page isolatio
     assert.deepEqual(after.published_layout,before.published_layout);
     const flags=await query("SELECT relrowsecurity,relforcerowsecurity FROM pg_class WHERE relname IN ('store_pages','store_page_versions')");
     assert.ok(flags.rows.every(x=>x.relrowsecurity&&x.relforcerowsecurity));
+    // Staged catalogue is tested only in this disposable in-memory database.
+    const beforeCatalogue = (await query("SELECT store_id,page_key,published_layout FROM store_pages ORDER BY store_id,page_key")).rows;
+    const stagedName = "0012_aura_skeleton_sections.sql";
+    const staged = await readFile(new URL(`../db/staged/${stagedName}`, import.meta.url), "utf8");
+    await pg.exec(await preparePageMigration(stagedName, staged));
+    assert.equal((await asApp(() => scalar("SELECT public.aura_skeleton_available() AS enabled"))).enabled, true);
+    await denied(() => asApp(() => query("SELECT public.aura_section_schemas()")), "42501");
+    const starters = starterLayouts({ store: { store_id: a }, settings: {} });
+    for (const page of ["home", "collection", "product", "cart", "checkout"]) {
+      const current = await scalar("SELECT version FROM store_pages WHERE store_id=$1 AND page_key=$2", [a, page]);
+      await asApp(() => query("SELECT * FROM save_store_page($1,$2,$3::jsonb,$4,$5)",
+        [a, page, JSON.stringify(starters[page]), current?.version || 0, hash]));
+    }
+    assert.deepEqual((await query("SELECT store_id,page_key,published_layout FROM store_pages ORDER BY store_id,page_key")).rows, beforeCatalogue,
+      "Installing catalogue and saving starters must never alter published layouts");
+    await denied(() => asApp(() => query("SELECT * FROM save_store_page($1,'home',$2::jsonb,0,$3)",
+      [b, JSON.stringify(starters.home), hash])), "42501");
   }finally{await pg.close();}
 });

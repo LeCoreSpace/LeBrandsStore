@@ -72,6 +72,7 @@ if (catalog) {
   const sort = document.querySelector("[data-catalog-sort]");
   const count = document.querySelector("[data-catalog-count]");
   const none = document.querySelector("[data-catalog-empty]");
+  let stockOnly = false, col = "";
   let q = (new URLSearchParams(location.search).get("q") || "").trim().toLowerCase();
   document.querySelectorAll(".au-search input").forEach((i) => { i.value = q; });
   const apply = () => {
@@ -79,10 +80,13 @@ if (catalog) {
     const n = (el, k) => Number(el.dataset[k]) || 0;
     const ordered = [...cards].sort((a, b) => mode === "price-asc" ? n(a, "price") - n(b, "price") : mode === "price-desc" ? n(b, "price") - n(a, "price") : mode === "available" ? n(b, "available") - n(a, "available") || n(a, "index") - n(b, "index") : n(a, "index") - n(b, "index"));
     let shown = 0;
-    for (const el of ordered) { const hit = !q || el.dataset.title.includes(q); el.hidden = !hit; if (hit) shown++; catalog.append(el); }
+    for (const el of ordered) { const hit = (!q || el.dataset.title.includes(q)) && (!stockOnly || el.dataset.available === "1") && (!col || (el.dataset.collections || "").split(" ").includes(col)); el.hidden = !hit; if (hit) shown++; catalog.append(el); }
     if (count) count.textContent = `${shown} ${shown === 1 ? "product" : "products"}`;
     if (none) none.hidden = shown > 0;
   };
   sort?.addEventListener("change", apply);
+  document.querySelector("[data-catalog-stock]")?.addEventListener("change", (e) => { stockOnly = e.target.checked; apply(); });
+  const chips = [...document.querySelectorAll("[data-catalog-collection]")];
+  chips.forEach((chip) => chip.addEventListener("click", () => { col = chip.dataset.catalogCollection; chips.forEach((o) => o.setAttribute("aria-pressed", String(o === chip))); apply(); }));
   apply();
 }

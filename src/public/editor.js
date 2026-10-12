@@ -3,6 +3,7 @@ import { attachAuraSearch } from "/assets/aura-ui.js";
 import { SECTION_SCHEMAS, defaultPageLayouts, safeLayoutLink } from "/assets/aura-layout.js";
 import { uploadAuraImage } from "/assets/aura-upload.js";
 import * as S from "/assets/editor-state.js";
+import { starterLayouts, mergeStarter, isLegacyDefault, TEMPLATE_META } from "/assets/aura-skeleton.js";
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -17,7 +18,20 @@ const readOnly = () => !canEditRole || phone.matches;
 const context = S.layoutContext(data);
 const defaults = defaultPageLayouts(data);
 const pages = {};
-for (const key of S.EDITABLE_PAGES) pages[key] = S.createPageState(structuredClone(data.layouts?.[key] || defaults[key]), data.page_versions?.[key]?.version || 0);
+const skeleton = data.aura_skeleton_enabled === true;
+const EDIT_PAGES = skeleton ? [...S.EDITABLE_PAGES, ...S.SKELETON_PAGES] : S.EDITABLE_PAGES;
+// Pages showing an unsaved Aura starter proposal. They are never autosaved; only "Save starter draft" persists them.
+const proposed = new Map();
+for (const key of EDIT_PAGES) {
+  const saved = structuredClone(data.layouts?.[key] || defaults[key]);
+  pages[key] = S.createPageState(saved, data.page_versions?.[key]?.version || 0);
+  if (skeleton && ["home", "collection", "product", "cart", "checkout"].includes(key) && isLegacyDefault(data.layouts?.[key], key, data)) {
+    proposed.set(key, saved);
+    pages[key].history = S.createHistory(starterLayouts(data)[key]);
+  }
+}
+const isDirtyKey = key => S.isDirty(pages[key]) && !proposed.has(key);
+const previewItem = {};
 const inflight = new Set(), conflicts = new Set(), saveErrors = new Map();
 let current = "home", selectedId = null, saveTimer = 0, previewTimer = 0, themeTimer = 0, drag = null, lastScroll = 0, inlineActive = false;
 let undoTags = [], redoTags = [], themeHist = S.createHistory(S.themeSnapshot(data.settings || {}));
@@ -27,7 +41,7 @@ let mediaCache = null, mediaError = "", view = "desktop", themeDirty = {}, theme
 const cur = () => pages[current];
 const layoutNow = () => S.pageLayout(cur());
 const selectedSection = () => layoutNow().find(item => item.id === selectedId) || null;
-const pageName = key => S.PAGE_LABELS[key] || key;
+const pageName = key => ({ product: TEMPLATE_META.product.label, collection: TEMPLATE_META.collection.label })[key] || S.PAGE_LABELS[key] || key;
 const humanise = name => name.replace(/_/g, " ").replace(/^./, c => c.toUpperCase());
 const labelOf = (field, name) => field.label || humanise(name);
 
@@ -68,7 +82,7 @@ function validationError(key = current) { return S.validateDraft(key, S.pageLayo
 function setStatus() {
   const node = $("#ed-status");
   let state = "saved", text = "Saved";
-  const dirty = S.EDITABLE_PAGES.filter(key => S.isDirty(pages[key]));
+  const dirty = EDIT_PAGES.filter(isDirtyKey);
   if (conflicts.size) { state = "conflict"; text = "Conflict. Choose a version"; }
   else if (saveErrors.size) { state = "error"; text = "Could not save"; }
   else if (inflight.size) { state = "saving"; text = "Saving"; }
@@ -93,8 +107,10 @@ function setStatus() {
 
 // ---------- saving ----------
 function scheduleSave(delay = 3000) { clearTimeout(saveTimer); saveTimer = setTimeout(() => { saveAll(); }, delay); }
-async function savePage(key) {
-  if (inflight.has(key) || conflicts.has(key) || !S.isDirty(pages[key]) || validationError(key)) return true;
+async function savePage(key, force = false) {
+  const decision = S.saveDecision(key, { proposed, inflight, conflicts, dirty: S.isDirty(pages[key]), invalid: validationError(key) }, force);
+  if (decision === "blocked") return false;
+  if (decision !== "save") return true;
   const sent = structuredClone(S.pageLayout(pages[key]));
   inflight.add(key); saveErrors.delete(key); setStatus();
   try {
@@ -106,12 +122,12 @@ async function savePage(key) {
   } catch (error) {
     if (error.status === 409) conflicts.add(key); else saveErrors.set(key, error.message);
     return false;
-  } finally { inflight.delete(key); setStatus(); renderPageSelect(); if (S.isDirty(pages[key]) && !conflicts.has(key) && !saveErrors.has(key)) scheduleSave(1500); }
+  } finally { inflight.delete(key); setStatus(); renderPageSelect(); if (isDirtyKey(key) && !conflicts.has(key) && !saveErrors.has(key)) scheduleSave(1500); }
 }
 async function saveAll() {
   clearTimeout(saveTimer);
-  const results = await Promise.all(S.EDITABLE_PAGES.map(savePage));
-  return results.every(Boolean) && !S.EDITABLE_PAGES.some(key => S.isDirty(pages[key]));
+  const results = await Promise.all(EDIT_PAGES.map(key => savePage(key, false)));
+  return results.every(Boolean) && !EDIT_PAGES.some(isDirtyKey);
 }
 async function fetchPage(key) {
   const result = await api(`${API}/pages/${encodeURIComponent(key)}`);
@@ -122,11 +138,14 @@ async function fetchPage(key) {
 async function resolveConflict(key, choice) {
   try {
     const remote = await fetchPage(key);
-    if (choice === "theirs") { pages[key] = S.adoptRemote(remote.layout, remote.version); selectedId = null; toast("Loaded the latest version of this page."); }
+    if (choice === "theirs") { proposed.delete(key); pages[key] = S.adoptRemote(remote.layout, remote.version); selectedId = null; toast("Loaded the latest version of this page."); }
     else pages[key] = S.overwriteRevision(pages[key], remote.version);
     conflicts.delete(key); saveErrors.delete(key);
     renderAll();
-    if (choice === "mine") await savePage(key);
+    if (choice === "mine") {
+      const wasProposal = proposed.has(key), ok = await savePage(key, wasProposal);
+      if (wasProposal && ok && !conflicts.has(key) && !saveErrors.has(key)) { proposed.delete(key); renderAll(); }
+    }
   } catch (error) { toast(`Could not check the page: ${error.message}`); }
   setStatus();
 }
@@ -196,7 +215,7 @@ function switchPage(key) {
 // ---------- rendering: page select, sections list, warnings ----------
 function renderPageSelect() {
   const select = $("#ed-page");
-  select.innerHTML = S.EDITABLE_PAGES.map(key => `<option value="${esc(key)}" ${key === current ? "selected" : ""}>${esc(pageName(key))}${S.isDirty(pages[key]) ? " (unsaved)" : ""}</option>`).join("");
+  select.innerHTML = EDIT_PAGES.map(key => `<option value="${esc(key)}" ${key === current ? "selected" : ""}>${esc(pageName(key))}${proposed.has(key) ? " (starter preview)" : S.isDirty(pages[key]) ? " (unsaved)" : ""}</option>`).join("");
 }
 function sectionSummary(section) {
   const text = ["title", "text", "name", "brand_line"].map(key => section.settings[key]).find(value => typeof value === "string" && value.trim());
@@ -449,6 +468,50 @@ $("#ed-sections").addEventListener("keydown", event => {
   $("#ed-sections").querySelector(`[data-reorder-handle="${CSS.escape(id)}"]`)?.focus();
 });
 
+// ---------- Aura starter layout and preview item ----------
+function renderStarter() {
+  const banner = $("#ed-starter-banner"), pickBox = $("#ed-preview-pick"), pick = $("#ed-preview-item");
+  const btn = $("#ed-starter"); if (btn) btn.disabled = readOnly() || !["home", "collection", "product", "cart", "checkout"].includes(current);
+  if (banner) {
+    banner.hidden = !proposed.has(current);
+    banner.innerHTML = proposed.has(current) ? `<p><strong>Aura starter layout preview.</strong> Nothing is saved yet. Your saved page is unchanged until you save.</p><div class="ed-banner-actions"><button type="button" class="ed-btn ed-small ed-primary" data-starter="save" ${readOnly() ? "disabled" : ""}>Save starter draft</button><button type="button" class="ed-btn ed-small" data-starter="discard">Discard preview</button></div>` : "";
+  }
+  if (!pickBox) return;
+  const withCollections = (data.products || []).some(item => Array.isArray(item.collection_ids));
+  const items = current === "product" ? (data.products || []).map(item => [item.id, item.title]) : current === "collection" && withCollections ? (data.collections || []).map(item => [item.id, item.title || item.name]) : [];
+  pickBox.hidden = !items.length;
+  if (items.length) {
+    pickBox.querySelector("label").textContent = current === "product" ? "Preview product" : "Preview collection";
+    pick.innerHTML = `<option value="">${current === "product" ? "First product" : "All products"}</option>${items.map(([id, name]) => `<option value="${esc(id)}" ${previewItem[current] === id ? "selected" : ""}>${esc(name || id)}</option>`).join("")}`;
+  }
+}
+$("#ed-preview-item")?.addEventListener("change", event => { previewItem[current] = event.target.value; schedulePreview(); });
+function applyStarter(key) {
+  const merged = mergeStarter(S.pageLayout(pages[key]), key, data);
+  proposed.set(key, proposed.get(key) || structuredClone(S.pageLayout(pages[key])));
+  cur().history = S.commit(cur().history, merged, { now: Date.now() });
+  undoTags.push({ t: "page", key }); redoTags = [];
+  selectedId = null; renderAll();
+}
+$("#ed-starter")?.addEventListener("click", () => {
+  if (readOnly()) return;
+  const modal = openModal("Use Aura starter layout", `<p>This arranges the ${esc(pageName(current))} page in the Aura starter order. Your existing text, images, links and custom sections are kept. Sections without content are added hidden.</p><p class="ed-help">It opens as a preview. Nothing is saved or published until you choose Save starter draft.</p>`, `<button type="button" class="ed-btn" data-close>Cancel</button><button type="button" class="ed-btn ed-primary" id="ed-starter-go">Preview starter layout</button>`);
+  modal.footer.querySelector("#ed-starter-go").addEventListener("click", () => { modal.close(); applyStarter(current); });
+});
+$("#ed-starter-banner")?.addEventListener("click", async event => {
+  const b = event.target.closest("[data-starter]"); if (!b) return;
+  const key = current;
+  if (b.dataset.starter === "save") {
+    const problem = validationError(key);
+    if (problem) { toast(`Fix this before saving: ${problem}`); return; }
+    const ok = await savePage(key, true);
+    if (conflicts.has(key)) { toast("This page changed elsewhere. Choose a version in the banner above. The starter is still a preview."); return; }
+    if (ok && !saveErrors.has(key)) { proposed.delete(key); renderAll(); toast("Starter draft saved."); if (isDirtyKey(key)) scheduleSave(); }
+    else toast("Could not save the starter draft. It is still a preview and nothing was changed.");
+  }
+  else { cur().history = S.commit(cur().history, proposed.get(key), { now: Date.now() }); proposed.delete(key); selectedId = null; renderAll(); }
+});
+
 // ---------- add section ----------
 const THUMB_KIND = { hero: "hero", gallery: "grid", craft: "grid", lookbook: "grid", "product-grid": "grid", "featured-collection": "grid", spotlight: "hero", press: "logos", trust: "logos", reviews: "quote" };
 function thumb(type) {
@@ -459,15 +522,15 @@ function thumb(type) {
   if (kind === "quote") return `<div class="ed-card-art"><i style="width:30%"></i><i></i><i></i><i style="width:55%"></i></div>`;
   return `<div class="ed-card-art"><i></i><i></i><i style="width:70%"></i><i style="width:45%"></i></div>`;
 }
-const TYPE_HELP = { hero: "A large headline with image or video", statement: "One strong sentence", "featured-collection": "Show products from a collection", spotlight: "Feature a single product", lookbook: "Editorial product images", founder: "Your story with a portrait", craft: "Show materials and making", reviews: "Customer reviews", press: "Where you have been featured", gallery: "A grid of photos", trust: "Delivery and returns assurances", announcement: "A thin message above the header", about: "Tell your story", contact: "How to reach you" };
+const TYPE_HELP = { faq: "Questions and answers you write", "material-care": "Materials and care notes", "how-to-use": "Numbered usage steps", "product-specs": "Facts such as dimensions", "size-guide": "A size and measurement table", "shipping-info": "Delivery and returns notes", "related-products": "Other products from your store", "featured-products": "Products you pick by hand", "collection-heading": "A short introduction", "collection-nav": "Switch between your collections", "collection-description": "Longer collection text", hero: "A large headline with image or video", statement: "One strong sentence", "featured-collection": "Show products from a collection", spotlight: "Feature a single product", lookbook: "Editorial product images", founder: "Your story with a portrait", craft: "Show materials and making", reviews: "Customer reviews", press: "Where you have been featured", gallery: "A grid of photos", trust: "Delivery and returns assurances", announcement: "A thin message above the header", about: "Tell your story", contact: "How to reach you" };
 function openAddSection() {
   if (readOnly()) return;
-  const types = S.addableTypes(current, layoutNow());
+  const types = S.addableTypes(current, layoutNow(), skeleton);
   const modal = openModal("Add a section", types.length ? `<p class="ed-help">Sections available on the ${esc(pageName(current))} page.</p><div class="ed-cards">${types.map(schema => `<button type="button" class="ed-card" data-type="${esc(schema.id)}">${thumb(schema.id)}<strong>${esc(schema.name)}</strong><small>${esc(TYPE_HELP[schema.id] || "Content section")}</small></button>`).join("")}</div>` : `<div class="ed-empty">No other sections can be added to this page.</div>`);
   modal.body.addEventListener("click", event => {
     const card = event.target.closest("[data-type]");
     if (!card) return;
-    const result = S.addSection(layoutNow(), card.dataset.type, current, context);
+    const result = S.addSection(layoutNow(), card.dataset.type, current, context, undefined, skeleton);
     if (!result.id) { toast("That section could not be added."); return; }
     mutate(() => result.layout);
     selectedId = result.id; modal.close(); renderAll();
@@ -651,12 +714,12 @@ async function openPublish() {
   const modal = openModal("Review and publish", `<div class="ed-skeleton"></div><div class="ed-skeleton"></div><p class="ed-help">Saving your latest edits</p>`, `<button type="button" class="ed-btn" data-close>Cancel</button><button type="button" class="ed-btn ed-primary" id="ed-go" disabled>Publish changes</button>`);
   const themeOk = await flushTheme();
   const saved = await saveAll();
-  const blockers = S.EDITABLE_PAGES.filter(key => conflicts.has(key) || saveErrors.has(key) || validationError(key) || S.isDirty(pages[key]));
+  const blockers = EDIT_PAGES.filter(key => proposed.has(key) || conflicts.has(key) || saveErrors.has(key) || validationError(key) || isDirtyKey(key));
   if (!themeOk || !saved || blockers.length) {
-    modal.body.innerHTML = `<div class="ed-error" role="alert">Fix these before publishing:</div><ul class="ed-change">${themeOk ? "" : `<li>Theme: ${esc(themeError || "not saved yet")}</li>`}${blockers.map(key => `<li>${esc(pageName(key))}: ${esc(conflicts.has(key) ? "changed in another tab" : saveErrors.get(key) || validationError(key) || "not saved yet")}</li>`).join("")}</ul>`;
+    modal.body.innerHTML = `<div class="ed-error" role="alert">Fix these before publishing:</div><ul class="ed-change">${themeOk ? "" : `<li>Theme: ${esc(themeError || "not saved yet")}</li>`}${blockers.map(key => `<li>${esc(pageName(key))}: ${esc(proposed.has(key) ? "starter layout preview is not saved. Save the starter draft or discard it" : conflicts.has(key) ? "changed in another tab" : saveErrors.get(key) || validationError(key) || "not saved yet")}</li>`).join("")}</ul>`;
     return;
   }
-  const results = await Promise.all(S.EDITABLE_PAGES.map(async key => {
+  const results = await Promise.all(EDIT_PAGES.map(async key => {
     try { const rows = await api(`${API}/pages/${encodeURIComponent(key)}/history`); return { key, published: Array.isArray(rows) && rows[0] ? rows[0].layout : null }; }
     catch (error) { return { key, error: error.message }; }
   }));
@@ -669,7 +732,7 @@ async function openPublish() {
     return list.length || !published ? { key, list: published ? list : [{ text: "First publish of this page" }] } : null;
   }).filter(Boolean);
   const themeLines = S.themeChanges(data.published_settings ? { ...data.published_settings } : null, data.settings || {});
-  const warnings = S.EDITABLE_PAGES.flatMap(key => S.layoutWarnings(S.pageLayout(pages[key]), data.settings || {}).map(w => ({ ...w, key })));
+  const warnings = EDIT_PAGES.flatMap(key => S.layoutWarnings(S.pageLayout(pages[key]), data.settings || {}).map(w => ({ ...w, key })));
   modal.body.innerHTML = `${themeLines.length ? `<div class="ed-page-change"><h3>Theme</h3><ul class="ed-change">${themeLines.map(line => `<li>${esc(line)}</li>`).join("")}</ul></div>` : ""}${changes.length ? changes.map(item => `<div class="ed-page-change"><h3>${esc(pageName(item.key))}</h3><ul class="ed-change">${item.list.map(c => `<li>${esc(c.text)}</li>`).join("")}</ul></div>`).join("") : `<div class="ed-empty">${themeLines.length ? "No page changes since the last publish." : "No page or theme changes since the last publish. Publishing will still refresh catalogue changes."}</div>`}
     ${warnings.length ? `<div><h3 style="font-size:14px;margin:4px 0">Warnings (you can still publish)</h3>${[...new Map(warnings.map(w => [w.key + w.text, w])).values()].map(w => `<div class="ed-warn" data-kind="${w.kind}"><b>${esc(pageName(w.key))}</b>${esc(w.text)}</div>`).join("")}</div>` : ""}<div class="ed-error" id="ed-publish-error" role="alert"></div>`;
   const go = $("#ed-go", modal.shade); go.disabled = false;
@@ -677,7 +740,7 @@ async function openPublish() {
     go.disabled = true; go.textContent = "Publishing";
     try {
       const result = await api(`${API}/publish`, { method: "POST", body: JSON.stringify({}) });
-      await Promise.all(S.EDITABLE_PAGES.map(async key => { try { const remote = await fetchPage(key); if (!S.isDirty(pages[key])) pages[key] = { ...pages[key], version: remote.version }; } catch { /* next autosave check will surface it */ } }));
+      await Promise.all(EDIT_PAGES.map(async key => { try { const remote = await fetchPage(key); if (!S.isDirty(pages[key])) pages[key] = { ...pages[key], version: remote.version }; } catch { /* next autosave check will surface it */ } }));
       data.published_settings = { ...(data.published_settings || {}), ...S.themeSnapshot(data.settings || {}) }; themeBase = S.themeSnapshot(data.published_settings);
       const status = result?.store?.status || result?.data?.store?.status;
       modal.body.innerHTML = `<div class="ed-empty" role="status"><strong>${status === "awaiting_approval" ? "Submitted for approval." : "Published."}</strong><br>${status === "awaiting_approval" ? "Your storefront stays offline until a reviewer approves it." : "Your changes are live."}</div>`;
@@ -692,10 +755,12 @@ function schedulePreview() { clearTimeout(previewTimer); previewTimer = setTimeo
 function renderPreview() {
   const frame = $("#ed-preview");
   try { lastScroll = frame.contentDocument?.scrollingElement?.scrollTop || lastScroll; } catch { /* first render */ }
-  const layouts = Object.fromEntries(S.EDITABLE_PAGES.map(key => [key, S.pageLayout(pages[key])]));
+  const layouts = Object.fromEntries(EDIT_PAGES.map(key => [key, S.pageLayout(pages[key])]));
   const settings = { ...(data.settings || {}) }; settings.brand_name = settings.brand_name || data.store?.name; settings.subdomain = settings.subdomain || data.store?.subdomain;
   let html;
-  try { html = renderAura({ ...data, settings, layouts }, { ...S.previewOptions(current), productId: data.products?.[0]?.id, preview: true, embeddedPreview: true, editorAnnotate: true, readOnly: true }); }
+  const pick = previewItem[current];
+  const shown = current === "collection" && pick ? (data.products || []).filter(item => (item.collection_ids || []).includes(pick)) : data.products;
+  try { html = renderAura({ ...data, products: shown, settings, layouts }, { ...S.previewOptions(current), productId: (current === "product" && pick) || data.products?.[0]?.id, preview: true, embeddedPreview: true, editorAnnotate: true, readOnly: true }); }
   catch (error) { html = `<!doctype html><body style="font-family:sans-serif;padding:24px">Preview could not be drawn: ${esc(error.message)}</body>`; }
   frame.srcdoc = html.replace("</head>", `${PREVIEW_STYLE}</head>`);
 }
@@ -780,7 +845,7 @@ document.querySelectorAll("[data-view]").forEach(button => button.addEventListen
   document.querySelectorAll(".ed-seg [data-view]").forEach(other => other.setAttribute("aria-pressed", String(other === button)));
 }));
 window.addEventListener("beforeunload", event => {
-  if (S.EDITABLE_PAGES.some(key => S.isDirty(pages[key])) || inflight.size || Object.keys(themeDirty).length) { event.preventDefault(); event.returnValue = ""; }
+  if (EDIT_PAGES.some(isDirtyKey) || inflight.size || Object.keys(themeDirty).length) { event.preventDefault(); event.returnValue = ""; }
 });
 document.addEventListener("visibilitychange", () => { if (document.hidden) saveAll(); else checkRemote(); });
 window.addEventListener("focus", checkRemote);
@@ -792,6 +857,6 @@ const datalist = document.createElement("datalist"); datalist.id = "ed-links";
 datalist.innerHTML = S.linkSuggestions(data).map(value => `<option value="${esc(value)}"></option>`).join("");
 root.append(datalist);
 
-function renderAll() { renderPageSelect(); renderSections(); renderProps(); renderWarnings(); setStatus(); schedulePreview(); }
+function renderAll() { renderStarter(); renderPageSelect(); renderSections(); renderProps(); renderWarnings(); setStatus(); schedulePreview(); }
 if (!$("#ed-page")) throw new Error("Editor shell is missing.");
 renderAll();

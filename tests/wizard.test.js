@@ -124,7 +124,7 @@ test("shared Aura renders every requested page, logo, gallery, SEO and disabled 
   const product = renderAura(data, { page: "product", productId: PRODUCT_ID });
   assert.match(product, /<del>/);
   assert.match(product, /disabled/);
-  assert.match(product, /Checkout opening soon/);
+  assert.match(product, /Shopping unavailable/);
   assert.match(product, /alt="Natural cotton tote"/);
   assert.match(renderAura(data), /aura-hero-spotlight/);
   data.products = [];

@@ -1,8 +1,9 @@
 // Pure editor state. No DOM, no network. Every function returns new values and never mutates its inputs.
 import { SECTION_SCHEMAS, PAGE_KEYS, validateLayout } from "./aura-layout.js";
+import { AURA_SKELETON_TYPES } from "./sections/index.js";
 
 export const EDITABLE_PAGES = ["home", "collection", "product", "about", "contact", "policy-privacy", "policy-terms", "policy-shipping", "policy-cancellation-refund", "policy-contact", "policy-pricing", "404"].filter(key => PAGE_KEYS.includes(key));
-export const PAGE_LABELS = { home: "Home", collection: "Collection", product: "Product", about: "About", contact: "Contact", "policy-privacy": "Privacy policy", "policy-terms": "Terms", "policy-shipping": "Shipping policy", "policy-cancellation-refund": "Cancellation and refunds", "policy-contact": "Contact policy", "policy-pricing": "Pricing policy", "404": "Page not found" };
+export const PAGE_LABELS = { home: "Home", collection: "Collection", product: "Product", about: "About", contact: "Contact", "policy-privacy": "Privacy policy", "policy-terms": "Terms", "policy-shipping": "Shipping policy", "policy-cancellation-refund": "Cancellation and refunds", "policy-contact": "Contact policy", "policy-pricing": "Pricing policy", "404": "Page not found", cart: "Cart", checkout: "Checkout" };
 export const LOCKED_PAGES = ["cart", "checkout", "track", "confirmation"];
 export const MAX_SECTIONS = 30;
 export const PERF_SECTION_LIMIT = 16;
@@ -43,10 +44,12 @@ export function canMoveSection(layout, index, delta) { return moveSection(layout
 export function findSection(layout, id) { return layout.find(item => item.id === id) || null; }
 const replaceSection = (layout, id, fn) => layout.map(item => item.id === id ? fn(item) : item);
 
-export function addableTypes(page, layout) {
-  if (!isEditablePage(page)) return [];
+export const SKELETON_PAGES = ["cart", "checkout"];
+/** skeleton=true only when the server confirmed the additive section catalog (data.aura_skeleton_enabled). */
+export function addableTypes(page, layout, skeleton = false) {
+  if (!isEditablePage(page) && !(skeleton && SKELETON_PAGES.includes(page))) return [];
   const present = new Set(layout.map(item => item.type));
-  return Object.values(SECTION_SCHEMAS).filter(schema => schema.allowedPages.includes(page) &&
+  return Object.values(SECTION_SCHEMAS).filter(schema => (skeleton || !AURA_SKELETON_TYPES.includes(schema.id)) && schema.allowedPages.includes(page) &&
     !schema.requiredOn.includes(page) && schema.id !== "commerce" && schema.id !== "header" && schema.id !== "footer" &&
     !(schema.id === "announcement" && present.has("announcement")));
 }
@@ -57,9 +60,9 @@ export function sectionDefaults(type) {
   return { settings, blocks };
 }
 /** Adds a section before the footer (announcement goes first). Returns {layout, id, hidden}. */
-export function addSection(layout, type, page, context = {}, idFactory = newId) {
+export function addSection(layout, type, page, context = {}, idFactory = newId, skeleton = false) {
   const schema = schemaOf(type);
-  if (!schema || layout.length >= MAX_SECTIONS || !addableTypes(page, layout).some(item => item.id === type)) return { layout, id: null, hidden: false };
+  if (!schema || layout.length >= MAX_SECTIONS || !addableTypes(page, layout, skeleton).some(item => item.id === type)) return { layout, id: null, hidden: false };
   const { settings, blocks } = sectionDefaults(type);
   const section = { id: idFactory(type), type, settings, blocks };
   let hidden = false;
@@ -326,3 +329,17 @@ export function findTextField(section, text) {
   if (schema.blockFields) for (const [i, block] of section.blocks.entries()) for (const [key, field] of Object.entries(schema.blockFields)) if (short(field) && String(block.settings[key] || "").trim() === wanted) return { path: ["blocks", i, "settings", key], maxLength: field.maxLength };
   return null;
 }
+
+/**
+ * Pure save decision. Returns "save", "clean" (nothing to write), "skip" (not allowed automatically)
+ * or "blocked" (an explicit save cannot proceed: conflict, request in flight or invalid draft).
+ * Starter proposals only reach "save" when force is true.
+ */
+export function saveDecision(key, { proposed, inflight, conflicts, dirty, invalid }, force = false) {
+  if (inflight.has(key) || conflicts.has(key) || (dirty && invalid)) return force ? "blocked" : "skip";
+  if (!dirty) return "clean";
+  return force || !proposed.has(key) ? "save" : "skip";
+}
+export const mayAutosave = (key, state, force = false) => saveDecision(key, state, force) === "save";
+/** Pages a background save (page switch, timer, tab hide) would write. Never includes starter proposals. */
+export const saveTargets = (keys, stateFor) => keys.filter(key => saveDecision(key, stateFor(key), false) === "save");

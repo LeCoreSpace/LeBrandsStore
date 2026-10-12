@@ -19,7 +19,10 @@ export function renderEditor(data = {}, user = {}, options = {}) {
   const payload = {
     store: { store_id: storeId, name: store.name, subdomain: store.subdomain, status: store.status },
     settings,
-    products: (data.products || []).map(item => ({ id: item.id, title: item.title, price_paise: item.price_paise, status: item.status, images: (item.images || []).slice(0, 8), description: item.description, stock: item.stock, compare_at_paise: item.compare_at_paise, tags: item.tags, sku: item.sku })),
+    products: (data.products || []).map(item => ({ id: item.id, title: item.title, price_paise: item.price_paise, status: item.status, images: (item.images || []).slice(0, 8), description: item.description, stock: item.stock, compare_at_paise: item.compare_at_paise, tags: item.tags, sku: item.sku, collection_ids: Array.isArray(item.collection_ids) ? item.collection_ids : undefined })),
+    policies: (data.policies || []).map(item => ({ kind: item.kind, title: item.title, body: item.body })),
+    reviews: (data.reviews || []).slice(0, 9).map(item => ({ body: item.body || item.text, author: item.author || item.name })),
+    aura_skeleton_enabled: data.aura_skeleton_enabled === true,
     collections: (data.collections || []).map(item => ({ id: item.id, title: item.title || item.name, name: item.name || item.title })),
     published_settings: data.published_settings ?? null,
     layouts: data.layouts || {},
@@ -47,6 +50,9 @@ export function renderEditor(data = {}, user = {}, options = {}) {
       <aside class="ed-left" aria-label="Pages and sections">
         <label class="ed-label" for="ed-page">Page</label>
         <select id="ed-page" class="ed-select"></select>
+        <div id="ed-preview-pick" class="ed-preview-pick" hidden><label class="ed-label" for="ed-preview-item">Preview item</label><select id="ed-preview-item" class="ed-select"></select></div>
+        ${payload.aura_skeleton_enabled ? '<button type="button" class="ed-btn ed-small" id="ed-starter">Use Aura starter layout</button>' : ""}
+        <div class="ed-conflict" id="ed-starter-banner" role="status" hidden></div>
         <div class="ed-left-head"><h2>Sections</h2><button type="button" class="ed-btn ed-small" id="ed-add">Add section</button></div>
         <ol class="ed-sections" id="ed-sections"></ol>
         <div id="ed-warnings" class="ed-warnings" aria-live="polite"></div>

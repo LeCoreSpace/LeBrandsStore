@@ -14,6 +14,13 @@ export function compilePageSchemaSnapshot(snapshot) {
   }]));
 }
 export async function preparePageMigration(filename, source) {
+  if (filename === "0012_aura_skeleton_sections.sql") {
+    const legacy = JSON.parse(await readFile(new URL("./schema-snapshots/aura-v1.json", import.meta.url), "utf8"));
+    const additions = JSON.parse(await readFile(new URL("./schema-snapshots/aura-skeleton-v1.json", import.meta.url), "utf8"));
+    const schemas = { ...compilePageSchemaSnapshot(legacy), ...compilePageSchemaSnapshot(additions) };
+    if (!source.includes("__AURA_SKELETON_SCHEMAS_V1__")) throw new Error("Missing Aura skeleton schema token.");
+    return source.replace("__AURA_SKELETON_SCHEMAS_V1__", JSON.stringify(schemas));
+  }
   if (filename !== "0010_store_pages.sql") return source;
   const snapshot = await readFile(new URL("./schema-snapshots/aura-v1.json", import.meta.url), "utf8");
   const schemas = compilePageSchemaSnapshot(JSON.parse(snapshot));
