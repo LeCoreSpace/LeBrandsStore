@@ -30,6 +30,9 @@ test("pricing shows the supplied billing terms without enabling billing", async 
   const css = await readFile(new URL("../src/public/marketing.css", import.meta.url), "utf8");
   assert.match(css, /body\.m-pricing-document\s*\{[^}]*--m-ivory: #ffffff/);
   assert.match(css, /--m-sans: Arial, Helvetica, sans-serif/);
+  assert.match(css, /:root body\.m-pricing-document \.m-pricing-page\s*\{\s*background: #ffffff/);
+  assert.match(css, /:root body\.m-pricing-document \.m-logo-dark\s*\{\s*display: none/);
+  assert.doesNotMatch(css, /:root\[data-theme="dark"\] \.m-pricing-page\s*\{/);
 });
 
 test("pricing uses provider-neutral integrations and accessible comparison tables", () => {

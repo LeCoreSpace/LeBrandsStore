@@ -13,9 +13,11 @@ integration wording. Payment subscription implementation is deferred.
 publishing a proposed feature comparison as permission to enable billing or as
 evidence that unfinished features are available.
 
-Pricing page background white, with normal font and size.
+Pricing page background white, with normal font and size, including when the
+saved site preference or browser theme is dark.
 
-**Why:** The user requested this for the pricing page.
+**Why:** The user requested this for the pricing page and repeated it when a
+dark-theme override left the page dark.
 
 **How to apply:** Keep this pricing-specific; do not recolour the homepage or merchant themes.
 

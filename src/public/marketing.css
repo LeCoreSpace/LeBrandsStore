@@ -897,9 +897,8 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
 
 /* Hero base uses the same token (artwork, grid, orbs and animation untouched). */
 :root:root #top > section.m-hero { background-color: #09090a; background-image: var(--m-dark-grad); }
-/* Dark mode only: solid header and pricing backdrop share the token. */
-:root[data-theme="dark"] .m-nav.is-solid { background-color: #0c090b; background-image: var(--m-dark-grad); }
-:root[data-theme="dark"] .m-pricing-page { background-color: #0c090b; background-image: var(--m-dark-grad); }
+/* Dark mode solid headers, excluding the always-white pricing page. */
+:root[data-theme="dark"] body:not(.m-pricing-document) .m-nav.is-solid { background-color: #0c090b; background-image: var(--m-dark-grad); }
 
 /* ===== Free discovery (LeBrands.Space), directly after hero ===== */
 .m-discovery { padding: clamp(60px, 8vw, 112px) 0; }
@@ -988,8 +987,10 @@ body.m-pricing-document {
   background: #ffffff; color: #222222; color-scheme: light;
   font-family: var(--m-sans); font-size: 15px; line-height: 1.6;
 }
-body.m-pricing-document .m-logo-light { display: block; }
-body.m-pricing-document .m-logo-dark { display: none; }
+:root body.m-pricing-document .m-pricing-page { background: #ffffff; color: #222222; }
+:root body.m-pricing-document .m-nav { background: #ffffff; color: #222222; }
+:root body.m-pricing-document .m-logo-light { display: block; }
+:root body.m-pricing-document .m-logo-dark { display: none; }
 body.m-pricing-document .m-footer { background: #ffffff; color: #222222; border-top: 1px solid #dddddd; }
 body.m-pricing-document .m-footer-bottom { color: #555555; }
 .m-pr-main { padding-top: 8px; }
