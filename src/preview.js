@@ -213,6 +213,9 @@ export default {
     headers.set("content-security-policy", headers.get("content-security-policy")?.replace("frame-ancestors 'none'", "frame-ancestors *") ?? "default-src 'self'");
     if (response.status === 303 && headers.get("location") === "/") headers.set("location", "/dashboard");
     if (!headers.get("content-type")?.includes("text/html")) return new Response(response.body, { status: response.status, headers });
+    // Production marketing HTML is cached for five minutes. Local development
+    // must not reuse old markup after edits or workflow restarts.
+    headers.set("cache-control", "no-store");
     let body = await response.text();
     if (account) body = body.replaceAll('href="/"', 'href="/dashboard"');
     body = body.replaceAll('href="https://lebrands.store"', 'href="/"')

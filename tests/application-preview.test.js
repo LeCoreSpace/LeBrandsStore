@@ -50,3 +50,10 @@ test("production entry has no application preview dependency", async () => {
   const source = await readFile("src/index.js", "utf8");
   assert.doesNotMatch(source, /local-app-preview|__app-preview/);
 });
+
+test("actual homepage preview disables production HTML caching", async () => {
+  const response=await request("/");
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get("cache-control"),"no-store");
+  assert.match(await response.text(),/Your products\. Your flagship store\./);
+});

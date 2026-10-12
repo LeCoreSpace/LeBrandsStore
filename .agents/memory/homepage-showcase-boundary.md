@@ -59,3 +59,14 @@ autoplay. Use available catalogue, COD order, customer and invoice capabilities
 as the story; label illustrative UI and future integrations honestly. Preserve
 the separate clothing concept and all operational screens. The hero's black
 background is an exception to the page's mode-dependent alternating bands.
+
+Keep the existing animated hero story. Its left side should use one short
+sentence synchronized to the active animation, rather than stacked explanatory
+paragraphs and feature chips.
+
+**Why:** The user confirmed "animation is nice .keep it" and said there was too
+much text on the left. They requested a changing line, a transparent hero logo
+and larger header menu text.
+
+**How to apply:** Preserve the visible SVG, slide and ambient motion when making
+future revisions. Keep payment and delivery integration availability honest.

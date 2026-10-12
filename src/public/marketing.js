@@ -171,6 +171,7 @@
     const tabs = [...story.querySelectorAll("[data-hs-tab]")];
     const toggle = story.querySelector("[data-hs-toggle]");
     const live = story.querySelector("[data-hs-live]");
+    const line = document.querySelector("[data-hero-line]");
     const heroEl = story.closest ? story.closest(".m-hero") || story : story;
     if (!slides.length) return;
     let current = 0;
@@ -182,6 +183,13 @@
         slide.classList.toggle("is-active", n === current);
       });
       tabs.forEach((tab, n) => tab.setAttribute("aria-current", String(n === current)));
+      const sentence = slides[current].getAttribute("data-hs-line");
+      if (line && sentence && line.textContent !== sentence) {
+        line.textContent = sentence;
+        line.classList.remove("is-swap");
+        if (line.offsetWidth !== undefined) void line.offsetWidth;
+        line.classList.add("is-swap");
+      }
       if (announce && live) live.textContent = (slides[current].getAttribute("aria-label") || "").replace(/^\d+ of \d+:\s*/, "") + `, ${current + 1} of ${slides.length}`;
     }
     story.classList.add("is-enhanced");

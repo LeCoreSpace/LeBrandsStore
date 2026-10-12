@@ -3,13 +3,19 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 import { renderHome } from "../src/ui/marketing.js";
+import worker from "../src/index.js";
 
 test("black hero explains current features and keeps all slides readable without JS", async () => {
   const html = renderHome().match(/<section class="m-hero"[\s\S]*?<\/section>/)[0];
-  assert.equal((html.match(/data-hs-slide\b/g) || []).length, 4);
+  assert.equal((html.match(/data-hs-slide\b/g) || []).length, 6);
   assert.equal((html.match(/Sample UI, illustrative/g) || []).length, 4);
-  assert.match(html, /run the catalogue, cash on delivery orders, customers and GST invoices from one place/);
-  assert.match(html, /Coming soon[\s\S]*Razorpay online payments and logistics integrations/);
+  assert.equal((html.match(/\bdata-hero-line\b/g) || []).length, 1);
+  assert.doesNotMatch(html, /class="m-hero-(?:lede|summary|points|soon)"/);
+  assert.equal((html.match(/data-hs-line="/g) || []).length, 6);
+  assert.equal((html.match(/<span class="m-hs-tag">Coming soon, not enabled yet<\/span>/g) || []).length, 2);
+  assert.match(html, /Razorpay/);
+  assert.match(html, /logistics partners/i);
+  assert.match(renderHome(), /src="\/img\/REPLACE-lebrands-hero-transparent\.png"/);
   assert.match(html, /First publication requires platform approval/);
   const css = await readFile("src/public/marketing.css", "utf8");
   assert.match(css, /section\.m-hero\s*\{[\s\S]*?background:\s*#09090a/);
@@ -24,28 +30,36 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
     const classes = new Set();
     return { hidden:false, attrs:{}, events:{}, textContent:"", classList:{
       add(name){classes.add(name);},
+      remove(name){classes.delete(name);},
       contains(name){return classes.has(name);},
       toggle(name,on){if(on)classes.add(name);else classes.delete(name);},
     },setAttribute(name,value){this.attrs[name]=value;},getAttribute(name){return this.attrs[name];},
     addEventListener(name,fn){this.events[name]=fn;} };
   }
-  const slides = Array.from({length:4},node), tabs = Array.from({length:4},node);
-  slides.forEach((slide,i)=>slide.attrs["aria-label"]=`${i+1} of 4: Feature ${i+1}`);
+  const slides = Array.from({length:6},node), tabs = Array.from({length:6},node);
+  slides.forEach((slide,i)=>{
+    slide.attrs["aria-label"]=`${i+1} of 6: Feature ${i+1}`;
+    slide.attrs["data-hs-line"]=`Sentence ${i+1}`;
+  });
   const toggle=node(), prev=node(), next=node(), live=node(), hero=node(), story=node();
+  const line=node();
   hero.classList.add("m-section-active");
   story.closest=()=>hero;
   story.querySelectorAll=(selector)=>selector==="[data-hs-slide]" ? slides : tabs;
   story.querySelector=(selector)=>({"[data-hs-toggle]":toggle,"[data-hs-prev]":prev,"[data-hs-next]":next,"[data-hs-live]":live})[selector];
-  const document={hidden:false,querySelector:()=>story}, motionPreference={matches:false};
+  const document={hidden:false,querySelector:(selector)=>selector==="[data-hero-line]" ? line : story}, motionPreference={matches:false};
   const context={document,motionPreference,motionDisabled:false};
   runInNewContext(`${functionSource}\ninitializeHeroStory();`,context);
   const active=()=>slides.findIndex((slide)=>!slide.hidden);
   const finish=()=>story.events.animationend({animationName:"m-hs-progress"});
   assert.equal(active(),0);
+  assert.equal(line.textContent,"Sentence 1");
   finish();assert.equal(active(),1);
+  assert.equal(line.textContent,"Sentence 2","The left-side sentence follows autoplay");
   assert.equal(live.textContent,"","Automatic slides must not repeatedly announce themselves");
   prev.events.click();assert.equal(active(),0);
-  prev.events.click();assert.equal(active(),3);
+  prev.events.click();assert.equal(active(),5);
+  assert.equal(line.textContent,"Sentence 6","The left-side sentence follows manual selection");
   tabs[2].events.click();assert.equal(active(),2);
   assert.match(live.textContent,/Feature 3/);
   toggle.events.click();assert.equal(toggle.textContent,"Play");finish();assert.equal(active(),2);
@@ -54,5 +68,20 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
   hero.classList.toggle("m-section-active",false);finish();assert.equal(active(),3);
   hero.classList.add("m-section-active");motionPreference.matches=true;finish();assert.equal(active(),3);
   motionPreference.matches=false;context.motionDisabled=true;finish();assert.equal(active(),3);
+  tabs[5].events.click();assert.equal(active(),5);
   next.events.click();assert.equal(active(),0,"Manual controls still work with motion disabled");
+});
+
+test("transparent hero logo exists and is served by the production asset allowlist", async () => {
+  const path="/img/REPLACE-lebrands-hero-transparent.png";
+  const bytes=await readFile(`src/public${path}`);
+  assert.equal(bytes[25],6,"The PNG must retain its RGBA transparency channel");
+  assert.ok(bytes.length<200000,"The header logo stays lightweight");
+  let fetched="";
+  const response=await worker.fetch(new Request(`https://lebrands.store${path}`),{
+    ASSETS:{fetch(request){fetched=new URL(request.url).pathname;return new Response(bytes,{headers:{"content-type":"image/png"}});}}
+  },{});
+  assert.equal(response.status,200);
+  assert.equal(fetched,path);
+  assert.equal(response.headers.get("content-type"),"image/png");
 });

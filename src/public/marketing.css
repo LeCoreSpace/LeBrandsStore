@@ -593,3 +593,43 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-dark { display: bloc
   .m-hs-stamp { width: 74px; right: 10px; }
   .m-chip { display: none; }
 }
+
+/* Hero revision: one synchronized sentence, six slides, larger header. */
+.m-hero-line { max-width: 440px; min-height: 1.5em; margin: 0; color: #f3ebe2; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.5; letter-spacing: -.01em; }
+.m-motion .m-hero-line.is-swap { animation: m-line-in .5s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes m-line-in { from { opacity: 0; transform: translate3d(0,8px,0); } to { opacity: 1; transform: translate3d(0,0,0); } }
+.m-hero-actions { margin-top: 22px; }
+.m-hs-tabs { grid-template-columns: repeat(6, minmax(0,1fr)); }
+.m-hs-tab.is-soon { border-style: dashed; }
+.m-soon { margin-left: 6px; padding: 2px 6px; border: 1px dashed var(--m-rose); color: var(--m-rose); font-size: 9px; font-style: normal; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; vertical-align: middle; }
+.m-hs-soon .m-hs-card { border-style: dashed; }
+
+.m-logo-hero { display: none; }
+body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-dark { display: none; }
+body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: block; background: none; }
+.m-nav-links { gap: clamp(14px, 2vw, 30px); }
+.m-nav-links a { font-size: 15px; }
+.m-nav-links .m-nav-cta { padding: 12px 18px; font-size: 15px; }
+.m-theme-toggle { min-height: 42px; padding: 0 14px; font-size: 14px; gap: 9px; }
+.m-theme-icon { width: 15px; height: 15px; }
+@media (max-width: 900px) {
+  .m-nav-links a, .m-nav-links .m-nav-cta { font-size: 14px; }
+  .m-nav-links .m-nav-cta { padding: 10px 14px; }
+  .m-theme-toggle { font-size: 13px; padding: 0 10px; }
+}
+@media (max-width: 600px) {
+  .m-nav-inner { gap: 10px; }
+  .m-wordmark { width: 90px; }
+  .m-nav-links { gap: 6px; }
+  .m-nav-links a { white-space: nowrap; }
+  .m-nav-links a, .m-nav-links .m-nav-cta { font-size: 12.5px; }
+  .m-nav-links .m-nav-cta { padding: 10px 10px; white-space: nowrap; }
+  .m-nav-links .m-theme-toggle { min-height: 38px; padding: 0 9px; }
+  .m-hero-line { min-height: 1.5em; font-size: 17px; }
+  .m-hs-tabs { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .m-hs-tab { font-size: 10.5px; }
+}
+@media (max-width: 360px) {
+  .m-nav-links a, .m-nav-links .m-nav-cta { font-size: 11.5px; }
+  .m-nav-links .m-nav-cta { padding-inline: 8px; }
+}

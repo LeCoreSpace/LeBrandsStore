@@ -22,3 +22,12 @@ working local login and persistent changes should use.
 **How to apply:** State database-backed limitations clearly. Treat authenticated
 preview with persistent saves as separate environment work requiring an explicit
 decision about database isolation. Keep fictional fixtures local-only.
+
+Workflow restarts do not clear the screenshot browser's HTTP cache.
+
+**Why:** The capture browser reused old marketing HTML after the Worker was
+restarted, while a direct request already returned the corrected page.
+
+**How to apply:** Local HTML should override production cache lifetimes. If a
+capture contradicts current responses, check browser caching before changing
+working code; use a fresh query URL to verify the current revision.

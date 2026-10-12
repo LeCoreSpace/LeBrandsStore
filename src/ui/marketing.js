@@ -63,7 +63,7 @@ ${body}
 function nav({ pricing = false } = {}) {
   return `<header class="m-nav">
   <div class="m-nav-inner">
-    <a class="m-wordmark" href="${pricing ? "https://lebrands.store" : "#top"}" aria-label="LeBrands.Store home"><img class="m-logo-light" src="/img/REPLACE-lebrands-light-logo.webp" width="186" height="66" alt=""><img class="m-logo-dark" src="/img/REPLACE-lebrands-dark-logo.webp" width="186" height="66" alt=""></a>
+    <a class="m-wordmark" href="${pricing ? "https://lebrands.store" : "#top"}" aria-label="LeBrands.Store home"><img class="m-logo-light" src="/img/REPLACE-lebrands-light-logo.webp" width="186" height="66" alt=""><img class="m-logo-dark" src="/img/REPLACE-lebrands-dark-logo.webp" width="186" height="66" alt="">${pricing ? "" : '<img class="m-logo-hero" src="/img/REPLACE-lebrands-hero-transparent.png" width="900" height="320" alt="">'}</a>
     <nav class="m-nav-links" aria-label="Main navigation">
       <a href="${pricing ? "/#features" : "#features"}">Features</a>
       <a href="/pricing">Pricing</a>
@@ -116,17 +116,12 @@ export function renderHome() {
       <div class="m-hero-copy">
         <p class="m-kicker">LeBrands.Store, live today</p>
         <h1 id="hero-title">A flagship store for your brand.</h1>
-        <p class="m-hero-lede">Live today. Built for Indian D2C brands that intend to be remembered.</p>
-        <p class="m-hero-summary">LeBrands.Store lets an independent Indian D2C brand build its own online shop, then run the catalogue, cash on delivery orders, customers and GST invoices from one place.</p>
-        <ul class="m-hero-points">
-          <li>Catalogue and collections</li><li>Cash on delivery checkout and orders</li><li>Customer records</li><li>GST invoices</li>
-        </ul>
+        <p class="m-hero-line" data-hero-line>Your products. Your flagship store.</p>
         <div class="m-hero-actions">
           <a class="m-cta" href="${SIGNUP}">Open your store</a>
           <a class="m-text-link" href="#craft">Explore the store concept <span aria-hidden="true">&rarr;</span></a>
         </div>
         <p class="m-hero-note">First publication requires platform approval.</p>
-        <p class="m-hero-soon"><b>Coming soon</b> Razorpay online payments and logistics integrations. Cash on delivery is the only payment option today.</p>
       </div>
       <div class="m-hs" data-hero-story role="region" aria-roledescription="carousel" aria-label="What LeBrands.Store does">
         <div class="m-hs-tabs" role="group" aria-label="Choose a feature">
@@ -134,16 +129,18 @@ export function renderHome() {
           <button type="button" class="m-hs-tab" data-hs-tab="1" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v10H3zM3 11h18M7 15h3"/></svg><span>COD orders</span><i class="m-hs-prog"></i></button>
           <button type="button" class="m-hs-tab" data-hs-tab="2" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><span>Customers</span><i class="m-hs-prog"></i></button>
           <button type="button" class="m-hs-tab" data-hs-tab="3" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></svg><span>GST invoice</span><i class="m-hs-prog"></i></button>
+          <button type="button" class="m-hs-tab is-soon" data-hs-tab="4" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h4"/></svg><span>Razorpay</span><i class="m-hs-prog"></i></button>
+          <button type="button" class="m-hs-tab is-soon" data-hs-tab="5" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7h11v9H2zM13 10h4l3 3v3h-7zM6 19a1.5 1.5 0 100-.01M17 19a1.5 1.5 0 100-.01"/></svg><span>Logistics</span><i class="m-hs-prog"></i></button>
         </div>
         <div class="m-hs-slides">
-          <article class="m-hs-slide is-active" data-hs-slide role="group" aria-roledescription="slide" aria-label="1 of 4: Catalogue and collections">
+          <article class="m-hs-slide is-active" data-hs-slide data-hs-line="Your products. Your flagship store." role="group" aria-roledescription="slide" aria-label="1 of 6: Catalogue and collections">
             <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
               <svg viewBox="0 0 240 70" class="m-hs-art" fill="none"><g class="m-t1"><path class="m-draw" pathLength="1" d="M10 14 L22 8 Q30 14 38 8 L50 14 L44 24 L40 21 L40 46 L20 46 L20 21 L16 24 Z" transform="translate(6 8)"/></g><g class="m-t2"><path class="m-draw" pathLength="1" d="M10 14 L22 8 Q30 14 38 8 L50 14 L44 24 L40 21 L40 46 L20 46 L20 21 L16 24 Z" transform="translate(88 8)"/></g><g class="m-t3"><path class="m-draw" pathLength="1" d="M10 14 L22 8 Q30 14 38 8 L50 14 L44 24 L40 21 L40 46 L20 46 L20 21 L16 24 Z" transform="translate(170 8)"/></g></svg>
               <div class="m-hs-rows"><span class="m-pill">New in</span><span class="m-pill">Basics</span><span class="m-pill">Festive</span><span class="m-pill m-pill-add">+ Collection</span></div>
             </div>
             <div class="m-hs-copy"><strong>Catalogue and collections.</strong><p>Add products with photos and prices, and group them into collections on your storefront. Catalogue display is available. Advanced collections: Coming soon.</p></div>
           </article>
-          <article class="m-hs-slide" data-hs-slide role="group" aria-roledescription="slide" aria-label="2 of 4: Cash on delivery orders" hidden>
+          <article class="m-hs-slide" data-hs-slide data-hs-line="COD orders, from placed to delivered." role="group" aria-roledescription="slide" aria-label="2 of 6: Cash on delivery orders" hidden>
             <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
               <div class="m-hs-order"><span>Order 1042 <em>Sample</em></span><span>Rs. 1,852.20</span><span class="m-pill">Cash on delivery</span></div>
               <svg viewBox="0 0 300 40" class="m-hs-art m-hs-track" fill="none"><path class="m-draw" pathLength="1" d="M30 20H150H270"/><circle cx="30" cy="20" r="6"/><circle cx="150" cy="20" r="6"/><circle cx="270" cy="20" r="6"/><circle class="m-dot" cx="30" cy="20" r="3.5"/></svg>
@@ -151,19 +148,33 @@ export function renderHome() {
             </div>
             <div class="m-hs-copy"><strong>COD checkout and orders.</strong><p>Customers pay on delivery. You follow each order from placed to packed to delivered, with COD limits and fraud checks built in.</p></div>
           </article>
-          <article class="m-hs-slide" data-hs-slide role="group" aria-roledescription="slide" aria-label="3 of 4: Customers" hidden>
+          <article class="m-hs-slide" data-hs-slide data-hs-line="Your customers, all in one place." role="group" aria-roledescription="slide" aria-label="3 of 6: Customers" hidden>
             <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
               <div class="m-hs-cust"><span><b>MK</b>Meera Kulkarni<em>3 orders</em></span><span><b>AS</b>Arjun Sethi<em>1 order</em></span><span><b>NF</b>Naz Fernandes<em>2 orders</em></span></div>
               <svg viewBox="0 0 300 30" class="m-hs-art" fill="none"><path class="m-draw" pathLength="1" d="M4 24C40 24 50 8 90 14S140 26 180 12 250 4 296 8"/></svg>
             </div>
             <div class="m-hs-copy"><strong>Customers you own.</strong><p>Every buyer, address and order history lives in your own customer list. We never market to your customers.</p></div>
           </article>
-          <article class="m-hs-slide" data-hs-slide role="group" aria-roledescription="slide" aria-label="4 of 4: GST invoices" hidden>
+          <article class="m-hs-slide" data-hs-slide data-hs-line="GST invoices, correctly numbered." role="group" aria-roledescription="slide" aria-label="4 of 6: GST invoices" hidden>
             <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
               <div class="m-hs-inv"><span>Taxable value<b>Rs. 1,764.00</b></span><span>CGST 2.5%<b>Rs. 44.10</b></span><span>SGST 2.5%<b>Rs. 44.10</b></span><span class="m-hs-total">Total<b>Rs. 1,852.20</b></span></div>
               <svg viewBox="0 0 100 40" class="m-hs-stamp" fill="none"><rect class="m-draw" pathLength="1" x="2" y="2" width="96" height="36" rx="3"/><text x="50" y="26" text-anchor="middle">SAMPLE</text></svg>
             </div>
             <div class="m-hs-copy"><strong>GST invoices.</strong><p>Tax invoices with CGST, SGST or IGST worked out for you, numbered correctly every financial year. A valid GSTIN is required to publish.</p></div>
+          </article>
+          <article class="m-hs-slide m-hs-soon" data-hs-slide data-hs-line="Razorpay payments. Coming soon." role="group" aria-roledescription="slide" aria-label="5 of 6: Razorpay payments, coming soon" hidden>
+            <div class="m-hs-card"><span class="m-hs-tag">Coming soon, not enabled yet</span>
+              <svg viewBox="0 0 300 40" class="m-hs-art m-hs-track" fill="none"><path class="m-draw" pathLength="1" d="M30 20H150H270"/><circle cx="30" cy="20" r="6"/><circle cx="150" cy="20" r="6"/><circle cx="270" cy="20" r="6"/><circle class="m-dot" cx="30" cy="20" r="3.5"/></svg>
+              <div class="m-hs-steps"><span>Customer pays</span><span>Razorpay</span><span>Your account</span></div>
+            </div>
+            <div class="m-hs-copy"><strong>Razorpay payments. <em class="m-soon">Coming soon</em></strong><p>Online payments through your own Razorpay account. Cash on delivery is the only option today.</p></div>
+          </article>
+          <article class="m-hs-slide m-hs-soon" data-hs-slide data-hs-line="Your logistics partner. Coming soon." role="group" aria-roledescription="slide" aria-label="6 of 6: Logistics partners, coming soon" hidden>
+            <div class="m-hs-card"><span class="m-hs-tag">Coming soon, not enabled yet</span>
+              <svg viewBox="0 0 300 40" class="m-hs-art m-hs-track" fill="none"><path class="m-draw" pathLength="1" d="M30 20H150H270"/><circle cx="30" cy="20" r="6"/><circle cx="150" cy="20" r="6"/><circle cx="270" cy="20" r="6"/><circle class="m-dot" cx="30" cy="20" r="3.5"/></svg>
+              <div class="m-hs-steps"><span>Dispatch</span><span>Your partner</span><span>Customer</span></div>
+            </div>
+            <div class="m-hs-copy"><strong>Logistics partners. <em class="m-soon">Coming soon</em></strong><p>Shiprocket or any partner you choose can be connected for your brand. Contact us to discuss your setup.</p></div>
           </article>
         </div>
         <div class="m-hs-controls">
