@@ -199,11 +199,35 @@ export function renderHome() {
     <span class="m-scroll-cue" aria-hidden="true">Scroll to explore <span></span></span>
   </section>
 
-  <section class="m-statement" aria-label="Our approach">
+  <section class="m-principles m-band-light" id="promises" aria-label="Our principles">
+    <div class="m-wrap m-promise-wrap">
+      <div class="m-promise m-reveal" data-promise-carousel role="region" aria-roledescription="carousel" aria-label="Our promises" tabindex="0">
+        <div class="m-promise-stage" data-promise-stage>
+          <article class="m-promise-slide is-active" data-promise-slide data-pv="0" role="group" aria-roledescription="slide" aria-label="1 of 3"><span class="m-promise-no" aria-hidden="true">01 <i>/ 03</i></span><p class="m-principle">Zero commission on your sales.</p></article>
+          <article class="m-promise-slide" data-promise-slide data-pv="1" role="group" aria-roledescription="slide" aria-label="2 of 3"><span class="m-promise-no" aria-hidden="true">02 <i>/ 03</i></span><p class="m-principle">Your domain, your payments, your customer data.</p></article>
+          <article class="m-promise-slide" data-promise-slide data-pv="2" role="group" aria-roledescription="slide" aria-label="3 of 3"><span class="m-promise-no" aria-hidden="true">03 <i>/ 03</i></span><p class="m-principle">We never market to your customers.</p></article>
+        </div>
+        <div class="m-promise-controls">
+          <button class="m-promise-arrow" type="button" data-promise-prev aria-label="Previous promise">&larr;</button>
+          <div class="m-promise-dots">
+            <button type="button" class="m-promise-dot" data-promise-select="0" aria-label="Show promise 1 of 3" aria-current="true"></button>
+            <button type="button" class="m-promise-dot" data-promise-select="1" aria-label="Show promise 2 of 3" aria-current="false"></button>
+            <button type="button" class="m-promise-dot" data-promise-select="2" aria-label="Show promise 3 of 3" aria-current="false"></button>
+          </div>
+          <button class="m-promise-arrow" type="button" data-promise-next aria-label="Next promise">&rarr;</button>
+          <button class="m-promise-play" type="button" data-promise-toggle aria-pressed="false" aria-label="Pause promises">Pause</button>
+        </div>
+        <p class="m-craft-live" data-promise-live aria-live="polite" aria-atomic="true"></p>
+      </div>
+      <p class="m-clarification m-reveal">Your own domain is coming soon. Cash on delivery is available today.</p>
+    </div>
+  </section>
+
+  <section class="m-statement m-band-dark" aria-label="Our approach">
     <div class="m-wrap m-statement-inner"><span class="m-kicker m-reveal">Built around your point of view</span><p class="m-reveal">Most store builders give you a website. We give you a storefront that looks like you already made it.</p></div>
   </section>
 
-  <section class="m-how" id="features">
+  <section class="m-how m-band-light" id="features">
     <div class="m-wrap">
       <div class="m-how-heading m-reveal">
         <div><span class="m-kicker">From first details to first look</span><h2 class="m-section-title">In one sitting.</h2></div>
@@ -223,7 +247,7 @@ export function renderHome() {
     </div>
   </section>
 
-  <section class="m-details" id="craft">
+  <section class="m-details m-band-dark" id="craft">
     <div class="m-wrap">
       <div class="m-details-head m-reveal">
         <div><span class="m-kicker">The store, behind the scenes</span><h2 class="m-section-title">Crafted details.</h2></div>
@@ -266,16 +290,7 @@ export function renderHome() {
   </section>
 
 
-  <section class="m-principles" aria-label="Our principles">
-    <div class="m-wrap m-principles-list">
-      <p class="m-principle m-reveal">Zero commission on your sales.</p>
-      <p class="m-principle m-reveal">Your domain, your payments, your customer data.</p>
-      <p class="m-principle m-reveal">We never market to your customers.</p>
-      <p class="m-clarification m-reveal">Your own domain is coming soon. Cash on delivery is available today.</p>
-    </div>
-  </section>
-
-  <section class="m-coming" id="integrations">
+  <section class="m-coming m-band-dark" id="integrations">
     <div class="m-wrap m-coming-inner">
       <h2 class="m-reveal">Integrations and what's next.</h2>
       <div class="m-coming-list m-reveal">
@@ -290,7 +305,7 @@ export function renderHome() {
     </div>
   </section>
 
-  <section class="m-showcase" id="showcase">
+  <section class="m-showcase m-band-light" id="showcase">
     <div class="m-wrap">
       <div class="m-showcase-head m-reveal">
         <h2>Example Studio, imagined.</h2>
@@ -304,14 +319,14 @@ export function renderHome() {
     </div>
   </section>
 
-  <section class="m-pricing-tease">
+  <section class="m-pricing-tease m-band-dark">
     <div class="m-wrap m-pricing-inner m-reveal">
       <h2>Simple monthly pricing. No commission, ever.</h2>
       <a href="/pricing">See pricing <span aria-hidden="true">&rarr;</span></a>
     </div>
   </section>
 
-  <section class="m-faq" id="faq">
+  <section class="m-faq m-band-light" id="faq">
     <div class="m-wrap m-faq-inner">
       <h2 class="m-reveal">Good to know.</h2>
       <div class="m-faq-list">
@@ -325,7 +340,7 @@ export function renderHome() {
     </div>
   </section>
 
-  <section class="m-final">
+  <section class="m-final m-band-dark">
     <div class="m-wrap m-final-inner">
       <h2 class="m-reveal">Your brand is ready. Your store can be too.</h2>
       <a class="m-cta m-reveal" href="${SIGNUP}">Open your store</a>

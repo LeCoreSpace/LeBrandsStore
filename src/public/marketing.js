@@ -280,6 +280,94 @@
     });
   }
 
+  let promiseSync = null;
+  // Promise carousel: whole-plane slides stacked in one grid cell. Advance is driven by the active dot's CSS progress animation
+  // (m-pr-progress), so it only runs while the section is onscreen, the tab is visible and motion is allowed.
+  function initializePromises() {
+    const car = document.querySelector("[data-promise-carousel]");
+    if (!car || !car.querySelectorAll) return;
+    const slides = [...car.querySelectorAll("[data-promise-slide]")];
+    const dots = [...car.querySelectorAll("[data-promise-select]")];
+    const toggle = car.querySelector("[data-promise-toggle]");
+    const live = car.querySelector("[data-promise-live]");
+    const section = car.closest ? car.closest("section") : null;
+    if (!slides.length) return;
+    let index = 0;
+    let userPaused = false;
+    const motionOff = () => motionPreference.matches || motionDisabled;
+    const fxPaused = () => Boolean(root.classList && root.classList.contains("m-fx-paused"));
+    const sectionVisible = () => !section || section.classList.contains("m-section-active");
+    const canFly = () => !motionOff() && !document.hidden && !fxPaused() && sectionVisible();
+    function settle() {
+      slides.forEach((slide) => slide.classList.remove("is-out"));
+      car.classList.remove("is-flying");
+    }
+    function show(i, announce, fly, step) {
+      const from = index;
+      index = (i + slides.length) % slides.length;
+      settle();
+      const flying = fly && from !== index && canFly();
+      car.classList.toggle("is-reverse", step < 0);
+      if (flying) car.classList.add("is-flying");
+      slides.forEach((slide, n) => {
+        const active = n === index;
+        slide.classList.toggle("is-active", active);
+        slide.setAttribute("aria-hidden", String(!active));
+        if (flying && n === from) slide.classList.add("is-out");
+      });
+      dots.forEach((dot, n) => dot.setAttribute("aria-current", String(n === index)));
+      if (announce && live) live.textContent = `Promise ${index + 1} of ${slides.length}: ${slides[index].textContent.replace(/^\s*\d+\s*\/\s*\d+\s*/, "").trim()}`;
+    }
+    promiseSync = () => {
+      const off = motionOff();
+      if (off) settle();
+      if (!toggle) return;
+      toggle.disabled = off;
+      toggle.textContent = off ? "Autoplay off" : userPaused ? "Play" : "Pause";
+      toggle.setAttribute("aria-label", off ? "Autoplay is off because automatic motion is disabled" : userPaused ? "Play promises" : "Pause promises");
+    };
+    car.classList.add("is-enhanced");
+    show(0, false, false, 1);
+    promiseSync();
+    const prev = car.querySelector("[data-promise-prev]");
+    const next = car.querySelector("[data-promise-next]");
+    if (prev) prev.addEventListener("click", () => show(index - 1, true, true, -1));
+    if (next) next.addEventListener("click", () => show(index + 1, true, true, 1));
+    dots.forEach((dot, n) => dot.addEventListener("click", () => show(n, true, true, n > index ? 1 : -1)));
+    if (toggle) toggle.addEventListener("click", () => {
+      userPaused = !userPaused;
+      car.classList.toggle("is-paused", userPaused);
+      toggle.setAttribute("aria-pressed", String(userPaused));
+      promiseSync();
+    });
+    car.addEventListener("animationend", (event) => {
+      if (event.animationName === "m-pr-progress") {
+        if (!userPaused && canFly()) show(index + 1, false, true, 1);
+      } else if (event.animationName === "m-pr-out" && event.target && event.target.classList) {
+        event.target.classList.remove("is-out");
+      }
+    });
+    car.addEventListener("animationcancel", (event) => {
+      if (event.animationName === "m-pr-out" && event.target && event.target.classList) event.target.classList.remove("is-out");
+    });
+    // Resolve interrupted flights explicitly, including a hero pause or leaving
+    // the viewport. Do not wait for animationcancel to clean up an old slide.
+    if (typeof MutationObserver !== "undefined") {
+      const stateObserver = new MutationObserver(() => {
+        if (!canFly()) settle();
+      });
+      stateObserver.observe(root, { attributes: true, attributeFilter: ["class"] });
+      if (section) stateObserver.observe(section, { attributes: true, attributeFilter: ["class"] });
+    }
+    car.addEventListener("keydown", (event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      if (event.key === "ArrowLeft") { event.preventDefault(); show(index - 1, true, true, -1); }
+      if (event.key === "ArrowRight") { event.preventDefault(); show(index + 1, true, true, 1); }
+      if (event.key === "Home") { event.preventDefault(); show(0, true, true, -1); }
+      if (event.key === "End") { event.preventDefault(); show(slides.length - 1, true, true, 1); }
+    });
+  }
+
   function setNavTone() {
     if (!navBar) return;
     navBar.classList.toggle("is-solid", window.scrollY > 32);
@@ -368,6 +456,7 @@
     revealObserver?.disconnect();
     videoObserver?.disconnect();
     stopCarouselTimer();
+    if (promiseSync) promiseSync();
     document.documentElement.classList.toggle("m-page-hidden", document.hidden);
     if (carouselToggle) {
       const disabled = motionPreference.matches || motionDisabled;
@@ -473,6 +562,7 @@
   else motionPreference.addListener(configureMotion);
   initializeCarousel();
   initializeHeroStory();
+  initializePromises();
   configureMotion();
   setNavTone();
   }

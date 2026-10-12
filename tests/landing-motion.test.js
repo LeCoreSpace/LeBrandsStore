@@ -76,7 +76,7 @@ test("scroll motion has distinct 3D transitions, readable rest and an explicit p
   const css = await readFile("src/public/marketing.css", "utf8");
   assert.match(css, /\.m-motion \.m-reveal\.is-past \{ transform: var\(--fo\)/);
   assert.match(css, /\.m-motion \.m-reveal\.is-visible \{ opacity: 1; transform: perspective\(900px\) translate3d\(0px,0px,0\) rotateX\(0deg\) rotateY\(0deg\) rotateZ\(0deg\) scale\(1\)/);
-  for (const region of ["m-statement", "m-wizard-media", "m-step", "m-principle", "m-showcase-frame", "m-faq-item", "m-footer-top"]) {
+  for (const region of ["m-statement", "m-wizard-media", "m-step", "m-showcase-frame", "m-faq-item", "m-footer-top"]) {
     assert.match(css, new RegExp(`\\.m-motion \\.${region}[^\\n]+--fx:[^\\n]+--fo:`));
   }
   assert.match(css, /:root\.m-fx-paused \.m-reveal \{ opacity: 1 !important; transform: none !important; transition: none !important/);

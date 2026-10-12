@@ -824,3 +824,79 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
 /* Preserve room for the enlarged mark, sign-in, theme and signup on narrow phones.
    Pricing remains accessible from the pricing section and footer. */
 @media (max-width: 430px) { .m-nav-links a[href="/pricing"] { display: none; } }
+
+/* ===== Shared dark band system. One gradient token for every dark area (bands in both themes, footer). Hero keeps its own artwork. ===== */
+:root {
+  --m-dark-grad: radial-gradient(70% 90% at 88% 0%, rgba(135,67,83,.34), transparent 68%), radial-gradient(55% 75% at 0% 100%, rgba(206,146,139,.13), transparent 70%), linear-gradient(180deg, #0b090a, #130d10);
+}
+:root #top > section.m-band-light {
+  --band-bg: var(--m-ivory); --band-fg: var(--m-ink); --band-muted: var(--m-muted); --band-line: var(--m-line);
+  background: var(--band-bg); color: var(--band-fg);
+}
+:root #top > section.m-band-dark, :root[data-theme="dark"] #top > section.m-band-dark {
+  color-scheme: dark; --band-bg: #0c090b; --band-fg: #f3ebe2; --band-muted: #c1b1ae; --band-line: rgba(243,235,226,.2);
+  --m-accent: #e0aaa0; --m-paper: #1a1316;
+  background-color: #0c090b; background-image: var(--m-dark-grad); color: #f3ebe2;
+}
+:root[data-theme="dark"] #top > section.m-band-light {
+  color-scheme: light; --band-bg: #f5f0e8; --band-fg: #38282b; --band-muted: #796c6c; --band-line: rgba(56, 40, 43, .19);
+  --m-accent: #874353; --m-paper: #eee7dd; --m-ink: #38282b;
+  background: #f5f0e8; color: #38282b;
+}
+.m-footer, .m-pricing-page .m-footer { background-color: #0c090b; background-image: var(--m-dark-grad); }
+
+/* ===== Promise carousel (highlight, immediately after hero) ===== */
+.m-principles { padding: clamp(56px, 7vw, 96px) 0 clamp(60px, 7vw, 100px); }
+.m-promise-wrap { max-width: 1120px; }
+.m-promise { outline-offset: 6px; }
+.m-promise-stage { position: relative; display: grid; overflow: hidden; isolation: isolate; border-radius: 4px; border: 1px solid rgba(224,170,160,.28);
+  background-color: #0c090b; background-image: var(--m-dark-grad); color: #f3ebe2; min-height: clamp(280px, 34vw, 400px); box-shadow: 0 30px 60px -34px rgba(20,10,14,.6); }
+.m-promise-stage::before { content: ""; position: absolute; z-index: 0; inset: 0; pointer-events: none; background-image: linear-gradient(rgba(243,235,226,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(243,235,226,.05) 1px, transparent 1px); background-size: 48px 48px; -webkit-mask-image: radial-gradient(ellipse at 70% 40%, #000 10%, transparent 72%); mask-image: radial-gradient(ellipse at 70% 40%, #000 10%, transparent 72%); }
+.m-promise-slide { --dir: 1; position: relative; z-index: 1; grid-area: 1 / 1; display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: clamp(28px, 5vw, 64px); }
+.m-promise.is-reverse .m-promise-slide { --dir: -1; }
+.m-promise-no { color: #e0aaa0; font-size: 12px; letter-spacing: .16em; font-variant-numeric: tabular-nums; }
+.m-promise-no i { color: #c1b1ae; font-style: normal; }
+.m-promise .m-principle { margin: 0; padding: 0; border: 0; max-width: 15em; font-size: clamp(36px, 6.2vw, 82px); font-weight: 400; line-height: 1.02; letter-spacing: -.06em; text-wrap: balance; color: #f6efe7; }
+.m-promise .m-principle:first-child, .m-promise .m-principle:nth-child(2), .m-promise .m-principle:nth-child(3) { padding-left: 0; border: 0; }
+.m-promise-slide::after { content: ""; width: 72px; height: 3px; background: var(--m-rose); }
+.m-promise.is-enhanced .m-promise-slide { visibility: hidden; opacity: 0; }
+.m-promise.is-enhanced .m-promise-slide.is-active, .m-promise.is-enhanced .m-promise-slide.is-out { visibility: visible; opacity: 1; }
+.m-promise:not(.is-enhanced) .m-promise-stage { display: block; }
+.m-promise:not(.is-enhanced) .m-promise-slide + .m-promise-slide { border-top: 1px solid rgba(243,235,226,.14); }
+.m-promise:not(.is-enhanced) .m-promise-controls { display: none; }
+.m-promise-controls { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
+.m-promise-arrow, .m-promise-play { height: 40px; min-width: 42px; display: inline-grid; place-items: center; padding: 0 10px; border: 1px solid var(--band-line); background: transparent; color: var(--band-fg); font-size: 15px; cursor: pointer; transition: background-color .2s ease, color .2s ease, border-color .2s ease; }
+.m-promise-play { min-width: 74px; margin-left: auto; font-size: 11px; }
+.m-promise-arrow:hover, .m-promise-play:hover:not(:disabled) { color: var(--band-bg); background: var(--band-fg); border-color: var(--band-fg); }
+.m-promise-play:disabled { opacity: .6; cursor: default; }
+.m-promise-dots { display: flex; gap: 8px; }
+.m-promise-dot { position: relative; width: 56px; height: 40px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.m-promise-dot::before, .m-promise-dot::after { content: ""; position: absolute; left: 0; right: 0; top: 18px; height: 3px; }
+.m-promise-dot::before { background: var(--band-line); }
+.m-promise-dot::after { background: var(--m-accent); transform: scaleX(0); transform-origin: left; }
+.m-promise-dot[aria-current="true"]::after { transform: scaleX(1); }
+.m-motion.m-motion .m-section-active .m-promise.is-enhanced .m-promise-dot[aria-current="true"]::after { transform: scaleX(0); animation: m-pr-progress 5.6s linear both; }
+.m-promise.is-paused .m-promise-dot::after, .m-promise:hover .m-promise-dot::after, .m-promise:focus-within .m-promise-dot::after, :root.m-fx-paused .m-promise-dot::after { animation-play-state: paused !important; }
+/* Whole-plane exits and entrances. Per-slide trajectories, mirrored by --dir for previous. */
+.m-motion .m-promise.is-flying .m-promise-slide.is-active { animation: m-pr-in .95s cubic-bezier(.12,.85,.2,1) both; }
+.m-motion .m-promise.is-flying .m-promise-slide.is-out { animation: m-pr-out .75s cubic-bezier(.55,0,.85,.35) both; }
+:root.m-fx-paused .m-promise-slide, :root:not(.m-motion) .m-promise-slide { animation: none !important; }
+:root.m-fx-paused .m-promise-slide.is-out, :root:not(.m-motion) .m-promise-slide.is-out { visibility: hidden; opacity: 0; }
+.m-promise-slide[data-pv="0"] { --pin: perspective(1100px) translate3d(calc(var(--dir) * 220px),0px,0) rotateX(0deg) rotateY(calc(var(--dir) * -38deg)) rotateZ(0deg) scale(0.9); --pout: perspective(1100px) translate3d(calc(var(--dir) * -220px),0px,0) rotateX(0deg) rotateY(calc(var(--dir) * 38deg)) rotateZ(0deg) scale(0.9); }
+.m-promise-slide[data-pv="1"] { --pin: perspective(1100px) translate3d(0px,calc(var(--dir) * 140px),0) rotateX(calc(var(--dir) * -45deg)) rotateY(0deg) rotateZ(0deg) scale(0.92); --pout: perspective(1100px) translate3d(0px,calc(var(--dir) * -140px),0) rotateX(calc(var(--dir) * 45deg)) rotateY(0deg) rotateZ(0deg) scale(0.92); }
+.m-promise-slide[data-pv="2"] { --pin: perspective(1100px) translate3d(0px,0px,0) rotateX(0deg) rotateY(0deg) rotateZ(calc(var(--dir) * -12deg)) scale(0.55); --pout: perspective(1100px) translate3d(0px,0px,0) rotateX(0deg) rotateY(0deg) rotateZ(calc(var(--dir) * 12deg)) scale(1.35); }
+@media (max-width: 600px) {
+  .m-promise-slide[data-pv="0"] { --pin: perspective(1100px) translate3d(calc(var(--dir) * 88.0px),0px,0) rotateX(0deg) rotateY(calc(var(--dir) * -38deg)) rotateZ(0deg) scale(0.9); --pout: perspective(1100px) translate3d(calc(var(--dir) * -88.0px),0px,0) rotateX(0deg) rotateY(calc(var(--dir) * 38deg)) rotateZ(0deg) scale(0.9); }
+  .m-promise-slide[data-pv="1"] { --pin: perspective(1100px) translate3d(0px,calc(var(--dir) * 56.0px),0) rotateX(calc(var(--dir) * -45deg)) rotateY(0deg) rotateZ(0deg) scale(0.92); --pout: perspective(1100px) translate3d(0px,calc(var(--dir) * -56.0px),0) rotateX(calc(var(--dir) * 45deg)) rotateY(0deg) rotateZ(0deg) scale(0.92); }
+  .m-promise-slide[data-pv="2"] { --pin: perspective(1100px) translate3d(0px,0px,0) rotateX(0deg) rotateY(0deg) rotateZ(calc(var(--dir) * -12deg)) scale(0.55); --pout: perspective(1100px) translate3d(0px,0px,0) rotateX(0deg) rotateY(0deg) rotateZ(calc(var(--dir) * 12deg)) scale(1.35); }
+  .m-promise-dot { width: 44px; } .m-promise-controls { gap: 8px; } .m-promise-play { min-width: 62px; }
+}
+@keyframes m-pr-in { from { opacity: 0; transform: var(--pin); } 40% { opacity: 1; } to { opacity: 1; transform: perspective(1100px) translate3d(0px,0px,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); } }
+@keyframes m-pr-out { from { opacity: 1; transform: perspective(1100px) translate3d(0px,0px,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); } to { opacity: 0; transform: var(--pout); } }
+@keyframes m-pr-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Hero base uses the same token (artwork, grid, orbs and animation untouched). */
+:root:root #top > section.m-hero { background-color: #09090a; background-image: var(--m-dark-grad); }
+/* Dark mode only: solid header and pricing backdrop share the token. */
+:root[data-theme="dark"] .m-nav.is-solid { background-color: #0c090b; background-image: var(--m-dark-grad); }
+:root[data-theme="dark"] .m-pricing-page { background-color: #0c090b; background-image: var(--m-dark-grad); }

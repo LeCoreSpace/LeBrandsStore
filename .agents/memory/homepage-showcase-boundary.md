@@ -79,3 +79,14 @@ future revisions. For Razorpay and logistics, use integration setup/contact
 wording instead of "Coming soon"; the user explicitly removed that wording for
 those integrations. A marketing copy change does not enable backend integrations
 or authorise changes to the real dashboard.
+
+The three promises about zero commission, brand-owned domain/payments/customer
+data, and not marketing to customers are the page's main differentiators.
+Present them prominently immediately after the hero as individual animated slides.
+
+**Why:** The user called this the highlight of the page and asked for each line
+to have its own slide rather than a lower-page list.
+
+**How to apply:** Preserve the domain/COD availability note. Dark marketing
+sections share the hero's black-to-plum gradient; lighter bands must stay genuinely
+light in both modes, not alternate between two dark browns.

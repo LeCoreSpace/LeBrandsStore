@@ -242,8 +242,8 @@ test("landing delivers supplied logos, one four-slide showcase and contrasting a
   for(const control of ["prev","next","toggle"])assert.ok(html.includes(`data-craft-${control}`));
   assert.match(css,/\.m-craft-carousel:not\(\.is-enhanced\)/);
   assert.match(css,/@keyframes/);
-  assert.match(css,/:root\[data-theme="dark"\] #top > section:nth-of-type\(even\)/);
-  assert.match(css,/:root\[data-theme="dark"\] #top > section:nth-of-type\(odd\)/);
+  assert.match(css,/:root\[data-theme="dark"\] #top > section\.m-band-dark/);
+  assert.match(css,/:root\[data-theme="dark"\] #top > section\.m-band-light/);
   assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);
 });
 
