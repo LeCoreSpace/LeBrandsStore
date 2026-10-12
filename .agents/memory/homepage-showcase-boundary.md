@@ -46,3 +46,16 @@ standalone discovery headline would be an unsupported claim.
 
 **How to apply:** Do not reintroduce removed claims in copy, FAQ, metadata,
 alt text or generated visuals; preserve the legal identity.
+
+The homepage hero should have a black background in both colour modes and use
+moving visual elements, text and slides to explain what the platform offers
+inside the hero itself. It should not be only a clothing-store screenshot.
+
+**Why:** The user explicitly requested a black hero that explains the platform
+through animated elements, referencing SVGator's website-animation examples.
+
+**How to apply:** Keep the platform explanation readable independently of
+autoplay. Use available catalogue, COD order, customer and invoice capabilities
+as the story; label illustrative UI and future integrations honestly. Preserve
+the separate clothing concept and all operational screens. The hero's black
+background is an exception to the page's mode-dependent alternating bands.

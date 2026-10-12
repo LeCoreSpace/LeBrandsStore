@@ -98,14 +98,13 @@ test("real UI captures exist, concepts are labelled, responsive and lazy, and he
       if(media.poster)assert.ok(!html.includes(`poster="${media.poster}"`));
     }
   }
-  assert.equal((html.match(/<img\b[^>]*fetchpriority="high"/g)||[]).length,2);
+  assert.equal((html.match(/<img\b[^>]*fetchpriority="high"/g)||[]).length,0,"The SVG hero requires no eager photography");
   assert.match(html,/loading="lazy"/);
   assert.equal((html.match(/class="m-media-caption">Example store</g)||[]).length,5);
   assert.doesNotMatch(html,/Image awaiting supply|Video awaiting supply/);
   const eagerBytes=(await stat("src/public/instrument-sans-latin.woff2")).size+
-    (await stat("src/public/img/REPLACE-example-desktop-1280.webp")).size+
-    (await stat("src/public/img/REPLACE-example-mobile-390.webp")).size;
-  assert.ok(eagerBytes<250000,"Font and responsive hero WebP imagery budget is under 250 KB");
+    Buffer.byteLength(html.match(/<section class="m-hero"[\s\S]*?<\/section>/)[0]);
+  assert.ok(eagerBytes<150000,"Font and inline SVG hero budget is under 150 KB");
 });
 
 test("marketing routes are read-only, scoped CSP supports font/video, and preview routes are absent in production",async()=>{

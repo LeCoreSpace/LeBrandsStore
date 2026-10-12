@@ -164,6 +164,47 @@
     });
   }
 
+  function initializeHeroStory() {
+    const story = document.querySelector("[data-hero-story]");
+    if (!story || !story.querySelectorAll) return;
+    const slides = [...story.querySelectorAll("[data-hs-slide]")];
+    const tabs = [...story.querySelectorAll("[data-hs-tab]")];
+    const toggle = story.querySelector("[data-hs-toggle]");
+    const live = story.querySelector("[data-hs-live]");
+    const heroEl = story.closest ? story.closest(".m-hero") || story : story;
+    if (!slides.length) return;
+    let current = 0;
+    let paused = false;
+    function show(i, announce = true) {
+      current = (i + slides.length) % slides.length;
+      slides.forEach((slide, n) => {
+        slide.hidden = n !== current;
+        slide.classList.toggle("is-active", n === current);
+      });
+      tabs.forEach((tab, n) => tab.setAttribute("aria-current", String(n === current)));
+      if (announce && live) live.textContent = (slides[current].getAttribute("aria-label") || "").replace(/^\d+ of \d+:\s*/, "") + `, ${current + 1} of ${slides.length}`;
+    }
+    story.classList.add("is-enhanced");
+    show(0, false);
+    const prev = story.querySelector("[data-hs-prev]");
+    const next = story.querySelector("[data-hs-next]");
+    if (prev) prev.addEventListener("click", () => show(current - 1));
+    if (next) next.addEventListener("click", () => show(current + 1));
+    tabs.forEach((tab, n) => tab.addEventListener("click", () => show(n)));
+    if (toggle) toggle.addEventListener("click", () => {
+      paused = !paused;
+      heroEl.classList.toggle("is-paused", paused);
+      toggle.setAttribute("aria-pressed", String(paused));
+      toggle.setAttribute("aria-label", paused ? "Play hero animation" : "Pause hero animation");
+      toggle.textContent = paused ? "Play" : "Pause";
+    });
+    // The progress bar animation drives the story: it only runs while the hero is onscreen, the tab is visible and the user has not paused.
+    story.addEventListener("animationend", (event) => {
+      if (event.animationName === "m-hs-progress" && !paused && !motionPreference.matches &&
+          !motionDisabled && !document.hidden && heroEl.classList.contains("m-section-active")) show(current + 1, false);
+    });
+  }
+
   function setNavTone() {
     if (!navBar) return;
     navBar.classList.toggle("is-solid", window.scrollY > 32);
@@ -355,6 +396,7 @@
   if (motionPreference.addEventListener) motionPreference.addEventListener("change", configureMotion);
   else motionPreference.addListener(configureMotion);
   initializeCarousel();
+  initializeHeroStory();
   configureMotion();
   setNavTone();
   }

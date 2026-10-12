@@ -51,7 +51,6 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
   <meta property="og:image:height" content="1800">
   <meta name="twitter:card" content="summary_large_image">
   <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="preload" as="image" href="${MARKETING_MEDIA.exampleDesktop.src}" imagesrcset="${MARKETING_MEDIA.exampleDesktop.srcset}" imagesizes="${MARKETING_MEDIA.exampleDesktop.sizes}" fetchpriority="high">
   <script src="/assets/marketing.js"></script>
   <link rel="stylesheet" href="/assets/marketing.css">
 </head>
@@ -105,22 +104,74 @@ export function renderHome() {
   const body = `${nav()}
 <main id="top">
   <section class="m-hero" aria-labelledby="hero-title">
+    <div class="m-hero-bg" aria-hidden="true">
+      <div class="m-hero-grid"></div><span class="m-orb m-orb-a"></span><span class="m-orb m-orb-b"></span>
+      <svg class="m-hero-flow" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" fill="none"><path class="m-flow m-flow-a" d="M-20 560 C220 470 330 640 560 520 S900 330 1220 400"/><path class="m-flow m-flow-b" d="M-20 180 C240 260 380 90 640 190 S980 330 1220 130"/></svg>
+      <span class="m-chip m-chip-1"><svg viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8"/></svg></span>
+      <span class="m-chip m-chip-2"><svg viewBox="0 0 24 24"><path d="M7 5h10M7 9h10M10 9c0 5-3 6-3 6l8 4"/></svg></span>
+      <span class="m-chip m-chip-3"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg></span>
+      <span class="m-chip m-chip-4"><svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></svg></span>
+    </div>
     <div class="m-hero-inner">
       <div class="m-hero-copy">
-        <p class="m-kicker">A considered place to begin</p>
+        <p class="m-kicker">LeBrands.Store, live today</p>
         <h1 id="hero-title">A flagship store for your brand.</h1>
         <p class="m-hero-lede">Live today. Built for Indian D2C brands that intend to be remembered.</p>
+        <p class="m-hero-summary">LeBrands.Store lets an independent Indian D2C brand build its own online shop, then run the catalogue, cash on delivery orders, customers and GST invoices from one place.</p>
+        <ul class="m-hero-points">
+          <li>Catalogue and collections</li><li>Cash on delivery checkout and orders</li><li>Customer records</li><li>GST invoices</li>
+        </ul>
         <div class="m-hero-actions">
           <a class="m-cta" href="${SIGNUP}">Open your store</a>
           <a class="m-text-link" href="#craft">Explore the store concept <span aria-hidden="true">&rarr;</span></a>
         </div>
         <p class="m-hero-note">First publication requires platform approval.</p>
+        <p class="m-hero-soon"><b>Coming soon</b> Razorpay online payments and logistics integrations. Cash on delivery is the only payment option today.</p>
       </div>
-      <div class="m-hero-visual" aria-label="Example Studio fictional clothing store concept shown on laptop and phone">
-        <span class="m-hero-index">01 / 04</span>
-        <div class="m-device-laptop">${imageMarkup(MARKETING_MEDIA.exampleDesktop, { eager: true })}<span class="m-device-caption">Example store concept</span></div>
-        <div class="m-device-phone">${imageMarkup(MARKETING_MEDIA.exampleMobile, { eager: true })}</div>
-        <span class="m-orbit-note">Made for the way<br>your brand moves.</span>
+      <div class="m-hs" data-hero-story role="region" aria-roledescription="carousel" aria-label="What LeBrands.Store does">
+        <div class="m-hs-tabs" role="group" aria-label="Choose a feature">
+          <button type="button" class="m-hs-tab" data-hs-tab="0" aria-current="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8"/></svg><span>Catalogue</span><i class="m-hs-prog"></i></button>
+          <button type="button" class="m-hs-tab" data-hs-tab="1" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h18v10H3zM3 11h18M7 15h3"/></svg><span>COD orders</span><i class="m-hs-prog"></i></button>
+          <button type="button" class="m-hs-tab" data-hs-tab="2" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-4 3-6 7-6s7 2 7 6"/></svg><span>Customers</span><i class="m-hs-prog"></i></button>
+          <button type="button" class="m-hs-tab" data-hs-tab="3" aria-current="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6"/></svg><span>GST invoice</span><i class="m-hs-prog"></i></button>
+        </div>
+        <div class="m-hs-slides">
+          <article class="m-hs-slide is-active" data-hs-slide role="group" aria-roledescription="slide" aria-label="1 of 4: Catalogue and collections">
+            <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
+              <svg viewBox="0 0 240 70" class="m-hs-art" fill="none"><g class="m-t1"><path class="m-draw" pathLength="1" d="M10 14 L22 8 Q30 14 38 8 L50 14 L44 24 L40 21 L40 46 L20 46 L20 21 L16 24 Z" transform="translate(6 8)"/></g><g class="m-t2"><path class="m-draw" pathLength="1" d="M10 14 L22 8 Q30 14 38 8 L50 14 L44 24 L40 21 L40 46 L20 46 L20 21 L16 24 Z" transform="translate(88 8)"/></g><g class="m-t3"><path class="m-draw" pathLength="1" d="M10 14 L22 8 Q30 14 38 8 L50 14 L44 24 L40 21 L40 46 L20 46 L20 21 L16 24 Z" transform="translate(170 8)"/></g></svg>
+              <div class="m-hs-rows"><span class="m-pill">New in</span><span class="m-pill">Basics</span><span class="m-pill">Festive</span><span class="m-pill m-pill-add">+ Collection</span></div>
+            </div>
+            <div class="m-hs-copy"><strong>Catalogue and collections.</strong><p>Add products with photos and prices, and group them into collections on your storefront. Catalogue display is available. Advanced collections: Coming soon.</p></div>
+          </article>
+          <article class="m-hs-slide" data-hs-slide role="group" aria-roledescription="slide" aria-label="2 of 4: Cash on delivery orders" hidden>
+            <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
+              <div class="m-hs-order"><span>Order 1042 <em>Sample</em></span><span>Rs. 1,852.20</span><span class="m-pill">Cash on delivery</span></div>
+              <svg viewBox="0 0 300 40" class="m-hs-art m-hs-track" fill="none"><path class="m-draw" pathLength="1" d="M30 20H150H270"/><circle cx="30" cy="20" r="6"/><circle cx="150" cy="20" r="6"/><circle cx="270" cy="20" r="6"/><circle class="m-dot" cx="30" cy="20" r="3.5"/></svg>
+              <div class="m-hs-steps"><span>Placed</span><span>Packed</span><span>Delivered</span></div>
+            </div>
+            <div class="m-hs-copy"><strong>COD checkout and orders.</strong><p>Customers pay on delivery. You follow each order from placed to packed to delivered, with COD limits and fraud checks built in.</p></div>
+          </article>
+          <article class="m-hs-slide" data-hs-slide role="group" aria-roledescription="slide" aria-label="3 of 4: Customers" hidden>
+            <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
+              <div class="m-hs-cust"><span><b>MK</b>Meera Kulkarni<em>3 orders</em></span><span><b>AS</b>Arjun Sethi<em>1 order</em></span><span><b>NF</b>Naz Fernandes<em>2 orders</em></span></div>
+              <svg viewBox="0 0 300 30" class="m-hs-art" fill="none"><path class="m-draw" pathLength="1" d="M4 24C40 24 50 8 90 14S140 26 180 12 250 4 296 8"/></svg>
+            </div>
+            <div class="m-hs-copy"><strong>Customers you own.</strong><p>Every buyer, address and order history lives in your own customer list. We never market to your customers.</p></div>
+          </article>
+          <article class="m-hs-slide" data-hs-slide role="group" aria-roledescription="slide" aria-label="4 of 4: GST invoices" hidden>
+            <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
+              <div class="m-hs-inv"><span>Taxable value<b>Rs. 1,764.00</b></span><span>CGST 2.5%<b>Rs. 44.10</b></span><span>SGST 2.5%<b>Rs. 44.10</b></span><span class="m-hs-total">Total<b>Rs. 1,852.20</b></span></div>
+              <svg viewBox="0 0 100 40" class="m-hs-stamp" fill="none"><rect class="m-draw" pathLength="1" x="2" y="2" width="96" height="36" rx="3"/><text x="50" y="26" text-anchor="middle">SAMPLE</text></svg>
+            </div>
+            <div class="m-hs-copy"><strong>GST invoices.</strong><p>Tax invoices with CGST, SGST or IGST worked out for you, numbered correctly every financial year. A valid GSTIN is required to publish.</p></div>
+          </article>
+        </div>
+        <div class="m-hs-controls">
+          <button type="button" data-hs-prev aria-label="Previous feature">&larr;</button>
+          <button type="button" data-hs-next aria-label="Next feature">&rarr;</button>
+          <button type="button" class="m-hs-toggle" data-hs-toggle aria-pressed="false" aria-label="Pause hero animation">Pause</button>
+        </div>
+        <p class="m-hs-live" data-hs-live aria-live="polite" aria-atomic="true"></p>
       </div>
     </div>
     <span class="m-scroll-cue" aria-hidden="true">Scroll to explore <span></span></span>
