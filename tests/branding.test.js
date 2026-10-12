@@ -63,3 +63,39 @@ test("browser ICO fallback serves real multi-size artwork and supports HEAD", as
     }
   }
 });
+
+test("account host serves shared logo artwork before account/auth routing", async () => {
+  for (const filename of ["light-transparent.webp", "light-transparent.png", "dark-transparent.webp", "hero-transparent.png", "mark.png", "apple-touch-icon.png"]) {
+    const path = `/img/REPLACE-lebrands-${filename}`;
+    const bytes = await readFile(`src/public${path}`);
+    for (const method of ["GET", "HEAD"]) {
+      let fetches = 0;
+      const response = await worker.fetch(new Request(`https://app.lebrands.store${path}`, { method }), {
+        ASSETS: { fetch: async request => {
+          fetches++;
+          assert.equal(new URL(request.url).pathname, path);
+          assert.equal(request.method, method);
+          return new Response(method === "HEAD" ? null : bytes, { headers: { "content-type": filename.endsWith(".webp") ? "image/webp" : "image/png" } });
+        } },
+      });
+      assert.equal(fetches, 1);
+      assert.equal(response.status, 200);
+      assert.match(response.headers.get("content-type"), /^image\//);
+      assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+      assert.equal(response.headers.get("cache-control"), "public, max-age=86400");
+      assert.deepEqual(Buffer.from(await response.arrayBuffer()), method === "HEAD" ? Buffer.alloc(0) : bytes);
+    }
+  }
+});
+
+test("account logo route rejects writes and preserves explicit asset errors", async () => {
+  const url = "https://app.lebrands.store/img/REPLACE-lebrands-light-transparent.webp";
+  for (const method of ["POST", "PUT", "PATCH", "DELETE"]) {
+    const response = await worker.fetch(new Request(url, { method }), {});
+    assert.equal(response.status, 405);
+  }
+  assert.equal((await worker.fetch(new Request(url), {})).status, 503);
+  const missing = await worker.fetch(new Request(url), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } });
+  assert.equal(missing.status, 404);
+  assert.equal(missing.headers.get("cache-control"), "no-store");
+});

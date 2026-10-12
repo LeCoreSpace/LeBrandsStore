@@ -13,3 +13,4 @@
 - [Mobile animation viewport](mobile-animation-viewport.md) — off-screen transforms can inflate Chromium's mobile viewport; compare against the requested width, not only scroll width.
 - [3D dashboard compositing](3d-dashboard-compositing.md) — flatten dashboard content; animate the whole surface to avoid hiding amounts behind its background.
 - [Replit preview boundary](replit-preview-boundary.md) — native Preview must show the real site, not just a sample gallery; visibility does not authorise live-data access.
+- [Platform logo visibility](platform-logo-visibility.md) — prominent logos across platform pages; verify account-host image delivery, not just local Preview.

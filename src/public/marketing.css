@@ -775,12 +775,12 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
 @media (prefers-reduced-motion: reduce) { .m-motion .m-reveal, :root .m-reveal { opacity: 1 !important; transform: none !important; } }
 
 /* Larger header logo */
-.m-nav-inner { height: 104px; }
-.m-wordmark { width: clamp(200px, 20vw, 262px); height: auto; aspect-ratio: 900 / 320; }
-.m-footer .m-wordmark { width: clamp(126px, 14vw, 174px); }
-@media (max-width: 900px) { .m-nav-inner { height: 88px; } .m-wordmark { width: 190px; } .m-footer .m-wordmark { width: 150px; } }
-@media (max-width: 600px) { .m-nav-inner { height: 76px; } .m-wordmark { width: 128px; } .m-footer .m-wordmark { width: 128px; } }
-@media (max-width: 360px) { .m-wordmark { width: 112px; } }
+.m-nav-inner { height: 114px; }
+.m-wordmark { width: clamp(260px, 22vw, 310px); height: auto; aspect-ratio: 900 / 320; }
+.m-footer .m-wordmark { width: clamp(176px, 18vw, 220px); }
+@media (max-width: 900px) { .m-nav-inner { height: 88px; } .m-wordmark { width: 220px; } .m-footer .m-wordmark { width: 180px; } }
+@media (max-width: 600px) { .m-nav-inner { height: 76px; } .m-wordmark { width: 140px; } .m-footer .m-wordmark { width: 150px; } }
+@media (max-width: 360px) { .m-wordmark { width: 124px; } .m-nav-inner { gap: 8px; } }
 
 /* Gap closure: carousel wrapper, setup clarification and showcase CTA join the scroll system; integration note rides .m-coming-list. */
 .m-motion .m-craft-reveal.m-reveal { --fx: perspective(900px) translate3d(0px,80px,0) rotateX(16deg) rotateY(0deg) rotateZ(0deg) scale(0.92); --fo: perspective(900px) translate3d(0px,-60px,0) rotateX(-12deg) rotateY(0deg) rotateZ(0deg) scale(0.95); }

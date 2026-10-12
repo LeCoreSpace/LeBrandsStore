@@ -1154,9 +1154,10 @@ a:focus-visible {
 
 /* Full hanging-sign lockup; compact mark only on very narrow headers. */
 .wizard-brand { gap: 0; }
-.wizard-brandmark { display: none; width: 34px; height: 34px; border-radius: 0; }
+.wizard-brandmark { display: none; width: 42px; height: 42px; border-radius: 0; }
 .wizard-brandmark .lb-mark-img { width: 100%; height: 100%; object-fit: contain; }
-.wizard-logo { display: block; width: 138px; }
+.wizard-logo { display: block; width: 180px; }
+@media (max-width: 760px) { .wizard-logo { width: 145px; } }
 .wizard-logo .lb-logo-img { display: block; width: 100%; height: auto; }
 @media (max-width: 360px) {
   .wizard-brandmark { display: block; }

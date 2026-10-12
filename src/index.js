@@ -5,6 +5,7 @@ import { SECURITY_HEADERS } from "./auth/security.js";
 import { renderHome, renderLegal } from "./ui/home.js";
 import { renderPricing } from "./ui/marketing.js";
 import { FAVICON_SVG } from "./ui/favicon.js";
+import { LE_BRANDS_LOGO } from "./ui/brand.js";
 import { serveMedia } from "./store/media.js";
 import { serveStorefront } from "./store/live.js";
 
@@ -34,6 +35,7 @@ function page(title, heading, message, status = 200, showBrand = true) {
       body { min-height: 100vh; margin: 0; display: grid; place-items: center; padding: 24px; }
       main { width: min(100%, 680px); padding: clamp(32px, 8vw, 72px); border: 1px solid #e4e0d8; border-radius: 20px; background: #fffefa; box-shadow: 0 24px 80px rgb(23 33 29 / 7%); }
       .brand { margin: 0 0 42px; color: #557064; font-size: 13px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; }
+      .brand .lb-logo-img { display: block; width: 220px; max-width: 100%; height: auto; }
       h1 { margin: 0; font-size: clamp(34px, 8vw, 60px); line-height: 1.04; letter-spacing: -.045em; overflow-wrap: anywhere; }
       .message { margin: 20px 0 0; color: #5d6861; font-size: clamp(16px, 3vw, 20px); line-height: 1.6; }
       @media (max-width: 480px) { body { padding: 16px; } main { border-radius: 16px; } .brand { margin-bottom: 32px; } }
@@ -41,7 +43,7 @@ function page(title, heading, message, status = 200, showBrand = true) {
   </head>
   <body>
     <main>
-      ${showBrand ? '<p class="brand">LeBrands.Store</p>' : ""}
+      ${showBrand ? `<p class="brand">${LE_BRANDS_LOGO.replace('src="/img/', 'src="https://lebrands.store/img/')}</p>` : ""}
       <h1>${escapeHtml(heading)}</h1>
       ${message ? `<p class="message">${escapeHtml(message)}</p>` : ""}
     </main>
@@ -98,6 +100,17 @@ export default {
       url.protocol = "https:";
       url.port = "";
       return new Response(null, { status: 308, headers: { location: url.href } });
+    }
+    // Platform artwork is public on the account host as well as marketing.
+    // Keep this narrow: it must not expose arbitrary files or merchant media.
+    if (hostname === "app.lebrands.store" && /^\/img\/REPLACE-lebrands-(?:light-transparent\.(?:webp|png)|dark-transparent\.webp|hero-transparent\.png|mark\.png|apple-touch-icon\.png)$/.test(url.pathname)) {
+      if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
+      if (!env.ASSETS) return new Response("Assets unavailable", { status: 503 });
+      const asset = await env.ASSETS.fetch(request);
+      const headers = new Headers(asset.headers);
+      headers.set("cache-control", asset.ok ? "public, max-age=86400" : "no-store");
+      headers.set("x-content-type-options", "nosniff");
+      return new Response(request.method === "HEAD" ? null : asset.body, { status: asset.status, headers });
     }
     if (hostname === "app.lebrands.store") return handleAccounts(request, env, ctx);
     if (hostname === "lebrands.store") {

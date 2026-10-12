@@ -659,9 +659,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Shared hanging-sign artwork: full lockup when the sidebar is open, compact mark when collapsed. */
 .lb-wordmark { gap:0; }
-.lb-wordmark .lb-logo { display:block; width:132px; }
+.lb-wordmark .lb-logo { display:block; width:180px; max-width:100%; }
 .lb-wordmark .lb-logo-img { display:block; width:100%; height:auto; }
-.lb-wordmark .lb-mark { display:none; width:36px; height:36px; background:transparent; border-radius:0; }
+.lb-wordmark .lb-mark { display:none; width:42px; height:42px; background:transparent; border-radius:0; }
 .lb-mark-img { display:block; width:100%; height:100%; object-fit:contain; }
 .lb-app.lb-sidebar-collapsed .lb-sidebar .lb-mark { display:block; }
 @media(max-width:767px) { .lb-app.lb-sidebar-collapsed .lb-sidebar .lb-mark { display:none; } }

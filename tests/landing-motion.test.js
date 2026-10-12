@@ -81,7 +81,7 @@ test("scroll motion has distinct 3D transitions, readable rest and an explicit p
   }
   assert.match(css, /:root\.m-fx-paused \.m-reveal \{ opacity: 1 !important; transform: none !important; transition: none !important/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[^\n]+transform: none !important/);
-  assert.match(css, /\.m-wordmark \{ width: clamp\(200px, 20vw, 262px\)/);
+  assert.match(css, /\.m-wordmark \{ width: clamp\(260px, 22vw, 310px\)/);
   const html = renderHome();
   assert.ok(!/<html[^>]*class="[^"]*m-motion/.test(html), "server-rendered content stays visible without JS");
   assert.match(html, /class="m-footer-top m-reveal"/);
