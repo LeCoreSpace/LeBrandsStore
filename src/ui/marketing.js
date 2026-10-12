@@ -192,8 +192,10 @@ export function renderHome() {
           <button type="button" class="m-hs-toggle" data-hs-toggle aria-pressed="false" aria-label="Pause hero animation">Pause</button>
         </div>
         <p class="m-hs-live" data-hs-live aria-live="polite" aria-atomic="true"></p>
-        <div class="m-hs-toast m-hs-toast-a" aria-hidden="true"><i></i><span><b>New order</b>Cash on delivery, Rs. 1,852.20. Sample.</span></div>
-        <div class="m-hs-toast m-hs-toast-b" aria-hidden="true"><i></i><span><b>Invoice ready</b>CGST and SGST split. Sample.</span></div>
+        <div class="m-hs-notifications" aria-hidden="true">
+          <div class="m-hs-toast m-hs-toast-a"><i></i><span><b>New order</b>Cash on delivery, Rs. 1,852.20. Sample.</span></div>
+          <div class="m-hs-toast m-hs-toast-b"><i></i><span><b>Invoice ready</b>CGST and SGST split. Sample.</span></div>
+        </div>
       </div>
       </div>
     </div>

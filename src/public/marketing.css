@@ -556,7 +556,7 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-dark { display: bloc
 .m-section-active .m-chip-4 { animation: m-hs-bob 8s ease-in-out -1s infinite; }
 .m-section-active .m-hs { animation: m-hs-float 9s ease-in-out infinite; }
 .m-section-active .m-hs.is-enhanced .m-hs-tab[aria-current="true"] .m-hs-prog { opacity: 1; animation: m-hs-progress 6.5s linear forwards; }
-.m-section-active .m-hs-slide.is-active { animation: m-hs-in .5s cubic-bezier(.2,.7,.2,1) both; }
+.m-section-active .m-hs-slide.is-active { animation: none; }
 .m-section-active .m-hs-slide.is-active .m-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: m-hs-draw 1.6s ease-out .15s forwards; }
 .m-section-active .m-hs-slide.is-active .m-t2 .m-draw { animation-delay: .5s; }
 .m-section-active .m-hs-slide.is-active .m-t3 .m-draw { animation-delay: .85s; }
@@ -567,7 +567,6 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-dark { display: bloc
 .m-hero.is-paused *::before, .m-hero.is-paused *::after { animation-play-state: paused !important; }
 @keyframes m-hs-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes m-hs-draw { to { stroke-dashoffset: 0; } }
-@keyframes m-hs-in { from { opacity: 0; transform: translate3d(14px,0,0); } to { opacity: 1; transform: translate3d(0,0,0); } }
 @keyframes m-hs-dot { 0% { transform: translate3d(0,0,0); } 60%,100% { transform: translate3d(240px,0,0); } }
 @keyframes m-hs-stamp { from { opacity: 0; transform: rotate(-9deg) scale(1.5); } to { opacity: .85; transform: rotate(-9deg) scale(1); } }
 @keyframes m-hs-drift { from { transform: translate3d(0,0,0); } to { transform: translate3d(-60px,40px,0); } }
@@ -597,7 +596,6 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-dark { display: bloc
 
 /* Hero revision: one synchronized sentence, six slides, larger header. */
 .m-hero-line { max-width: 440px; min-height: 1.5em; margin: 0; color: #f3ebe2; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.5; letter-spacing: -.01em; }
-.m-motion .m-hero-line.is-swap { animation: m-line-in .5s cubic-bezier(.2,.7,.2,1) both; }
 @keyframes m-line-in { from { opacity: 0; transform: translate3d(0,8px,0); } to { opacity: 1; transform: translate3d(0,0,0); } }
 .m-hero-actions { margin-top: 22px; }
 .m-hs-tabs { grid-template-columns: repeat(6, minmax(0,1fr)); }
@@ -636,11 +634,11 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
 }
 
 /* Hero dashboard: dimensional, glass and metal materials. Original timings and keyframes above are untouched. */
-.m-hs { padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,.13); transform-style: preserve-3d;
+.m-hs { padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,.13);
   background: linear-gradient(158deg, rgba(31,31,35,.97), rgba(11,11,13,.98) 62%);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.16), inset 0 0 0 1px rgba(255,255,255,.03), 0 0 0 1px rgba(0,0,0,.7), 0 55px 90px -25px rgba(0,0,0,.9), 30px 40px 70px -30px rgba(135,67,83,.35); }
-.m-hs::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 14px; background: linear-gradient(160deg, #1a1315, #050506); border: 1px solid rgba(206,146,139,.22); transform: translate3d(14px,16px,-28px); pointer-events: none; }
-.m-hs::after { content: ""; position: absolute; left: 6%; right: 6%; bottom: -54px; height: 46px; background: radial-gradient(ellipse at center, rgba(0,0,0,.75), transparent 70%); transform: translateZ(-70px); pointer-events: none; }
+.m-hs::before { content: ""; position: absolute; inset: 0; z-index: -1; border-radius: 14px; background: linear-gradient(160deg, #1a1315, #050506); border: 1px solid rgba(206,146,139,.22); transform: translate(14px,16px); pointer-events: none; }
+.m-hs::after { content: ""; position: absolute; left: 6%; right: 6%; bottom: -54px; height: 46px; background: radial-gradient(ellipse at center, rgba(0,0,0,.75), transparent 70%);  pointer-events: none; }
 .m-hs-sheen { position: absolute; inset: 0; z-index: 7; overflow: hidden; border-radius: 14px; pointer-events: none; }
 .m-hs-sheen::before { content: ""; position: absolute; top: -20%; bottom: -20%; left: 0; width: 34%; background: linear-gradient(100deg, transparent, rgba(255,255,255,.07) 45%, rgba(255,235,230,.12) 50%, transparent 70%); transform: translate3d(-130%,0,0) skewX(-14deg); }
 .m-hs-chrome { display: flex; align-items: center; gap: 12px; margin: -2px 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--band-line); }
@@ -682,11 +680,11 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
 @media (max-width: 900px) {
   .m-hs { transform: perspective(1000px) rotateX(3deg) rotateY(-2deg); transform-origin: center top; }
   .m-section-active .m-hs { animation: m-hs-float-m 9s ease-in-out infinite !important; }
-  .m-hs::before { transform: translate3d(8px,10px,-20px); }
+  .m-hs::before { transform: translate(8px,10px); }
 }
 @media (max-width: 600px) {
   .m-hs { padding: 9px; box-shadow: inset 0 1px 0 rgba(255,255,255,.14), 0 30px 50px -20px rgba(0,0,0,.9); }
-  .m-hs::before { transform: translate3d(5px,7px,-16px); }
+  .m-hs::before { transform: translate(5px,7px); }
   .m-hs-url { font-size: 9.5px; }
   .m-hs-kpis { gap: 4px; }
   .m-hs-kpi { padding: 7px 7px 8px; }
@@ -699,111 +697,36 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
   .m-hs-toast-b { left: 14px; bottom: -32px; }
 }
 
-/* Hero flight choreography. Distances (--d) and rotations (--r) shrink on small screens.
-   Everything below sits under .m-section-active, so it is off for no-JS, reduced motion, motion=off and offscreen.
-   Pausing swaps entrances for their resting state, so nothing is ever left mid-flight or invisible. */
-.m-hs-scene { --d: 1; --r: 1; position: relative; min-width: 0; z-index: 3; transform-style: preserve-3d; }
-@media (max-width: 900px) { .m-hs-scene { --d: .6; --r: .7; } }
-@media (max-width: 600px) { .m-hs-scene { --d: .36; --r: .55; } }
-.m-hs-art g { transform-box: fill-box; transform-origin: center; }
 
-.m-section-active .m-hs-scene { animation: m-scene-enter 1.7s cubic-bezier(.16,.8,.2,1) both; }
-.m-section-active .m-hs-slides { animation: m-hs-sway 8s ease-in-out infinite alternate; }
-.m-section-active .m-hs-slide.is-active { animation: none; }
-
-.m-section-active .m-hs-slide.is-active .m-hs-card { animation-duration: 1.35s; animation-timing-function: cubic-bezier(.2,.85,.25,1); animation-fill-mode: both; }
-.m-section-active .m-hs-slides > .m-hs-slide:nth-child(1).is-active .m-hs-card { animation-name: m-fly-1; transform-origin: 20% 80%; }
-.m-section-active .m-hs-slides > .m-hs-slide:nth-child(2).is-active .m-hs-card { animation-name: m-fly-2; transform-origin: right center; }
-.m-section-active .m-hs-slides > .m-hs-slide:nth-child(3).is-active .m-hs-card { animation-name: m-fly-3; transform-origin: center bottom; }
-.m-section-active .m-hs-slides > .m-hs-slide:nth-child(4).is-active .m-hs-card { animation-name: m-fly-4; transform-origin: center top; }
-.m-section-active .m-hs-slides > .m-hs-slide:nth-child(5).is-active .m-hs-card { animation-name: m-fly-5; transform-origin: center; }
-.m-section-active .m-hs-slides > .m-hs-slide:nth-child(6).is-active .m-hs-card { animation-name: m-fly-6; transform-origin: 80% 20%; }
-.m-section-active .m-hs-slide.is-active .m-hs-copy { animation: m-hs-copy-in .7s ease-out .45s both; }
-
-.m-section-active .m-hs-slide.is-active .m-hs-rows .m-pill { animation: m-fly-pill .8s cubic-bezier(.2,.9,.25,1.2) both; transform-origin: bottom; }
-.m-section-active .m-hs-slide.is-active .m-hs-rows .m-pill:nth-child(1) { animation-delay: .6s; }
-.m-section-active .m-hs-slide.is-active .m-hs-rows .m-pill:nth-child(2) { animation-delay: .7s; }
-.m-section-active .m-hs-slide.is-active .m-hs-rows .m-pill:nth-child(3) { animation-delay: .8s; }
-.m-section-active .m-hs-slide.is-active .m-hs-rows .m-pill:nth-child(4) { animation-delay: .9s; }
-.m-section-active .m-hs-slide.is-active .m-hs-art g { animation: m-fly-tee .9s cubic-bezier(.2,.9,.25,1.15) both; }
-.m-section-active .m-hs-slide.is-active .m-t2 { animation-delay: .25s; }
-.m-section-active .m-hs-slide.is-active .m-t3 { animation-delay: .5s; }
-.m-section-active .m-hs-slide.is-active .m-hs-order > span { animation: m-fly-drop .8s cubic-bezier(.2,.9,.25,1.1) both; transform-origin: center top; }
-.m-section-active .m-hs-slide.is-active .m-hs-order > span:nth-child(1) { animation-delay: .5s; }
-.m-section-active .m-hs-slide.is-active .m-hs-order > span:nth-child(2) { animation-delay: .62s; }
-.m-section-active .m-hs-slide.is-active .m-hs-order > span:nth-child(3) { animation-delay: .74s; }
-.m-section-active .m-hs-slide.is-active .m-hs-steps span { animation: m-fly-pop .8s cubic-bezier(.2,.9,.25,1.3) both; }
-.m-section-active .m-hs-slide.is-active .m-hs-steps span:nth-child(1) { animation-delay: .7s; }
-.m-section-active .m-hs-slide.is-active .m-hs-steps span:nth-child(2) { animation-delay: .85s; }
-.m-section-active .m-hs-slide.is-active .m-hs-steps span:nth-child(3) { animation-delay: 1s; }
-.m-section-active .m-hs-slide.is-active .m-hs-cust span { animation: m-fly-left .85s cubic-bezier(.2,.9,.25,1.05) both; }
-.m-section-active .m-hs-slide.is-active .m-hs-cust span:nth-child(2) { animation-name: m-fly-right; animation-delay: .15s; }
-.m-section-active .m-hs-slide.is-active .m-hs-cust span:nth-child(1) { animation-delay: .45s; }
-.m-section-active .m-hs-slide.is-active .m-hs-cust span:nth-child(2) { animation-delay: .6s; }
-.m-section-active .m-hs-slide.is-active .m-hs-cust span:nth-child(3) { animation-delay: .75s; }
-.m-section-active .m-hs-slide.is-active .m-hs-cust b { animation: m-fly-spin 1s cubic-bezier(.2,.9,.25,1.1) both; animation-delay: inherit; }
-.m-section-active .m-hs-slide.is-active .m-hs-inv span { animation: m-fly-right .8s cubic-bezier(.2,.9,.25,1.05) both; }
-.m-section-active .m-hs-slide.is-active .m-hs-inv span:nth-child(1) { animation-delay: .55s; }
-.m-section-active .m-hs-slide.is-active .m-hs-inv span:nth-child(2) { animation-delay: .68s; }
-.m-section-active .m-hs-slide.is-active .m-hs-inv span:nth-child(3) { animation-delay: .81s; }
-.m-section-active .m-hs-slide.is-active .m-hs-inv span:nth-child(4) { animation-delay: .94s; }
-
-/* Pause: show resting state instead of freezing mid-flight. */
-.m-hero.is-paused .m-hs-scene, .m-hero.is-paused .m-hs-slides,
-.m-hero.is-paused .m-hs-slide .m-hs-card, .m-hero.is-paused .m-hs-slide .m-hs-copy,
-.m-hero.is-paused .m-hs-slide .m-pill, .m-hero.is-paused .m-hs-slide .m-hs-art g,
-.m-hero.is-paused .m-hs-slide .m-hs-order > span, .m-hero.is-paused .m-hs-slide .m-hs-steps span,
-.m-hero.is-paused .m-hs-slide .m-hs-cust span, .m-hero.is-paused .m-hs-slide .m-hs-cust b,
-.m-hero.is-paused .m-hs-slide .m-hs-inv span { animation: none !important; }
-
-@keyframes m-scene-enter {
-  0% { opacity: 0; transform: perspective(1600px) translate3d(calc(var(--d) * 170px), calc(var(--d) * 90px), calc(var(--d) * -420px)) rotateY(calc(var(--r) * -34deg)) rotateZ(calc(var(--r) * 5deg)) scale(.8); }
-  30% { opacity: 1; }
-  72% { transform: perspective(1600px) translate3d(calc(var(--d) * -12px), calc(var(--d) * -6px), calc(var(--d) * 30px)) rotateY(calc(var(--r) * 3deg)) rotateZ(calc(var(--r) * -.6deg)) scale(1.015); }
-  100% { opacity: 1; transform: perspective(1600px) translate3d(0,0,0) rotateY(0) rotateZ(0) scale(1); }
-}
-@keyframes m-hs-sway { from { transform: perspective(1300px) rotateY(calc(var(--r) * -1.4deg)) rotateX(calc(var(--r) * .6deg)); } to { transform: perspective(1300px) rotateY(calc(var(--r) * 1.4deg)) rotateX(calc(var(--r) * -.5deg)); } }
-@keyframes m-fly-1 {
-  0% { opacity: 0; transform: perspective(900px) translate3d(calc(var(--d) * -190px), calc(var(--d) * 110px), calc(var(--d) * -260px)) rotateY(calc(var(--r) * 48deg)) rotateZ(calc(var(--r) * -9deg)) scale(.7); }
-  25% { opacity: 1; }
-  70% { transform: perspective(900px) translate3d(calc(var(--d) * 10px), calc(var(--d) * -8px), calc(var(--d) * 30px)) rotateY(calc(var(--r) * -5deg)) rotateZ(calc(var(--r) * 1.5deg)) scale(1.02); }
-  100% { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateY(0) rotateZ(0) scale(1); }
-}
-@keyframes m-fly-2 {
-  0% { opacity: 0; transform: perspective(900px) translate3d(calc(var(--d) * 130px), 0, calc(var(--d) * -120px)) rotateY(calc(var(--r) * -72deg)) scale(.86); }
-  25% { opacity: 1; }
-  70% { transform: perspective(900px) translate3d(calc(var(--d) * -6px), 0, calc(var(--d) * 20px)) rotateY(calc(var(--r) * 6deg)) scale(1.01); }
-  100% { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateY(0) scale(1); }
-}
-@keyframes m-fly-3 {
-  0% { opacity: 0; transform: perspective(900px) translate3d(0, calc(var(--d) * 170px), calc(var(--d) * -200px)) rotateX(calc(var(--r) * 62deg)) scale(.8); }
-  25% { opacity: 1; }
-  70% { transform: perspective(900px) translate3d(0, calc(var(--d) * -8px), calc(var(--d) * 24px)) rotateX(calc(var(--r) * -5deg)) scale(1.015); }
-  100% { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateX(0) scale(1); }
-}
-@keyframes m-fly-4 {
-  0% { opacity: 0; transform: perspective(900px) translate3d(calc(var(--d) * 70px), calc(var(--d) * -180px), calc(var(--d) * -170px)) rotateX(calc(var(--r) * -58deg)) rotateZ(calc(var(--r) * 14deg)) scale(.8); }
-  25% { opacity: 1; }
-  70% { transform: perspective(900px) translate3d(calc(var(--d) * -6px), calc(var(--d) * 10px), calc(var(--d) * 20px)) rotateX(calc(var(--r) * 5deg)) rotateZ(calc(var(--r) * -2deg)) scale(1.015); }
-  100% { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateX(0) rotateZ(0) scale(1); }
-}
-@keyframes m-fly-5 {
-  0% { opacity: 0; transform: perspective(900px) translate3d(0, calc(var(--d) * 30px), calc(var(--d) * -520px)) rotateX(calc(var(--r) * 20deg)) rotateZ(calc(var(--r) * -16deg)) scale(.5); }
-  30% { opacity: 1; }
-  68% { transform: perspective(900px) translate3d(0, calc(var(--d) * -6px), calc(var(--d) * 40px)) rotateX(calc(var(--r) * -3deg)) rotateZ(calc(var(--r) * 2.5deg)) scale(1.05); }
-  100% { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateX(0) rotateZ(0) scale(1); }
-}
-@keyframes m-fly-6 {
-  0% { opacity: 0; transform: perspective(900px) translate3d(calc(var(--d) * 210px), calc(var(--d) * -150px), calc(var(--d) * -220px)) rotateX(calc(var(--r) * 20deg)) rotateY(calc(var(--r) * -60deg)) rotateZ(calc(var(--r) * 12deg)) scale(.75); }
-  25% { opacity: 1; }
-  50% { transform: perspective(900px) translate3d(calc(var(--d) * -34px), calc(var(--d) * 34px), calc(var(--d) * 50px)) rotateX(calc(var(--r) * -6deg)) rotateY(calc(var(--r) * 12deg)) rotateZ(calc(var(--r) * -3deg)) scale(1.03); }
-  100% { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateX(0) rotateY(0) rotateZ(0) scale(1); }
-}
-@keyframes m-hs-copy-in { from { opacity: 0; transform: translate3d(0, calc(var(--d) * 16px), 0); } to { opacity: 1; transform: translate3d(0,0,0); } }
-@keyframes m-fly-pill { from { opacity: 0; transform: translate3d(0, calc(var(--d) * 40px), 0) rotateX(calc(var(--r) * -80deg)) scale(.5); } to { opacity: 1; transform: translate3d(0,0,0) rotateX(0) scale(1); } }
-@keyframes m-fly-tee { from { opacity: 0; transform: translate3d(0, calc(var(--d) * -40px), 0) rotate(calc(var(--r) * -25deg)) scale(.6); } to { opacity: 1; transform: translate3d(0,0,0) rotate(0) scale(1); } }
-@keyframes m-fly-drop { from { opacity: 0; transform: translate3d(0, calc(var(--d) * -24px), 0) rotateX(calc(var(--r) * 70deg)); } to { opacity: 1; transform: translate3d(0,0,0) rotateX(0); } }
-@keyframes m-fly-pop { from { opacity: 0; transform: translate3d(0, calc(var(--d) * 14px), 0) rotate(calc(var(--r) * -20deg)) scale(.3); } to { opacity: 1; transform: translate3d(0,0,0) rotate(0) scale(1); } }
-@keyframes m-fly-left { from { opacity: 0; transform: translate3d(calc(var(--d) * -120px), 0, 0) rotateY(calc(var(--r) * 50deg)) rotateZ(calc(var(--r) * -4deg)); } to { opacity: 1; transform: translate3d(0,0,0) rotateY(0) rotateZ(0); } }
-@keyframes m-fly-right { from { opacity: 0; transform: translate3d(calc(var(--d) * 120px), 0, 0) rotateY(calc(var(--r) * -50deg)) rotateZ(calc(var(--r) * 4deg)); } to { opacity: 1; transform: translate3d(0,0,0) rotateY(0) rotateZ(0); } }
-@keyframes m-fly-spin { from { opacity: 0; transform: rotate(calc(var(--r) * 360deg)) scale(0); } to { opacity: 1; transform: rotate(0) scale(1); } }
+/* Hero story transitions: JS drives a phase (is-exit, then swap, then is-enter) on .m-hero with data-hs-out/data-hs-in.
+   Left headline parts and the whole dashboard plane use independent trajectories on the same phase. Resting state has no animation and no transform.
+   Dashboard content is flat: no preserve-3d, no inner depth, no perpetual sway. All rules require .m-section-active. */
+.m-hero { --d: 1; --r: 1; }
+@media (max-width: 900px) { .m-hero { --d: .6; --r: .7; } }
+@media (max-width: 600px) { .m-hero { --d: .36; --r: .55; } }
+.m-hs-scene { position: relative; min-width: 0; z-index: 3; }
+.m-hs-scene, .m-hs, .m-hs-slides, .m-hs-card { transform-style: flat; }
+.m-hs-notifications { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin-top: 12px; }
+.m-hs-notifications .m-hs-toast { position: relative; inset: auto; width: auto; transform: none; box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 8px 18px rgba(0,0,0,.28); }
+.m-section-active .m-hs-notifications .m-hs-toast { animation: none; }
+.m-hero-copy .m-kicker { --cd: 0s; } .m-hero-copy h1 { --cd: .06s; } .m-hero-copy .m-hero-line { --cd: .12s; }
+.m-hero[data-hs-out="0"] { --so: translate3d(calc(var(--d) * 260px), calc(var(--d) * -90px), calc(var(--d) * -300px)) rotateX(calc(var(--r) * 10deg)) rotateY(calc(var(--r) * -38deg)) rotateZ(calc(var(--r) * 6deg)) scale(0.7); --co: translate3d(calc(var(--d) * -220px), calc(var(--d) * 0px), calc(var(--d) * 0px)) rotateX(calc(var(--r) * 0deg)) rotateY(calc(var(--r) * 40deg)) rotateZ(calc(var(--r) * 0deg)) scale(0.9); }
+.m-hero[data-hs-in="0"] { --si: translate3d(calc(var(--d) * -260px), calc(var(--d) * 120px), calc(var(--d) * -360px)) rotateX(calc(var(--r) * -8deg)) rotateY(calc(var(--r) * 34deg)) rotateZ(calc(var(--r) * -6deg)) scale(0.72); --ci: translate3d(calc(var(--d) * 0px), calc(var(--d) * 60px), calc(var(--d) * 0px)) rotateX(calc(var(--r) * -50deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 0deg)) scale(0.9); }
+.m-hero[data-hs-out="1"] { --so: translate3d(calc(var(--d) * -240px), calc(var(--d) * 60px), calc(var(--d) * -280px)) rotateX(calc(var(--r) * 0deg)) rotateY(calc(var(--r) * 40deg)) rotateZ(calc(var(--r) * -8deg)) scale(0.72); --co: translate3d(calc(var(--d) * 0px), calc(var(--d) * -90px), calc(var(--d) * 0px)) rotateX(calc(var(--r) * 50deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 0deg)) scale(0.9); }
+.m-hero[data-hs-in="1"] { --si: translate3d(calc(var(--d) * 240px), calc(var(--d) * -100px), calc(var(--d) * -300px)) rotateX(calc(var(--r) * 6deg)) rotateY(calc(var(--r) * -36deg)) rotateZ(calc(var(--r) * 7deg)) scale(0.75); --ci: translate3d(calc(var(--d) * -240px), calc(var(--d) * 0px), calc(var(--d) * 0px)) rotateX(calc(var(--r) * 0deg)) rotateY(calc(var(--r) * -40deg)) rotateZ(calc(var(--r) * 0deg)) scale(0.9); }
+.m-hero[data-hs-out="2"] { --so: translate3d(calc(var(--d) * 0px), calc(var(--d) * 240px), calc(var(--d) * -320px)) rotateX(calc(var(--r) * 34deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 0deg)) scale(0.72); --co: translate3d(calc(var(--d) * -200px), calc(var(--d) * 40px), calc(var(--d) * 0px)) rotateX(calc(var(--r) * 0deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * -8deg)) scale(0.9); }
+.m-hero[data-hs-in="2"] { --si: translate3d(calc(var(--d) * 0px), calc(var(--d) * -240px), calc(var(--d) * -300px)) rotateX(calc(var(--r) * -30deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * -5deg)) scale(0.74); --ci: translate3d(calc(var(--d) * 0px), calc(var(--d) * 90px), calc(var(--d) * 0px)) rotateX(calc(var(--r) * 40deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 0deg)) scale(0.9); }
+.m-hero[data-hs-out="3"] { --so: translate3d(calc(var(--d) * 0px), calc(var(--d) * -230px), calc(var(--d) * -300px)) rotateX(calc(var(--r) * -34deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 10deg)) scale(0.72); --co: translate3d(calc(var(--d) * 0px), calc(var(--d) * 90px), calc(var(--d) * 0px)) rotateX(calc(var(--r) * -45deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 0deg)) scale(0.9); }
+.m-hero[data-hs-in="3"] { --si: translate3d(calc(var(--d) * 0px), calc(var(--d) * 230px), calc(var(--d) * -320px)) rotateX(calc(var(--r) * 30deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * -10deg)) scale(0.72); --ci: translate3d(calc(var(--d) * -220px), calc(var(--d) * -30px), calc(var(--d) * 0px)) rotateX(calc(var(--r) * 0deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 8deg)) scale(0.9); }
+.m-hero[data-hs-out="4"] { --so: translate3d(calc(var(--d) * 0px), calc(var(--d) * 0px), calc(var(--d) * -520px)) rotateX(calc(var(--r) * 12deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * -14deg)) scale(0.35); --co: translate3d(calc(var(--d) * -140px), calc(var(--d) * -50px), calc(var(--d) * -200px)) rotateX(calc(var(--r) * 0deg)) rotateY(calc(var(--r) * 50deg)) rotateZ(calc(var(--r) * 0deg)) scale(0.7); }
+.m-hero[data-hs-in="4"] { --si: translate3d(calc(var(--d) * 0px), calc(var(--d) * 0px), calc(var(--d) * -560px)) rotateX(calc(var(--r) * -10deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 14deg)) scale(0.35); --ci: translate3d(calc(var(--d) * 0px), calc(var(--d) * 0px), calc(var(--d) * -300px)) rotateX(calc(var(--r) * 0deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 10deg)) scale(0.6); }
+.m-hero[data-hs-out="5"] { --so: translate3d(calc(var(--d) * 280px), calc(var(--d) * -160px), calc(var(--d) * -240px)) rotateX(calc(var(--r) * 20deg)) rotateY(calc(var(--r) * -55deg)) rotateZ(calc(var(--r) * 12deg)) scale(0.7); --co: translate3d(calc(var(--d) * -260px), calc(var(--d) * 60px), calc(var(--d) * 0px)) rotateX(calc(var(--r) * 0deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 10deg)) scale(0.9); }
+.m-hero[data-hs-in="5"] { --si: translate3d(calc(var(--d) * -280px), calc(var(--d) * 160px), calc(var(--d) * -260px)) rotateX(calc(var(--r) * -18deg)) rotateY(calc(var(--r) * 50deg)) rotateZ(calc(var(--r) * -12deg)) scale(0.7); --ci: translate3d(calc(var(--d) * 0px), calc(var(--d) * -80px), calc(var(--d) * 0px)) rotateX(calc(var(--r) * 50deg)) rotateY(calc(var(--r) * 0deg)) rotateZ(calc(var(--r) * 0deg)) scale(0.9); }
+.m-hero.m-section-active.is-exit .m-hs-scene { animation: m-hs-out .7s cubic-bezier(.55,0,.85,.35) both; }
+.m-hero.m-section-active.is-enter .m-hs-scene { animation: m-hs-in 1.1s cubic-bezier(.12,.85,.2,1) both; }
+.m-hero.m-section-active.is-exit .m-hero-copy .m-kicker, .m-hero.m-section-active.is-exit .m-hero-copy h1, .m-hero.m-section-active.is-exit .m-hero-copy .m-hero-line { animation: m-copy-out .58s cubic-bezier(.55,0,.85,.35) var(--cd) both; }
+.m-hero.m-section-active.is-enter .m-hero-copy .m-kicker, .m-hero.m-section-active.is-enter .m-hero-copy h1, .m-hero.m-section-active.is-enter .m-hero-copy .m-hero-line { animation: m-copy-in .95s cubic-bezier(.12,.85,.2,1) var(--cd) both; }
+@keyframes m-hs-out { from { opacity: 1; transform: perspective(1400px) translate3d(0,0,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); } 35% { opacity: 1; } to { opacity: 0; transform: perspective(1400px) var(--so); } }
+@keyframes m-hs-in { from { opacity: 0; transform: perspective(1400px) var(--si); } 35% { opacity: 1; } to { opacity: 1; transform: perspective(1400px) translate3d(0,0,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); } }
+@keyframes m-copy-out { from { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); } to { opacity: 0; transform: perspective(900px) var(--co); } }
+@keyframes m-copy-in { from { opacity: 0; transform: perspective(900px) var(--ci); } to { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); } }

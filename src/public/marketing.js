@@ -184,32 +184,98 @@
       });
       tabs.forEach((tab, n) => tab.setAttribute("aria-current", String(n === current)));
       const sentence = slides[current].getAttribute("data-hs-line");
-      if (line && sentence && line.textContent !== sentence) {
-        line.textContent = sentence;
-        line.classList.remove("is-swap");
-        if (line.offsetWidth !== undefined) void line.offsetWidth;
-        line.classList.add("is-swap");
-      }
+      if (line && sentence && line.textContent !== sentence) line.textContent = sentence;
       if (announce && live) live.textContent = (slides[current].getAttribute("aria-label") || "").replace(/^\d+ of \d+:\s*/, "") + `, ${current + 1} of ${slides.length}`;
+    }
+    // Transition phases: rest, exit (current content flies out), then swap slide and headline, then enter (next content flies in).
+    // Exit and enter are gated by animationend on the scene root. animationcancel (class removed, hero offscreen, motion off) resolves to rest.
+    const scene = story.parentElement || null;
+    let phase = "rest";
+    let target = 0;
+    let announceTarget = false;
+    function canFly() {
+      return Boolean(scene) && !paused && !motionPreference.matches && !motionDisabled && !document.hidden &&
+        heroEl.classList.contains("m-section-active");
+    }
+    function clearFlight() {
+      phase = "rest";
+      heroEl.classList.remove("is-exit");
+      heroEl.classList.remove("is-enter");
+      heroEl.removeAttribute("data-hs-out");
+      heroEl.removeAttribute("data-hs-in");
+    }
+    function showNow(i, announce) {
+      clearFlight();
+      show(i, announce);
+    }
+    function beginEnter() {
+      heroEl.classList.remove("is-exit");
+      heroEl.removeAttribute("data-hs-out");
+      show(target, announceTarget);
+      phase = "enter";
+      heroEl.setAttribute("data-hs-in", String(current));
+      heroEl.classList.add("is-enter");
+    }
+    function go(i, announce = true) {
+      const index = (i + slides.length) % slides.length;
+      if (phase === "rest" && index !== current && canFly()) {
+        target = index;
+        announceTarget = announce;
+        phase = "exit";
+        heroEl.setAttribute("data-hs-out", String(current));
+        heroEl.classList.add("is-exit");
+      } else {
+        showNow(index, announce);
+      }
+    }
+    function onSceneEnd(event) {
+      if (event.target !== scene) return;
+      if (event.animationName === "m-hs-out" && phase === "exit") beginEnter();
+      else if (event.animationName === "m-hs-in" && phase === "enter") clearFlight();
+    }
+    function onSceneCancel(event) {
+      if (event.target !== scene) return;
+      if (event.animationName === "m-hs-out" && phase === "exit") showNow(target, announceTarget);
+      else if (event.animationName === "m-hs-in" && phase === "enter") clearFlight();
+    }
+    // Resolve interruptions independently of animationcancel, which browsers
+    // may not deliver when the page or its motion settings change.
+    function settleInterruptedFlight() {
+      if (phase !== "rest" && !canFly()) {
+        showNow(phase === "exit" ? target : current, phase === "exit" && announceTarget);
+      }
     }
     story.classList.add("is-enhanced");
     show(0, false);
+    if (scene) {
+      scene.addEventListener("animationend", onSceneEnd);
+      scene.addEventListener("animationcancel", onSceneCancel);
+    }
+    document.addEventListener?.("visibilitychange", settleInterruptedFlight);
+    motionPreference.addEventListener?.("change", settleInterruptedFlight);
+    if (typeof MutationObserver !== "undefined") {
+      new MutationObserver(settleInterruptedFlight).observe(heroEl, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+    }
     const prev = story.querySelector("[data-hs-prev]");
     const next = story.querySelector("[data-hs-next]");
-    if (prev) prev.addEventListener("click", () => show(current - 1));
-    if (next) next.addEventListener("click", () => show(current + 1));
-    tabs.forEach((tab, n) => tab.addEventListener("click", () => show(n)));
+    if (prev) prev.addEventListener("click", () => go(current - 1));
+    if (next) next.addEventListener("click", () => go(current + 1));
+    tabs.forEach((tab, n) => tab.addEventListener("click", () => go(n)));
     if (toggle) toggle.addEventListener("click", () => {
       paused = !paused;
       heroEl.classList.toggle("is-paused", paused);
       toggle.setAttribute("aria-pressed", String(paused));
       toggle.setAttribute("aria-label", paused ? "Play hero animation" : "Pause hero animation");
       toggle.textContent = paused ? "Play" : "Pause";
+      if (paused && phase !== "rest") showNow(phase === "exit" ? target : current, announceTarget);
     });
     // The progress bar animation drives the story: it only runs while the hero is onscreen, the tab is visible and the user has not paused.
     story.addEventListener("animationend", (event) => {
-      if (event.animationName === "m-hs-progress" && !paused && !motionPreference.matches &&
-          !motionDisabled && !document.hidden && heroEl.classList.contains("m-section-active")) show(current + 1, false);
+      if (event.animationName === "m-hs-progress" && phase === "rest" && !paused && !motionPreference.matches &&
+          !motionDisabled && !document.hidden && heroEl.classList.contains("m-section-active")) go(current + 1, false);
     });
   }
 

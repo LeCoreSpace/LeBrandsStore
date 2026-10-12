@@ -23,7 +23,9 @@ test("black hero explains current features and keeps all slides readable without
   assert.match(css, /\.m-hero\.is-paused \*, \.m-page-hidden \.m-hero \*[\s\S]*?animation-play-state: paused/);
   assert.match(html, /m-hs-chrome/);
   assert.match(html, /Sample data, illustrative/);
-  assert.match(css, /transform-style:\s*preserve-3d/);
+  assert.match(css, /\.m-hs-scene, \.m-hs, \.m-hs-slides, \.m-hs-card \{ transform-style: flat; \}/);
+  assert.match(html, /class="m-hs-notifications" aria-hidden="true"/);
+  assert.match(css, /\.m-hs-notifications \.m-hs-toast \{ position: relative; inset: auto;/);
   assert.match(css, /m-hs-progress 6\.5s linear forwards/);
   assert.match(css, /m-hs-draw 1\.6s ease-out \.15s forwards/);
   assert.match(css, /m-hs-dot 3\.2s ease-in-out 1s infinite/);
@@ -36,20 +38,19 @@ test("black hero explains current features and keeps all slides readable without
   }
 });
 
-test("each hero feature has a distinct gated flying entrance with a readable resting state", async () => {
+test("each hero feature coordinates whole-dashboard and text entrances and exits without intersecting content layers", async () => {
   const css = await readFile("src/public/marketing.css", "utf8");
   assert.match(renderHome(), /class="m-hs-scene"/);
-  assert.match(css, /\.m-section-active \.m-hs-scene \{ animation: m-scene-enter 1\.7s/);
-  assert.match(css, /\.m-section-active \.m-hs-slide\.is-active \.m-hs-card \{ animation-duration: 1\.35s/);
-  for(let i=1;i<=6;i++) {
-    assert.ok(css.includes(`.m-section-active .m-hs-slides > .m-hs-slide:nth-child(${i}).is-active .m-hs-card { animation-name: m-fly-${i};`));
-    const keyframes=css.match(new RegExp(`@keyframes m-fly-${i} \\{[\\s\\S]*?\\n\\}`))?.[0];
-    assert.ok(keyframes, `Feature ${i} has a flight animation`);
-    assert.match(keyframes,/rotate[XYZ]\(/);
-    assert.match(keyframes,/100% \{ opacity: 1; transform: perspective\(900px\) translate3d\(0,0,0\)/);
+  for(let i=0;i<6;i++) {
+    assert.ok(css.includes(`.m-hero[data-hs-out="${i}"] { --so:`));
+    assert.ok(css.includes(`.m-hero[data-hs-in="${i}"] { --si:`));
   }
-  assert.match(css,/\.m-hero\.is-paused \.m-hs-scene[\s\S]*?\{ animation: none !important; \}/);
-  assert.match(css,/@media \(max-width: 600px\) \{ \.m-hs-scene \{ --d: \.36; --r: \.55;/);
+  assert.match(css,/\.m-hero\.m-section-active\.is-exit \.m-hs-scene \{ animation: m-hs-out \.7s/);
+  assert.match(css,/\.m-hero\.m-section-active\.is-enter \.m-hs-scene \{ animation: m-hs-in 1\.1s/);
+  assert.match(css,/@keyframes m-copy-out/);
+  assert.match(css,/@keyframes m-copy-in/);
+  assert.doesNotMatch(css,/@keyframes m-hs-sway|@keyframes m-fly-\d/);
+  assert.match(css,/@media \(max-width: 600px\) \{ \.m-hero \{ --d: \.36; --r: \.55;/);
 });
 
 test("hero slides advance, wrap, select and pause; autoplay respects visibility and motion preferences", async () => {
@@ -62,7 +63,7 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
       remove(name){classes.delete(name);},
       contains(name){return classes.has(name);},
       toggle(name,on){if(on)classes.add(name);else classes.delete(name);},
-    },setAttribute(name,value){this.attrs[name]=value;},getAttribute(name){return this.attrs[name];},
+    },setAttribute(name,value){this.attrs[name]=value;},getAttribute(name){return this.attrs[name];},removeAttribute(name){delete this.attrs[name];},
     addEventListener(name,fn){this.events[name]=fn;} };
   }
   const slides = Array.from({length:6},node), tabs = Array.from({length:6},node);
@@ -71,25 +72,41 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
     slide.attrs["data-hs-line"]=`Sentence ${i+1}`;
   });
   const toggle=node(), prev=node(), next=node(), live=node(), hero=node(), story=node();
-  const line=node();
+  const line=node(),scene=node(),observers=[];
+  story.parentElement=scene;
   hero.classList.add("m-section-active");
   story.closest=()=>hero;
   story.querySelectorAll=(selector)=>selector==="[data-hs-slide]" ? slides : tabs;
   story.querySelector=(selector)=>({"[data-hs-toggle]":toggle,"[data-hs-prev]":prev,"[data-hs-next]":next,"[data-hs-live]":live})[selector];
-  const document={hidden:false,querySelector:(selector)=>selector==="[data-hero-line]" ? line : story}, motionPreference={matches:false};
-  const context={document,motionPreference,motionDisabled:false};
+  const document={...node(),hidden:false,querySelector:(selector)=>selector==="[data-hero-line]" ? line : story}, motionPreference={...node(),matches:false};
+  const context={document,motionPreference,motionDisabled:false,MutationObserver:class {
+    constructor(callback){observers.push(callback);} observe(){}
+  }};
   runInNewContext(`${functionSource}\ninitializeHeroStory();`,context);
   const active=()=>slides.findIndex((slide)=>!slide.hidden);
-  const finish=()=>story.events.animationend({animationName:"m-hs-progress"});
+  const end=(name)=>scene.events.animationend({animationName:name,target:scene});
+  const settle=()=>{end("m-hs-out");end("m-hs-in");};
+  const finish=()=>{story.events.animationend({animationName:"m-hs-progress"});settle();};
   assert.equal(active(),0);
   assert.equal(line.textContent,"Sentence 1");
-  finish();assert.equal(active(),1);
+  story.events.animationend({animationName:"m-hs-progress"});
+  assert.equal(active(),0,"Outgoing slide must remain until its exit completes");
+  assert.equal(line.textContent,"Sentence 1");
+  assert.equal(hero.attrs["data-hs-out"],"0");
+  story.events.animationend({animationName:"m-hs-progress"});
+  scene.events.animationend({animationName:"m-hs-out",target:story});
+  assert.equal(active(),0,"Bubbled detail animations must not complete a scene exit");
+  end("m-hs-out");
+  assert.equal(active(),1);
+  assert.ok(hero.classList.contains("is-enter"));
+  end("m-hs-in");
+  assert.ok(!hero.classList.contains("is-enter"));
   assert.equal(line.textContent,"Sentence 2","The left-side sentence follows autoplay");
   assert.equal(live.textContent,"","Automatic slides must not repeatedly announce themselves");
-  prev.events.click();assert.equal(active(),0);
-  prev.events.click();assert.equal(active(),5);
+  prev.events.click();settle();assert.equal(active(),0);
+  prev.events.click();settle();assert.equal(active(),5);
   assert.equal(line.textContent,"Sentence 6","The left-side sentence follows manual selection");
-  tabs[2].events.click();assert.equal(active(),2);
+  tabs[2].events.click();settle();assert.equal(active(),2);
   assert.match(live.textContent,/Feature 3/);
   toggle.events.click();assert.equal(toggle.textContent,"Play");finish();assert.equal(active(),2);
   toggle.events.click();assert.equal(toggle.textContent,"Pause");finish();assert.equal(active(),3);
@@ -99,6 +116,32 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
   motionPreference.matches=false;context.motionDisabled=true;finish();assert.equal(active(),3);
   tabs[5].events.click();assert.equal(active(),5);
   next.events.click();assert.equal(active(),0,"Manual controls still work with motion disabled");
+  context.motionDisabled=false;
+  tabs[4].events.click();
+  toggle.events.click();
+  assert.equal(active(),4,"Pause mid-exit resolves to a readable selected slide");
+  assert.ok(!hero.classList.contains("is-exit"));
+  tabs[1].events.click();
+  assert.equal(active(),1,"Manual selection while paused is immediate");
+  toggle.events.click();
+  next.events.click();
+  document.hidden=true;document.events.visibilitychange();
+  assert.equal(active(),2,"Hidden-tab interruption cannot leave a vanished dashboard");
+  document.hidden=false;
+  next.events.click();
+  motionPreference.matches=true;motionPreference.events.change();
+  assert.equal(active(),3);
+  motionPreference.matches=false;
+  next.events.click();hero.classList.remove("m-section-active");observers[0]();
+  assert.equal(active(),4,"Offscreen interruption resolves without animationcancel");
+  hero.classList.add("m-section-active");
+  next.events.click();
+  scene.events.animationcancel({animationName:"m-hs-out",target:scene});
+  assert.equal(active(),5);
+  next.events.click();end("m-hs-out");
+  scene.events.animationcancel({animationName:"m-hs-in",target:scene});
+  assert.equal(active(),0);
+  assert.ok(!hero.classList.contains("is-enter"));
 });
 
 test("transparent hero logo exists and is served by the production asset allowlist", async () => {
