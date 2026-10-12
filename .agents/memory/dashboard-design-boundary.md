@@ -17,6 +17,9 @@ silently expanding backend/schema scope.
 
 LeBrands app branding also includes sign-in, signup, password and account pages,
 not just the wizard and store dashboard. Use the supplied hanging-sign logo.
+The user also explicitly requested it across all static and dynamically rendered
+platform pages and as the browser favicon. Use the complete lockup where it fits
+and the supplied compact sign mark for collapsed or narrow layouts.
 
 **Why:** The user pointed out that the inner account pages and old L logo had
 been missed when the app branding was recoloured.

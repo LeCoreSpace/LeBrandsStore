@@ -268,6 +268,7 @@ test("live routing returns real product/policy pages and branded 404 for missing
 test("signed-in headers escape the user's name and show Sign out, not Sign in; mark uses supplied artwork", () => {
   const html = accountHeader({ name: '<img src=x onerror="x">' });
   assert.match(html, /Sign out/); assert.ok(!html.includes("Sign in"));
-  assert.ok(!html.includes("<img")); assert.match(html, /&lt;img/);
-  assert.match(brandMark(), /REPLACE-lebrands-light-logo\.webp/);
+  assert.ok(!html.includes('<img src=x onerror=')); assert.match(html, /&lt;img/);
+  assert.match(html, /<img[^>]+src="\/img\/REPLACE-lebrands-light-transparent\.webp"[^>]+alt="LeBrands.Store">/);
+  assert.match(brandMark(), /REPLACE-lebrands-light-transparent\.webp/);
 });

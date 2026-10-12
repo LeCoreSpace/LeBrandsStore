@@ -1,5 +1,6 @@
-export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="18" fill="#6b1735"/>
-  <path d="M18 20h8v17h20v7H18z" fill="#fffdf4"/>
-  <circle cx="46" cy="22" r="3" fill="#ce928b"/>
-</svg>`;
+// Self-contained favicon: the actual supplied hanging-sign mark, not a redraw.
+export const FAVICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><image width="64" height="64" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAAIGNIUk0AAHomAACAhAAA+gAAAIDoAAB1MAAA6mAAADqYAAAXcJy6UTwAAAB4UExURQAAAGIZKl0OIVsJHVsMIF0PI1wOIV8TJV4PImIYKlkMHmIWKF4RI2gkM18WJ14XKF8UJmMXKng3RY9ZZXxATWQeLmchMWEUJmEYKXMyQHArOu3k4LiTmdnFxPbu6P3685VhbIdMWOzh3M+1tqh7hHk3RsKeoWIZKxaDGbkAAAABdFJOUwBA5thmAAAAAWJLR0QAiAUdSAAAAAd0SU1FB+oKDAQrNVynpMsAAAAldEVYdGRhdGU6Y3JlYXRlADIwMjYtMTAtMTJUMDQ6NDM6NTErMDA6MDBuzE7TAAAAJXRFWHRkYXRlOm1vZGlmeQAyMDI2LTEwLTEyVDA0OjQzOjUxKzAwOjAwH5H2bwAAACh0RVh0ZGF0ZTp0aW1lc3RhbXAAMjAyNi0xMC0xMlQwNDo0Mzo1MSswMDowMEiE17AAAAH7SURBVFjD7ZbtcoMgEEUFVkFTSUjSpLXGj1rT93/DAqKxiYD6q53JnYwR1j3CsgsGwVNP/R0hTGCZR4gxGjUjQghQyhiLjca38YMYSIdkBEiI6tAikDg0PHUHQLJtRsTcQ2c3h80vw9B6QS5/FD043Cml1AWIOfdEl+ufTVv7m3tRlDrmgDhKPYAAti7rZufzD6KZQZx2BpAZIi8QDhcIR9LWcGd7h0qvaWGMf7Utw9M2vQaMuEUdAG3jHgBzACILAC8H6BAOccFC3ALhBaRkvD9wIHh/SNPj6wnmA3SxxozqJYvTw16cd2+m8P2AkwEMHcezcWTLAVjnNukCgJYDcNcD3TKw5VMwgISMk3EasJmegnk68eeBDWDMbA0AACe30ouWA3QDRf0mwBcDwvgkqxPBcATAihioIyzqD4H3bEUQVRRD4/ORixUApmw45MdLURbVCoAagkrE+rMsy0asA+xUNL4k4DObA+jLOWuzusZY3umpt3IIRT0TEMq/Y369NrlQt7qcRTMXwPVOLncxIfbBN+8LTQHmTSGgWpxz2iVAl8XZpSyv9iCOyvleppDqopuBcwTweG59dOmnZ+BPpIfzALdN06rNJMvLovNfCJCeTV5VX5fiUgn/tj4l0Va5VJ31HZaPmIg4NN4SrR+lnM2S8zPsqaf+qX4AA7UjxCzlI5UAAAAASUVORK5CYII="/></svg>`;
+
+export const FAVICON_LINKS = `<link rel="icon" href="/favicon.ico?v=hanging-sign" sizes="16x16 32x32 48x48">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=hanging-sign" sizes="any">
+  <link rel="apple-touch-icon" href="/img/REPLACE-lebrands-apple-touch-icon.png">`;

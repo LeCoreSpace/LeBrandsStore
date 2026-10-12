@@ -232,8 +232,8 @@ test("landing delivers supplied logos, one four-slide showcase and contrasting a
   assert.match(html,/data-theme-toggle/);
   assert.match(html,/<script src="\/assets\/marketing\.js"><\/script>/);
   for(const variant of ["light","dark"]){
-    assert.match(html,new RegExp(`REPLACE-lebrands-${variant}-logo\\.webp`));
-    assert.ok((await stat(`src/public/img/REPLACE-lebrands-${variant}-logo.webp`)).size<45000);
+    assert.match(html,new RegExp(`REPLACE-lebrands-${variant}-transparent\\.webp`));
+    assert.ok((await stat(`src/public/img/REPLACE-lebrands-${variant}-transparent.webp`)).size<45000);
   }
   assert.equal((html.match(/\bdata-craft-carousel\b/g)||[]).length,1);
   assert.equal((html.match(/\bdata-craft-slide\b/g)||[]).length,4);

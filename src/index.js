@@ -79,8 +79,19 @@ export default {
       headers.set("x-content-type-options", "nosniff");
       return new Response(asset.body, { status: asset.status, headers });
     }
-    if (["GET", "HEAD"].includes(request.method) && url.pathname === "/favicon.svg" && ["lebrands.store", "app.lebrands.store"].includes(hostname)) {
-      return new Response(FAVICON_SVG, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
+    if (["GET", "HEAD"].includes(request.method) && ["/favicon.svg", "/favicon.ico"].includes(url.pathname) && ["lebrands.store", "app.lebrands.store"].includes(hostname)) {
+      if (url.pathname === "/favicon.svg") {
+        return new Response(request.method === "HEAD" ? null : FAVICON_SVG, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
+      }
+      if (!env.ASSETS) return new Response("Favicon asset unavailable", { status: 503 });
+      const iconUrl = new URL(url);
+      iconUrl.pathname = "/img/REPLACE-lebrands-favicon.ico";
+      iconUrl.search = "";
+      const icon = await env.ASSETS.fetch(new Request(iconUrl, { method: request.method }));
+      const headers = new Headers(icon.headers);
+      headers.set("content-type", "image/x-icon");
+      headers.set("cache-control", icon.ok ? "public, max-age=86400" : "no-store");
+      return new Response(request.method === "HEAD" ? null : icon.body, { status: icon.status, headers });
     }
     if (hostname === "www.lebrands.store") {
       url.hostname = "lebrands.store";

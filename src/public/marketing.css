@@ -730,3 +730,6 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
 @keyframes m-hs-in { from { opacity: 0; transform: perspective(1400px) var(--si); } 35% { opacity: 1; } to { opacity: 1; transform: perspective(1400px) translate3d(0,0,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); } }
 @keyframes m-copy-out { from { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); } to { opacity: 0; transform: perspective(900px) var(--co); } }
 @keyframes m-copy-in { from { opacity: 0; transform: perspective(900px) var(--ci); } to { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); } }
+
+.m-wordmark img { background: none; }
+.m-wordmark .m-logo-footer { display: block; }

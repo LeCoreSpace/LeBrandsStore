@@ -1,4 +1,5 @@
 import { MARKETING_MEDIA } from "./marketing-media.js";
+import { FAVICON_LINKS } from "./favicon.js";
 
 const TITLE = "LeBrands.Store | A flagship online store for Indian D2C brands";
 const DESCRIPTION = "A flagship store for Indian D2C brands. Build and publish your storefront with LeBrands.Store.";
@@ -37,6 +38,7 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4efe7" data-m-theme-color>
+  ${FAVICON_LINKS}
   <title>${title}</title>
   <meta name="description" content="${description}">
   <meta name="robots" content="index,follow">
@@ -63,7 +65,7 @@ ${body}
 function nav({ pricing = false } = {}) {
   return `<header class="m-nav">
   <div class="m-nav-inner">
-    <a class="m-wordmark" href="${pricing ? "https://lebrands.store" : "#top"}" aria-label="LeBrands.Store home"><img class="m-logo-light" src="/img/REPLACE-lebrands-light-logo.webp" width="186" height="66" alt=""><img class="m-logo-dark" src="/img/REPLACE-lebrands-dark-logo.webp" width="186" height="66" alt="">${pricing ? "" : '<img class="m-logo-hero" src="/img/REPLACE-lebrands-hero-transparent.png" width="900" height="320" alt="">'}</a>
+    <a class="m-wordmark" href="${pricing ? "https://lebrands.store" : "#top"}" aria-label="LeBrands.Store home"><img class="m-logo-light" src="/img/REPLACE-lebrands-light-transparent.webp" width="900" height="320" alt=""><img class="m-logo-dark" src="/img/REPLACE-lebrands-dark-transparent.webp" width="900" height="320" alt="">${pricing ? "" : '<img class="m-logo-hero" src="/img/REPLACE-lebrands-hero-transparent.png" width="900" height="320" alt="">'}</a>
     <nav class="m-nav-links" aria-label="Main navigation">
       <a href="${pricing ? "/#features" : "#features"}">Features</a>
       <a href="/pricing">Pricing</a>
@@ -81,7 +83,7 @@ function footer({ pricing = false } = {}) {
   return `<footer class="m-footer">
   <div class="m-wrap">
     <div class="m-footer-top m-reveal">
-      <a class="m-wordmark" href="https://lebrands.store" aria-label="LeBrands.Store home"><img class="m-logo-light" src="/img/REPLACE-lebrands-light-logo.webp" width="186" height="66" alt=""><img class="m-logo-dark" src="/img/REPLACE-lebrands-dark-logo.webp" width="186" height="66" alt=""></a>
+      <a class="m-wordmark" href="https://lebrands.store" aria-label="LeBrands.Store home"><img class="m-logo-footer" src="/img/REPLACE-lebrands-hero-transparent.png" width="900" height="320" alt=""></a>
       <nav class="m-footer-links" aria-label="Footer">
         <a href="${homePrefix}#features">Features</a>
         <a href="/pricing">Pricing</a>

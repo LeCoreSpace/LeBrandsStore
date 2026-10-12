@@ -1,3 +1,5 @@
-// Shared app mark, cropped from the supplied hanging-sign artwork.
-// Keep the existing header footprints; storefront branding is independent.
-export const LE_BRANDS_MARK = `<svg viewBox="290 0 316 250" aria-hidden="true" focusable="false"><image href="/img/REPLACE-lebrands-light-logo.webp" width="900" height="320"/></svg>`;
+
+// Shared LeBrands artwork: supplied transparent hanging-sign files, never redrawn.
+// Full lockup (900x320, dark on light), compact mark (128x128) for collapsed or narrow layouts.
+export const LE_BRANDS_LOGO = `<img class="lb-logo-img" src="/img/REPLACE-lebrands-light-transparent.webp" width="900" height="320" alt="LeBrands.Store">`;
+export const LE_BRANDS_MARK = `<img class="lb-mark-img" src="/img/REPLACE-lebrands-mark.png" width="128" height="128" alt="" aria-hidden="true">`;
