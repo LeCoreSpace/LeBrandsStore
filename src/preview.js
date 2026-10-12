@@ -12,6 +12,7 @@ import { EXAMPLE_STORE_ID,EXAMPLE_PRODUCTS,exampleFixture,exampleInvoice,example
 import { renderInvoice } from "./ui/invoice.js";
 import { quoteCart } from "./public/commerce-rules.js";
 import { renderPremiumStore } from "./ui/premium-example.js";
+import { previewShell, renderAppSample } from "./local-app-preview.js";
 
 const LOCAL_STORE_ID = "00000000-0000-4000-8000-000000000000";
 function filterDashboardFixture(data, filters) {
@@ -40,11 +41,18 @@ export default {
     const original = new URL(request.url);
     const exampleHeaders={...SECURITY_HEADERS,"x-frame-options":"SAMEORIGIN","cache-control":"no-store",
       "content-security-policy":SECURITY_HEADERS["content-security-policy"].replace("frame-ancestors 'none'","frame-ancestors *")};
+    if (original.pathname === "/__app-preview" || original.pathname.startsWith("/__app-preview/")) {
+      if (!["GET", "HEAD"].includes(request.method)) return Response.json({error:"Read-only application preview. Nothing is saved."},{status:403});
+      const body = original.pathname === "/__app-preview"
+        ? previewShell(original.searchParams.get("screen"))
+        : original.pathname.startsWith("/__app-preview/page/") ? renderAppSample(original.pathname.slice("/__app-preview/page/".length), original.searchParams) : null;
+      return new Response(request.method === "HEAD" ? null : body || "Preview screen not found", {status:body ? 200 : 404,headers:{...exampleHeaders,"content-type":"text/html; charset=utf-8"}});
+    }
     if(original.pathname.startsWith(`/api/stores/${EXAMPLE_STORE_ID}`)){
       if(!["GET","HEAD"].includes(request.method))return Response.json({error:"Example store is read-only. Nothing is saved."},{status:403});
       return new Response(request.method==="HEAD"?null:exampleMedia(JSON.stringify(exampleFixture())),{headers:{...exampleHeaders,"content-type":"application/json"}});
     }
-    if(original.pathname==="/api/cart/validate" && request.headers.get("referer")?.includes("/__example-preview/")){
+    if(original.pathname==="/api/cart/validate" && /\/__(?:example|app)-preview\//.test(request.headers.get("referer") || "")){
       if(request.method!=="POST")return new Response("Method not allowed",{status:405});
       try{
         const input=await request.json(),data=exampleFixture();
@@ -52,7 +60,7 @@ export default {
           {headers:{...exampleHeaders,"content-type":"application/json"}});
       }catch{return Response.json({error:"Invalid example cart"},{status:400});}
     }
-    if(original.pathname==="/api/checkout/order" && request.headers.get("referer")?.includes("/__example-preview/")){
+    if(original.pathname==="/api/checkout/order" && /\/__(?:example|app)-preview\//.test(request.headers.get("referer") || "")){
       return Response.json({error:"Example store is read-only. Orders cannot be placed."},{status:403});
     }
     if(original.pathname.startsWith("/__example-media/")){
@@ -209,6 +217,8 @@ export default {
     if (account) body = body.replaceAll('href="/"', 'href="/dashboard"');
     body = body.replaceAll('href="https://lebrands.store"', 'href="/"')
       .replaceAll("https://app.lebrands.store", "").replaceAll("https://lebrands.store", "");
+    // Local-only entry point; never part of the production homepage or app.
+    body = body.replace("</body>", '<a href="/__app-preview" target="_top" style="position:fixed;right:16px;bottom:16px;z-index:10000;padding:10px 16px;border-radius:6px;background:#6b1735;color:#fffdf4;font:600 12px system-ui;text-decoration:none;box-shadow:0 3px 15px #0002">Browse application preview</a></body>');
     return new Response(body, { status: response.status, headers });
   },
 };

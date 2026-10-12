@@ -11,3 +11,4 @@
 - [Browser video capture](browser-video-capture.md) — remote native recording may lack FFmpeg; actual CDP screencast frames can be encoded locally.
 - [Homepage showcase boundary](homepage-showcase-boundary.md) — original clothing concept replaces Stonescence; preserve operational visuals and defer live Aura integration.
 - [Mobile animation viewport](mobile-animation-viewport.md) — off-screen transforms can inflate Chromium's mobile viewport; compare against the requested width, not only scroll width.
+- [Replit preview boundary](replit-preview-boundary.md) — app-wide browsing is a labelled read-only demo, not implicit access to live brand data.
