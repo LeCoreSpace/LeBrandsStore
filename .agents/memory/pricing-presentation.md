@@ -12,3 +12,22 @@ integration wording. Payment subscription implementation is deferred.
 **How to apply:** Preserve this separation during pricing updates. Do not treat
 publishing a proposed feature comparison as permission to enable billing or as
 evidence that unfinished features are available.
+
+Pricing page background white, with normal font and size.
+
+**Why:** The user requested this for the pricing page.
+
+**How to apply:** Keep this pricing-specific; do not recolour the homepage or merchant themes.
+
+## Billing terms
+
+- Free trial: 14 days.
+- Founding members: discounted price for the first brands (to decide).
+- Billing: one GST invoice from LeBrandsSpace Digital Pvt Ltd, e.g. "Grow plan (includes LeBrands.Space Premium)".
+- Upgrades / downgrades: Store and LeBrands.Space plans move together.
+- Non-payment: 7-day grace, then dashboard read-only, then store paused; data kept 90 days; LeBrands.Space plan returns to free registration.
+- Order band exceeded: upgrade prompt after 2 months over the band, checkout never blocked.
+
+**Why:** The user asked to remember these billing terms.
+
+**How to apply:** Preserve these terms when implementing billing later. The founding-member discount remains to be decided.

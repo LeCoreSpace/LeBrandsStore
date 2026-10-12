@@ -87,6 +87,15 @@ const ADDONS = [
   ["LeBrands.Space plan on its own (no store)", "Starter ₹1,500, Premium ₹2,500, Freedom ₹3,500"],
 ];
 
+const BILLING_TERMS = [
+  ["Free trial", "14 days."],
+  ["Founding members", "Discounted pricing for the first brands. Discount to be decided."],
+  ["Billing", 'One GST invoice from LeBrandsSpace Digital Pvt Ltd, for example: "Grow plan (includes LeBrands.Space Premium)".'],
+  ["Upgrades and downgrades", "Store and LeBrands.Space plans move together."],
+  ["Non-payment", "7-day grace period, then dashboard read-only, then store paused. Data kept for 90 days. The LeBrands.Space plan returns to free registration."],
+  ["Order band exceeded", "Upgrade prompt after 2 months over the band. Checkout is never blocked."],
+];
+
 const CHECK = '<svg class="m-pr-check" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>';
 
 function cell(v) {
@@ -161,6 +170,12 @@ export function pricingMain() {
           <tbody>${ADDONS.map((a) => `<tr><th scope="row">${a[0]}</th><td class="m-pr-val">${a[1]}</td></tr>`).join("")}</tbody>
         </table>
       </div>
+    </div>
+  </section>
+  <section class="m-pr-billing" aria-labelledby="billing-title">
+    <div class="m-pr-wrap">
+      <header class="m-pr-head"><h2 id="billing-title">Billing terms</h2><p class="m-pr-lede">Terms for the planned subscription service. Automated billing is not enabled yet.</p></header>
+      <dl class="m-pr-terms">${BILLING_TERMS.map(([name, detail]) => `<div><dt>${name}</dt><dd>${detail}</dd></div>`).join("")}</dl>
     </div>
   </section>
   <section class="m-pr-close" aria-labelledby="close-title">

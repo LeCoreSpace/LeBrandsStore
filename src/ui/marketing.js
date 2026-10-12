@@ -86,7 +86,7 @@ function footer({ pricing = false } = {}) {
   return `<footer class="m-footer">
   <div class="m-wrap">
     <div class="m-footer-top m-reveal">
-      <a class="m-wordmark" href="https://lebrands.store" aria-label="LeBrands.Store home"><img class="m-logo-footer" src="/img/REPLACE-lebrands-hero-transparent.png" width="900" height="320" alt=""></a>
+      <a class="m-wordmark" href="https://lebrands.store" aria-label="LeBrands.Store home"><img class="m-logo-footer" src="/img/${pricing ? "REPLACE-lebrands-light-transparent.webp" : "REPLACE-lebrands-hero-transparent.png"}" width="900" height="320" alt=""></a>
       <nav class="m-footer-links" aria-label="Footer">
         <a href="${homePrefix}#features">Features</a>
         <a href="/pricing">Pricing</a>
