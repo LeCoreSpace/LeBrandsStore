@@ -63,3 +63,19 @@ section availability is distinct from inserting sections into saved layouts.
 If template tables are introduced, existing stores must continue to work
 without pre-populated template rows; create store-specific draft records
 only through an explicit save or build action.
+
+## Ordered starter layouts in the editor
+
+The new Aura template must have its sections initially arranged in the
+proper proposed order in the editor itself, not merely available in
+the section library.
+
+**Why:** The user explicitly clarified that section availability alone
+does not satisfy the required initial template.
+
+**How to apply:** Provide ordered starter layouts for home, default collection,
+default product, cart and restricted checkout customisation. Optional sections
+have their intended position but stay disabled when suitable content or
+functionality is absent. For existing stores, prepare the upgraded draft
+preview without bulk backfilling or silently changing published layouts;
+persist changes only on explicit save/build.
