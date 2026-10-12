@@ -37,15 +37,17 @@ headings were too big.
 elements and media, and verify actual movement in a browser rather than relying
 on static screenshots. Keep reduced-motion and offscreen/tab-hidden pauses.
 
-Do not mention LeBrands.Space, its listings, discovery/mall claims or the
-300,000+ brands figure anywhere in marketing. Keep the registered legal company
+Free discovery through the LeBrands.Space virtual mall is available to every
+approved store. It is provided manually, not automatically.
+
+**Why:** The user confirmed availability and reversed the earlier instruction
+to remove LeBrands.Space from marketing. They explicitly said not to mention
+the manual process or those setup details in public copy.
+
+**How to apply:** Market the free discovery benefit prominently near the hero,
+following the Example Studio showcase. Do not imply automatic listing, guaranteed traffic or sales,
+or restore the unsupported 300,000+ brands figure. Preserve the legal company
 name LeBrandsSpace Digital Private Limited in the footer, terms and policies.
-
-**Why:** The user removed that marketing direction and explicitly said the
-standalone discovery headline would be an unsupported claim.
-
-**How to apply:** Do not reintroduce removed claims in copy, FAQ, metadata,
-alt text or generated visuals; preserve the legal identity.
 
 The homepage hero should have a black background in both colour modes and use
 moving visual elements, text and slides to explain what the platform offers
@@ -81,11 +83,11 @@ those integrations. A marketing copy change does not enable backend integrations
 or authorise changes to the real dashboard.
 
 The three promises about zero commission, brand-owned domain/payments/customer
-data, and not marketing to customers are the page's main differentiators.
-Present them prominently immediately after the hero as individual animated slides.
+data, and not marketing to customers are prominent differentiators.
+Keep them as individual animated slides following the discovery highlight.
 
-**Why:** The user called this the highlight of the page and asked for each line
-to have its own slide rather than a lower-page list.
+**Why:** The user asked for each promise to have its own slide. They subsequently
+asked to move the Example Studio showcase directly below the hero.
 
 **How to apply:** Preserve the domain/COD availability note. Dark marketing
 sections share the hero's black-to-plum gradient; lighter bands must stay genuinely
@@ -100,3 +102,12 @@ even after the actual application had the new hanging-sign logo and plum accents
 **How to apply:** Capture the current real UI with fictional local fixtures,
 preserve merchant/storefront colours, and use fresh asset URLs to avoid stale
 cached images. This does not authorise changing operational behaviour.
+
+The homepage needs one coherent abstract pattern flowing across section
+boundaries, with each section background acknowledging it.
+
+**Why:** The user explicitly requested a continuous design rather than
+independent-looking sections.
+
+**How to apply:** Keep genuinely light bands and the shared dark gradient.
+Keep the pattern behind readable content and preserve the existing hero motion.

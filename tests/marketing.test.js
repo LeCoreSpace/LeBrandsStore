@@ -66,11 +66,13 @@ test("homepage preserves the requested story, six native FAQ items, and honest a
   assert.match(copy,/First publication requires platform approval/);
   assert.match(copy,/Razorpay payments and integrations with any logistics partner can be added for your brand/);
   assert.match(html,/href="\/contact">Contact us to discuss your setup/);
+  assert.match(html, /Free discovery for your store\./);
+  assert.match(html, /Help shoppers find your brand through the LeBrands\.Space virtual mall, at no extra cost\./);
   for(const page of [html,renderPricing()]){
-    assert.doesNotMatch(page,/LeBrands\.Space|300[,\s]?000|\bdiscovery\b|\bmall\b|listed on|shoppers already looking|listing mean/i);
+    assert.doesNotMatch(page,/300[,\s]?000|shoppers already looking|listing mean/i);
     assert.match(page,/LeBrandsSpace Digital Private Limited/);
-    assert.doesNotMatch(page,/m-discovery/);
   }
+  assert.doesNotMatch(renderPricing(), /LeBrands\.Space|\bdiscovery\b|\bmall\b/i);
   for(const feature of ["Razorpay","Shiprocket","Your own domain","Order emails","Drag-and-drop page editor","Bazaar"]){
     assert.ok(html.includes(feature));
   }

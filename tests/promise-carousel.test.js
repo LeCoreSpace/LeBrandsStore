@@ -4,11 +4,13 @@ import { readFile } from "node:fs/promises";
 import { runInNewContext } from "node:vm";
 import { renderHome } from "../src/ui/marketing.js";
 
-test("three promises are unique slides directly after hero, with static fallback and shared dark gradients", async () => {
+test("three promises remain unique slides after the storefront and discovery highlights, with static fallback and shared dark gradients", async () => {
   const html = renderHome(), css = await readFile("src/public/marketing.css", "utf8");
   const sections = [...html.matchAll(/<section class="([^"]+)"/g)].map(match => match[1]);
   assert.equal(sections[0], "m-hero");
-  assert.match(sections[1], /^m-principles\b/);
+  assert.match(sections[1], /^m-showcase\b/);
+  assert.match(sections[2], /^m-discovery\b/);
+  assert.match(sections[3], /^m-principles\b/);
   assert.equal((html.match(/data-promise-carousel\b/g) || []).length, 1);
   assert.equal((html.match(/data-promise-slide\b/g) || []).length, 3);
   assert.deepEqual([...html.matchAll(/<p class="m-principle">([^<]*)<\/p>/g)].map(match => match[1]), [
