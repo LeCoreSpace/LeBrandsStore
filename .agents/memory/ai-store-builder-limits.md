@@ -13,3 +13,18 @@ description: User's revised build allowance, image regeneration and cost control
 **Why:** These are the user's revised section 6 requirements, replacing the attached brief's three trial builds, higher paid-plan limits and later single-section regeneration.
 
 **How to apply:** Use these limits when scoping the AI store builder. They are product requirements, not evidence that the builder or billing enforcement exists.
+
+## Skeleton first and progressive generation
+
+First create and test the Aura skeleton for home, collection, product, cart
+and checkout, with all essential sections and components. Then include AI
+step by step after the user completes the fill-in-the-blanks prompt.
+The user sees each page being created one at a time, one section at a time,
+with the AI-generated image for that section approved by them before moving
+to the next section, rather than creating all sections in a page at once.
+
+**Why:** The user changed the proposed workflow from generating everything
+in one go to a tested skeleton followed by progressive generation and approval.
+
+**How to apply:** Preserve this order when planning the builder. Section-image
+allowances beyond the specified product-image allowance remain undecided.
