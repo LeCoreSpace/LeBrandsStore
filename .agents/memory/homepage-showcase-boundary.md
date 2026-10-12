@@ -60,15 +60,16 @@ as the story; label illustrative UI and future integrations honestly. Preserve
 the separate clothing concept and all operational screens. The hero's black
 background is an exception to the page's mode-dependent alternating bands.
 
-Keep the existing animated hero story and its exact animation sequence. Present
-it as a realistic moving 3D dashboard. Its left side should use one short sentence
+Keep the existing six-slide hero story, with distinct flying, rotating entrances
+that settle into a realistic moving 3D dashboard. Its left side should use one short sentence
 synchronized to the active animation, rather than stacked explanatory paragraphs
 and feature chips.
 
 **Why:** The user confirmed "animation is nice .keep it" and said there was too
 much text on the left. They requested a changing line, a transparent hero logo
 and larger header menu text, then a realistic 3D dashboard look without replacing
-the animation.
+the animation. They then requested stronger flying and rotating entrances for
+every slide, making the entire hero a coordinated showcase.
 
 **How to apply:** Preserve the visible SVG, slide and ambient motion when making
 future revisions. For Razorpay and logistics, use integration setup/contact

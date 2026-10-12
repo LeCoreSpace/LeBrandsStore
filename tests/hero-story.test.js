@@ -36,6 +36,22 @@ test("black hero explains current features and keeps all slides readable without
   }
 });
 
+test("each hero feature has a distinct gated flying entrance with a readable resting state", async () => {
+  const css = await readFile("src/public/marketing.css", "utf8");
+  assert.match(renderHome(), /class="m-hs-scene"/);
+  assert.match(css, /\.m-section-active \.m-hs-scene \{ animation: m-scene-enter 1\.7s/);
+  assert.match(css, /\.m-section-active \.m-hs-slide\.is-active \.m-hs-card \{ animation-duration: 1\.35s/);
+  for(let i=1;i<=6;i++) {
+    assert.ok(css.includes(`.m-section-active .m-hs-slides > .m-hs-slide:nth-child(${i}).is-active .m-hs-card { animation-name: m-fly-${i};`));
+    const keyframes=css.match(new RegExp(`@keyframes m-fly-${i} \\{[\\s\\S]*?\\n\\}`))?.[0];
+    assert.ok(keyframes, `Feature ${i} has a flight animation`);
+    assert.match(keyframes,/rotate[XYZ]\(/);
+    assert.match(keyframes,/100% \{ opacity: 1; transform: perspective\(900px\) translate3d\(0,0,0\)/);
+  }
+  assert.match(css,/\.m-hero\.is-paused \.m-hs-scene[\s\S]*?\{ animation: none !important; \}/);
+  assert.match(css,/@media \(max-width: 600px\) \{ \.m-hs-scene \{ --d: \.36; --r: \.55;/);
+});
+
 test("hero slides advance, wrap, select and pause; autoplay respects visibility and motion preferences", async () => {
   const source = await readFile("src/public/marketing.js", "utf8");
   const functionSource = source.slice(source.indexOf("  function initializeHeroStory()"), source.indexOf("  function setNavTone()"));

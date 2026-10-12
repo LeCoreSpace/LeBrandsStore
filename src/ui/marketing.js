@@ -123,6 +123,7 @@ export function renderHome() {
         </div>
         <p class="m-hero-note">First publication requires platform approval.</p>
       </div>
+      <div class="m-hs-scene">
       <div class="m-hs" data-hero-story role="region" aria-roledescription="carousel" aria-label="What LeBrands.Store does">
         <span class="m-hs-sheen" aria-hidden="true"></span>
         <div class="m-hs-chrome"><span class="m-hs-dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="m-hs-url">app.lebrands.store</span></div>
@@ -193,6 +194,7 @@ export function renderHome() {
         <p class="m-hs-live" data-hs-live aria-live="polite" aria-atomic="true"></p>
         <div class="m-hs-toast m-hs-toast-a" aria-hidden="true"><i></i><span><b>New order</b>Cash on delivery, Rs. 1,852.20. Sample.</span></div>
         <div class="m-hs-toast m-hs-toast-b" aria-hidden="true"><i></i><span><b>Invoice ready</b>CGST and SGST split. Sample.</span></div>
+      </div>
       </div>
     </div>
     <span class="m-scroll-cue" aria-hidden="true">Scroll to explore <span></span></span>
