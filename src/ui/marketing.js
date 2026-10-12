@@ -263,10 +263,6 @@ export function renderHome() {
     </div>
   </section>
 
-  <section class="m-statement m-band-dark" aria-label="Our approach">
-    <div class="m-wrap m-statement-inner"><span class="m-kicker m-reveal">Built around your point of view</span><p class="m-reveal">Most store builders give you a website. We give you a storefront that looks like you already made it.</p></div>
-  </section>
-
   <section class="m-how m-band-light" id="features">
     <div class="m-wrap">
       <div class="m-how-heading m-reveal">

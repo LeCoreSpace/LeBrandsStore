@@ -48,9 +48,9 @@ test("homepage has the exact title, canonical, original concept OG image, single
 
 test("homepage preserves the requested story, six native FAQ items, and honest availability labels",()=>{
   const html=renderHome(),copy=text(html);
+  assert.doesNotMatch(html, /m-statement|Built around your point of view|Most store builders give you a website/);
   for(const required of [
     "Your products. Your flagship store.",
-    "Most store builders give you a website. We give you a storefront that looks like you already made it.",
     "Tell us about your brand.","Choose your look and watch it build live.",
     "Add your products and publish.","Your store is live at yourbrand.lebrands.store.",
     "Product pages, collections, cart and checkout designed to sell, on every screen size.",
