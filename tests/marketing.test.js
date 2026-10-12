@@ -5,6 +5,19 @@ import { runInNewContext } from "node:vm";
 import { renderHome,renderLegal } from "../src/ui/home.js";
 import { renderPricing } from "../src/ui/marketing.js";
 import { MARKETING_MEDIA } from "../src/ui/marketing-media.js";
+
+test("wizard and dashboard showcase use refreshed branding in every responsive and fallback asset", () => {
+  const html = renderHome();
+  for (const media of [MARKETING_MEDIA.dashboard, MARKETING_MEDIA.wizardVideo.poster]) {
+    for (const url of [media.src, media.fallback, ...`${media.srcset},${media.avifSrcset}`.split(",").map(value => value.trim().split(" ")[0])]) {
+      assert.match(url, /-branded(?:-\d+)?\.(?:webp|avif|jpg)$/);
+      assert.ok(html.includes(url));
+    }
+  }
+  assert.equal(MARKETING_MEDIA.wizardVideo.src, "/img/REPLACE-wizard-loop-branded.webm");
+  assert.ok(html.includes(MARKETING_MEDIA.wizardVideo.src));
+  assert.doesNotMatch(html, /\/img\/REPLACE-(?:dashboard(?:-\d+)?\.(?:webp|avif|jpg)|wizard-poster(?:-\d+)?\.(?:webp|avif|jpg)|wizard-loop\.webm)/);
+});
 import worker from "../src/index.js";
 
 const text=html=>html.replace(/<[^>]+>/g," ").replace(/\s+/g," ");

@@ -90,3 +90,13 @@ to have its own slide rather than a lower-page list.
 **How to apply:** Preserve the domain/COD availability note. Dark marketing
 sections share the hero's black-to-plum gradient; lighter bands must stay genuinely
 light in both modes, not alternate between two dark browns.
+
+Refresh captured wizard and dashboard media when LeBrands branding changes,
+including the wizard recording, its first-frame poster and responsive formats.
+
+**Why:** The user identified outdated green logos in these homepage captures
+even after the actual application had the new hanging-sign logo and plum accents.
+
+**How to apply:** Capture the current real UI with fictional local fixtures,
+preserve merchant/storefront colours, and use fresh asset URLs to avoid stale
+cached images. This does not authorise changing operational behaviour.
