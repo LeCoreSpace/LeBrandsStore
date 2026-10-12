@@ -28,3 +28,18 @@ in one go to a tested skeleton followed by progressive generation and approval.
 
 **How to apply:** Preserve this order when planning the builder. Section-image
 allowances beyond the specified product-image allowance remain undecided.
+
+## Shared product and collection templates
+
+AI builds the default product page template and default collection page
+template. All products follow the default product template, and all
+collections follow the default collection template. Creating additional
+product/collection templates and assigning templates individually are
+scoped for later implementation.
+
+**Why:** The user proposed shared default templates rather than separately
+building the structure of every product and collection page.
+
+**How to apply:** Keep shared layout settings separate from individual product
+and collection content. Progressive AI generation builds the shared templates
+once, while each page resolves its own entity data.
