@@ -119,11 +119,6 @@ export function renderHome() {
         <p class="m-kicker">LeBrands.Store, live today</p>
         <h1 id="hero-title">A flagship store for your brand.</h1>
         <p class="m-hero-line" data-hero-line>Your products. Your flagship store.</p>
-        <div class="m-hero-actions">
-          <a class="m-cta" href="${SIGNUP}">Open your store</a>
-          <a class="m-text-link" href="#craft">Explore the store concept <span aria-hidden="true">&rarr;</span></a>
-        </div>
-        <p class="m-hero-note">First publication requires platform approval.</p>
       </div>
       <div class="m-hs-scene">
       <div class="m-hs" data-hero-story role="region" aria-roledescription="carousel" aria-label="What LeBrands.Store does">
@@ -222,7 +217,7 @@ export function renderHome() {
             <article class="m-step m-reveal"><span class="m-step-no">02</span><div><h3>Choose your look and watch it build live.</h3></div></article>
             <article class="m-step m-reveal"><span class="m-step-no">03</span><div><h3>Add your products and publish.</h3><p>Your store is live at yourbrand.lebrands.store.</p></div></article>
           </div>
-          <p class="m-clarification">First publication requires platform approval. Advanced collections: Coming soon.</p>
+          <p class="m-clarification m-reveal">First publication requires platform approval. Advanced collections: Coming soon.</p>
         </div>
       </div>
     </div>
@@ -234,6 +229,7 @@ export function renderHome() {
         <div><span class="m-kicker">The store, behind the scenes</span><h2 class="m-section-title">Crafted details.</h2></div>
         <p>A storefront and the work that keeps it moving, considered together.</p>
       </div>
+      <div class="m-reveal m-craft-reveal">
       <div class="m-craft-carousel" data-craft-carousel role="region" aria-roledescription="carousel" aria-label="Crafted details" tabindex="0">
         <div class="m-craft-stage" data-craft-stage>
           <article class="m-craft-slide" data-craft-slide role="group" aria-roledescription="slide" aria-label="1 of 4: The store">
@@ -265,6 +261,7 @@ export function renderHome() {
         </div>
         <p class="m-craft-live" data-craft-live aria-live="polite" aria-atomic="true">The store, 1 of 4</p>
       </div>
+      </div>
     </div>
   </section>
 
@@ -288,7 +285,7 @@ export function renderHome() {
         <p>Order emails. <span>Coming soon</span></p>
         <p>Drag-and-drop page editor. <span>Coming soon</span></p>
         <p>A second theme, Bazaar. <span>Coming soon</span></p>
-        <p class="m-integration-note m-reveal">Razorpay payments and integrations with any logistics partner can be added for your brand. <a href="/contact">Contact us to discuss your setup.</a></p>
+        <p class="m-integration-note">Razorpay payments and integrations with any logistics partner can be added for your brand. <a href="/contact">Contact us to discuss your setup.</a></p>
       </div>
     </div>
   </section>
@@ -303,7 +300,7 @@ export function renderHome() {
         <div class="m-showcase-desktop">${imageMarkup(MARKETING_MEDIA.exampleDesktop)}<span class="m-device-caption">Example store concept</span></div>
         <div class="m-showcase-mobile">${imageMarkup(MARKETING_MEDIA.exampleMobile)}</div>
       </div>
-      <a class="m-showcase-cta" href="${SIGNUP}">Build a store like this <span aria-hidden="true">&rarr;</span></a>
+      <a class="m-showcase-cta m-reveal" href="${SIGNUP}">Build a store like this <span aria-hidden="true">&rarr;</span></a>
     </div>
   </section>
 

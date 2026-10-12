@@ -270,6 +270,7 @@
       toggle.setAttribute("aria-pressed", String(paused));
       toggle.setAttribute("aria-label", paused ? "Play hero animation" : "Pause hero animation");
       toggle.textContent = paused ? "Play" : "Pause";
+      if (root.classList) root.classList.toggle("m-fx-paused", paused);
       if (paused && phase !== "rest") showNow(phase === "exit" ? target : current, announceTarget);
     });
     // The progress bar animation drives the story: it only runs while the hero is onscreen, the tab is visible and the user has not paused.
@@ -409,6 +410,7 @@
             continue;
           }
           entry.target.classList.toggle("is-visible", entry.isIntersecting);
+          entry.target.classList.toggle("is-past", !entry.isIntersecting && Boolean(entry.boundingClientRect) && entry.boundingClientRect.top < 0);
         }
       }, { threshold: 0.12, rootMargin: "0px 0px -36px 0px" });
       for (const item of revealItems) revealObserver.observe(item);

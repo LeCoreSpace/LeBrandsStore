@@ -16,7 +16,8 @@ test("black hero explains current features and keeps all slides readable without
   assert.match(html, /Razorpay/);
   assert.match(html, /logistics partners/i);
   assert.match(renderHome(), /src="\/img\/REPLACE-lebrands-hero-transparent\.png"/);
-  assert.match(html, /First publication requires platform approval/);
+  assert.doesNotMatch(html, /First publication requires platform approval|m-hero-actions|m-hero-note|Explore the store concept|Open your store/);
+  assert.match(renderHome(), /First publication requires platform approval/);
   const css = await readFile("src/public/marketing.css", "utf8");
   assert.match(css, /section\.m-hero\s*\{[\s\S]*?background:\s*#09090a/);
   assert.match(css, /\.m-hs:not\(\.is-enhanced\) \.m-hs-slide\[hidden\]\s*\{\s*display: block/);
@@ -78,8 +79,8 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
   story.closest=()=>hero;
   story.querySelectorAll=(selector)=>selector==="[data-hs-slide]" ? slides : tabs;
   story.querySelector=(selector)=>({"[data-hs-toggle]":toggle,"[data-hs-prev]":prev,"[data-hs-next]":next,"[data-hs-live]":live})[selector];
-  const document={...node(),hidden:false,querySelector:(selector)=>selector==="[data-hero-line]" ? line : story}, motionPreference={...node(),matches:false};
-  const context={document,motionPreference,motionDisabled:false,MutationObserver:class {
+  const document={...node(),documentElement:node(),hidden:false,querySelector:(selector)=>selector==="[data-hero-line]" ? line : story}, motionPreference={...node(),matches:false};
+  const context={document,root:document.documentElement,motionPreference,motionDisabled:false,MutationObserver:class {
     constructor(callback){observers.push(callback);} observe(){}
   }};
   runInNewContext(`${functionSource}\ninitializeHeroStory();`,context);
@@ -109,7 +110,9 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
   tabs[2].events.click();settle();assert.equal(active(),2);
   assert.match(live.textContent,/Feature 3/);
   toggle.events.click();assert.equal(toggle.textContent,"Play");finish();assert.equal(active(),2);
+  assert.ok(document.documentElement.classList.contains("m-fx-paused"), "hero pause also freezes scroll-reveal motion");
   toggle.events.click();assert.equal(toggle.textContent,"Pause");finish();assert.equal(active(),3);
+  assert.ok(!document.documentElement.classList.contains("m-fx-paused"), "playing restores scroll-reveal motion");
   document.hidden=true;finish();assert.equal(active(),3);document.hidden=false;
   hero.classList.toggle("m-section-active",false);finish();assert.equal(active(),3);
   hero.classList.add("m-section-active");motionPreference.matches=true;finish();assert.equal(active(),3);

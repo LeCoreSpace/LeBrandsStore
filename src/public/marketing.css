@@ -733,3 +733,94 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
 
 .m-wordmark img { background: none; }
 .m-wordmark .m-logo-footer { display: block; }
+
+/* Scroll motion across the landing page. JS toggles .is-visible (in view) and .is-past (left through the top) on .m-reveal.
+   Each surface moves as one whole plane with its own entry and exit transform. Rest state is identity. Requires :root.m-motion; absent for no-JS, reduced motion and ?motion=off. */
+.m-footer { overflow: clip; }
+.m-motion .m-reveal { --fx: perspective(900px) translate3d(0px,50px,0) rotateX(20deg) rotateY(0deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(0px,-40px,0) rotateX(-14deg) rotateY(0deg) rotateZ(0deg) scale(0.96); opacity: 0; transform: var(--fx); will-change: transform, opacity; transition: opacity .6s ease, transform 1s cubic-bezier(.16,.84,.24,1); transition-delay: var(--rd, 0s); }
+.m-motion .m-reveal.is-past { transform: var(--fo); }
+.m-motion .m-reveal.is-visible { opacity: 1; transform: perspective(900px) translate3d(0px,0px,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); will-change: auto; }
+.m-motion .m-reveal-delay { --rd: .12s; }
+.m-motion .m-step:nth-child(2), .m-motion .m-faq-item:nth-child(even) { --rd: .1s; }
+.m-motion .m-step:nth-child(3) { --rd: .2s; }
+.m-motion .m-principle:nth-of-type(2) { --rd: .08s; } .m-motion .m-principle:nth-of-type(3) { --rd: .16s; }
+.m-motion .m-statement .m-kicker.m-reveal { --fx: perspective(900px) translate3d(-70px,0px,0) rotateX(0deg) rotateY(30deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(70px,0px,0) rotateX(0deg) rotateY(-30deg) rotateZ(0deg) scale(1); }
+.m-motion .m-statement p.m-reveal { --fx: perspective(900px) translate3d(0px,60px,0) rotateX(40deg) rotateY(0deg) rotateZ(0deg) scale(0.94); --fo: perspective(900px) translate3d(0px,-50px,0) rotateX(-30deg) rotateY(0deg) rotateZ(0deg) scale(0.96); }
+.m-motion .m-how-heading.m-reveal { --fx: perspective(900px) translate3d(-90px,0px,0) rotateX(0deg) rotateY(18deg) rotateZ(-1deg) scale(1); --fo: perspective(900px) translate3d(90px,0px,0) rotateX(0deg) rotateY(-18deg) rotateZ(1deg) scale(1); }
+.m-motion .m-wizard-media.m-reveal { --fx: perspective(900px) translate3d(80px,20px,0) rotateX(0deg) rotateY(-16deg) rotateZ(1.5deg) scale(0.88); --fo: perspective(900px) translate3d(-80px,-20px,0) rotateX(0deg) rotateY(16deg) rotateZ(-1.5deg) scale(0.92); }
+.m-motion .m-step:nth-child(1).m-reveal { --fx: perspective(900px) translate3d(0px,60px,0) rotateX(-30deg) rotateY(0deg) rotateZ(-4deg) scale(1); --fo: perspective(900px) translate3d(0px,-50px,0) rotateX(24deg) rotateY(0deg) rotateZ(3deg) scale(1); }
+.m-motion .m-step:nth-child(2).m-reveal { --fx: perspective(900px) translate3d(0px,70px,0) rotateX(-30deg) rotateY(0deg) rotateZ(3deg) scale(1); --fo: perspective(900px) translate3d(0px,-50px,0) rotateX(24deg) rotateY(0deg) rotateZ(-3deg) scale(1); }
+.m-motion .m-step:nth-child(3).m-reveal { --fx: perspective(900px) translate3d(0px,60px,0) rotateX(-30deg) rotateY(0deg) rotateZ(-3deg) scale(1); --fo: perspective(900px) translate3d(0px,-50px,0) rotateX(24deg) rotateY(0deg) rotateZ(4deg) scale(1); }
+.m-motion .m-details-head.m-reveal { --fx: perspective(900px) translate3d(100px,0px,0) rotateX(0deg) rotateY(-20deg) rotateZ(2deg) scale(1); --fo: perspective(900px) translate3d(-100px,0px,0) rotateX(0deg) rotateY(20deg) rotateZ(-2deg) scale(1); }
+.m-motion .m-principle:nth-of-type(1).m-reveal { --fx: perspective(900px) translate3d(-140px,0px,0) rotateX(0deg) rotateY(34deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(140px,0px,0) rotateX(0deg) rotateY(-34deg) rotateZ(0deg) scale(1); }
+.m-motion .m-principle:nth-of-type(2).m-reveal { --fx: perspective(900px) translate3d(140px,0px,0) rotateX(0deg) rotateY(-34deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(-140px,0px,0) rotateX(0deg) rotateY(34deg) rotateZ(0deg) scale(1); }
+.m-motion .m-principle:nth-of-type(3).m-reveal { --fx: perspective(900px) translate3d(-140px,0px,0) rotateX(0deg) rotateY(34deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(140px,0px,0) rotateX(0deg) rotateY(-34deg) rotateZ(0deg) scale(1); }
+.m-motion .m-principles .m-clarification.m-reveal { --fx: perspective(900px) translate3d(0px,40px,0) rotateX(20deg) rotateY(0deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(0px,-30px,0) rotateX(-14deg) rotateY(0deg) rotateZ(0deg) scale(1); }
+.m-motion .m-coming h2.m-reveal { --fx: perspective(900px) translate3d(0px,-44px,0) rotateX(36deg) rotateY(0deg) rotateZ(0deg) scale(0.96); --fo: perspective(900px) translate3d(0px,40px,0) rotateX(-30deg) rotateY(0deg) rotateZ(0deg) scale(0.96); }
+.m-motion .m-coming-list.m-reveal { --fx: perspective(900px) translate3d(90px,0px,0) rotateX(0deg) rotateY(-14deg) rotateZ(1.5deg) scale(1); --fo: perspective(900px) translate3d(-90px,0px,0) rotateX(0deg) rotateY(14deg) rotateZ(-1.5deg) scale(1); }
+.m-motion .m-coming .m-integration-note.m-reveal { --fx: perspective(900px) translate3d(0px,40px,0) rotateX(20deg) rotateY(0deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(0px,-30px,0) rotateX(-14deg) rotateY(0deg) rotateZ(0deg) scale(1); }
+.m-motion .m-showcase-head.m-reveal { --fx: perspective(900px) translate3d(-90px,0px,0) rotateX(0deg) rotateY(16deg) rotateZ(-1.5deg) scale(1); --fo: perspective(900px) translate3d(90px,0px,0) rotateX(0deg) rotateY(-16deg) rotateZ(1.5deg) scale(1); }
+.m-motion .m-showcase-frame.m-reveal { --fx: perspective(900px) translate3d(0px,90px,0) rotateX(18deg) rotateY(0deg) rotateZ(0deg) scale(0.9); --fo: perspective(900px) translate3d(0px,-70px,0) rotateX(-14deg) rotateY(0deg) rotateZ(0deg) scale(0.94); }
+.m-motion .m-pricing-inner.m-reveal { --fx: perspective(900px) translate3d(0px,50px,0) rotateX(26deg) rotateY(0deg) rotateZ(0deg) scale(0.9); --fo: perspective(900px) translate3d(0px,-40px,0) rotateX(-20deg) rotateY(0deg) rotateZ(0deg) scale(0.94); }
+.m-motion .m-faq h2.m-reveal { --fx: perspective(900px) translate3d(-90px,0px,0) rotateX(0deg) rotateY(26deg) rotateZ(-2deg) scale(1); --fo: perspective(900px) translate3d(90px,0px,0) rotateX(0deg) rotateY(-26deg) rotateZ(2deg) scale(1); }
+.m-motion .m-faq-item:nth-child(odd).m-reveal { --fx: perspective(900px) translate3d(-100px,0px,0) rotateX(0deg) rotateY(22deg) rotateZ(-1deg) scale(1); --fo: perspective(900px) translate3d(100px,0px,0) rotateX(0deg) rotateY(-22deg) rotateZ(1deg) scale(1); }
+.m-motion .m-faq-item:nth-child(even).m-reveal { --fx: perspective(900px) translate3d(100px,0px,0) rotateX(0deg) rotateY(-22deg) rotateZ(1deg) scale(1); --fo: perspective(900px) translate3d(-100px,0px,0) rotateX(0deg) rotateY(22deg) rotateZ(-1deg) scale(1); }
+.m-motion .m-final h2.m-reveal { --fx: perspective(900px) translate3d(0px,80px,0) rotateX(30deg) rotateY(0deg) rotateZ(0deg) scale(0.9); --fo: perspective(900px) translate3d(0px,-60px,0) rotateX(-24deg) rotateY(0deg) rotateZ(0deg) scale(0.94); }
+.m-motion .m-final .m-cta.m-reveal { --fx: perspective(900px) translate3d(0px,40px,0) rotateX(0deg) rotateY(0deg) rotateZ(-8deg) scale(0.6); --fo: perspective(900px) translate3d(0px,-30px,0) rotateX(0deg) rotateY(0deg) rotateZ(6deg) scale(0.8); }
+.m-motion .m-footer-top.m-reveal { --fx: perspective(900px) translate3d(0px,44px,0) rotateX(18deg) rotateY(0deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(0px,-30px,0) rotateX(-10deg) rotateY(0deg) rotateZ(0deg) scale(1); }
+.m-motion .m-footer-bottom.m-reveal { --fx: perspective(900px) translate3d(0px,30px,0) rotateX(10deg) rotateY(0deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(0px,-20px,0) rotateX(-8deg) rotateY(0deg) rotateZ(0deg) scale(1); }
+.m-motion .m-cta.m-reveal.is-visible:hover { transform: perspective(900px) translate3d(0,-2px,0) rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); }
+:root.m-fx-paused .m-reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+@media (max-width: 600px) { .m-motion .m-reveal { --fx: perspective(900px) translate3d(0px,34px,0) rotateX(14deg) rotateY(0deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(0px,-26px,0) rotateX(-10deg) rotateY(0deg) rotateZ(0deg) scale(0.97); } .m-motion .m-reveal[class*="m-"] { transition-duration: .8s; } }
+@media (prefers-reduced-motion: reduce) { .m-motion .m-reveal, :root .m-reveal { opacity: 1 !important; transform: none !important; } }
+
+/* Larger header logo */
+.m-nav-inner { height: 104px; }
+.m-wordmark { width: clamp(200px, 20vw, 262px); height: auto; aspect-ratio: 900 / 320; }
+.m-footer .m-wordmark { width: clamp(126px, 14vw, 174px); }
+@media (max-width: 900px) { .m-nav-inner { height: 88px; } .m-wordmark { width: 190px; } .m-footer .m-wordmark { width: 150px; } }
+@media (max-width: 600px) { .m-nav-inner { height: 76px; } .m-wordmark { width: 128px; } .m-footer .m-wordmark { width: 128px; } }
+@media (max-width: 360px) { .m-wordmark { width: 112px; } }
+
+/* Gap closure: carousel wrapper, setup clarification and showcase CTA join the scroll system; integration note rides .m-coming-list. */
+.m-motion .m-craft-reveal.m-reveal { --fx: perspective(900px) translate3d(0px,80px,0) rotateX(16deg) rotateY(0deg) rotateZ(0deg) scale(0.92); --fo: perspective(900px) translate3d(0px,-60px,0) rotateX(-12deg) rotateY(0deg) rotateZ(0deg) scale(0.95); }
+.m-motion .m-how .m-clarification.m-reveal { --fx: perspective(900px) translate3d(-60px,0px,0) rotateX(0deg) rotateY(20deg) rotateZ(0deg) scale(1); --fo: perspective(900px) translate3d(60px,0px,0) rotateX(0deg) rotateY(-20deg) rotateZ(0deg) scale(1); }
+.m-motion .m-showcase-cta.m-reveal { --fx: perspective(900px) translate3d(0px,30px,0) rotateX(0deg) rotateY(0deg) rotateZ(-6deg) scale(0.8); --fo: perspective(900px) translate3d(0px,-24px,0) rotateX(0deg) rotateY(0deg) rotateZ(5deg) scale(0.9); }
+@media (max-width: 600px) {
+  .m-motion .m-craft-reveal.m-reveal { --fx: perspective(900px) translate3d(0px,44px,0) rotateX(10deg) rotateY(0deg) rotateZ(0.0deg) scale(0.952); --fo: perspective(900px) translate3d(0px,-33px,0) rotateX(-7deg) rotateY(0deg) rotateZ(0.0deg) scale(0.97); }
+  .m-motion .m-how .m-clarification.m-reveal { --fx: perspective(900px) translate3d(-17px,0px,0) rotateX(0deg) rotateY(10deg) rotateZ(0.0deg) scale(1.0); --fo: perspective(900px) translate3d(17px,0px,0) rotateX(0deg) rotateY(-10deg) rotateZ(0.0deg) scale(1.0); }
+  .m-motion .m-showcase-cta.m-reveal { --fx: perspective(900px) translate3d(0px,16px,0) rotateX(0deg) rotateY(0deg) rotateZ(-3.5999999999999996deg) scale(0.88); --fo: perspective(900px) translate3d(0px,-13px,0) rotateX(0deg) rotateY(0deg) rotateZ(3.0deg) scale(0.94); }
+  .m-motion .m-statement .m-kicker.m-reveal { --fx: perspective(900px) translate3d(-20px,0px,0) rotateX(0deg) rotateY(15deg) rotateZ(0.0deg) scale(1.0); --fo: perspective(900px) translate3d(20px,0px,0) rotateX(0deg) rotateY(-15deg) rotateZ(0.0deg) scale(1.0); }
+  .m-motion .m-statement p.m-reveal { --fx: perspective(900px) translate3d(0px,33px,0) rotateX(24deg) rotateY(0deg) rotateZ(0.0deg) scale(0.964); --fo: perspective(900px) translate3d(0px,-28px,0) rotateX(-18deg) rotateY(0deg) rotateZ(0.0deg) scale(0.976); }
+  .m-motion .m-how-heading.m-reveal { --fx: perspective(900px) translate3d(-25px,0px,0) rotateX(0deg) rotateY(9deg) rotateZ(-0.6deg) scale(1.0); --fo: perspective(900px) translate3d(25px,0px,0) rotateX(0deg) rotateY(-9deg) rotateZ(0.6deg) scale(1.0); }
+  .m-motion .m-wizard-media.m-reveal { --fx: perspective(900px) translate3d(22px,11px,0) rotateX(0deg) rotateY(-8deg) rotateZ(0.8999999999999999deg) scale(0.928); --fo: perspective(900px) translate3d(-22px,-11px,0) rotateX(0deg) rotateY(8deg) rotateZ(-0.8999999999999999deg) scale(0.952); }
+  .m-motion .m-step:nth-child(1).m-reveal { --fx: perspective(900px) translate3d(0px,33px,0) rotateX(-18deg) rotateY(0deg) rotateZ(-2.4deg) scale(1.0); --fo: perspective(900px) translate3d(0px,-28px,0) rotateX(14deg) rotateY(0deg) rotateZ(1.7999999999999998deg) scale(1.0); }
+  .m-motion .m-step:nth-child(2).m-reveal { --fx: perspective(900px) translate3d(0px,38px,0) rotateX(-18deg) rotateY(0deg) rotateZ(1.7999999999999998deg) scale(1.0); --fo: perspective(900px) translate3d(0px,-28px,0) rotateX(14deg) rotateY(0deg) rotateZ(-1.7999999999999998deg) scale(1.0); }
+  .m-motion .m-step:nth-child(3).m-reveal { --fx: perspective(900px) translate3d(0px,33px,0) rotateX(-18deg) rotateY(0deg) rotateZ(-1.7999999999999998deg) scale(1.0); --fo: perspective(900px) translate3d(0px,-28px,0) rotateX(14deg) rotateY(0deg) rotateZ(2.4deg) scale(1.0); }
+  .m-motion .m-details-head.m-reveal { --fx: perspective(900px) translate3d(28px,0px,0) rotateX(0deg) rotateY(-10deg) rotateZ(1.2deg) scale(1.0); --fo: perspective(900px) translate3d(-28px,0px,0) rotateX(0deg) rotateY(10deg) rotateZ(-1.2deg) scale(1.0); }
+  .m-motion .m-principle:nth-of-type(1).m-reveal { --fx: perspective(900px) translate3d(-39px,0px,0) rotateX(0deg) rotateY(17deg) rotateZ(0.0deg) scale(1.0); --fo: perspective(900px) translate3d(39px,0px,0) rotateX(0deg) rotateY(-17deg) rotateZ(0.0deg) scale(1.0); }
+  .m-motion .m-principle:nth-of-type(2).m-reveal { --fx: perspective(900px) translate3d(39px,0px,0) rotateX(0deg) rotateY(-17deg) rotateZ(0.0deg) scale(1.0); --fo: perspective(900px) translate3d(-39px,0px,0) rotateX(0deg) rotateY(17deg) rotateZ(0.0deg) scale(1.0); }
+  .m-motion .m-principle:nth-of-type(3).m-reveal { --fx: perspective(900px) translate3d(-39px,0px,0) rotateX(0deg) rotateY(17deg) rotateZ(0.0deg) scale(1.0); --fo: perspective(900px) translate3d(39px,0px,0) rotateX(0deg) rotateY(-17deg) rotateZ(0.0deg) scale(1.0); }
+  .m-motion .m-principles .m-clarification.m-reveal { --fx: perspective(900px) translate3d(0px,22px,0) rotateX(12deg) rotateY(0deg) rotateZ(0.0deg) scale(1.0); --fo: perspective(900px) translate3d(0px,-16px,0) rotateX(-8deg) rotateY(0deg) rotateZ(0.0deg) scale(1.0); }
+  .m-motion .m-coming h2.m-reveal { --fx: perspective(900px) translate3d(0px,-24px,0) rotateX(22deg) rotateY(0deg) rotateZ(0.0deg) scale(0.976); --fo: perspective(900px) translate3d(0px,22px,0) rotateX(-18deg) rotateY(0deg) rotateZ(0.0deg) scale(0.976); }
+  .m-motion .m-coming-list.m-reveal { --fx: perspective(900px) translate3d(25px,0px,0) rotateX(0deg) rotateY(-7deg) rotateZ(0.8999999999999999deg) scale(1.0); --fo: perspective(900px) translate3d(-25px,0px,0) rotateX(0deg) rotateY(7deg) rotateZ(-0.8999999999999999deg) scale(1.0); }
+  .m-motion .m-showcase-head.m-reveal { --fx: perspective(900px) translate3d(-25px,0px,0) rotateX(0deg) rotateY(8deg) rotateZ(-0.8999999999999999deg) scale(1.0); --fo: perspective(900px) translate3d(25px,0px,0) rotateX(0deg) rotateY(-8deg) rotateZ(0.8999999999999999deg) scale(1.0); }
+  .m-motion .m-showcase-frame.m-reveal { --fx: perspective(900px) translate3d(0px,50px,0) rotateX(11deg) rotateY(0deg) rotateZ(0.0deg) scale(0.94); --fo: perspective(900px) translate3d(0px,-38px,0) rotateX(-8deg) rotateY(0deg) rotateZ(0.0deg) scale(0.964); }
+  .m-motion .m-pricing-inner.m-reveal { --fx: perspective(900px) translate3d(0px,28px,0) rotateX(16deg) rotateY(0deg) rotateZ(0.0deg) scale(0.94); --fo: perspective(900px) translate3d(0px,-22px,0) rotateX(-12deg) rotateY(0deg) rotateZ(0.0deg) scale(0.964); }
+  .m-motion .m-faq h2.m-reveal { --fx: perspective(900px) translate3d(-25px,0px,0) rotateX(0deg) rotateY(13deg) rotateZ(-1.2deg) scale(1.0); --fo: perspective(900px) translate3d(25px,0px,0) rotateX(0deg) rotateY(-13deg) rotateZ(1.2deg) scale(1.0); }
+  .m-motion .m-faq-item:nth-child(odd).m-reveal { --fx: perspective(900px) translate3d(-28px,0px,0) rotateX(0deg) rotateY(11deg) rotateZ(-0.6deg) scale(1.0); --fo: perspective(900px) translate3d(28px,0px,0) rotateX(0deg) rotateY(-11deg) rotateZ(0.6deg) scale(1.0); }
+  .m-motion .m-faq-item:nth-child(even).m-reveal { --fx: perspective(900px) translate3d(28px,0px,0) rotateX(0deg) rotateY(-11deg) rotateZ(0.6deg) scale(1.0); --fo: perspective(900px) translate3d(-28px,0px,0) rotateX(0deg) rotateY(11deg) rotateZ(-0.6deg) scale(1.0); }
+  .m-motion .m-final h2.m-reveal { --fx: perspective(900px) translate3d(0px,44px,0) rotateX(18deg) rotateY(0deg) rotateZ(0.0deg) scale(0.94); --fo: perspective(900px) translate3d(0px,-33px,0) rotateX(-14deg) rotateY(0deg) rotateZ(0.0deg) scale(0.964); }
+  .m-motion .m-final .m-cta.m-reveal { --fx: perspective(900px) translate3d(0px,22px,0) rotateX(0deg) rotateY(0deg) rotateZ(-4.8deg) scale(0.76); --fo: perspective(900px) translate3d(0px,-16px,0) rotateX(0deg) rotateY(0deg) rotateZ(3.5999999999999996deg) scale(0.88); }
+  .m-motion .m-footer-top.m-reveal { --fx: perspective(900px) translate3d(0px,24px,0) rotateX(11deg) rotateY(0deg) rotateZ(0.0deg) scale(1.0); --fo: perspective(900px) translate3d(0px,-16px,0) rotateX(-6deg) rotateY(0deg) rotateZ(0.0deg) scale(1.0); }
+  .m-motion .m-footer-bottom.m-reveal { --fx: perspective(900px) translate3d(0px,16px,0) rotateX(6deg) rotateY(0deg) rotateZ(0.0deg) scale(1.0); --fo: perspective(900px) translate3d(0px,-11px,0) rotateX(-5deg) rotateY(0deg) rotateZ(0.0deg) scale(1.0); }
+}
+/* One-time header arrival: nav stays usable (animation ends at identity, never hides pointer targets for long). */
+.m-motion .m-nav .m-wordmark { animation: m-nav-logo 1.1s cubic-bezier(.16,.84,.24,1) .1s both; }
+.m-motion .m-nav .m-nav-links { animation: m-nav-menu .9s cubic-bezier(.16,.84,.24,1) .25s both; }
+@keyframes m-nav-logo { from { opacity: 0; transform: perspective(900px) translate3d(-40px,-18px,0) rotateY(24deg) scale(.88); } to { opacity: 1; transform: perspective(900px) translate3d(0,0,0) rotateY(0deg) scale(1); } }
+@keyframes m-nav-menu { from { opacity: 0; transform: translate3d(0,-22px,0); } to { opacity: 1; transform: translate3d(0,0,0); } }
+@media (prefers-reduced-motion: reduce) { .m-motion .m-nav .m-wordmark, .m-motion .m-nav .m-nav-links { animation: none; } }
+/* Preserve room for the enlarged mark, sign-in, theme and signup on narrow phones.
+   Pricing remains accessible from the pricing section and footer. */
+@media (max-width: 430px) { .m-nav-links a[href="/pricing"] { display: none; } }
