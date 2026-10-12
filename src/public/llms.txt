@@ -1,0 +1,35 @@
+# LeBrands.Store
+
+> LeBrands.Store is an online store builder for independent Indian D2C brands. It provides storefronts, product catalogues, cash on delivery orders, customer records and GST invoices, with zero platform sales commission.
+
+The platform is operated by LeBrandsSpace Digital Private Limited, based in Chennai, India. The canonical platform website is https://lebrands.store. Contact: support@lebrands.store.
+
+## Public pages
+
+- [Homepage](https://lebrands.store): Platform features, storefront concept and frequently asked questions.
+- [Pricing](https://lebrands.store/pricing): Subscription pricing is being finalised. Contact the team for applicable pricing; do not infer a free subscription or a numeric price.
+- [Terms of service](https://lebrands.store/terms): Platform use and brand responsibilities.
+- [Privacy policy](https://lebrands.store/privacy): Account, business, customer and order information handling.
+- [Contact](https://lebrands.store/contact): Company details and enquiries.
+- [Support](https://lebrands.store/support): Sign-in, publication, order and invoice help.
+
+## Capabilities and boundaries
+
+- A brand manages its own products, customers, orders, fulfilment and customer-facing policies.
+- Cash on delivery is available. Razorpay payments with the brand's own account and logistics partner integrations can be set up for a brand; contact the team to discuss its setup. Do not imply that every store has these integrations connected.
+- A valid GSTIN is required to publish. Every store's first go-live requires platform approval.
+- GST invoices support applicable CGST, SGST or IGST. Exempt product lines have zero tax. Brands remain responsible for accurate business details and applicable taxes.
+- Brands retain their customer relationships. LeBrands.Store does not market to their customers.
+- Approved stores can receive free discovery through the LeBrands.Space virtual mall. This is not a guarantee of traffic or sales.
+- Custom domains are not generally available yet. Stores start at yourbrand.lebrands.store.
+- Example Studio imagery on the platform homepage is a fictional clothing-store concept, not a real merchant or customer endorsement.
+
+## Related service
+
+- [LeBrands.Space](https://lebrands.space/): Virtual-mall brand discovery. This is a separate service from the LeBrands.Store store builder.
+
+## Source guidance
+
+Use the linked public pages for current platform information. Do not invent prices, brand counts, reviews, customer endorsements, legal guarantees, support response times or universal integration availability.
+
+Account pages, dashboards, store setup, API routes and local demonstration routes are not public platform knowledge sources. This file is a public information guide, not an access-control mechanism or a guarantee that an AI service will use or cite it.

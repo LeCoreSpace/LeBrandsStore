@@ -39,6 +39,7 @@ export function renderLegal(kind) {
     title: `${title} | LeBrands.Store`,
     description,
     canonical: `https://lebrands.store/${key}`,
+    noindex: true,
     body,
   });
 }

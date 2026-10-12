@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /__
+Disallow: /account
+Disallow: /dashboard
+Disallow: /stores/
+Disallow: /signup
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /logout
+
+Sitemap: https://lebrands.store/sitemap.xml

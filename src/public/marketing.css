@@ -937,3 +937,13 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
 :root[data-theme="dark"] .m-flow-a { opacity: .4; }
 :root[data-theme="dark"] .m-flow-b { opacity: .34; }
 @media (max-width: 600px) { .m-flow-a { opacity: .3; } .m-flow-b { opacity: .26; } }
+
+/* ===== Platform media frames: rounded, softly lifted, clipped cleanly (wizard video and craft captures) ===== */
+.m-wizard-media, .m-craft-media {
+  border-radius: clamp(14px, 2.2vw, 26px); isolation: isolate; overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--band-fg) 16%, transparent);
+  box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 28px 56px -30px rgba(56,40,43,.5), 0 8px 18px -12px rgba(56,40,43,.28);
+}
+:root[data-theme="dark"] .m-band-dark .m-wizard-media, :root[data-theme="dark"] .m-band-dark .m-craft-media { box-shadow: 0 0 0 1px rgba(243,235,226,.06) inset, 0 30px 60px -28px rgba(0,0,0,.75); }
+.m-wizard-poster, .m-wizard-media video { border-radius: inherit; }
+@media (max-width: 600px) { .m-wizard-media, .m-craft-media { border-radius: 14px; } }

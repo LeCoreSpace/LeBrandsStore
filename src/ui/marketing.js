@@ -1,8 +1,9 @@
 import { MARKETING_MEDIA } from "./marketing-media.js";
 import { FAVICON_LINKS } from "./favicon.js";
+import { platformSeoHead, PLATFORM_DESCRIPTION, PLATFORM_FAQ } from "./platform-seo.js";
 
 const TITLE = "LeBrands.Store | A flagship online store for Indian D2C brands";
-const DESCRIPTION = "A flagship store for Indian D2C brands. Build and publish your storefront with LeBrands.Store.";
+const DESCRIPTION = PLATFORM_DESCRIPTION;
 const SIGNUP = "https://app.lebrands.store/signup";
 const LOGIN = "https://app.lebrands.store/login";
 
@@ -52,6 +53,7 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
   <meta property="og:image:width" content="2880">
   <meta property="og:image:height" content="1800">
   <meta name="twitter:card" content="summary_large_image">
+  ${platformSeoHead({ canonical, title, description })}
   <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <script src="/assets/marketing.js"></script>
   <link rel="stylesheet" href="/assets/marketing.css">
@@ -328,12 +330,7 @@ export function renderHome() {
     <div class="m-wrap m-faq-inner">
       <h2 class="m-reveal">Good to know.</h2>
       <div class="m-faq-list">
-        <details class="m-faq-item m-reveal"><summary>Do you take a commission?</summary><p>No. Your sales are entirely yours.</p></details>
-        <details class="m-faq-item m-reveal"><summary>Do I need GST registration?</summary><p>Yes. A valid GSTIN is required to publish, so every invoice your store issues is compliant.</p></details>
-        <details class="m-faq-item m-reveal"><summary>How do payments work?</summary><p>Cash on delivery today. Razorpay payments with your own account can be set up for your brand, so the money goes straight to you. Contact us to discuss your setup.</p></details>
-        <details class="m-faq-item m-reveal"><summary>Can I use my own domain?</summary><p>Coming soon. Your store starts at yourbrand.lebrands.store.</p></details>
-        <details class="m-faq-item m-reveal"><summary>Who owns my customer data?</summary><p>You do. We never market to your customers.</p></details>
-        <details class="m-faq-item m-reveal"><summary>How long does setup take?</summary><p>Most brands finish the guided setup in one sitting.</p></details>
+        ${PLATFORM_FAQ.map(([question, answer]) => `<details class="m-faq-item m-reveal"><summary>${question}</summary><p>${answer}</p></details>`).join("\n")}
       </div>
     </div>
   </section>

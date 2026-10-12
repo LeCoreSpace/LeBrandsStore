@@ -15,3 +15,4 @@
 - [Replit preview boundary](replit-preview-boundary.md) — native Preview must show the real site, not just a sample gallery; visibility does not authorise live-data access.
 - [Platform logo visibility](platform-logo-visibility.md) — prominent logos across platform pages; verify account-host image delivery, not just local Preview.
 - [Platform information boundary](platform-information-boundary.md) — verified company details only; distinguish merchant records and require legal review before publication.
+- [Platform crawler boundary](platform-crawler-boundary.md) — public platform URLs only; keep private and preview routes out, with truthful schema and AI-facing claims.

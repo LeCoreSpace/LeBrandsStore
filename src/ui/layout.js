@@ -1,5 +1,6 @@
 import { LE_BRANDS_LOGO } from "./brand.js";
 import { FAVICON_LINKS } from "./favicon.js";
+import { platformSeoHead } from "./platform-seo.js";
 
 export function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -29,6 +30,7 @@ export function layout({ title, description, canonical, body, noindex = false, e
   <meta property="og:title" content="${safeTitle}">
   <meta property="og:description" content="${safeDescription}">
   <meta property="og:url" content="${safeCanonical}">
+  ${noindex ? "" : platformSeoHead({ canonical, title, description, includeImage: true })}
   <meta name="theme-color" content="#f6f0e6">
   ${FAVICON_LINKS}
   <link rel="preconnect" href="https://fonts.googleapis.com">

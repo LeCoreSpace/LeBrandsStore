@@ -13,6 +13,7 @@ import { renderInvoice } from "./ui/invoice.js";
 import { quoteCart } from "./public/commerce-rules.js";
 import { renderPremiumStore } from "./ui/premium-example.js";
 import { previewShell, renderAppSample } from "./local-app-preview.js";
+import { ACCOUNT_ROBOTS } from "./ui/platform-seo.js";
 
 const LOCAL_STORE_ID = "00000000-0000-4000-8000-000000000000";
 function filterDashboardFixture(data, filters) {
@@ -39,6 +40,13 @@ function dashboardPreviewLink(path) {
 export default {
   async fetch(request, env, ctx) {
     const original = new URL(request.url);
+    if (original.pathname === "/robots.txt") {
+      const allowed = ["GET", "HEAD"].includes(request.method);
+      return new Response(allowed && request.method !== "HEAD" ? ACCOUNT_ROBOTS : null, {
+        status: allowed ? 200 : 405,
+        headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store", "x-robots-tag": "noindex, nofollow", allow: "GET, HEAD" },
+      });
+    }
     const exampleHeaders={...SECURITY_HEADERS,"x-frame-options":"SAMEORIGIN","cache-control":"no-store",
       "content-security-policy":SECURITY_HEADERS["content-security-policy"].replace("frame-ancestors 'none'","frame-ancestors *")};
     if (original.pathname === "/__app-preview" || original.pathname.startsWith("/__app-preview/")) {
@@ -212,7 +220,11 @@ export default {
     headers.delete("x-frame-options");
     headers.set("content-security-policy", headers.get("content-security-policy")?.replace("frame-ancestors 'none'", "frame-ancestors *") ?? "default-src 'self'");
     if (response.status === 303 && headers.get("location") === "/") headers.set("location", "/dashboard");
-    if (!headers.get("content-type")?.includes("text/html")) return new Response(response.body, { status: response.status, headers });
+    headers.set("x-robots-tag", "noindex, nofollow");
+    if (!headers.get("content-type")?.includes("text/html")) {
+      headers.set("cache-control", "no-store");
+      return new Response(response.body, { status: response.status, headers });
+    }
     // Production marketing HTML is cached for five minutes. Local development
     // must not reuse old markup after edits or workflow restarts.
     headers.set("cache-control", "no-store");

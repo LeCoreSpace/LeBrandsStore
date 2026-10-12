@@ -8,6 +8,7 @@ import { FAVICON_SVG } from "./ui/favicon.js";
 import { LE_BRANDS_LOGO } from "./ui/brand.js";
 import { serveMedia } from "./store/media.js";
 import { serveStorefront } from "./store/live.js";
+import { CRAWLER_FILES, serveCrawlerFile } from "./crawler-files.js";
 
 const ROOT_DOMAIN = ".lebrands.store";
 const STORE_NAME_PATTERN = /^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])$/;
@@ -112,8 +113,10 @@ export default {
       headers.set("x-content-type-options", "nosniff");
       return new Response(request.method === "HEAD" ? null : asset.body, { status: asset.status, headers });
     }
+    if (hostname === "app.lebrands.store" && url.pathname === "/robots.txt") return serveCrawlerFile(request, env, true);
     if (hostname === "app.lebrands.store") return handleAccounts(request, env, ctx);
     if (hostname === "lebrands.store") {
+      if (Object.hasOwn(CRAWLER_FILES, url.pathname)) return serveCrawlerFile(request, env);
       if (!["GET", "HEAD"].includes(request.method)) return page("Method not allowed", "Method not allowed", "", 405);
       if (url.pathname.startsWith("/img/")) {
         if(!/^\/img\/(?:stonescence-(?:desktop-(?:640|1200)|mobile-(?:260|390))\.webp|REPLACE-[a-z0-9-]+\.(?:jpg|webp|avif|png|webm|mp4))$/.test(url.pathname))return notFound();
