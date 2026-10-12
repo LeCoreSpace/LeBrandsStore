@@ -13,16 +13,27 @@ const str = (v) => typeof v === "string" ? v.trim() : "";
 const blocks = (s) => (Array.isArray(s.blocks) ? s.blocks : []).map((b) => b?.settings || {});
 const off = (s) => s?.settings?.enabled === false;
 
-function img(image, { eager = false, cls = "", label = "" } = {}) {
+export const HERO_IMAGE_SIZES = "(max-width: 680px) 100vw, 50vw";
+export function imageSourceSet(image) {
   const url = safeImage(image?.url);
+  if (!url) return {url:"",srcset:""};
+  const candidates=[...(image.sources||[]),{url,width:image.width}];
+  const widths=new Set(),urls=new Set();
+  const sources=candidates.filter(s=>safeImage(s.url)&&Number.isInteger(s.width)&&s.width>0)
+    .sort((a,b)=>a.width-b.width)
+    .filter(s=>!widths.has(s.width)&&!urls.has(s.url)&&widths.add(s.width)&&urls.add(s.url));
+  return {url,srcset:sources.map(s=>`${safeImage(s.url)} ${s.width}w`).join(", ")};
+}
+function img(image, { eager = false, cls = "", label = "", sizes = HERO_IMAGE_SIZES } = {}) {
+  const {url,srcset}=imageSourceSet(image);
   if (!url) return "";
   const w = Number(image.width) > 0 ? ` width="${Math.round(image.width)}"` : "";
   const h = Number(image.height) > 0 ? ` height="${Math.round(image.height)}"` : "";
-  const responsive=Number(image.width)>0?` srcset="${[...(image.sources||[]).filter(s=>safeImage(s.url)).map(s=>`${esc(safeImage(s.url))} ${Math.round(s.width)}w`),`${esc(url)} ${Math.round(image.width)}w`].join(", ")}" sizes="(max-width: 680px) 100vw, 50vw"`:"";
-  return `<img class="${cls}" src="${esc(url)}"${responsive} alt="${esc(image.alt || label)}"${w}${h} ${eager ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async">`;
+  const responsive=srcset?` srcset="${esc(srcset)}" sizes="${esc(sizes)}"`:"";
+  return `<img class="${cls}" src="${esc(url)}"${responsive} alt="${esc(image.alt || label)}"${w}${h} ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" fetchpriority="low"'} decoding="async">`;
 }
 function card(p, ctx, eager = false, index = 0) {
-  const im = img(p.images?.[0], { eager, label: p.title });
+  const im = img(p.images?.[0], { label: p.title, sizes:"(max-width: 680px) 50vw, (max-width: 1024px) 33vw, 25vw" });
   return `<a class="au-card" data-title="${esc(String(p.title || "").toLowerCase())}" data-price="${Number(p.price_paise) || 0}" data-available="${available(p) ? 1 : 0}" data-index="${index}" href="/products/${encodeURIComponent(p.id || "")}"><span class="au-card-media">${im || `<span class="au-card-blank">${esc((p.title || "").slice(0, 1))}</span>`}</span><span class="au-card-name">${esc(p.title || "Untitled product")}</span><span class="au-card-price">${money(p.price_paise)}${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}${available(p) ? "" : " · Sold out"}</span></a>`;
 }
 const heading = (t, extra = "") => t ? `<div class="au-head"><h2>${esc(t)}</h2>${extra}</div>` : "";

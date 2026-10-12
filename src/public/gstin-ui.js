@@ -8,6 +8,9 @@ export function observeGSTINForms(root,storeId,options={}){
   if(!input||!stateInput||input.dataset.gstinMounted)return;
   input.dataset.gstinMounted="true";
   const pane=document.createElement("section");pane.className="gstin-verification";pane.setAttribute("aria-label","GSTIN verification");
+  // No flash of stage-2 controls, including while capability detection runs.
+  // The existing manual GSTIN field remains required by the stage-1 rules.
+  pane.hidden=true;pane.style.display="none";
   const status=document.createElement("p");status.setAttribute("role","status");
   const action=document.createElement("button");action.type="button";action.textContent="Verify GSTIN";
   const choices=document.createElement("div");pane.append(status,action,choices);input.closest("label,.field,.form-field,.lb-field")?.after(pane);
@@ -68,9 +71,9 @@ export function observeGSTINForms(root,storeId,options={}){
   input.addEventListener("input",()=>{readonly(false);clearTimeout(typingTimer);clearTimeout(retryTimer);choices.replaceChildren();typingTimer=setTimeout(verify,800)});
   stateInput.addEventListener("change",()=>{clearTimeout(typingTimer);typingTimer=setTimeout(verify,800)});
   api("state").then(result=>{if(!input.isConnected)return;enabled=!!result.enabled;action.disabled=!enabled;
-   if(enabled){show(result);if(result.state==="unverified"&&input.value.trim())retryTimer=setTimeout(verify,1500)}
-   else status.textContent="GSTIN verification will be available after the scheduled database rollout.";
-  }).catch(()=>{status.textContent="Verification services are unavailable. Your saved details have not changed.";action.disabled=true});
+   if(enabled){pane.hidden=false;pane.style.removeProperty("display");show(result);if(result.state==="unverified"&&input.value.trim())retryTimer=setTimeout(verify,1500)}
+   else{clearTimeout(typingTimer);clearTimeout(retryTimer);pane.remove();}
+  }).catch(()=>{pane.remove();action.disabled=true});
  };
  install();const observer=new MutationObserver(install);observer.observe(root,{childList:true,subtree:true});
  return()=>observer.disconnect();

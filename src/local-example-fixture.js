@@ -14,9 +14,14 @@ export const EXAMPLE_PRODUCTS=[
 ];
 export const exampleProductId=i=>`00000000-0000-4000-8000-${String(100+i).padStart(12,"0")}`;
 export const examplePhotoUrl=i=>`https://media.lebrands.store/stores/${EXAMPLE_STORE_ID}/${exampleProductId(i)}.webp`;
+export const EXAMPLE_IMAGE_WIDTHS=[480,768,1200,1600];
+export const exampleRenditionUrl=(i,width)=>`https://media.lebrands.store/stores/${EXAMPLE_STORE_ID}/00000000-0000-4000-8000-${String((i+1)*1000000+width).padStart(12,"0")}.webp`;
 
 export function exampleMedia(html){
-  for(let i=0;i<EXAMPLE_PRODUCTS.length;i++)html=html.replaceAll(examplePhotoUrl(i),`/__example-media/${EXAMPLE_PRODUCTS[i][0]}.webp`);
+  for(let i=0;i<EXAMPLE_PRODUCTS.length;i++){
+    html=html.replaceAll(examplePhotoUrl(i),`/__example-media/${EXAMPLE_PRODUCTS[i][0]}.webp`);
+    for(const width of EXAMPLE_IMAGE_WIDTHS)html=html.replaceAll(exampleRenditionUrl(i,width),`/__example-media/${EXAMPLE_PRODUCTS[i][0]}-${width}.webp`);
+  }
   return html;
 }
 export function exampleFixture(){
@@ -34,7 +39,8 @@ export function exampleFixture(){
       "Soft woven cotton, cut and stitched by hand. A relaxed everyday fit in a muted natural shade. Gentle cold wash and line dry.",
     sku:`EX-${String(i+1).padStart(2,"0")}`,slug,price_paise:rupees*100,stock:18+i*3,
     track_inventory:true,status:"active",hsn_code:"6205",gst_rate:rupees>2500?18:5,
-    images:[{id:exampleProductId(i),url:examplePhotoUrl(i),alt:`Generated ${title} product photograph for fictional Example Studio`,width:2000,height:2500}]
+    images:[{id:exampleProductId(i),url:examplePhotoUrl(i),alt:`Generated ${title} product photograph for fictional Example Studio`,width:2000,height:2500,
+      sources:EXAMPLE_IMAGE_WIDTHS.map(width=>({url:exampleRenditionUrl(i,width),width,height:Math.round(width*1.25)}))}]
   }));
   const policyBodies={
     privacy:"Example store policy. This fictional store uses customer details only to fulfil orders. No customer information is sold or used for marketing.",

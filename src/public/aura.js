@@ -1,5 +1,5 @@
 import { contrastColor } from "./validation.js";
-import { renderSection, safeImage, policyTitle } from "./aura-sections.js";
+import { renderSection, safeImage, policyTitle, imageSourceSet, HERO_IMAGE_SIZES } from "./aura-sections.js";
 import { getPageKey, defaultPageLayouts } from "./aura-layout.js";
 
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
@@ -95,6 +95,11 @@ export function renderAura(data = {}, options = {}) {
   const pageKey = getPageKey({ ...options, page });
   const layouts = data.layouts && typeof data.layouts === "object" ? data.layouts : defaultPageLayouts(data);
   const sections = Array.isArray(layouts[pageKey]) ? layouts[pageKey] : [];
+  const hero = sections.find(section=>section.type==="hero"&&section.settings?.enabled!==false);
+  const heroImage = hero?.settings?.variant==="video"?hero.settings.poster:hero?.settings?.image;
+  const heroResource = imageSourceSet(heroImage);
+  const heroSizes = hero?.settings?.variant==="fullbleed"||hero?.settings?.variant==="video"?"100vw":HERO_IMAGE_SIZES;
+  const heroPreload = heroResource.url ? `<link rel="preload" as="image" href="${esc(heroResource.url)}"${heroResource.srcset?` imagesrcset="${esc(heroResource.srcset)}" imagesizes="${esc(heroSizes)}"`:""} fetchpriority="high">` : "";
   const ctx = { data, options: { ...options, page }, settings, brand, products, product: prodForPage, logoUrl, renderDescription };
   const out = [];
   let mainOpen = false;
@@ -114,6 +119,7 @@ export function renderAura(data = {}, options = {}) {
     <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
+      ${heroPreload}
       <title>${esc(title)}</title>
       <meta name="description" content="${esc(descriptionText)}">
       <meta name="theme-color" content="${esc(paper)}">

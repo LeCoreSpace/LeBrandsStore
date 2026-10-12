@@ -123,7 +123,7 @@ BEGIN
         RAISE EXCEPTION 'Invalid media or media belongs to another store' USING ERRCODE='22023';
       END IF;
       IF v ? 'sources' THEN
-        IF kind<>'image' OR jsonb_typeof(v->'sources')<>'array' OR jsonb_array_length(v->'sources')>3
+        IF kind<>'image' OR jsonb_typeof(v->'sources')<>'array' OR jsonb_array_length(v->'sources')>4
           OR NOT(v ? 'width' AND v ? 'height') THEN
           RAISE EXCEPTION 'Invalid responsive image sources' USING ERRCODE='22023';
         END IF;
@@ -163,7 +163,7 @@ CREATE FUNCTION public.aura_validate_sources(p_image jsonb,p_store uuid) RETURNS
 LANGUAGE plpgsql SET search_path=pg_catalog,public AS $$
 DECLARE s jsonb; widths jsonb; urls jsonb;
 BEGIN
- IF jsonb_typeof(p_image->'sources') IS DISTINCT FROM 'array' OR jsonb_array_length(p_image->'sources')>3
+ IF jsonb_typeof(p_image->'sources') IS DISTINCT FROM 'array' OR jsonb_array_length(p_image->'sources')>4
   OR jsonb_typeof(p_image->'width') IS DISTINCT FROM 'number' OR jsonb_typeof(p_image->'height') IS DISTINCT FROM 'number'
   OR p_image->>'width' !~ '^[0-9]+$' OR p_image->>'height' !~ '^[0-9]+$' THEN
   RAISE EXCEPTION 'Invalid responsive image dimensions' USING ERRCODE='22023';
@@ -189,7 +189,7 @@ BEGIN
 END $$;
 
 ALTER TABLE public.media ADD COLUMN renditions jsonb NOT NULL DEFAULT '[]'::jsonb
- CHECK(jsonb_typeof(renditions)='array' AND jsonb_array_length(renditions)<=3);
+ CHECK(jsonb_typeof(renditions)='array' AND jsonb_array_length(renditions)<=4);
 GRANT UPDATE(renditions) ON public.media TO lebrands_app;
 CREATE FUNCTION public.aura_guard_media_sources() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
@@ -277,7 +277,7 @@ BEGIN
   IF p_page='home' THEN
     hero := COALESCE(s->'hero_image',p_snapshot#>'{products,0,images,0}');
     IF hero IS NOT NULL AND hero->>'url' IS NOT NULL THEN
-      hero := jsonb_strip_nulls(jsonb_build_object('url',hero->'url','alt',COALESCE(NULLIF(hero->>'alt',''),p_snapshot#>>'{products,0,title}',brand),'width',hero->'width','height',hero->'height'));
+      hero := jsonb_strip_nulls(jsonb_build_object('url',hero->'url','alt',COALESCE(NULLIF(hero->>'alt',''),p_snapshot#>>'{products,0,title}',brand),'width',hero->'width','height',hero->'height','sources',hero->'sources'));
     ELSE hero := 'null'::jsonb; END IF;
     parts := jsonb_build_array(public.aura_section('announcement'),public.aura_section('header'),
       public.aura_section('hero',jsonb_build_object('title',COALESCE(NULLIF(s->>'tagline',''),brand),
@@ -443,6 +443,9 @@ CREATE FUNCTION public.save_store_page(p_store uuid,p_page text,p_layout jsonb,p
 RETURNS public.store_pages LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
 DECLARE actor uuid; row public.store_pages;
 BEGIN
+  IF p_store IS NULL OR p_store IS DISTINCT FROM NULLIF(current_setting('app.store_id',true),'')::uuid THEN
+    RAISE EXCEPTION 'Store access denied' USING ERRCODE='42501';
+  END IF;
   IF p_expected IS NULL OR p_expected<0 THEN RAISE EXCEPTION 'Invalid page revision' USING ERRCODE='22023'; END IF;
   IF p_page='checkout' THEN RAISE EXCEPTION 'Checkout layout is not editable' USING ERRCODE='42501'; END IF;
   actor:=public.store_page_actor(p_store,p_token);
@@ -462,6 +465,9 @@ CREATE FUNCTION public.restore_store_page(p_store uuid,p_page text,p_version int
 RETURNS public.store_pages LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,public AS $$
 DECLARE layout jsonb;
 BEGIN
+  IF p_store IS NULL OR p_store IS DISTINCT FROM NULLIF(current_setting('app.store_id',true),'')::uuid THEN
+    RAISE EXCEPTION 'Store access denied' USING ERRCODE='42501';
+  END IF;
   PERFORM public.store_page_actor(p_store,p_token);
   SELECT v.layout INTO layout FROM public.store_page_versions v WHERE store_id=p_store AND page_key=p_page AND version=p_version;
   IF layout IS NULL THEN RAISE EXCEPTION 'Published version not found' USING ERRCODE='22023'; END IF;
@@ -508,3 +514,23 @@ BEGIN
   END LOOP;
 END $$;
 GRANT EXECUTE ON FUNCTION public.save_store_page(uuid,text,jsonb,integer,text),public.restore_store_page(uuid,text,integer,integer,text) TO lebrands_app;
+
+-- Final fail-closed acceptance of EVERY backfilled draft and published layout.
+-- The migration runner wraps all pending migrations in one transaction: an
+-- invalid legacy row aborts the migration, rather than leaving partial pages.
+DO $$
+DECLARE page record;
+BEGIN
+  FOR page IN SELECT store_id,page_key,draft_layout,published_layout FROM public.store_pages LOOP
+    BEGIN
+      PERFORM public.aura_validate_layout(page.store_id,page.page_key,page.draft_layout);
+      IF page.published_layout IS NOT NULL THEN
+        PERFORM public.aura_validate_layout(page.store_id,page.page_key,page.published_layout);
+      END IF;
+    EXCEPTION WHEN OTHERS THEN
+      RAISE EXCEPTION '0010 backfill validation failed for store %, page %: %',
+        page.store_id,page.page_key,SQLERRM USING ERRCODE=SQLSTATE;
+    END;
+  END LOOP;
+END;
+$$;

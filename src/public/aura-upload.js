@@ -7,7 +7,7 @@ export async function prepareAuraPhoto(file) {
   catch{throw new Error("This photo could not be opened. Choose a valid image.");}
   try{
     if(bitmap.width*bitmap.height>40000000)throw new Error("Choose a photo no larger than 40 megapixels.");
-    const ratio=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+    const ratio=Math.min(1,2000/bitmap.width,20000/bitmap.height);
     const canvas=document.createElement("canvas");
     canvas.width=Math.max(1,Math.round(bitmap.width*ratio));canvas.height=Math.max(1,Math.round(bitmap.height*ratio));
     canvas.getContext("2d").drawImage(bitmap,0,0,canvas.width,canvas.height);
@@ -17,7 +17,7 @@ export async function prepareAuraPhoto(file) {
   }finally{bitmap.close();}
 }
 
-export const RENDITION_WIDTHS = [640, 1024];
+export const RENDITION_WIDTHS = [480, 768, 1200, 1600];
 /** Pure: which widths to build. Never above the primary width, never a duplicate of it. */
 export function renditionWidths(primaryWidth, widths = RENDITION_WIDTHS) {
   return widths.filter(width => Number.isInteger(primaryWidth) && width < primaryWidth);
@@ -31,7 +31,7 @@ export function mediaWithSources(primary, renditions, alt) {
   const dto = { url: primary.url, alt: String(alt ?? primary.alt ?? "").trim() };
   for (const key of ["width", "height"]) if (Number.isInteger(primary[key]) && primary[key] > 0) dto[key] = primary[key];
   const sources = [...(renditions || []), ...(Array.isArray(primary.sources) ? primary.sources : [])]
-    .filter(item => item?.url && Number.isInteger(item.width) && Number.isInteger(item.height) && (!dto.width || item.width <= dto.width))
+    .filter(item => item?.url && Number.isInteger(item.width) && Number.isInteger(item.height) && (!dto.width || item.width < dto.width))
     .map(item => ({ url: item.url, width: item.width, height: item.height }));
   const seen = new Set();
   const unique = sources.filter(item => !seen.has(item.url) && seen.add(item.url)).sort((a, b) => a.width - b.width);

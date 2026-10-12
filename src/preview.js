@@ -11,7 +11,7 @@ import { SECURITY_HEADERS } from "./auth/security.js";
 import { renderDashboard } from "./ui/dashboard.js";
 import { localDashboardFixture } from "./local-dashboard-fixture.js";
 import { dateFilters } from "./public/dashboard-rules.js";
-import { EXAMPLE_STORE_ID,EXAMPLE_PRODUCTS,exampleFixture,exampleInvoice,exampleMedia } from "./local-example-fixture.js";
+import { EXAMPLE_STORE_ID,EXAMPLE_PRODUCTS,EXAMPLE_IMAGE_WIDTHS,exampleFixture,exampleInvoice,exampleMedia } from "./local-example-fixture.js";
 import { renderInvoice } from "./ui/invoice.js";
 import { quoteCart } from "./public/commerce-rules.js";
 import { renderPremiumStore } from "./ui/premium-example.js";
@@ -77,7 +77,7 @@ export default {
     if(original.pathname.startsWith("/__example-media/")){
       if(!["GET","HEAD"].includes(request.method))return new Response("Read-only example assets",{status:405});
       const filename=original.pathname.slice("/__example-media/".length);
-      if(![...EXAMPLE_PRODUCTS.map(p=>p[0]+".webp"),"store-desktop.png","store-mobile.png"].includes(filename))return new Response("Not found",{status:404});
+      if(![...EXAMPLE_PRODUCTS.flatMap(p=>[p[0]+".webp",...EXAMPLE_IMAGE_WIDTHS.map(w=>`${p[0]}-${w}.webp`)]),"store-desktop.png","store-mobile.png"].includes(filename))return new Response("Not found",{status:404});
       const asset=await env.ASSETS.fetch(new Request(new URL(`/img/local-example/${filename}`,original)));
       return new Response(request.method==="HEAD"?null:asset.body,{status:asset.status,headers:asset.headers});
     }

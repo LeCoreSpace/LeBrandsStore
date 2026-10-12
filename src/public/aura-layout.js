@@ -39,7 +39,7 @@ export function validateLayoutMedia(value, type, context = {}) {
   for (const key of ["width", "height"]) if (own(value, key) && (!Number.isInteger(value[key]) || value[key] < 1 || value[key] > 20000)) fail("Invalid image dimensions.");
   for (const key of ["focalX", "focalY"]) if (own(value, key) && (typeof value[key] !== "number" || value[key] < 0 || value[key] > 1)) fail("Invalid focal point.");
   if(own(value,"sources")){
-    if(type!=="image"||!Array.isArray(value.sources)||value.sources.length>3||!value.width||!value.height)fail("Invalid responsive image sources.");
+    if(type!=="image"||!Array.isArray(value.sources)||value.sources.length>4||!value.width||!value.height)fail("Invalid responsive image sources.");
     const widths=new Set([value.width]),urls=new Set([value.url]);
     for(const source of value.sources){
       if(!plain(source)||Object.keys(source).some(k=>!["url","width","height"].includes(k))||!source.width||!source.height)fail("Invalid responsive image source.");
