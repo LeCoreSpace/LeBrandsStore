@@ -72,7 +72,7 @@ export default {
     if (url.pathname.startsWith("/assets/")) {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
       const filename = url.pathname.slice("/assets/".length);
-      if (!["aura.js", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
+      if (!["aura.js", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
       if (!env.ASSETS) return new Response("Assets unavailable", { status: 503 });
       url.pathname = `/${filename}`;
       const asset = await env.ASSETS.fetch(new Request(url, request));
@@ -124,7 +124,7 @@ export default {
         headers.set("x-content-type-options","nosniff");
         return new Response(request.method==="HEAD"?null:asset.body,{status:asset.status,headers});
       }
-      const legal = { "/terms": "terms", "/privacy": "privacy", "/contact": "contact", "/refund-policy":"refund-policy" };
+      const legal = { "/terms": "terms", "/privacy": "privacy", "/contact": "contact", "/support": "support", "/refund-policy":"refund-policy" };
       if (url.pathname !== "/" && url.pathname!=="/pricing" && !legal[url.pathname]) return notFound();
       const marketing=url.pathname==="/" || url.pathname==="/pricing";
       const headers={ ...SECURITY_HEADERS, "cache-control": "public, max-age=300", "content-type": "text/html; charset=utf-8" };

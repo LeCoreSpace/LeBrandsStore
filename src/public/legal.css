@@ -1,0 +1,54 @@
+/* Information pages: Terms, Privacy, Contact, Support. Scoped to .platform-info so the refund draft and all other pages are untouched. */
+.legal-page.platform-info {
+  max-width: 1060px;
+  padding: 56px 0 96px;
+  min-height: 0;
+  font-family: var(--sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.platform-info .info-heading { max-width: 70ch; padding-bottom: 28px; margin-bottom: 36px; border-bottom: 1px solid var(--line); }
+.platform-info .info-label { display: block; margin: 0 0 10px; font: 600 12px/1.2 var(--sans), system-ui, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--green); }
+.legal-page.platform-info h1 {
+  font: 600 clamp(26px, 3.4vw, 34px)/1.2 var(--sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: -.01em; margin: 0 0 12px; color: var(--ink);
+}
+.legal-page.platform-info .info-intro { margin: 0; max-width: 62ch; font-size: 16px; line-height: 1.65; color: var(--muted); }
+
+.platform-info .info-layout { display: grid; grid-template-columns: 176px minmax(0, 1fr); gap: clamp(32px, 6vw, 72px); align-items: start; }
+.platform-info .info-navigation { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 2px; border-left: 1px solid var(--line); }
+.platform-info .info-navigation a {
+  display: block; padding: 8px 14px; margin-left: -1px; border-left: 2px solid transparent;
+  font-size: 14px; line-height: 1.4; color: var(--muted); text-decoration: none;
+}
+.platform-info .info-navigation a:hover { color: var(--ink); background: var(--paper-2); }
+.platform-info .info-navigation a[aria-current="page"] { color: var(--green); font-weight: 600; border-left-color: var(--green); }
+
+.platform-info .info-content { min-width: 0; max-width: 70ch; }
+.platform-info .info-section { padding: 0 0 28px; margin: 0 0 28px; border-bottom: 1px solid var(--line); scroll-margin-top: 24px; }
+.platform-info .info-section:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+.legal-page.platform-info h2 {
+  font: 600 clamp(18px, 2vw, 20px)/1.3 var(--sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: 0; margin: 0 0 10px; color: var(--ink);
+}
+.legal-page.platform-info p { max-width: none; margin: 0 0 14px; font-size: 15.5px; line-height: 1.65; color: var(--ink); }
+.platform-info .info-section > :last-child { margin-bottom: 0; }
+.platform-info ul { margin: 0 0 14px; padding-left: 20px; }
+.platform-info li { margin: 0 0 6px; font-size: 15.5px; line-height: 1.65; padding-left: 2px; }
+.platform-info li::marker { color: var(--coral); }
+.platform-info strong { font-weight: 600; }
+
+.platform-info .info-content a { color: var(--green); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.platform-info .info-content a:hover { color: var(--green-dark); text-decoration-thickness: 2px; }
+.platform-info a:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; border-radius: 2px; }
+
+@media (max-width: 760px) {
+  .legal-page.platform-info { padding: 36px 0 72px; }
+  .platform-info .info-heading { padding-bottom: 22px; margin-bottom: 26px; }
+  .legal-page.platform-info h1 { font-size: clamp(26px, 7vw, 30px); }
+  .platform-info .info-layout { grid-template-columns: minmax(0, 1fr); gap: 28px; }
+  .platform-info .info-navigation { position: static; flex-direction: row; flex-wrap: wrap; gap: 6px; border-left: 0; }
+  .platform-info .info-navigation a { margin: 0; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 13.5px; }
+  .platform-info .info-navigation a[aria-current="page"] { border-color: var(--green); background: var(--lime); }
+  .platform-info .info-content { max-width: none; }
+}

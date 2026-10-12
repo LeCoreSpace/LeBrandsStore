@@ -56,7 +56,7 @@ export function footer() {
     <div class="footer-meta">© ${new Date().getFullYear()} LeBrandsSpace Digital Private Limited</div>
     <nav class="footer-links" aria-label="Footer">
       <a href="https://lebrands.store/terms">Terms</a><a href="https://lebrands.store/privacy">Privacy</a>
-      <a href="https://lebrands.store/contact">Contact</a><a href="mailto:support@lebrands.store">Support</a>
+      <a href="https://lebrands.store/contact">Contact</a><a href="https://lebrands.store/support">Support</a>
     </nav>
   </div></footer>`;
 }

@@ -92,6 +92,7 @@ function footer({ pricing = false } = {}) {
         <a href="/terms">Terms</a>
         <a href="/refund-policy">Refund policy</a>
         <a href="/contact">Contact</a>
+        <a href="/support">Support</a>
       </nav>
     </div>
     <div class="m-footer-bottom m-reveal m-reveal-delay">
