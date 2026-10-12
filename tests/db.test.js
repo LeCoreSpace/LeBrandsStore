@@ -96,7 +96,8 @@ test("tenant hostname and custom domain render a database store name", async () 
     assert.equal(response.status, 200);
     const body = await response.text();
     assert.match(body, /<h1>Test Brand<\/h1>/);
-    assert.match(body, /This store is coming soon/);
+    assert.match(body, /The store catalogue is not available/);
+    assert.doesNotMatch(body, /coming soon/i);
   }
   assert.equal(state.closes, 2);
   assert.deepEqual(state.queries.filter((q) => q.query.includes("resolve_store")).map((q) => q.values),

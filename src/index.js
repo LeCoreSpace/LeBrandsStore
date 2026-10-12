@@ -161,7 +161,7 @@ export default {
       return page(
         `${store.name} | LeBrands.Store`,
         store.name,
-        "This store is coming soon.",
+        "The store catalogue is not available.",
       );
     } catch (error) {
       // Log a diagnostic code, never raw errors (which may contain credentials).

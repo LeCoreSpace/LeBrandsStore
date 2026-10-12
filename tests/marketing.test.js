@@ -10,11 +10,11 @@ test("wizard and dashboard showcase use refreshed branding in every responsive a
   const html = renderHome();
   for (const media of [MARKETING_MEDIA.dashboard, MARKETING_MEDIA.wizardVideo.poster]) {
     for (const url of [media.src, media.fallback, ...`${media.srcset},${media.avifSrcset}`.split(",").map(value => value.trim().split(" ")[0])]) {
-      assert.match(url, /-branded(?:-\d+)?\.(?:webp|avif|jpg)$/);
+      assert.match(url, /-branded-clean(?:-\d+)?\.(?:webp|avif|jpg)$/);
       assert.ok(html.includes(url));
     }
   }
-  assert.equal(MARKETING_MEDIA.wizardVideo.src, "/img/REPLACE-wizard-loop-branded.webm");
+  assert.equal(MARKETING_MEDIA.wizardVideo.src, "/img/REPLACE-wizard-loop-branded-clean.webm");
   assert.ok(html.includes(MARKETING_MEDIA.wizardVideo.src));
   assert.doesNotMatch(html, /\/img\/REPLACE-(?:dashboard(?:-\d+)?\.(?:webp|avif|jpg)|wizard-poster(?:-\d+)?\.(?:webp|avif|jpg)|wizard-loop\.webm)/);
 });
@@ -37,7 +37,7 @@ test("homepage has the exact title, canonical, original concept OG image, single
   assert.match(html,/<link rel="canonical" href="https:\/\/lebrands\.store">/);
   assert.match(html,/<meta property="og:image" content="https:\/\/lebrands\.store\/img\/REPLACE-example-desktop\.jpg">/);
   assert.doesNotMatch(html,/stonescence/i);
-  assert.match(html,/Example store concept/);
+  assert.match(html,/Example Studio is a fictional clothing store concept/);
   assert.equal((html.match(/<h1\b/g)||[]).length,1);
   assert.match(html,/<h1[^>]*>A flagship store for your brand\.<\/h1>/);
   for(const href of ["https://app.lebrands.store/signup","https://app.lebrands.store/login","/pricing","/refund-policy","/privacy","/terms","/contact"]){
@@ -114,7 +114,7 @@ test("real UI captures exist, concepts are labelled, responsive and lazy, and he
       if(media.poster)assert.ok(!html.includes(`poster="${media.poster}"`));
     }
   }
-  assert.equal((html.match(/<img\b[^>]*fetchpriority="high"/g)||[]).length,0,"The SVG hero requires no eager photography");
+  assert.equal((html.match(/<img\b[^>]*fetchpriority="high"/g)||[]).length,2,"Only the first-scene desktop and phone storefront images are prioritised");
   assert.match(html,/loading="lazy"/);
   assert.equal((html.match(/class="m-media-caption">Example store</g)||[]).length,5);
   assert.doesNotMatch(html,/Image awaiting supply|Video awaiting supply/);

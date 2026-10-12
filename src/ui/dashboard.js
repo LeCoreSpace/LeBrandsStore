@@ -75,7 +75,7 @@ function header(data, user, view) {
       <nav class="lb-nav" data-nav aria-label="Store navigation"><span class="lb-nav-caption">Workspace</span>
         ${items.map(([key,label,href,icon]) => `<a href="${href}" class="lb-nav-link" ${key === active ? 'aria-current="page"' : ""} title="${esc(label)}">${dashboardIcon(icon)}<span>${esc(label)}</span>${key === "orders" ? `<b class="lb-count" data-open-order-count hidden title="Loading open orders"></b>` : ""}</a>`).join("")}
         <span class="lb-nav-caption lb-nav-caption-spaced">Manage</span>
-        <span class="lb-nav-link is-disabled" aria-disabled="true" title="Analytics coming soon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg><span>Analytics</span><small>Coming soon</small></span>
+        <span class="lb-nav-link is-disabled" aria-disabled="true" title="Analytics not enabled"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg><span>Analytics</span><small>Not enabled</small></span>
         <a href="${root}/setup" class="lb-nav-link" title="Online store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-1.5-6h-15L3 9Zm2 0v12h14V9M9 21v-7h6v7"/></svg><span>Online store</span></a>
         <div class="lb-online-links"><a href="${root}/editor">Theme and store editor</a><a href="${root}/setup">Guided setup</a><a href="${root}/settings#policies">Pages and policies</a>${store.subdomain ? `<a href="${esc(storeUrl)}" target="_blank" rel="noopener">Preview store</a>` : '<span>Preview unavailable</span>'}</div>
       </nav>
@@ -113,13 +113,13 @@ function overview(data) {
   const period = Number(data.filters?.period) === 7 ? 7 : 30;
   const checks = [
     ["Products", catalogProducts.length ? "Catalogue is ready" : "Add your first product", catalogProducts.length ? "Done" : "Add product", catalogProducts.length > 0],
-    ["Payments", "Payment-provider integrations are not available yet", "Coming soon", false],
-    ["Shipping", "Courier integrations are not available yet", "Coming soon", false],
-    ["Domain", "Custom domain setup is not available here", "Coming soon", false],
+    ["Payments", "Payment-provider integrations are not configured", "Not configured", false],
+    ["Shipping", "Courier integrations are not configured", "Not configured", false],
+    ["Domain", "Custom domain setup is not available here", "Not configured", false],
     ["Policies", "Review store policies in setup", "Review policies", false],
   ];
   const setupDone = checks.filter(item => item[3]).length;
-  const setup = `<div class="lb-setup-progress"><span>${setupDone} of ${checks.length} steps complete</span><div role="progressbar" aria-label="Store setup progress" aria-valuemin="0" aria-valuemax="${checks.length}" aria-valuenow="${setupDone}"><i style="width:${setupDone / checks.length * 100}%"></i></div></div><div class="lb-checklist">${checks.map(([label, text, action, done]) => `<div class="lb-check-row"><span class="lb-check-dot ${done ? "" : "is-pending"}" aria-hidden="true"></span><div><strong>${esc(label)}</strong><small>${esc(text)}</small></div>${action === "Add product" ? `<a href="/stores/${storeId}/products/new">${action}</a>` : action === "Review policies" ? `<a href="/stores/${storeId}/setup">${action}</a>` : `<span class="lb-coming" ${action === "Coming soon" ? 'aria-disabled="true"' : ""}>${esc(action)}</span>`}</div>`).join("")}</div>`;
+  const setup = `<div class="lb-setup-progress"><span>${setupDone} of ${checks.length} steps complete</span><div role="progressbar" aria-label="Store setup progress" aria-valuemin="0" aria-valuemax="${checks.length}" aria-valuenow="${setupDone}"><i style="width:${setupDone / checks.length * 100}%"></i></div></div><div class="lb-checklist">${checks.map(([label, text, action, done]) => `<div class="lb-check-row"><span class="lb-check-dot ${done ? "" : "is-pending"}" aria-hidden="true"></span><div><strong>${esc(label)}</strong><small>${esc(text)}</small></div>${action === "Add product" ? `<a href="/stores/${storeId}/products/new">${action}</a>` : action === "Review policies" ? `<a href="/stores/${storeId}/setup">${action}</a>` : `<span class="lb-coming" ${action === "Not configured" ? 'aria-disabled="true"' : ""}>${esc(action)}</span>`}</div>`).join("")}</div>`;
   const soldTop = top.filter(p => Number(p.quantity || 0) > 0);
   const sourced = sources.filter(s => Number(s.orders || 0) > 0);
   const rankRows = soldTop.length ? soldTop.slice(0, 5).map((p, i) => `<div class="lb-rank-row"><span class="lb-rank">${String(i + 1).padStart(2, "0")}</span><strong>${esc(p.title || "Untitled product")}</strong><span>${Number(p.quantity || 0)} sold</span><b>${money(p.revenue_paise)}</b></div>`).join("") : `<div class="lb-inline-empty">${top.length ? "No product sales in this period." : catalogProducts.length ? "Product sales will appear after orders are placed." : `Add a product before sales can be ranked. <a href="/stores/${storeId}/products/new">Add a product</a>.`}</div>`;

@@ -12,6 +12,6 @@ test("platform video and craft captures use rounded clipped frames without cropp
   assert.match(css, /\.m-wizard-media video \{[^}]*object-fit: contain/);
   const html = renderHome();
   assert.match(html, /<video muted playsinline loop preload="none"/);
-  assert.match(html, /data-src="\/img\/REPLACE-wizard-loop-branded.webm"/);
+  assert.match(html, /data-src="\/img\/REPLACE-wizard-loop-branded-clean.webm"/);
   assert.match(html, /class="m-wizard-media m-reveal"/);
 });

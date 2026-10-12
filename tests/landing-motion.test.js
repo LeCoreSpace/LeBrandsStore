@@ -86,7 +86,7 @@ test("scroll motion has distinct 3D transitions, readable rest and an explicit p
   assert.ok(!/<html[^>]*class="[^"]*m-motion/.test(html), "server-rendered content stays visible without JS");
   assert.match(html, /class="m-footer-top m-reveal"/);
   assert.match(html, /class="m-reveal m-craft-reveal">\s*<div class="m-craft-carousel"/);
-  assert.match(html, /class="m-showcase-cta m-reveal"/);
+  assert.doesNotMatch(html, /class="m-showcase-cta m-reveal"/);
   assert.match(html, /class="m-clarification m-reveal">First publication requires platform approval/);
   assert.doesNotMatch(html, /class="m-integration-note/, "the removed integrations section must not return");
 });

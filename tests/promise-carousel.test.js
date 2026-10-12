@@ -8,9 +8,9 @@ test("three promises remain unique slides after the storefront and discovery hig
   const html = renderHome(), css = await readFile("src/public/marketing.css", "utf8");
   const sections = [...html.matchAll(/<section class="([^"]+)"/g)].map(match => match[1]);
   assert.equal(sections[0], "m-hero");
-  assert.match(sections[1], /^m-showcase\b/);
-  assert.match(sections[2], /^m-discovery\b/);
-  assert.match(sections[3], /^m-principles\b/);
+  assert.match(sections[1], /^m-discovery\b/);
+  assert.match(sections[2], /^m-principles\b/);
+  assert.doesNotMatch(html, /<section[^>]*\bm-showcase\b/);
   assert.equal((html.match(/data-promise-carousel\b/g) || []).length, 1);
   assert.equal((html.match(/data-promise-slide\b/g) || []).length, 3);
   assert.deepEqual([...html.matchAll(/<p class="m-principle">([^<]*)<\/p>/g)].map(match => match[1]), [
@@ -18,7 +18,7 @@ test("three promises remain unique slides after the storefront and discovery hig
     "We never market to your customers.",
   ]);
   assert.match(html, /id="promises"/);
-  assert.match(html, /Your own domain is coming soon\. Cash on Delivery is available today\./);
+  assert.doesNotMatch(html, /coming soon|Cash on Delivery is available today|only payment option/i);
   assert.match(css, /\.m-promise:not\(\.is-enhanced\) \.m-promise-stage \{ display: block/);
   assert.match(css, /\.m-promise:not\(\.is-enhanced\) \.m-promise-controls \{ display: none/);
   assert.match(css, /section\.m-hero \{[^}]*background-image: var\(--m-dark-grad\)/);

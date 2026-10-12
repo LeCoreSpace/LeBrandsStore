@@ -44,8 +44,8 @@ approved store. It is provided manually, not automatically.
 to remove LeBrands.Space from marketing. They explicitly said not to mention
 the manual process or those setup details in public copy.
 
-**How to apply:** Market the free discovery benefit prominently near the hero,
-following the Example Studio showcase. Do not imply automatic listing, guaranteed traffic or sales,
+**How to apply:** Market the free discovery benefit prominently near the hero.
+Do not imply automatic listing, guaranteed traffic or sales,
 or restore the unsupported 300,000+ brands figure. Preserve the legal company
 name LeBrandsSpace Digital Private Limited in the footer, terms and policies.
 
@@ -95,12 +95,30 @@ The three promises about zero commission, brand-owned domain/payments/customer
 data, and not marketing to customers are prominent differentiators.
 Keep them as individual animated slides following the discovery highlight.
 
-**Why:** The user asked for each promise to have its own slide. They subsequently
-asked to move the Example Studio showcase directly below the hero.
+**Why:** The user asked for each promise to have its own slide.
 
-**How to apply:** Preserve the domain/COD availability note. Dark marketing
+**How to apply:** Dark marketing
 sections share the hero's black-to-plum gradient; lighter bands must stay genuinely
 light in both modes, not alternate between two dark browns.
+
+The hero must lead with the fictional clothing storefront on desktop and mobile,
+then show the operational dashboards with the existing motion. Do not retain a
+separate brand-website showcase section or the hanging square decorative icons.
+
+**Why:** The user changed direction to show the store first inside the hero and
+avoid a duplicate section.
+
+**How to apply:** Keep the store and operational sequence together, with working
+controls and reduced-motion support.
+
+Do not use "coming soon" or COD-only/current-option promotional disclaimers on
+the homepage or store pages.
+
+**Why:** The user explicitly requested their removal across these surfaces.
+
+**How to apply:** Describe actual features without those disclaimers. This is a
+copy boundary, not permission to enable unsupported payments or remove
+checkout eligibility errors, disabled-feature states, or security checks.
 
 Refresh captured wizard and dashboard media when LeBrands branding changes,
 including the wizard recording, its first-frame poster and responsive formats.

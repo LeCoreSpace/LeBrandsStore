@@ -947,3 +947,35 @@ body:not(.m-pricing-document) .m-nav:not(.is-solid) .m-logo-hero { display: bloc
 :root[data-theme="dark"] .m-band-dark .m-wizard-media, :root[data-theme="dark"] .m-band-dark .m-craft-media { box-shadow: 0 0 0 1px rgba(243,235,226,.06) inset, 0 30px 60px -28px rgba(0,0,0,.75); }
 .m-wizard-poster, .m-wizard-media video { border-radius: inherit; }
 @media (max-width: 600px) { .m-wizard-media, .m-craft-media { border-radius: 14px; } }
+
+/* Hero scene 1: premium storefront (desktop and phone) inside the carousel. */
+.m-hs-tabs { grid-template-columns: repeat(7, minmax(0,1fr)); gap: 4px; }
+.m-hs-tab { padding-inline: 6px; font-size: 10px; }
+.m-hs:has(.m-hs-slide-store.is-active) .m-hs-kpis,
+.m-hs:has(.m-hs-slide-store.is-active) .m-hs-chrome { display: none; }
+.m-hs-slides { position: relative; }
+.m-hs-card.m-hs-store { position: relative; display: block; min-height: 0; padding: 0; aspect-ratio: 1.62; overflow: visible; background: var(--m-paper); border-radius: 9px; }
+.m-hs-store-desktop { position: absolute; inset: 0; overflow: hidden; border-radius: 9px; }
+.m-hs-store-desktop picture, .m-hs-store-desktop img { display: block; width: 100%; height: 100%; }
+.m-hs-store-desktop img { object-fit: cover; object-position: top; }
+.m-hs-store-phone { position: absolute; z-index: 2; right: 12px; bottom: -14px; width: 21%; aspect-ratio: .49; padding: 4px; overflow: hidden; border-radius: 16px; background: #21191b; border: 1px solid rgba(255,255,255,.2); box-shadow: 0 16px 34px rgba(0,0,0,.45); }
+.m-hs-store-phone picture, .m-hs-store-phone img { display: block; width: 100%; height: 100%; }
+.m-hs-store-phone img { border-radius: 12px; object-fit: cover; }
+.m-hs-store-cap { position: absolute; z-index: 3; left: 10px; bottom: 10px; padding: 5px 8px; background: rgba(52,37,40,.86); color: #f6f0e9; font-size: 9px; letter-spacing: .08em; text-transform: uppercase; }
+.m-hs-slide-store .m-hs-copy { padding-top: 22px; }
+.m-section-active .m-hs-slide-store.is-active .m-hs-store-desktop img { animation: none; }
+@media (max-width: 600px) {
+  .m-hs-tabs { grid-template-columns: repeat(4, minmax(0,1fr)); }
+  .m-hs-tab { font-size: 9.5px; padding-inline: 4px; }
+  .m-hs-store-phone { width: 26%; right: 8px; border-radius: 12px; padding: 3px; }
+  .m-hs-store-phone img { border-radius: 9px; }
+  .m-hs-store-cap { font-size: 8px; left: 6px; bottom: 6px; }
+}
+
+/* Homepage header logo only, slightly smaller. */
+.m-nav-home .m-wordmark { width: clamp(224px, 19vw, 264px); }
+@media (max-width: 900px) { .m-nav-home .m-wordmark { width: 190px; } }
+@media (max-width: 600px) { .m-nav-home .m-wordmark { width: 122px; } }
+@media (max-width: 360px) { .m-nav-home .m-wordmark { width: 110px; } }
+.m-hero[data-hs-out="6"] { --so: translate3d(calc(var(--d) * -260px), calc(var(--d) * -120px), calc(var(--d) * 180px)) rotateX(calc(var(--r) * -16deg)) rotateY(calc(var(--r) * -32deg)) rotateZ(calc(var(--r) * -8deg)) scale(.72); --co: translate3d(calc(var(--d) * -120px), calc(var(--d) * 40px), 0) rotateZ(calc(var(--r) * -8deg)); }
+.m-hero[data-hs-in="6"] { --si: translate3d(calc(var(--d) * 260px), calc(var(--d) * -120px), calc(var(--d) * -360px)) rotateX(calc(var(--r) * 8deg)) rotateY(calc(var(--r) * -34deg)) rotateZ(calc(var(--r) * 6deg)) scale(.72); --ci: translate3d(calc(var(--d) * 80px), calc(var(--d) * -40px), 0) rotateZ(calc(var(--r) * 8deg)); }

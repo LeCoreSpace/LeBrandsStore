@@ -10,8 +10,8 @@ export const ACCOUNT_ROBOTS = "User-agent: *\nDisallow: /\n";
 export const PLATFORM_FAQ = [
   ["Do you take a commission?", "No. LeBrands.Store takes no commission on your sales."],
   ["Do I need GST registration?", "Yes. A valid GSTIN is required to publish. Your brand remains responsible for accurate business details and applicable taxes."],
-  ["How do payments work?", "Cash on Delivery today. Razorpay payments with your own account can be set up for your brand, so the money goes straight to you. Contact us to discuss your setup."],
-  ["Can I use my own domain?", "Coming soon. Your store starts at yourbrand.lebrands.store."],
+  ["How do payments work?", "Customers can pay with Cash on Delivery. Razorpay payments with your own account can be set up for your brand, so the money goes straight to you. Contact us to discuss your setup."],
+  ["Can I use my own domain?", "Your store starts at yourbrand.lebrands.store. Custom domains are not enabled in the self-serve setup."],
   ["Who owns my customer data?", "Your brand owns its customer data. We never market to your customers."],
   ["How long does setup take?", "Setup time varies with your product catalogue and business details. You complete a guided wizard, then first publication requires platform approval."],
 ];

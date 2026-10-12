@@ -40,7 +40,7 @@ export function validateBasics(s = {}) {
 }
 export function validateTheme(s = {}) {
   const errors = {};
-  if (s.theme !== "aura") errors.theme = "Choose Aura. Bazaar is coming soon.";
+  if (s.theme !== "aura") errors.theme = "Choose Aura.";
   if (!contrastColor(s.accent_color)) errors.accent_color = "Choose a six-digit hex colour. Button text is adjusted for contrast.";
   if (!["serif", "modern", "classic"].includes(s.font_preset)) errors.font_preset = "Choose one of the three font presets.";
   if (s.color_preset != null && s.color_preset !== "" && !["ivory", "stone", "midnight", "white", "porcelain", "sand", "ink"].includes(s.color_preset)) errors.color_preset = "Choose one of the four colour presets.";

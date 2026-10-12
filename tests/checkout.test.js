@@ -213,7 +213,7 @@ test("tracking requires correct phone and receipt tokens are tenant scoped; wron
 test("checkout and account commerce HTML escape values; previews do not enable ordering", () => {
   const escaped={...data,store:{...store,name:'<script>alert("x")</script>'}};
   const page=renderAura(escaped,{page:"checkout",commerce:true});
-  assert.ok(!page.includes('<script>alert("x")</script>'));assert.match(page,/Online payment coming soon/);
+  assert.ok(!page.includes('<script>alert("x")</script>'));assert.doesNotMatch(page,/coming soon/i);assert.match(page,/Pay when your order arrives/);
   assert.match(renderAura(data,{page:"product",productId:PA,commerce:true}),/data-add-product/);
   assert.ok(!renderAura(data,{page:"product",productId:PA,preview:true}).includes("data-add-product"));
 });

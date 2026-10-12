@@ -7,11 +7,11 @@ import worker from "../src/index.js";
 
 test("black hero explains current features and keeps all slides readable without JS", async () => {
   const html = renderHome().match(/<section class="m-hero"[\s\S]*?<\/section>/)[0];
-  assert.equal((html.match(/data-hs-slide\b/g) || []).length, 6);
+  assert.equal((html.match(/data-hs-slide\b/g) || []).length, 7);
   assert.equal((html.match(/Sample UI, illustrative/g) || []).length, 4);
   assert.equal((html.match(/\bdata-hero-line\b/g) || []).length, 1);
   assert.doesNotMatch(html, /class="m-hero-(?:lede|summary|points|soon)"/);
-  assert.equal((html.match(/data-hs-line="/g) || []).length, 6);
+  assert.equal((html.match(/data-hs-line="/g) || []).length, 7);
   assert.equal((html.match(/<span class="m-hs-tag">Integration setup, illustrative<\/span>/g) || []).length, 2);
   assert.match(html, /Razorpay/);
   assert.match(html, /logistics partners/i);
@@ -32,7 +32,7 @@ test("black hero explains current features and keeps all slides readable without
   assert.match(css, /m-hs-dot 3\.2s ease-in-out 1s infinite/);
   assert.match(css, /\.m-hero\.is-paused \*::before, \.m-hero\.is-paused \*::after \{ animation-play-state: paused/);
   const integrationSlides=[...html.matchAll(/<article\b[^>]*data-hs-slide\b[^>]*>[\s\S]*?<\/article>/g)]
-    .map(([slide])=>slide).slice(4);
+    .map(([slide])=>slide).slice(5);
   for(const slide of integrationSlides) {
     assert.doesNotMatch(slide,/Coming soon|not enabled yet/i);
     assert.match(slide,/Contact us to discuss your setup/);
@@ -42,7 +42,7 @@ test("black hero explains current features and keeps all slides readable without
 test("each hero feature coordinates whole-dashboard and text entrances and exits without intersecting content layers", async () => {
   const css = await readFile("src/public/marketing.css", "utf8");
   assert.match(renderHome(), /class="m-hs-scene"/);
-  for(let i=0;i<6;i++) {
+   for(let i=0;i<7;i++) {
     assert.ok(css.includes(`.m-hero[data-hs-out="${i}"] { --so:`));
     assert.ok(css.includes(`.m-hero[data-hs-in="${i}"] { --si:`));
   }
@@ -67,9 +67,9 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
     },setAttribute(name,value){this.attrs[name]=value;},getAttribute(name){return this.attrs[name];},removeAttribute(name){delete this.attrs[name];},
     addEventListener(name,fn){this.events[name]=fn;} };
   }
-  const slides = Array.from({length:6},node), tabs = Array.from({length:6},node);
+  const slides = Array.from({length:7},node), tabs = Array.from({length:7},node);
   slides.forEach((slide,i)=>{
-    slide.attrs["aria-label"]=`${i+1} of 6: Feature ${i+1}`;
+    slide.attrs["aria-label"]=`${i+1} of 7: Feature ${i+1}`;
     slide.attrs["data-hs-line"]=`Sentence ${i+1}`;
   });
   const toggle=node(), prev=node(), next=node(), live=node(), hero=node(), story=node();
@@ -105,8 +105,8 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
   assert.equal(line.textContent,"Sentence 2","The left-side sentence follows autoplay");
   assert.equal(live.textContent,"","Automatic slides must not repeatedly announce themselves");
   prev.events.click();settle();assert.equal(active(),0);
-  prev.events.click();settle();assert.equal(active(),5);
-  assert.equal(line.textContent,"Sentence 6","The left-side sentence follows manual selection");
+  prev.events.click();settle();assert.equal(active(),6);
+  assert.equal(line.textContent,"Sentence 7","The left-side sentence follows manual selection");
   tabs[2].events.click();settle();assert.equal(active(),2);
   assert.match(live.textContent,/Feature 3/);
   toggle.events.click();assert.equal(toggle.textContent,"Play");finish();assert.equal(active(),2);
@@ -117,7 +117,7 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
   hero.classList.toggle("m-section-active",false);finish();assert.equal(active(),3);
   hero.classList.add("m-section-active");motionPreference.matches=true;finish();assert.equal(active(),3);
   motionPreference.matches=false;context.motionDisabled=true;finish();assert.equal(active(),3);
-  tabs[5].events.click();assert.equal(active(),5);
+  tabs[6].events.click();assert.equal(active(),6);
   next.events.click();assert.equal(active(),0,"Manual controls still work with motion disabled");
   context.motionDisabled=false;
   tabs[4].events.click();
@@ -143,8 +143,24 @@ test("hero slides advance, wrap, select and pause; autoplay respects visibility 
   assert.equal(active(),5);
   next.events.click();end("m-hs-out");
   scene.events.animationcancel({animationName:"m-hs-in",target:scene});
-  assert.equal(active(),0);
+  assert.equal(active(),6);
   assert.ok(!hero.classList.contains("is-enter"));
+  next.events.click();settle();assert.equal(active(),0,"The seventh scene wraps back to the storefront");
+});
+test("hero begins with desktop and phone storefronts, without a duplicate showcase or floating square icons",async()=>{
+  const html=renderHome(),hero=html.match(/<section class="m-hero"[\s\S]*?<\/section>/)[0];
+  const scenes=[...hero.matchAll(/<article\b[^>]*data-hs-slide\b[^>]*>[\s\S]*?<\/article>/g)].map(([scene])=>scene);
+  assert.match(scenes[0],/m-hs-slide-store is-active/);
+  assert.match(scenes[0],/m-hs-store-desktop/);assert.match(scenes[0],/m-hs-store-phone/);
+  assert.match(scenes[1],/Catalogue and collections/);
+  assert.equal((hero.match(/data-hs-tab="\d"/g)||[]).length,7);
+  assert.doesNotMatch(html,/id="showcase"|Example Studio, imagined|class="m-chip/);
+  assert.doesNotMatch(html,/coming soon|only payment option|Cash on Delivery is available today/i);
+});
+test("platform-owned homepage and store-page copy omit deferred-payment disclaimers",async()=>{
+  for(const file of ["src/ui/marketing.js","src/ui/platform-seo.js","src/ui/dashboard.js","src/ui/invoice.js","src/index.js","src/public/wizard.js","src/public/validation.js","src/public/commerce.js","src/public/commerce-view.js"]){
+    assert.doesNotMatch(await readFile(file,"utf8"),/coming\s+soon|only payment option|Cash on Delivery is available today/i,file);
+  }
 });
 
 test("transparent hero logo exists and is served by the production asset allowlist", async () => {

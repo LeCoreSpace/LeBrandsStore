@@ -3,16 +3,15 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { renderHome, renderPricing } from "../src/ui/marketing.js";
 
-test("existing storefront showcase is unique and directly follows hero", () => {
+test("storefront is the first hero scene and discovery directly follows hero", () => {
   const html = renderHome();
   const sections = [...html.matchAll(/<section class="([^"]+)"/g)].map(match => match[1]);
   assert.equal(sections[0], "m-hero");
-  assert.match(sections[1], /^m-showcase\b/);
-  assert.match(sections[2], /^m-discovery\b/);
-  assert.match(sections[3], /^m-principles\b/);
-  assert.equal((html.match(/id="showcase"/g) || []).length, 1);
-  assert.equal((html.match(/Example Studio, imagined\./g) || []).length, 1);
-  assert.match(html, /class="m-showcase-cta m-reveal"[^>]*>Build a store like this/);
+  assert.match(sections[1], /^m-discovery\b/);
+  assert.match(sections[2], /^m-principles\b/);
+  assert.equal((html.match(/m-hs-slide-store is-active/g) || []).length, 1);
+  assert.doesNotMatch(html, /id="showcase"|Example Studio, imagined\./);
+  assert.doesNotMatch(html, /class="m-showcase-cta m-reveal"/);
 });
 
 test("one decorative homepage flow crosses every section instead of restarting", async () => {
