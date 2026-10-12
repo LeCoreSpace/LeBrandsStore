@@ -20,3 +20,4 @@
 - [Sandboxed storefront previews](sandboxed-store-previews.md) — bind preview controls from the trusted parent; blocked forms need explicit click/Enter handlers.
 - [Pricing presentation](pricing-presentation.md) — plan cards above a separate comparison; use provider-neutral integration descriptions and defer billing.
 - [Platform white surfaces](platform-white-surfaces.md) — beige homepage and application backgrounds become white; dark sections and merchant presets stay distinct.
+- [COD, returns and native components](cod-returns-native-components.md) — every-plan COD/RTO centre and built-in Aura commerce components; loyalty points later.
