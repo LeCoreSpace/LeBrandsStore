@@ -222,20 +222,11 @@ export function renderHome() {
         <p>Help shoppers find your brand through the LeBrands.Space virtual mall, at no extra cost.</p>
       </div>
       <figure class="m-ds-panel m-reveal m-reveal-delay">
-        <div class="m-ds-map" role="img" aria-label="Illustrative directory of example stores in a virtual mall">
-          <span class="m-ds-chip">LeBrands.Space</span>
-          <svg class="m-ds-paths" viewBox="0 0 100 74" preserveAspectRatio="none" aria-hidden="true"><path d="M18 26 L50 26 L82 56 L50 56 Z" pathLength="100"/></svg>
-          <ul class="m-ds-tiles">
-          <li class="m-ds-tile m-ds-t1"><img src="/img/REPLACE-example-lookbook-portrait.webp" alt="" loading="lazy" decoding="async"><span>Kora &amp; Thread</span></li>
-          <li class="m-ds-tile m-ds-t2"><b>SS</b><span>Salt Studio</span></li>
-          <li class="m-ds-tile m-ds-t3"><img src="/img/REPLACE-example-mobile.webp" alt="" loading="lazy" decoding="async"><span>Nilgiri Loom</span></li>
-          <li class="m-ds-tile m-ds-t4"><b>MD</b><span>Maru Denim</span></li>
-          <li class="m-ds-tile m-ds-t5"><img src="/img/REPLACE-example-lookbook-wide.webp" alt="" loading="lazy" decoding="async"><span>Ode Atelier</span></li>
-          <li class="m-ds-tile m-ds-t6"><b>FK</b><span>Field Kurta Co.</span></li>
-          </ul>
-          <i class="m-ds-dot" aria-hidden="true"></i>
+        <div class="m-ds-map">
+          <div class="m-ds-bar" aria-hidden="true"><i></i><i></i><i></i><span>lebrands.space</span></div>
+          <a class="m-ds-shot" href="https://lebrands.space/" target="_blank" rel="noopener noreferrer" aria-label="Visit LeBrands.Space (opens in a new tab)"><img src="/img/REPLACE-lebrands-space-homepage.webp" width="1600" height="900" loading="lazy" decoding="async" alt="Screenshot of the LeBrands.Space homepage, showing the virtual mall and links to discover online brands"></a>
         </div>
-        <figcaption>Illustrative directory. Example stores.</figcaption>
+        <figcaption>LeBrands.Space homepage (screenshot). <a class="m-ds-link" href="https://lebrands.space/" target="_blank" rel="noopener noreferrer">Explore LeBrands.Space <span aria-hidden="true">&rarr;</span></a></figcaption>
       </figure>
     </div>
   </section>

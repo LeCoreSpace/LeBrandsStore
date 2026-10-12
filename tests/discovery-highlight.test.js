@@ -9,7 +9,11 @@ test("free discovery remains an aspiration highlight after the storefront showca
   assert.ok(section);
   assert.match(section, /Free discovery for your store\./);
   assert.match(section, /Help shoppers find your brand through the LeBrands\.Space virtual mall, at no extra cost\./);
-  assert.match(section, /Illustrative directory\. Example stores\./);
+  assert.match(section, /LeBrands\.Space homepage \(screenshot\)\./);
+  assert.match(section, /src="\/img\/REPLACE-lebrands-space-homepage\.webp" width="1600" height="900"/);
+  assert.match(section, /href="https:\/\/lebrands\.space\/" target="_blank" rel="noopener noreferrer"/);
+  assert.match(section, /Screenshot of the LeBrands\.Space homepage/);
+  assert.doesNotMatch(section, /Kora|Salt Studio|Nilgiri|Maru Denim|Ode Atelier|Field Kurta|Illustrative directory|m-ds-tiles|<iframe/);
   assert.doesNotMatch(section, /\bmanual(?:ly)?\b|\bautomat(?:ic|ically|ed)\b|300[,\s]?000|guaranteed|Rolling out|coming soon|\bapproval\b/i);
   assert.equal((html.match(/id="discovery"/g) || []).length, 1);
   assert.ok(html.indexOf('id="showcase"') < html.indexOf('id="discovery"'));
@@ -25,7 +29,9 @@ test("free discovery remains an aspiration highlight after the storefront showca
 test("discovery motion uses shared gradient, visibility gating and existing pause accessibility", async () => {
   const css = await readFile("src/public/marketing.css", "utf8");
   assert.match(css, /\.m-ds-map \{[^}]*background-image: var\(--m-dark-grad\)/);
-  assert.match(css, /\.m-motion \.m-section-active\.m-ds \.m-ds-dot \{ animation: m-ds-travel/);
+  assert.match(css, /\.m-motion \.m-section-active\.m-ds \.m-ds-map::after \{ animation: m-ds-glow/);
+  assert.match(css, /\.m-ds-shot img \{[^}]*object-fit: contain/);
+  assert.doesNotMatch(css, /m-ds-travel|m-ds-tile|m-ds-lit/);
   assert.match(css, /\.m-page-hidden \.m-section-active \*[\s\S]*?animation-play-state: paused !important/);
   assert.match(css, /:root\.m-fx-paused \.m-ds \*[^}]*animation: none !important/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\) \{ \.m-ds \*[^}]*animation: none !important/);

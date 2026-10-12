@@ -49,6 +49,15 @@ following the Example Studio showcase. Do not imply automatic listing, guarantee
 or restore the unsupported 300,000+ brands figure. Preserve the legal company
 name LeBrandsSpace Digital Private Limited in the footer, terms and policies.
 
+The discovery visual must come from the actual LeBrands.Space homepage, not
+an invented directory of example brands.
+
+**Why:** The user pointed to the fictional directory and requested the actual
+LeBrands.Space homepage instead.
+
+**How to apply:** Use a genuine public-homepage capture, label it as a screenshot
+and link to the source. Do not present a capture as a live embedded website.
+
 The homepage hero should have a black background in both colour modes and use
 moving visual elements, text and slides to explain what the platform offers
 inside the hero itself. It should not be only a clothing-store screenshot.
