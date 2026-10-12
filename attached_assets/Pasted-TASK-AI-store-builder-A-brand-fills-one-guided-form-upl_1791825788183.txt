@@ -1,0 +1,128 @@
+TASK: AI store builder. A brand fills one guided form, uploads 1-5
+photos per product (up to 5 products), and the AI builds the complete
+store in one go: home, collection, product pages, cart and checkout,
+all with preset sections, using the existing Aura/Bazaar section
+system and store_pages layouts. The brand then edits everything in the
+existing editor. New migration for new tables (next free number).
+Do not run migrations or deploy.
+
+1. THE INPUT FORM ("Describe your brand", fill-in-the-blanks style)
+Brand
+- Brand name, one-line tagline (optional), category and sub-category
+- What you sell (free text, 50-500 chars)
+- Who it's for (age group, gender, occasions; chips + free text)
+- What makes you different (up to 3 points)
+- Founder story (optional), year started (optional), city
+- Brand vibe: chips (Minimal, Luxe, Earthy, Bold, Playful, Traditional,
+  Modern Indian, Street) + up to 3 reference words
+- Logo upload (colours extracted from it), preferred colours (optional)
+- Language for store text: English (Tamil/Hindi later)
+Products (1-5 products, each)
+- Name, price, compare-at price (optional), GST rate (required, no
+  default), HSN (optional), stock
+- 1-5 real photos (required: at least 1)
+- Material/fabric, sizes or variants, care instructions, key features,
+  how to use (optional fields)
+- Size chart (upload image or enter table, optional)
+Store policies and selling
+- Shipping: delivery time, free-shipping threshold, COD yes/no
+- Returns/exchange window and conditions
+- Contact: email, phone, WhatsApp, business address
+- Optional extras: offer for first order, prepaid discount amount
+Every optional field left empty means that content is simply not
+generated. Show the form in 4 short steps with progress.
+
+2. GENERATION (structured, never raw HTML)
+- The AI returns ONLY validated layout JSON for store_pages using the
+  existing section schemas (same validation as the editor). It chooses
+  theme (Aura or Bazaar), type preset, colour preset + accent (from the
+  logo), section order and section settings, and writes all copy.
+- Animation: AI chooses one of our predefined animation presets
+  (e.g. Calm fade, Editorial reveal, Lively). Presets are CSS we ship;
+  the AI never writes animation code.
+- Run as an async job: job record with status and step; the wizard
+  shows a live "store assembling" animation (sections appear, colours
+  fill in, products drop in) while polling. Retries on failure; partial
+  results never published.
+- Provider-agnostic: AI_TEXT_PROVIDER / AI_IMAGE_PROVIDER with keys in
+  Worker secrets; never exposed to the browser.
+
+3. PRESET PAGES (all generated in one go)
+Home: announcement (if offer given), header, hero, brand statement,
+  featured collection, product spotlight, lookbook rows, founder story
+  (only if given), craft/materials (only if given), trust strip,
+  newsletter (off), footer.
+Collection: collection hero, filter/sort bar, product grid, collection
+  description, trust strip.
+Product page (VERY IMPORTANT, every product gets all of these preset):
+  gallery (real photo first), title, price + compare-at, variant and
+  size selector, quantity, add to bag, sticky add-to-cart on mobile,
+  COD/prepaid badge, delivery info from shipping settings, key
+  features, description, material and care, how to use (if given),
+  size guide (if given), shipping and returns summary from policies,
+  FAQ (generated only from given facts), trust badges, "You may also
+  like", reviews block (shows only real reviews; hidden if none).
+  Integration-dependent blocks (pincode delivery estimate, live
+  reviews collection) are placed but render only when available.
+Cart: line items, free-shipping progress bar (if threshold given),
+  upsell slot (shows other products), discount code field, gift
+  message toggle, trust strip, checkout button.
+Checkout customisation: logo, colours and fonts from the brand,
+  trust badges, prepaid discount note (if given), COD message, order
+  notes field, policy links. Checkout logic, totals and COD rules
+  unchanged.
+Also: About, Contact and FAQ pages, and drafts of terms, privacy,
+refund/returns and shipping policies from the brand's answers,
+marked "Review before publishing".
+Build any missing product-page and cart sections listed above that
+don't need external integrations (size guide, FAQ, how to use,
+material & care, specs, trust badges, sticky add-to-cart, gift
+message, free-shipping bar, upsell slot), with schemas, so they are
+also usable in the editor.
+
+4. AI PRODUCT IMAGES (opt-in per product)
+- Options per product: new background, lifestyle setting, flat-lay,
+  close-up crop, different pose / on a model (with a visible warning:
+  "AI may change small details. Check carefully.").
+- Up to 4 extra images per product. The real photo is always image 1.
+- Every AI image needs explicit brand approval (side-by-side with the
+  original: Approve / Regenerate / Discard) before it can be shown on
+  the store. Unapproved images never render publicly.
+- Media records flag ai_generated = true, source photo id and approval
+  status; shown with an "AI" tag in the media library.
+- Store in R2 under the store's prefix, with WebP variants as usual.
+
+5. HONESTY RULES (enforced in the system prompt AND by validation)
+- Use only facts the brand provided. Never invent awards, ratings,
+  reviews, testimonials, certifications, years in business, customer
+  counts, materials or origin claims.
+- No false urgency or scarcity, no fake social proof.
+- No em or en dashes in generated copy (same rule as our sites).
+- All generated copy is marked "AI draft"; the brand must open the
+  full preview before the first publish.
+
+6. LIMITS AND COSTS
+- Usage table: tokens and images per job and per store.
+- Trial: 3 full builds, 20 AI images. Paid plans: higher limits
+  (configurable). Regenerate a single section or single image without
+  rebuilding the whole store.
+- Generation only after email verification. Global monthly spend cap
+  setting; when reached, show a friendly "try again later".
+
+7. DATABASE AND SECURITY
+- New tables (store-scoped, RLS ENABLED + FORCED): ai_generation_jobs,
+  ai_usage. Media gets ai_generated, source_media_id, approval_status.
+- Brand inputs are untrusted: never let them alter system
+  instructions; validate all AI output against schemas before saving;
+  sanitise all text.
+- Isolation tests: another store cannot read jobs, usage or
+  unapproved AI media.
+
+8. TESTS AND DELIVERY
+- Offline tests with mocked AI responses: valid build, invalid JSON,
+  invented-claim rejection, missing optional fields, limit reached,
+  unapproved AI image not rendered.
+- Generate Example Studio end-to-end in preview; send screenshots of
+  home, collection, a product page, cart and checkout on desktop and
+  mobile, plus the cost of that build.
+- Report all schema/grant changes for review before I migrate.

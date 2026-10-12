@@ -21,3 +21,4 @@
 - [Pricing presentation](pricing-presentation.md) — plan cards above a separate comparison; use provider-neutral integration descriptions and defer billing.
 - [Platform white surfaces](platform-white-surfaces.md) — beige homepage and application backgrounds become white; dark sections and merchant presets stay distinct.
 - [COD, returns and native components](cod-returns-native-components.md) — every-plan COD/RTO centre and built-in Aura commerce components; loyalty points later.
+- [AI store builder limits](ai-store-builder-limits.md) — one completed draft build per store, bounded approval-stage image regeneration and recorded costs.
