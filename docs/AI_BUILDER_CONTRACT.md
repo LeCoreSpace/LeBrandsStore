@@ -26,6 +26,12 @@ Use existing same-origin CSRF behaviour; JSON mutations carry
 Job: `{id,status,version,cursor,total_steps,step:{page,type,label,product_id?},
 candidate:null|{section,images:Image[],copy:[]},
 approved:[],error:null|string,completed_at,usage:{tokens,images,cost_usd,cost_estimated:true}}`.
+
+The merchant UI displays approximate INR costs and the converted monthly limit.
+Provider accounting and budget enforcement remain USD. The display-only
+reference is ₹95.78/USD, dated 2026-10-12, sourced from the ECB through
+https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR. The rate/date are
+disclosed in a tooltip; this is a fixed reference, not a live exchange-rate feed.
 Statuses: `ready`, `queued`, `generating`, `review`, `failed`,
 `ready_to_save`, `completed`, `cancelled`.
 Image: `{id,media_id,url,source_url,label,status:"pending"|"approved"|"discarded",

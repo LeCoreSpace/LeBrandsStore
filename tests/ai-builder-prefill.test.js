@@ -116,4 +116,19 @@ test("actual builder startup renders prefill and persists merchant clearing on r
   assert.equal(reloaded.result.brand.tagline, "");
   assert.equal(JSON.parse(storage.get("aib-brief-fictional-store")).brand.tagline, "");
   assert.ok(JSON.parse(storage.get("aib-brief-fictional-store"))._prefill_touched.includes("b.tagline"));
+  vm.runInNewContext(`
+    globalThis.costs=[costInr(0),costInr(0.01),costInr(20),costInr(0.0012)];
+    S.job={status:"failed",cursor:0,total_steps:51,error:"Test failure",usage:{images:0,cost_usd:0.01}};
+    globalThis.usageView=jobView();
+    S.job=null;S.step=3;
+    globalThis.confirmView=formView();
+    S.info.remaining_builds=0;
+    globalThis.limitView=gates();
+  `, reloaded);
+  assert.deepEqual(Array.from(reloaded.costs),["₹0.00","₹0.96","₹1,915.60","₹0.11"]);
+  assert.match(reloaded.usageView,/estimated cost ₹0\.96/);
+  assert.match(reloaded.usageView,/12 October 2026/);
+  assert.match(reloaded.confirmView,/approximately ₹1,915\.60/);
+  assert.match(String(reloaded.limitView),/approximately ₹1,915\.60/);
+  assert.doesNotMatch(reloaded.usageView+reloaded.confirmView+reloaded.limitView,/\bUSD\b/);
 });

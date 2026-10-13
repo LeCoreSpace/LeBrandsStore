@@ -12,6 +12,12 @@ const STYLES = ["background", "lifestyle", "flatlay", "closeup", "model"];
 const GST = [0, 5, 18, 40];
 const STEPS = ["Brand", "Products", "Selling", "Confirm"];
 const LS = `aib-brief-${boot.store_id}`;
+// Display-only ECB reference rate via Frankfurter, dated 2026-10-12.
+// Provider accounting and the enforced monthly budget remain in USD.
+const USD_TO_INR = 95.78;
+const inr = new Intl.NumberFormat("en-IN", {style:"currency",currency:"INR",minimumFractionDigits:2,maximumFractionDigits:2});
+const costInr = usd => inr.format(Number(usd || 0) * USD_TO_INR);
+const conversionNote = "Approximate INR conversion at ₹95.78 per US dollar, reference rate dated 12 October 2026.";
 
 const S = { info: { ...boot }, job: boot.job || null, step: 0, brief: null, errors: {}, msg: null, busy: false, media: (boot.draft && boot.draft.media) || [] };
 let timer = null;
@@ -105,7 +111,7 @@ function gates() {
   if (!i.available) g.push("The guided builder is not available for this store yet.");
   if (i.available && !i.verified) g.push(`<strong>Verify your email first.</strong> We will send a link to your account address. <div class="aib-row"><button class="aib-btn" data-act="verify" ${S.busy ? "disabled" : ""}>Send verification email</button></div>`);
   if (i.available && (!i.provider_ready || !i.image_ready)) g.push("Setup is not finished: the text and image providers must be configured by the LeBrands team before building.");
-  if (i.available && Number(i.remaining_builds) <= 0 && !S.job) g.push(`This store has used its one build, or the shared USD ${esc(i.monthly_cap_usd || 20)} monthly limit has been reached. Please try again next month or contact support.`);
+  if (i.available && Number(i.remaining_builds) <= 0 && !S.job) g.push(`This store has used its one build, or the shared monthly limit of approximately ${esc(costInr(i.monthly_cap_usd || 20))} has been reached. Please try again next month or contact support.`);
   return g.map((m) => `<div class="aib-notice" role="status">${m}</div>`).join("");
 }
 const blocked = () => !S.info.available || !S.info.verified || !S.info.provider_ready || !S.info.image_ready || Number(S.info.remaining_builds) <= 0;
@@ -140,7 +146,7 @@ function formView() {
     ${fld("s.first_order_offer", "First order offer (informational)", s.first_order_offer)}${fld("s.prepaid_discount", "Prepaid discount (INR, informational)", s.prepaid_discount, { type: "number", step: "0.01" })}</div>`;
   if (st === 3) { const br = toBrief(), n = br.products.reduce((a, p) => a + p.ai_images, 0); h = `<div class="aib-notice"><strong>Image warning.</strong> AI images are generated pictures, not photos of your goods. Every one is shown next to your real photo and only appears after you approve it. Private until approved.</div>
     <h3>Your facts</h3><p><strong>${esc(br.brand.name)}</strong>, ${esc(br.brand.category)}, ${esc(br.brand.vibe)}. ${br.products.length} product${br.products.length > 1 ? "s" : ""}: ${br.products.map((p) => esc(p.name)).join(", ")}.</p>
-    <h3>Allowances</h3><ul><li>Up to 6 extra section images for the whole build</li><li>${n} product image${n === 1 ? "" : "s"} requested (at most 4 per product)</li><li>Each product image can be regenerated twice</li><li>One completed build per store, ${esc(S.info.remaining_builds)} remaining. Shared monthly limit: USD ${esc(S.info.monthly_cap_usd || 20)}.</li></ul>
+    <h3>Allowances</h3><ul><li>Up to 6 extra section images for the whole build</li><li>${n} product image${n === 1 ? "" : "s"} requested (at most 4 per product)</li><li>Each product image can be regenerated twice</li><li title="${esc(conversionNote)}">One completed build per store, ${esc(S.info.remaining_builds)} remaining. Shared monthly limit: approximately ${esc(costInr(S.info.monthly_cap_usd || 20))}.</li></ul>
     <p class="aib-hint">Pages are built in order: home, collection, product, cart, checkout. Product and collection layouts use one shared template. Nothing is published.</p>
     <label style="font-weight:400"><input type="checkbox" data-f="confirmed" ${S.brief.confirmed ? "checked" : ""} style="display:inline;width:auto"> These facts are accurate and I understand the image warning.</label>`; }
   return `<section class="aib-card"><p class="aib-hint">Saved store details and up to five existing products are prefilled where available. Review them and add any missing facts. Your existing builder answers are kept.</p><ol class="aib-steps">${STEPS.map((x, i) => `<li class="${i === st ? "on" : i < st ? "done" : ""}" ${i === st ? 'aria-current="step"' : ""}>${i + 1}. ${x}</li>`).join("")}</ol>${h}
@@ -173,7 +179,7 @@ function jobView() {
   if (!["completed", "cancelled"].includes(st)) h += `<div class="aib-row"><button class="aib-btn danger" data-act="cancel" ${dis}>Cancel build</button></div>`;
   h += `</section>`;
   if (j.approved?.length) h += `<section class="aib-card"><h3>Approved so far</h3><ul class="aib-done">${j.approved.map((a) => `<li>${esc(typeof a === "string" ? a : a.label || a.type || "Section")}</li>`).join("")}</ul></section>`;
-  if (j.usage) h += `<p class="aib-hint">Usage so far: ${esc(j.usage.images)} images, estimated cost USD ${esc(Number(j.usage.cost_usd || 0).toFixed(2))} (estimate).</p>`;
+  if (j.usage) h += `<p class="aib-hint" title="${esc(conversionNote)}">Usage so far: ${esc(j.usage.images)} images, estimated cost ${esc(costInr(j.usage.cost_usd))} (approximate).</p>`;
   return h;
 }
 

@@ -21,6 +21,13 @@ The global monthly AI spending cap is USD 20 across all stores.
 Allow up to six extra section images per build, separately from the product-image allowance.
 Every generated image still requires explicit brand approval.
 
+Show merchant-facing AI usage amounts in INR, not USD. Label conversions
+as approximate and disclose the reference rate. Keep the approved provider
+cost accounting and USD spending cap unchanged unless separately requested.
+
+**Why:** The user requested INR usage display, not a change to the existing
+spending controls or provider billing.
+
 **Why:** The user selected these providers, budget and section-image allowance.
 
 **How to apply:** Preserve these limits in the Phase 3 builder and its setup.
