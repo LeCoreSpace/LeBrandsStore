@@ -47,6 +47,10 @@ try {
     if (selection.staged) {
       const [dependency] = await tx`SELECT filename FROM public.schema_migrations WHERE filename='0010_store_pages.sql'`;
       if (!dependency) throw new MigrationConfigurationError("Apply and review 0010 before the Aura catalogue. No migrations were applied.");
+      if (selection.requires) {
+        const [prerequisite] = await tx`SELECT filename FROM public.schema_migrations WHERE filename=${selection.requires}`;
+        if (!prerequisite) throw new MigrationConfigurationError(`Apply and review ${selection.requires} first. No migrations were applied.`);
+      }
     }
 
     for (const filename of filenames) {

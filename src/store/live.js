@@ -14,6 +14,7 @@ export function storefrontPage(path, data) {
   }
   if (["/about", "/pages/about"].includes(path)) return { page: "about", status: 200 };
   if (["/contact", "/pages/contact"].includes(path)) return { page: "contact", status: 200 };
+  if (["/faq", "/pages/faq"].includes(path)) return { page: "faq", status: 200 };
   const product = path.match(/^\/products\/([^/]+)$/);
   if (product && UUID.test(product[1]) && data.products?.some((p) => p.id === product[1])) return { page: "product", productId: product[1], status: 200 };
   const policy = path.match(/^\/policies\/([^/]+)$/);

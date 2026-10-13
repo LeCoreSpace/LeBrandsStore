@@ -8,8 +8,11 @@ import { FAVICON_SVG, FAVICON_CSP } from "./ui/favicon.js";
 import { SECTION_SCHEMAS } from "./public/aura-layout.js";
 import { LE_BRANDS_LOGO } from "./ui/brand.js";
 import { serveMedia } from "./store/media.js";
+import {processEmailMessage,schedulePendingEmails} from "./email/worker.js";
+import {handleEmailWebhook} from "./email/webhook.js";
 import { serveStorefront } from "./store/live.js";
 import { CRAWLER_FILES, serveCrawlerFile } from "./crawler-files.js";
+import { processAiMessage } from "./ai/worker.js";
 
 const ROOT_DOMAIN = ".lebrands.store";
 const STORE_NAME_PATTERN = /^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])$/;
@@ -67,15 +70,26 @@ function notFound() {
 }
 
 export default {
+  async queue(batch,env){
+    for(const message of batch.messages){
+      try{
+        if(message.body?.type==="ai")await processAiMessage(message.body,env);
+        else await processEmailMessage(message.body,env);
+        message.ack();
+      }catch{message.retry({delaySeconds:Math.min(900,10*2**Math.min(message.attempts||1,6))});}
+    }
+  },
+  async scheduled(event,env,ctx){ctx.waitUntil(schedulePendingEmails(env));},
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const hostname = url.hostname;
+    if(hostname==="app.lebrands.store"&&url.pathname==="/webhooks/resend")return handleEmailWebhook(request,env);
     if (hostname === "media.lebrands.store") return serveMedia(request, env);
     if (url.pathname.startsWith("/assets/")) {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
       const filename = url.pathname.slice("/assets/".length);
       const sectionAsset = ["sections/index.js", "sections/schema-helpers.js"].includes(filename) || Object.keys(SECTION_SCHEMAS).some(type => filename === `sections/${type}.schema.js`);
-      if (!sectionAsset && !["catalog-page.js","content-form.js","catalog-content.js","account-home.css","editor.js","editor.css","editor-state.js","gstin-ui.js","aura.js", "aura.css", "aura-sections.js", "aura-layout.js", "aura-skeleton.js", "aura-ui.js", "aura-upload.js", "aura-editorial.ttf", "aura-classic.ttf", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
+      if (!sectionAsset && !["ai-builder.js","ai-builder.css","catalog-page.js","content-form.js","catalog-content.js","account-home.css","editor.js","editor.css","editor-state.js","gstin-ui.js","aura.js", "aura.css", "aura-sections.js", "aura-layout.js", "aura-skeleton.js", "aura-ui.js", "aura-upload.js", "aura-editorial.ttf", "aura-classic.ttf", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
       if (!env.ASSETS) return new Response("Assets unavailable", { status: 503 });
       url.pathname = `/${filename}`;
       const asset = await env.ASSETS.fetch(new Request(url, request));
@@ -116,7 +130,11 @@ export default {
       return new Response(request.method === "HEAD" ? null : asset.body, { status: asset.status, headers });
     }
     if (hostname === "app.lebrands.store" && url.pathname === "/robots.txt") return serveCrawlerFile(request, env, true);
-    if (hostname === "app.lebrands.store") return handleAccounts(request, env, ctx);
+    if (hostname === "app.lebrands.store"){
+      const response=await handleAccounts(request,env,ctx);
+      if(request.method==="POST"&&response.status<400&&env.AI_BUILD_QUEUE)ctx?.waitUntil(schedulePendingEmails(env));
+      return response;
+    }
     if (hostname === "lebrands.store") {
       if (Object.hasOwn(CRAWLER_FILES, url.pathname)) return serveCrawlerFile(request, env);
       if (!["GET", "HEAD"].includes(request.method)) return page("Method not allowed", "Method not allowed", "", 405);
@@ -155,7 +173,10 @@ export default {
       const store = await db.resolveStore(hostname);
       if (!store || store.status !== "live") return notFound();
       const storefront = await serveStorefront(request, db, store, env);
-      if (storefront) return storefront;
+      if (storefront) {
+        if(request.method==="POST"&&storefront.status<400&&env.AI_BUILD_QUEUE)ctx?.waitUntil(schedulePendingEmails(env));
+        return storefront;
+      }
       // Legacy live stores without a wizard publication retain their landing.
       // Draft content is never used as a public fallback.
       return page(

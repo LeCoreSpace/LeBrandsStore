@@ -13,7 +13,7 @@ export function settingsPatch(value, context = {}) {
   if (!object(value)) throw badInput("Use the setup form.");
   const result = {}, limits = {
     brand_name: 40, subdomain: 30, tagline: 60, description: 500,
-    legal_name: 120, trade_name:120, address: 500, support_email: 254, support_phone: 25,
+    legal_name: 120, trade_name:120, address: 500, support_email: 254,notification_email:254, support_phone: 25,
     business_line1:150,business_line2:150,business_city:80,business_pincode:6,invoice_prefix:4,
     gstin: 15, business_state: 2, category: 30, theme: 20, accent_color: 7, font_preset: 20, button_style: 20,
     color_preset: 20, statement: 500, founder_name: 160, founder_story: 4000,
@@ -53,6 +53,7 @@ export function settingsPatch(value, context = {}) {
   if (gstError) formatErrors.gstin = gstError;
   if (result.business_state && !INDIAN_STATES.some(s => s.code === result.business_state)) formatErrors.business_state = "Choose a valid Indian state.";
   if (result.support_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result.support_email)) formatErrors.support_email = "Enter a valid email.";
+  if (result.notification_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(result.notification_email)) formatErrors.notification_email = "Enter a valid notification email.";
   if (result.support_phone && !/^\+?[0-9 ()-]{7,25}$/.test(result.support_phone)) formatErrors.support_phone = "Enter a valid phone number, such as +91 followed by your number.";
   if (Object.keys(formatErrors).length) throw badInput("Check the highlighted fields.", formatErrors);
   const themeFields = ["theme", "accent_color", "font_preset", "button_style", "color_preset"];

@@ -1,3 +1,4 @@
+import { createDb } from "../db.js";
 const signature = (data, values, offset = 0) => values.every((v, i) => data[offset + i] === v);
 const fail = (message) => { throw Object.assign(new Error(message), { status: 400 }); };
 function dimensions(width, height) {
@@ -111,6 +112,15 @@ export async function serveMedia(request, env) {
    try { object = request.method === "HEAD" ? await env.MEDIA.head(key) : await env.MEDIA.get(key,request.headers.has("range")?{range:request.headers}:undefined); }
   catch { return new Response("Media is temporarily unavailable", { status: 503 }); }
   if (!object) return new Response("Not found", { status: 404 });
+  if(object.customMetadata?.ai_generated==="true"){
+    let db;
+    try{
+      db=createDb(env);
+      const [allowed]=await db.account(tx=>tx`SELECT public.ai_media_public(${key.split("/")[1]},${key}) AS allowed`);
+      if(!allowed?.allowed)return new Response("Not found",{status:404});
+    }catch{return new Response("Media is temporarily unavailable",{status:503});}
+    finally{if(db)await db.close();}
+  }
   const headers = new Headers({
     "cache-control": "public, max-age=31536000, immutable",
     "x-content-type-options": "nosniff",

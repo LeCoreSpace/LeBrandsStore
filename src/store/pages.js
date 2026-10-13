@@ -23,7 +23,7 @@ export function layoutContext(data) {
     collectionIds: new Set((data.collections || []).map(collection => collection.id)) };
 }
 export async function savePage(tx, id, page, layout, expected, tokenHash, data) {
-  if (!PAGE_KEYS.includes(page) || !Number.isInteger(expected) || expected < 0) throw Object.assign(new Error("Invalid page revision."), { status: 400 });
+  if ((!PAGE_KEYS.includes(page)&&page!=="faq") || !Number.isInteger(expected) || expected < 0) throw Object.assign(new Error("Invalid page revision."), { status: 400 });
   const normalized = validateLayout(page, layout, layoutContext(data));
   if (!data.aura_skeleton_enabled && normalized.some(section => AURA_SKELETON_TYPES.includes(section.type))) {
     throw Object.assign(new Error("The Aura section catalogue update is required before saving this layout."), { status: 409 });
@@ -35,7 +35,7 @@ export async function savePage(tx, id, page, layout, expected, tokenHash, data) 
   return row;
 }
 export async function restorePage(tx, id, page, version, expected, tokenHash) {
-  if (!PAGE_KEYS.includes(page) || ![version, expected].every(value => Number.isInteger(value) && value >= 0)) throw Object.assign(new Error("Invalid page revision."), { status: 400 });
+  if ((!PAGE_KEYS.includes(page)&&page!=="faq") || ![version, expected].every(value => Number.isInteger(value) && value >= 0)) throw Object.assign(new Error("Invalid page revision."), { status: 400 });
   const [row] = await tx`SELECT * FROM public.restore_store_page(${id},${page},${version},${expected},${tokenHash})`;
   return row;
 }
@@ -45,5 +45,5 @@ export async function pageHistory(tx, id, page) {
 }
 export function draftPageResponse(data) {
   const defaults = defaultPageLayouts(data);
-  return { aura_skeleton_enabled: data.aura_skeleton_enabled === true, layouts: { ...defaults, ...data.layouts }, revisions: Object.fromEntries(PAGE_KEYS.map(key => [key, data.page_versions?.[key] || { version: 0 }])) };
+  return { aura_skeleton_enabled: data.aura_skeleton_enabled === true, layouts: { ...defaults, ...data.layouts }, revisions: Object.fromEntries([...PAGE_KEYS,"faq"].map(key => [key, data.page_versions?.[key] || { version: 0 }])) };
 }

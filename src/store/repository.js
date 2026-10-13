@@ -21,6 +21,7 @@ const mediaRecord = (m) => ({
   id: m.id, key: m.object_key, url: mediaUrl(m.object_key), type: m.upload_type,
   size: Number(m.size_bytes), width: m.width, height: m.height, alt: m.alt_text,
   ...(m.upload_type==="image"&&m.renditions?.length?{sources:m.renditions}:{}),
+  ...(m.ai_generated?{ai_generated:true,approval_status:m.approval_status,source_media_id:m.source_media_id}:{}),
 });
 export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
   // to_jsonb is compatible both before and after the staged approval migration.
@@ -192,8 +193,9 @@ export async function saveProduct(tx, id, productId, patch) {
       ARRAY(SELECT jsonb_array_elements_text(${tx.json(p.tags)})), ${sku}, ${p.stock ?? 0}, ${p.stock != null}, ${p.hsn_code}, ${p.gst_rate ?? 0})`;
   if (patch.images) {
     for (const image of patch.images) {
-      const [media] = await tx`SELECT id FROM public.media WHERE store_id = ${id}
-        AND id = ${image.id} AND upload_type = 'image' AND kind = 'image'`;
+      const [media] = await tx`SELECT id FROM public.media m WHERE store_id = ${id}
+        AND id = ${image.id} AND upload_type = 'image' AND kind = 'image'
+        AND COALESCE(to_jsonb(m)->>'approval_status','approved')='approved'`;
       if (!media) throw badInput("Choose product images uploaded to this store.");
       await tx`UPDATE public.media SET alt_text = ${image.alt || p.title || "Product image"}
         WHERE store_id = ${id} AND id = ${image.id}`;
@@ -253,6 +255,11 @@ export async function publish(tx, id, live) {
   await ensureSetup(tx, id);
   let status = "draft";
   if (live) {
+    const [aiSchema]=await tx`SELECT to_regclass('public.ai_generation_jobs') IS NOT NULL AS enabled`;
+    if(aiSchema?.enabled){
+      const[unseen]=await tx`SELECT id FROM public.ai_generation_jobs WHERE store_id=${id} AND status='completed' AND previewed_at IS NULL LIMIT 1`;
+      if(unseen)throw badInput("Open the full AI draft in the theme editor before publishing.");
+    }
     const data = await loadDraft(tx, id), checklist = publishChecklist(data);
     if(data.gstinVerification?.state==="blocked")throw badInput("An inactive or Composition GSTIN cannot publish.",{gstin:"Verify an active Regular registration."});
     if(data.gstinVerification?.state==="verified"&&!data.gstinVerification.confirmed)throw badInput("Confirm your verified registered supplier details before publishing.",{gstin:"Choose and confirm a registered address."});

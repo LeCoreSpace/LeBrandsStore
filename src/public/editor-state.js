@@ -2,7 +2,7 @@
 import { SECTION_SCHEMAS, PAGE_KEYS, validateLayout } from "./aura-layout.js";
 import { AURA_SKELETON_TYPES } from "./sections/index.js";
 
-export const EDITABLE_PAGES = ["home", "collection", "product", "about", "contact", "policy-privacy", "policy-terms", "policy-shipping", "policy-cancellation-refund", "policy-contact", "policy-pricing", "404"].filter(key => PAGE_KEYS.includes(key));
+export const EDITABLE_PAGES = ["home", "collection", "product", "about", "contact", "faq", "policy-privacy", "policy-terms", "policy-shipping", "policy-cancellation-refund", "policy-contact", "policy-pricing", "404"].filter(key => PAGE_KEYS.includes(key)||key==="faq");
 export const PAGE_LABELS = { home: "Home", collection: "Collection", product: "Product", about: "About", contact: "Contact", "policy-privacy": "Privacy policy", "policy-terms": "Terms", "policy-shipping": "Shipping policy", "policy-cancellation-refund": "Cancellation and refunds", "policy-contact": "Contact policy", "policy-pricing": "Pricing policy", "404": "Page not found", cart: "Cart", checkout: "Checkout" };
 export const LOCKED_PAGES = ["cart", "checkout", "track", "confirmation"];
 export const MAX_SECTIONS = 30;

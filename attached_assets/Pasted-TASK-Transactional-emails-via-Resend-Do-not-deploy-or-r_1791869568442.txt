@@ -1,0 +1,43 @@
+TASK: Transactional emails via Resend. Do not deploy or run migrations
+(use the next free migration number if a table is needed).
+
+SETUP
+- Send via the Resend API using env.RESEND_API_KEY (Worker secret).
+  Never log the key.
+- Sender: "<Brand name> <orders@notify.lebrands.store>", reply-to =
+  the brand's contact email from Settings. Platform emails (password
+  reset, staff invites) use "LeBrands.Store <hello@notify.lebrands.store>".
+
+EMAILS TO CUSTOMERS (every plan)
+- Order confirmed (items, totals with GST, payment method, delivery
+  address, tracking link)
+- Shipped (courier, tracking number, tracking link)
+- Delivered
+- Cancelled / refunded (amount, credit note reference)
+Branded with the store's logo, colours and fonts; simple, mobile-first
+HTML plus a plain-text version; footer with store contact and policy
+links. No marketing content, no em/en dashes.
+
+EMAILS TO BRANDS
+- New order alert to the store's notification email
+- Password reset by email (replace the admin-script-only flow; signed,
+  single-use token, 30-minute expiry, rate-limited, same response
+  whether or not the email exists)
+- Staff invite (signed, single-use, 7-day expiry)
+
+RELIABILITY
+- Send from a queue/retry path (waitUntil + retry with backoff), never
+  blocking checkout or status updates.
+- email_log table (store-scoped, RLS ENABLED + FORCED): type, order id,
+  recipient (masked in UI), Resend message id, status, error.
+  Idempotent per (order, event) so retries never send duplicates.
+- Resend webhook (delivered, bounced, complained) verified with its
+  signing secret (new Worker secret RESEND_WEBHOOK_SECRET); bounced
+  addresses are flagged on the customer.
+- Order page shows the email history for that order.
+
+TESTS
+- Offline tests with mocked Resend: each template renders, duplicates
+  suppressed, retries, webhook signature checks, reset token expiry and
+  single use. Isolation tests for email_log.
+- Send me screenshots of each email (desktop + mobile).

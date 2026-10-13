@@ -1,3 +1,5 @@
+import { renderAiBuilder } from "./ui/ai-builder.js";
+import { aiBuilderFixture } from "./local-ai-fixture.js";
 // Development-only adapter. Production always uses src/index.js.
 // Optional explicitly enabled, restricted live-database bridge for real testing.
 import worker from "./index.js";
@@ -12,6 +14,7 @@ import { SECURITY_HEADERS } from "./auth/security.js";
 import { renderDashboard } from "./ui/dashboard.js";
 import { localDashboardFixture, auraDashboardFixture } from "./local-dashboard-fixture.js";
 import { dateFilters } from "./public/dashboard-rules.js";
+import {emailFixture} from "./local-email-fixture.js";
 import { EXAMPLE_STORE_ID,EXAMPLE_PRODUCTS,EXAMPLE_IMAGE_WIDTHS,exampleFixture,exampleInvoice,exampleMedia } from "./local-example-fixture.js";
 import { renderInvoice } from "./ui/invoice.js";
 import { renderAccount } from "./ui/accounts.js";
@@ -46,6 +49,16 @@ function dashboardPreviewLink(path, aura = false) {
 
 export default {
   async fetch(request, env, ctx) {
+    const emailUrl=new URL(request.url);
+    if(emailUrl.pathname==="/__email-preview"&&["GET","HEAD"].includes(request.method)){
+      const body=emailFixture(emailUrl.searchParams.get("type")||"confirmed");
+      return new Response(request.method==="HEAD"?null:body||"Unknown template",{status:body?200:404,headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
+    }
+    const previewUrl=new URL(request.url);
+    if(previewUrl.pathname==="/__ai-builder-preview"&&["GET","HEAD"].includes(request.method)){
+      return new Response(request.method==="HEAD"?null:renderAiBuilder(aiBuilderFixture(previewUrl.searchParams.get("mode")), {name:"Demo merchant",email:"demo@example.invalid"}),
+        {headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
+    }
     const original = new URL(request.url);
     if (original.pathname === "/__account-preview" && request.method === "GET") {
       const html = renderAccount("dashboard", {
@@ -280,7 +293,7 @@ export default {
         "content-security-policy": SECURITY_HEADERS["content-security-policy"].replace("frame-ancestors 'none'", "frame-ancestors *"),
         "content-type": "text/html; charset=utf-8" } });
     }
-    const account = ["/signup", "/login", "/forgot-password", "/account", "/logout", "/dashboard", "/stores/new", "/api/subdomain-check"]
+    const account = ["/signup", "/login", "/forgot-password", "/verify-email", "/reset-password", "/invite", "/account", "/logout", "/dashboard", "/stores/new", "/api/subdomain-check"]
       .includes(original.pathname) || original.pathname.startsWith("/api/stores/") || /^\/stores\/[^/]+(?:\/|$)/.test(original.pathname);
     const target = new URL(original);
     target.protocol = "https:";

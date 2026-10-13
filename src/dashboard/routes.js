@@ -7,6 +7,7 @@ import {refreshVerification} from "../gstin/service.js";
 import { loadDraft } from "../store/repository.js";
 import { commerceError } from "../public/commerce-rules.js";
 import { dateFilters, csv } from "../public/dashboard-rules.js";
+import {emailHistory} from "../email/worker.js";
 import { dashboardAccess, overview, listOrders, orderDetail, listCustomers, customerDetail, listInvoices,
   invoiceDetail, changeOrderStatus, collectPayment, archiveProduct, adjustStock, exportRows, audit } from "./repository.js";
 
@@ -62,7 +63,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
       }
       if (section === "overview") data.overview = await overview(tx,id,filters.period);
       else if (section === "orders") {
-        if (child) data.order = await orderDetail(tx,id,child);
+        if (child) {data.order = await orderDetail(tx,id,child);data.order.email_history=await emailHistory(tx,id,child);}
         else data.orders = await listOrders(tx,id,filters);
       } else if (section === "customers") {
         if (child) data.customer = await customerDetail(tx,id,child);

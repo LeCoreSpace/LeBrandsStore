@@ -5,7 +5,11 @@ import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
 import { handlePageRoutes, isPageRoute } from "../store/page-routes.js";
 import {handleGSTINRoutes,isGSTINRoute} from "../gstin/routes.js";
 import {renderEditor} from "../ui/editor.js";
+import {isAiRoute,handleAiRoutes} from "../ai/routes.js";
+import {aiEnabled} from "../ai/repository.js";
 import {loadDraft} from "../store/repository.js";
+import {isEmailAccountPath,handleEmailAccount,emailAccountDocument} from "../email/account-routes.js";
+import {handleStaffInvitation,isStaffPath} from "../email/staff.js";
 import { isMerchantCheckoutPath, merchantCheckout } from "../checkout/merchant.js";
 import { isDashboardPath, handleDashboard } from "../dashboard/routes.js";
 import { assertPasswordPepper, hashPassword, needsPasswordRehash, randomToken, sha256, validatePassword, verifyPassword } from "./passwords.js";
@@ -30,14 +34,14 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
   const editorMatch=path.match(/^\/stores\/([0-9a-f-]{36})\/editor$/i);
-  const storeRoute = isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || !!editorMatch || path==="/editor";
-  const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password" };
+  const storeRoute = isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isAiRoute(path) || !!editorMatch || path==="/editor";
+  const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password", "/reset-password":"forgot-password","/invite":"forgot-password" };
   if (!["GET", "POST", "HEAD", ...(storeRoute ? ["PATCH", "PUT", "DELETE"] : [])].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
   if (!["GET", "HEAD"].includes(request.method) && !isValidOrigin(request)) {
     return html("error", { error: "This request did not come from the account website." }, 403);
   }
   const token = readSessionToken(request);
-  if ((request.method === "GET" || request.method === "HEAD") && publicViews[path] && !token) {
+  if ((request.method === "GET" || request.method === "HEAD") && publicViews[path] && !token && !isEmailAccountPath(path)) {
     return html(publicViews[path], {
       notice: path === "/login" && url.searchParams.get("notice") === "signup"
         ? "Your request has been processed. Sign in to continue, or contact support if you need help." : undefined,
@@ -49,7 +53,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   if (!token && storeRoute) {
     return path.startsWith("/api/") ? json({ error: "Sign in to manage your store." }, 401) : redirect("/login");
   }
-  if (!storeRoute && !["/", "/account", "/stores/new", "/api/subdomain-check", "/logout", ...Object.keys(publicViews)].includes(path)) {
+  if (!storeRoute && !["/", "/account", "/stores/new", "/api/subdomain-check", "/logout", "/verify-email", ...Object.keys(publicViews)].includes(path)) {
     return html("error", { error: "Page not found." }, 404);
   }
 
@@ -58,8 +62,25 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     db = (dependencies.createDb ?? createDb)(env);
     const repo = dependencies.repository ?? accountRepository(db);
     const tokenHash = token ? await sha256(token) : null;
+    if(path==="/verify-email"&&["GET","HEAD"].includes(request.method)){
+      // GET/HEAD never consumes the link. A POST confirmation prevents email-scanner consumption.
+      const value=url.searchParams.get("token")||"";
+      return emailAccountDocument(`<h1 style="font-size:28px">Verify your email</h1><form method="post" action="/verify-email"><input type="hidden" name="token" value="${/^[a-f0-9]{64}$/.test(value)?value:""}"><button>Confirm email</button></form>`);
+    }
+    if(path==="/verify-email"&&request.method==="POST"){
+      const form=await readForm(request),value=form.get("token")||"";
+      if(!/^[a-f0-9]{64}$/.test(value))return html("error",{error:"This verification link is invalid or expired."},400);
+      const valid=await db.account(async tx=>{
+        if(!await aiEnabled(tx))return false;
+        const[row]=await tx`SELECT public.ai_confirm_verification(${await sha256(value)}) AS ok`;return row.ok;
+      });
+      return valid?redirect("/"):html("error",{error:"This verification link is invalid or expired."},400);
+    }
     const session = tokenHash ? await repo.session(tokenHash) : null;
     const user = session ? { ...session, id: session.user_id } : null;
+    if(isEmailAccountPath(path))return await handleEmailAccount(request,env,db,user,tokenHash);
+    const inviteRoute=path.match(/^\/(?:api\/)?stores\/([a-f0-9-]{36})\/(?:staff-invitations|team)$/i);
+    if(inviteRoute)return await handleStaffInvitation(request,env,db,user,tokenHash,inviteRoute[1]);
     if (token && !session && !publicViews[path]) {
       return path.startsWith("/api/") ? json({ available: false, error: "Sign in again." }, 401)
         : redirect("/login", sessionCookie("", true));
@@ -69,6 +90,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     }
     if (isPageRoute(path)) return await handlePageRoutes(request, env, db, user, tokenHash);
     if (isGSTINRoute(path)) return await handleGSTINRoutes(request,env,db,user,tokenHash);
+    if (isAiRoute(path)) return await handleAiRoutes(request,env,db,user,tokenHash);
     if (path==="/editor") {
       if(request.method!=="GET")return html("error",{error:"Method not allowed."},405);
       const store=session.stores?.[0];
@@ -78,6 +100,9 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       if(request.method!=="GET")return html("error",{error:"Method not allowed."},405);
       const data=await db.withMemberStore(editorMatch[1],tokenHash,async tx=>{
         const draft=await loadDraft(tx,editorMatch[1]);
+        draft.ai_builder_enabled=await aiEnabled(tx);
+        if(draft.ai_builder_enabled)await tx`UPDATE public.ai_generation_jobs SET previewed_at=now()
+          WHERE store_id=${editorMatch[1]} AND status='completed' AND previewed_at IS NULL`;
         const[member]=await tx`SELECT role FROM public.store_members WHERE store_id=${editorMatch[1]} AND user_id=${user.id}`;
         return{...draft,role:member?.role};
       });

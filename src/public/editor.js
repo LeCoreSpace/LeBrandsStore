@@ -1,6 +1,6 @@
 import { renderAura } from "/assets/aura.js";
 import { attachAuraSearch, attachAuraCatalog } from "/assets/aura-ui.js";
-import { SECTION_SCHEMAS, defaultPageLayouts, safeLayoutLink } from "/assets/aura-layout.js";
+import { AI_SECTION_SCHEMAS as SECTION_SCHEMAS, defaultPageLayouts, safeLayoutLink } from "/assets/aura-layout.js";
 import { uploadAuraImage } from "/assets/aura-upload.js";
 import * as S from "/assets/editor-state.js";
 import { starterLayouts, mergeStarter, isLegacyDefault, TEMPLATE_META } from "/assets/aura-skeleton.js";
@@ -19,7 +19,7 @@ const context = S.layoutContext(data);
 const defaults = defaultPageLayouts(data);
 const pages = {};
 const skeleton = data.aura_skeleton_enabled === true;
-const EDIT_PAGES = skeleton ? [...S.EDITABLE_PAGES, ...S.SKELETON_PAGES] : S.EDITABLE_PAGES;
+const EDIT_PAGES = (skeleton ? [...S.EDITABLE_PAGES, ...S.SKELETON_PAGES] : S.EDITABLE_PAGES).filter(page=>page!=="faq"||data.ai_builder_enabled);
 // Pages showing an unsaved Aura starter proposal. They are never autosaved; only "Save starter draft" persists them.
 const proposed = new Map();
 for (const key of EDIT_PAGES) {

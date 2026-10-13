@@ -3,7 +3,7 @@ import { loadDraft } from "./repository.js";
 import { readJson } from "./input.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import { UUID } from "../public/validation.js";
-import { PAGE_KEYS } from "../public/aura-layout.js";
+import { AI_PAGE_KEYS as PAGE_KEYS } from "../public/aura-layout.js";
 import { audit } from "../dashboard/repository.js";
 export const isPageRoute = path => /^\/api\/stores\/[^/]+\/pages(?:\/|$)/.test(path);
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { ...SECURITY_HEADERS, "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });

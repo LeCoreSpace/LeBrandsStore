@@ -1,5 +1,10 @@
 import { SECTION_SCHEMAS, PAGE_KEYS } from "./sections/index.js";
 export { SECTION_SCHEMAS, PAGE_KEYS };
+export const AI_PAGE_KEYS=Object.freeze([...PAGE_KEYS,"faq"]);
+// Keep the shipped migration registries immutable. AI extends them additively.
+export const AI_SECTION_SCHEMAS=Object.freeze(Object.fromEntries(Object.entries(SECTION_SCHEMAS).map(([key,schema])=>[
+  key,["header","footer","faq"].includes(key)?{...schema,allowedPages:[...schema.allowedPages,"faq"]}:schema
+])));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const IDENTIFIER = /^[A-Za-z0-9_-]{1,64}$/;
 const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
@@ -89,12 +94,12 @@ function validateFields(values, fields, context, enabled = true) {
   return result;
 }
 export function validateLayout(pageKey, layout, context = {}) {
-  if (!PAGE_KEYS.includes(pageKey) || !Array.isArray(layout) || layout.length < 2 || layout.length > 30 || JSON.stringify(layout).length > 100000) fail("Invalid page or layout size.");
+  if ((!PAGE_KEYS.includes(pageKey)&&pageKey!=="faq") || !Array.isArray(layout) || layout.length < 2 || layout.length > 30 || JSON.stringify(layout).length > 100000) fail("Invalid page or layout size.");
   const ids = new Set(), types = new Set();
   const result = layout.map(instance => {
     if (!plain(instance) || Object.keys(instance).some(key => !["id", "type", "settings", "blocks"].includes(key)) || typeof instance.id !== "string" || !IDENTIFIER.test(instance.id) || ids.has(instance.id)) fail("Invalid or duplicate section ID.");
     ids.add(instance.id);
-    const schema = SECTION_SCHEMAS[instance.type];
+    const schema = (pageKey==="faq"?AI_SECTION_SCHEMAS:SECTION_SCHEMAS)[instance.type];
     if (!own(SECTION_SCHEMAS,instance.type) || !schema.allowedPages.includes(pageKey)) fail("Section is not allowed on this page.");
     if (schema.requiredOn.includes(pageKey) && (types.has(instance.type) || instance.settings?.enabled === false)) fail("Required sections cannot be hidden or duplicated.");
     types.add(instance.type);
@@ -170,12 +175,13 @@ export function defaultPageLayouts(data = {}) {
     make("craft", {}, blocks(s.craft_images)), make("reviews"), make("trust"), make("footer", { brand_line: s.tagline || "" }),
   ];
   if (s.gallery_images?.length >= 4) home.splice(-3, 0, make("gallery", {}, blocks(s.gallery_images).map(block => ({ ...block, settings: { image: block.settings.image } }))));
-  return Object.fromEntries(PAGE_KEYS.map(key => [key, key === "home" ? home : [
+  return Object.fromEntries([...PAGE_KEYS,"faq"].map(key => [key, key === "home" ? home : [
     make("header"),
     key === "collection" ? make("product-grid", { title: "Collection" }) :
       key === "product" ? make("product-details") :
       key === "about" ? make("about", { title: brand, body: plainRich(s.description) }) :
       key === "contact" ? make("contact", { title: "Contact" }) :
+      key === "faq" ? make("faq") :
       key.startsWith("policy-") ? make("policy") : key === "404" ? make("not-found") : make("commerce"),
     make("footer", { brand_line: s.tagline || "" }),
   ]]));
