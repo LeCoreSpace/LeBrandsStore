@@ -15,7 +15,10 @@ async function request(env,path,body,{multipart=false}={}) {
 export async function generateText(env,prompt) {
   const result = await request(env,"chat/completions",{
     model:"gpt-5-mini",messages:[{role:"system",content:prompt.instructions},{role:"user",content:JSON.stringify(prompt.input)}],
-    reasoning_effort:"minimal",max_completion_tokens:2200,response_format:{type:"json_object"},
+    reasoning_effort:"minimal",max_completion_tokens:2200,
+    response_format:prompt.responseSchema
+      ? {type:"json_schema",json_schema:{name:"aura_section_copy",strict:true,schema:prompt.responseSchema}}
+      : {type:"json_object"},
   });
   const usage = {input_tokens:result.usage?.prompt_tokens,output_tokens:result.usage?.completion_tokens};
   if (![usage.input_tokens,usage.output_tokens].every(n=>Number.isInteger(n)&&n>=0)) throw aiError("AI usage could not be recorded.",503);
