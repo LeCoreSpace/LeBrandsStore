@@ -33,7 +33,7 @@ export function exampleFixture(){
     business_state:"33",business_city:"Chennai",business_pincode:"600001",
     business_line1:"12 Example Studio Lane",address:"12 Example Studio Lane\nChennai, Tamil Nadu 600001",
     support_email:"hello@example-studio.invalid",support_phone:"+919000000000",
-    accent_color:"#214a3d",theme:"aura",font_preset:"serif",button_style:"square"};
+    accent_color:"#214a3d",theme:"aura",font_preset:"modern",color_preset:"white",button_style:"square"};
   const products=EXAMPLE_PRODUCTS.map(([slug,title,rupees],i)=>({
     id:exampleProductId(i),store_id:store.store_id,title,description:
       "Soft woven cotton, cut and stitched by hand. A relaxed everyday fit in a muted natural shade. Gentle cold wash and line dry.",

@@ -632,17 +632,17 @@ function applyMedia(path, media) {
 const PRESETS = [["ivory", "Ivory and ink"], ["stone", "Stone"], ["midnight", "Midnight"], ["white", "Pure white"]];
 function openTheme() {
   const s = data.settings || (data.settings = {}), ro = readOnly();
-  const preset = ({ porcelain: "ivory", sand: "ivory", ink: "midnight" })[s.color_preset] || s.color_preset || "ivory";
+  const preset = ({ porcelain: "ivory", sand: "ivory", ink: "midnight" })[s.color_preset] || s.color_preset || "white";
   const accent = /^#[0-9a-f]{6}$/i.test(s.accent_color || "") ? s.accent_color : "#3d4a43";
   const check = S.accentCheck(accent, preset);
   const modal = openModal("Theme", `<fieldset ${ro ? "disabled" : ""} style="border:0;padding:0;margin:0;display:grid;gap:14px">
     <div class="ed-field"><span class="ed-fl">Colour preset</span><div class="ed-swatches">${PRESETS.map(([key, name]) => `<button type="button" class="ed-swatch" data-preset="${key}" aria-pressed="${key === preset}"><span style="background:${S.PRESET_PAPER[key]}"></span>${esc(name)}</button>`).join("")}</div></div>
     <div class="ed-field"><label for="th-accent" class="ed-fl">Accent colour</label><div class="ed-colour"><input type="color" id="th-accent-pick" aria-label="Accent colour picker" value="${esc(accent)}"><input class="ed-input" id="th-accent" maxlength="7" value="${esc(accent)}"></div><span id="th-contrast" role="status" class="${check.passes ? "ed-help" : "ed-error"}"></span></div>
-    <div class="ed-field"><label for="th-font" class="ed-fl">Type preset</label><select class="ed-select" id="th-font">${[["serif", "Studio serif"], ["modern", "Contemporary sans"], ["classic", "Classic book"]].map(([v, l]) => `<option value="${v}" ${(s.font_preset || "serif") === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
+    <div class="ed-field"><label for="th-font" class="ed-fl">Type preset</label><select class="ed-select" id="th-font">${[["serif", "Studio serif"], ["modern", "Contemporary sans"], ["classic", "Classic book"]].map(([v, l]) => `<option value="${v}" ${(s.font_preset || "modern") === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
     <div class="ed-field"><label for="th-button" class="ed-fl">Button style</label><select class="ed-select" id="th-button">${[["rounded", "Soft corners"], ["square", "Square"], ["pill", "Pill"]].map(([v, l]) => `<option value="${v}" ${(s.button_style || "rounded") === v ? "selected" : ""}>${l}</option>`).join("")}</select></div>
     <p class="ed-help" id="th-state" role="status">${ro ? "You cannot change the theme on this device or role." : "Theme changes save to your draft automatically and show in the preview."}</p></fieldset>`, `<button type="button" class="ed-btn ed-primary" data-close>Done</button>`);
   const contrast = () => {
-    const c = S.accentCheck($("#th-accent", modal.body).value, (data.settings.color_preset || "ivory")), node = $("#th-contrast", modal.body);
+    const c = S.accentCheck($("#th-accent", modal.body).value, (data.settings.color_preset || "white")), node = $("#th-contrast", modal.body);
     node.className = c.passes ? "ed-help" : "ed-error";
     node.textContent = c.ratio == null ? "Enter a six digit hex colour." : `Contrast with the page background: ${c.ratio.toFixed(1)}:1. ${c.passes ? "Good for text." : c.large ? "Fine for large text only. Pick a darker or lighter shade for body text." : "Too low. Buttons and links may be hard to read."}`;
   };

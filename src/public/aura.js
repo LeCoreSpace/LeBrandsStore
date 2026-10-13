@@ -65,7 +65,7 @@ export function renderAura(data = {}, options = {}) {
   const description = settings.description || "";
   const subdomain = slug(settings.subdomain || store.subdomain);
   const rawPreset = PRESET_ALIAS[settings.color_preset] || settings.color_preset;
-  const preset = PRESETS.includes(rawPreset) ? rawPreset : "ivory";
+  const preset = PRESETS.includes(rawPreset) ? rawPreset : "white";
   const accent = /^#[0-9a-f]{6}$/i.test(settings.accent_color || "") ? settings.accent_color : "#3d4a43";
   const accentInk = contrastColor(accent) || "#ffffff";
   const paper = { ivory: "#f6f0e6", stone: "#e9e8e4", midnight: "#12151d", white: "#ffffff" }[preset];
@@ -77,7 +77,7 @@ export function renderAura(data = {}, options = {}) {
     modern: { display: '"Instrument Sans", system-ui, sans-serif', body: '"Instrument Sans", system-ui, sans-serif' },
     classic: { display: '"Aura Classic", Georgia, serif', body: '"Instrument Sans", system-ui, sans-serif' },
   };
-  const font = fonts[settings.font_preset] || fonts.serif;
+  const font = fonts[settings.font_preset] || fonts.modern;
   const radius = settings.button_style === "pill" ? "999px" : settings.button_style === "square" ? "2px" : "6px";
   const product = products.find((i) => String(i.id) === String(options.productId)) || (page === "product" ? undefined : products[0]);
   const prodForPage = page === "product" ? (products.find((i) => String(i.id) === String(options.productId)) || products[0]) : product;
@@ -134,6 +134,6 @@ export function renderAura(data = {}, options = {}) {
       <style>:root{--accent:${accent};--accent-ink:${accentInk};--accent-label:${accentLabel};--display:${font.display};--body:${font.body};--radius:${radius}}</style>
       ${options.commerce ? `<link rel="stylesheet" href="/assets/commerce.css">` : ""}
     </head>
-    <body data-aura data-preset="${preset}" data-font="${esc(fonts[settings.font_preset] ? settings.font_preset : "serif")}">${body}${options.commerce && !commercePage ? `<template data-commerce-config data-store-key="${esc(store.store_id || options.storeKey || "")}" data-site-key="${esc(options.siteKey || "")}" data-page="${esc(page)}" data-read-only="${options.readOnly === true ? "true" : "false"}"></template>` : ""}${options.embeddedPreview ? "" : '<script type="module" src="/assets/aura-ui.js"></script>'}${options.commerce ? `<div id="commerce-mount"></div>${options.embeddedPreview ? "" : '<script type="module" src="/assets/commerce.js"></script>'}` : ""}</body>
+    <body data-aura data-preset="${preset}" data-font="${esc(fonts[settings.font_preset] ? settings.font_preset : "modern")}">${body}${options.commerce && !commercePage ? `<template data-commerce-config data-store-key="${esc(store.store_id || options.storeKey || "")}" data-site-key="${esc(options.siteKey || "")}" data-page="${esc(page)}" data-read-only="${options.readOnly === true ? "true" : "false"}"></template>` : ""}${options.embeddedPreview ? "" : '<script type="module" src="/assets/aura-ui.js"></script>'}${options.commerce ? `<div id="commerce-mount"></div>${options.embeddedPreview ? "" : '<script type="module" src="/assets/commerce.js"></script>'}` : ""}</body>
   </html>`;
 }

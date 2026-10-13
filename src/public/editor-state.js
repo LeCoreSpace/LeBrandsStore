@@ -160,7 +160,7 @@ export function mediaFromRecord(record, alt) {
 
 // ---------- theme (joins undo history) ----------
 export const THEME_KEYS = ["color_preset", "accent_color", "font_preset", "button_style"];
-export const THEME_DEFAULTS = { color_preset: "ivory", accent_color: "#3d4a43", font_preset: "serif", button_style: "rounded" };
+export const THEME_DEFAULTS = { color_preset: "white", accent_color: "#3d4a43", font_preset: "modern", button_style: "rounded" };
 export function themeSnapshot(settings = {}) {
   const alias = { porcelain: "ivory", sand: "ivory", ink: "midnight" };
   const out = {};
@@ -268,8 +268,8 @@ export function contrastRatio(a, b) {
 }
 export const PRESET_PAPER = { ivory: "#f6f0e6", stone: "#e9e8e4", midnight: "#12151d", white: "#ffffff" };
 const ALIAS = { porcelain: "ivory", sand: "ivory", ink: "midnight" };
-export function accentCheck(accent, preset = "ivory") {
-  const paper = PRESET_PAPER[ALIAS[preset] || preset] || PRESET_PAPER.ivory;
+export function accentCheck(accent, preset = "white") {
+  const paper = PRESET_PAPER[ALIAS[preset] || preset] || PRESET_PAPER.white;
   const ratio = contrastRatio(accent, paper);
   return { ratio, paper, passes: ratio != null && ratio >= 4.5, large: ratio != null && ratio >= 3 };
 }

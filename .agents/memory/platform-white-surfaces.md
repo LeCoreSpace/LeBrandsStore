@@ -12,3 +12,12 @@ pricing page was made white.
 sections, accent colours, semantic warnings and statuses, and merchant-chosen
 storefront presets. Theme thumbnails represent merchant presets, not platform
 backgrounds.
+
+Aura's default should also be white, with typography like premium Shopify
+stores rather than the heavy serif shown in the original skeleton.
+
+**Why:** The user explicitly extended the white-background request to Aura
+and asked for a more premium storefront font style.
+
+**How to apply:** Use this direction for new-store defaults and example
+previews without overriding an existing brand's explicitly selected presets.

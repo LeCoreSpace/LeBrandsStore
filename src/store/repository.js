@@ -12,7 +12,7 @@ export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
   support_email: "", support_phone: "", gstin: "", business_state: "", category: "",
   business_line1:"",business_line2:"",business_city:"",business_pincode:"",signature_media_id:null,
-  theme: "aura", accent_color: "#214a3d", font_preset: "serif", button_style: "rounded",
+  theme: "aura", accent_color: "#214a3d", font_preset: "modern", color_preset: "white", button_style: "rounded",
 };
 const missing = () => Object.assign(new Error("Store or product not found."), { status: 404 });
 const conflict = (message) => Object.assign(new Error(message), { status: 409 });
