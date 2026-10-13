@@ -26,7 +26,7 @@ export async function completeBuild(tx,job,hash) {
       VALUES(${product.id},${storeId},${product.name},${product.id},${product.price_paise},${product.gst_rate},${product.stock},true)`;
     const step=job.approved.find(item=>item.product_id===product.id);
     const generated=(step?.images||[]).filter(image=>image.status==="approved").map(image=>({id:image.media_id,alt:`${product.name}: AI image approved by the brand`}));
-    await saveProduct(tx,storeId,product.id,{title:product.name,description:product.features.join("\n"),hsn_code:product.hsn,
+    await saveProduct(tx,storeId,product.id,{title:product.name,description:product.description||product.features.join("\n"),hsn_code:product.hsn,
       images:[...product.photo_ids.map(id=>({id,alt:product.name})),...generated],
       content:step?.content||productContent(product,s)});
   }

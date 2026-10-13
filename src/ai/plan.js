@@ -22,7 +22,7 @@ export function buildPlan(draft, brief) {
 }
 export function productContent(product, selling) {
   return {
-    description_features:product.features.join("\n"),
+    description_features:[product.description,...product.features].filter(Boolean).join("\n"),
     materials_care:[product.material,product.care].filter(Boolean).join("\n\n"),
     delivery_returns:[selling.delivery_time,selling.returns_window,selling.returns_conditions].filter(Boolean).join("\n\n"),
     features:product.features.map(value => ({label:"Feature",value})),

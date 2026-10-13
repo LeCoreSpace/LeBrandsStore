@@ -1,4 +1,5 @@
 import { prepareAuraPhoto } from "./aura-upload.js";
+import { blankProduct, existingProductBrief, prefillBrief } from "./ai-builder-prefill.js";
 
 const root = document.querySelector("[data-ai-builder]");
 const boot = JSON.parse(document.getElementById("ai-builder-boot")?.textContent || "{}");
@@ -15,16 +16,16 @@ const LS = `aib-brief-${boot.store_id}`;
 const S = { info: { ...boot }, job: boot.job || null, step: 0, brief: null, errors: {}, msg: null, busy: false, media: (boot.draft && boot.draft.media) || [] };
 let timer = null;
 
-const fromExisting = (p) => ({ ...blankProduct(), id: p.id, locked: true, name: p.title || p.name || "", price: p.price_paise != null ? String(Number(p.price_paise) / 100) : "", gst_rate: p.gst_rate ?? "", hsn: p.hsn_code || p.hsn || "", stock: p.stock ?? "", photo_ids: realIds((p.images || []).map((i) => i.id || i.media_id)) });
-const blankProduct = () => ({ name: "", price: "", compare: "", gst_rate: "", hsn: "", stock: "", photo_ids: [], material: "", variants: "", care: "", features: "", how_to_use: "", sizes: "", ai_images: 0, image_styles: [] });
+const fromExisting = (p) => existingProductBrief(p, S.media);
 function loadBrief() {
-  try { const v = JSON.parse(localStorage.getItem(LS) || "null"); if (v && v.brand) return v; } catch {}
-  return { brand: { name: "", tagline: "", category: "", subcategory: "", sells: "", audience: "", differentiators: "", founder_story: "", year_started: "", city: "", vibe: "", reference_words: "", logo_id: "", colours: "", language: "English" },
-    products: [blankProduct()],
-    selling: { delivery_time: "", free_shipping_threshold: "", cod: false, returns_window: "", returns_conditions: "", contact_email: "", phone: "", whatsapp: "", address: "", first_order_offer: "", prepaid_discount: "" }, confirmed: false };
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem(LS) || "null"); } catch {}
+  return prefillBrief(boot.draft, saved);
 }
 S.brief = loadBrief();
 const save = () => { try { localStorage.setItem(LS, JSON.stringify(S.brief)); } catch {} };
+const touch = (path) => { if (!S.brief._prefill_touched.includes(path)) S.brief._prefill_touched.push(path); };
+save();
 
 async function api(action, opts = {}) {
   const init = { credentials: "same-origin", headers: {}, ...opts };
@@ -64,7 +65,7 @@ function toBrief() {
   const b = S.brief.brand, s = S.brief.selling;
   return {
     brand: { name: b.name.trim(), tagline: b.tagline.trim(), category: b.category.trim(), subcategory: b.subcategory.trim(), sells: b.sells.trim(), audience: b.audience.trim(), differentiators: lines(b.differentiators).slice(0, 3), founder_story: b.founder_story.trim(), year_started: b.year_started ? Number(b.year_started) : null, city: b.city.trim(), vibe: b.vibe, reference_words: csv(b.reference_words).slice(0, 3), logo_id: b.logo_id || "", colours: csv(b.colours).slice(0, 3), language: "English" },
-    products: S.brief.products.map((p) => ({ ...(p.id ? { id: p.id } : {}), name: p.name.trim(), price_paise: paise(p.price), compare_at_paise: paise(p.compare), gst_rate: p.gst_rate === "" ? null : Number(p.gst_rate), hsn: p.hsn.trim(), stock: p.stock === "" ? null : Number(p.stock), photo_ids: p.photo_ids, material: p.material.trim(), variants: p.variants.trim(), care: p.care.trim(), features: lines(p.features).slice(0, 8), how_to_use: p.how_to_use.trim(),
+    products: S.brief.products.map((p) => ({ ...(p.id ? { id: p.id } : {}), name: p.name.trim(), description: p.description.trim(), price_paise: paise(p.price), compare_at_paise: paise(p.compare), gst_rate: p.gst_rate === "" ? null : Number(p.gst_rate), hsn: p.hsn.trim(), stock: p.stock === "" ? null : Number(p.stock), photo_ids: p.photo_ids, material: p.material.trim(), variants: p.variants.trim(), care: p.care.trim(), features: lines(p.features).slice(0, 8), how_to_use: p.how_to_use.trim(),
       size_chart: lines(p.sizes).slice(0, 20).map((l) => { const [size, ...r] = l.split(":"); return { size: size.trim(), measurement: r.join(":").trim() }; }), ai_images: Number(p.ai_images) || 0, image_styles: p.image_styles })),
     selling: { delivery_time: s.delivery_time.trim(), free_shipping_threshold_paise: paise(s.free_shipping_threshold), cod: !!s.cod, returns_window: s.returns_window.trim(), returns_conditions: s.returns_conditions.trim(), contact_email: s.contact_email.trim(), phone: s.phone.trim(), whatsapp: s.whatsapp.trim(), address: s.address.trim(), first_order_offer: s.first_order_offer.trim(), prepaid_discount_paise: paise(s.prepaid_discount) },
   };
@@ -96,7 +97,7 @@ const err = (k) => S.errors[k] ? `<span class="aib-err" role="alert">${esc(S.err
 const fld = (path, label, val, o = {}) => `<label class="${o.wide ? "wide" : ""}">${esc(label)}${o.hint ? `<span class="aib-hint">${esc(o.hint)}</span>` : ""}${o.area ? `<textarea data-f="${path}" class="${S.errors[o.ek || path] ? "bad" : ""}">${esc(val)}</textarea>` : `<input type="${o.type || "text"}" data-f="${path}" value="${esc(val)}" ${o.step ? `step="${o.step}"` : ""} class="${S.errors[o.ek || path] ? "bad" : ""}">`}${err(o.ek || path)}</label>`;
 const media = (type) => S.media.filter((m) => m && m.id && !m.ai_generated && !m.source_media_id && !["pending", "discarded"].includes(m.approval_status) && (type === "logo" ? m.type === "logo" : m.type === "image"));
 const realIds = (ids) => (ids || []).filter((id) => media("product").some((m) => m.id === id)).slice(0, 5);
-const existing = () => (boot.draft?.products || []).filter((p) => p && p.id && p.status !== "archived" && !p.archived_at);
+const existing = () => (S.info.draft?.products || []).filter((p) => p && p.id && p.status !== "archived" && !p.archived_at);
 const photoPick = (sel, name, multi, ek) => `<div class="aib-photos">${media(multi ? "product" : "logo").map((m) => `<label><input type="${multi ? "checkbox" : "radio"}" name="${name}" data-photo="${esc(m.id)}" ${sel.includes(m.id) ? "checked" : ""}><img src="${esc(m.url)}" alt="${esc(m.alt || "")}"></label>`).join("") || `<small>No uploads yet.</small>`}</div><div class="aib-row"><label class="aib-btn ghost" style="cursor:pointer">Upload photo<input type="file" accept="image/png,image/jpeg,image/webp,image/avif" data-upload="${multi ? "product" : "logo"}" data-name="${name}" hidden></label></div>${err(ek)}`;
 
 function gates() {
@@ -124,6 +125,7 @@ function formView() {
     <label>GST rate<select data-f="p.${i}.gst_rate" class="${S.errors[`p.${i}.gst_rate`] ? "bad" : ""}"><option value="">Select a rate</option>${[...GST,...(p.locked&&[12,28].includes(Number(p.gst_rate))?[Number(p.gst_rate)]:[])].map((r) => `<option value="${r}" ${String(p.gst_rate) === String(r) ? "selected" : ""}>${r}%</option>`).join("")}</select>${err(`p.${i}.gst_rate`)}</label>
     ${fld(`p.${i}.hsn`, "HSN code", p.hsn)}${fld(`p.${i}.stock`, "Stock", p.stock, { type: "number" })}
     <div class="wide"><strong>Real photos (1 to 5, kept first)</strong>${photoPick(p.photo_ids, `ph${i}`, true, `p.${i}.photos`)}</div>
+    ${fld(`p.${i}.description`, "Product description", p.description, { area: 1, wide: 1 })}
     ${fld(`p.${i}.material`, "Material (optional)", p.material)}${fld(`p.${i}.variants`, "Variants (optional)", p.variants)}${fld(`p.${i}.care`, "Care (optional)", p.care, { wide: 1 })}
     ${fld(`p.${i}.features`, "Features (optional)", p.features, { area: 1, wide: 1, hint: "Up to 8, one per line" })}${fld(`p.${i}.how_to_use`, "How to use (optional)", p.how_to_use, { area: 1, wide: 1 })}
     ${fld(`p.${i}.sizes`, "Size chart (optional)", p.sizes, { area: 1, wide: 1, hint: "One per line as Size: measurement. Up to 20." })}
@@ -141,7 +143,7 @@ function formView() {
     <h3>Allowances</h3><ul><li>Up to 6 extra section images for the whole build</li><li>${n} product image${n === 1 ? "" : "s"} requested (at most 4 per product)</li><li>Each product image can be regenerated twice</li><li>One completed build per store, ${esc(S.info.remaining_builds)} remaining. Shared monthly limit: USD ${esc(S.info.monthly_cap_usd || 20)}.</li></ul>
     <p class="aib-hint">Pages are built in order: home, collection, product, cart, checkout. Product and collection layouts use one shared template. Nothing is published.</p>
     <label style="font-weight:400"><input type="checkbox" data-f="confirmed" ${S.brief.confirmed ? "checked" : ""} style="display:inline;width:auto"> These facts are accurate and I understand the image warning.</label>`; }
-  return `<section class="aib-card"><ol class="aib-steps">${STEPS.map((x, i) => `<li class="${i === st ? "on" : i < st ? "done" : ""}" ${i === st ? 'aria-current="step"' : ""}>${i + 1}. ${x}</li>`).join("")}</ol>${h}
+  return `<section class="aib-card"><p class="aib-hint">Saved store details and up to five existing products are prefilled where available. Review them and add any missing facts. Your existing builder answers are kept.</p><ol class="aib-steps">${STEPS.map((x, i) => `<li class="${i === st ? "on" : i < st ? "done" : ""}" ${i === st ? 'aria-current="step"' : ""}>${i + 1}. ${x}</li>`).join("")}</ol>${h}
     <div class="aib-row end"><button class="aib-btn ghost" data-back ${st === 0 ? "disabled" : ""}>Back</button>${st < 3 ? `<button class="aib-btn" data-next>Continue</button>` : `<button class="aib-btn" data-start ${!S.brief.confirmed || S.busy || blocked() || readOnly ? "disabled" : ""}>Start building</button>`}</div></section>`;
 }
 
@@ -187,6 +189,8 @@ function draw() {
   if (keep) { const el = root.querySelector(`[data-f="${keep}"]`); if (el && el.type !== "checkbox") { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch {} } }
 }
 function setPath(path, val) {
+  touch(path);
+  if (path.startsWith("p.")) touch("products");
   const [k, a, b] = path.split(".");
   if (k === "b") S.brief.brand[a] = val; else if (k === "s") S.brief.selling[a] = val; else if (k === "p") S.brief.products[Number(a)][b] = val; else S.brief[path] = val;
   save();
@@ -195,14 +199,15 @@ function setPath(path, val) {
 root?.addEventListener("input", (e) => { const f = e.target.dataset.f; if (f && e.target.type !== "checkbox" && e.target.tagName !== "SELECT") { setPath(f, e.target.value); if (f === "b.sells") draw(); } });
 root?.addEventListener("change", (e) => {
   const t = e.target, f = t.dataset.f;
-  if (t.dataset.existing != null) { const e = existing().find((x) => x.id === t.value); if (e) { S.brief.products = S.brief.products.filter((p) => p.name || p.id); S.brief.products.push(fromExisting(e)); save(); draw(); } return; }
+  if (t.dataset.existing != null) { const e = existing().find((x) => x.id === t.value); if (e) { touch("products"); S.brief.products = S.brief.products.filter((p) => p.name || p.id); S.brief.products.push(fromExisting(e)); save(); draw(); } return; }
   if (f) { setPath(f, t.type === "checkbox" ? t.checked : t.value); if (f === "confirmed" || f.endsWith("ai_images")) draw(); return; }
   if (t.dataset.photo) {
+    touch(t.name === "logo" ? "b.logo_id" : "products");
     if (t.name === "logo") S.brief.brand.logo_id = t.dataset.photo;
     else { const i = Number(t.name.slice(2)), p = S.brief.products[i], set = new Set(p.photo_ids); if (t.checked) { if (set.size >= 5) { t.checked = false; return; } set.add(t.dataset.photo); } else set.delete(t.dataset.photo); p.photo_ids = [...set]; }
     save(); return;
   }
-  if (t.dataset.style != null) { const p = S.brief.products[Number(t.dataset.style)], s = new Set(p.image_styles); t.checked ? s.add(t.value) : s.delete(t.value); p.image_styles = [...s]; save(); return; }
+    if (t.dataset.style != null) { touch("products"); const p = S.brief.products[Number(t.dataset.style)], s = new Set(p.image_styles); t.checked ? s.add(t.value) : s.delete(t.value); p.image_styles = [...s]; save(); return; }
   if (t.dataset.upload && t.files?.[0]) upload(t);
 });
 async function extractPalette(file) {
@@ -233,8 +238,8 @@ async function upload(input) {
     const d = await res.json().catch(() => ({}));
     if (!res.ok || !d.media?.id) throw new Error(d.error || "The upload failed. Try again.");
     S.media = [...S.media, { ...d.media, type: kind === "logo" ? "logo" : "image" }];
-    if (kind === "logo") { S.brief.brand.logo_id = d.media.id; if (!S.brief.brand.colours.trim()) { const c = await extractPalette(file).catch(() => []); if (c.length) S.brief.brand.colours = c.join(", "); } }
-    else { const p = S.brief.products[Number(name.slice(2))]; if (p.photo_ids.length < 5) p.photo_ids.push(d.media.id); }
+    if (kind === "logo") { touch("b.logo_id"); S.brief.brand.logo_id = d.media.id; if (!S.brief.brand.colours.trim()) { const c = await extractPalette(file).catch(() => []); if (c.length) { touch("b.colours"); S.brief.brand.colours = c.join(", "); } } }
+    else { touch("products"); const p = S.brief.products[Number(name.slice(2))]; if (p.photo_ids.length < 5) p.photo_ids.push(d.media.id); }
     save(); S.msg = { t: "ok", m: "Photo uploaded." };
   } catch (e) { S.msg = { t: "err", m: e.message }; }
   draw();
@@ -245,8 +250,8 @@ root?.addEventListener("click", async (e) => {
   if (t.dataset.act) return act(t.dataset.act);
   if (t.dataset.img) return act("image", { image_id: t.dataset.img, decision: t.dataset.dec });
   if (t.hasAttribute("data-preview")) { await api("preview", { json: { job_id: S.job.id } }).catch(() => {}); location.href = `/stores/${sid}/editor`; return; }
-  if (t.dataset.rm != null) { S.brief.products.splice(Number(t.dataset.rm), 1); save(); return draw(); }
-  if (t.dataset.add != null) { S.brief.products.push(blankProduct()); save(); return draw(); }
+  if (t.dataset.rm != null) { touch("products"); S.brief.products.splice(Number(t.dataset.rm), 1); save(); return draw(); }
+  if (t.dataset.add != null) { touch("products"); S.brief.products.push(blankProduct()); save(); return draw(); }
   if (t.dataset.back != null) { S.step = Math.max(0, S.step - 1); S.errors = {}; return draw(); }
   if (t.dataset.next != null) { S.errors = validate(S.step); if (Object.keys(S.errors).length) { S.msg = { t: "err", m: "Please fix the highlighted fields." }; draw(); root.querySelector(".bad,.aib-err")?.scrollIntoView({ block: "center" }); return; } S.msg = null; S.step++; draw(); return window.scrollTo(0, 0); }
   if (t.dataset.start != null) {

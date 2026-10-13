@@ -45,12 +45,19 @@ Four-step brief:
    year_started, city, vibe (enum Minimal/Luxe/Earthy/Bold/Playful/Traditional/
    Modern Indian/Street), reference_words (max 3), logo_id (uploaded media
    UUID or empty), colours (array up to 3 hex values), language ("English").
-2. `products` (1–5): existing `id` optional, name, price_paise,
+2. `products` (1–5): existing `id` optional, name, description (optional plain text, max 5000 chars), price_paise,
    compare_at_paise optional/null, gst_rate (explicit required selection,
-   never preselected), hsn, stock, photo_ids (1–5 real uploaded image UUIDs),
+   never guessed for new products; saved rates retained for existing products), hsn, stock, photo_ids (1–5 real uploaded image UUIDs),
    material, variants (text), care, features (max 8 strings), how_to_use,
    size_chart (array max 20 `{size,measurement}`), `ai_images` (0–4),
    `image_styles` (array selections background/lifestyle/flatlay/closeup/model).
+
+The form prefills known store settings, the selected owned logo, and up to five
+non-archived products from the tenant's draft. It preserves saved builder answers,
+including explicitly cleared fields and changed product selections. Public
+contact details come from business support settings, not the login email.
+Legal/GST registration fields are not added to the AI brief. Unknown commercial
+claims and creative facts remain blank for the merchant to supply.
 3. `selling`: delivery_time, free_shipping_threshold_paise optional/null,
    cod (boolean), returns_window, returns_conditions, contact_email,
    phone, whatsapp, address, first_order_offer, prepaid_discount_paise

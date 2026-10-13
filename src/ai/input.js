@@ -56,7 +56,7 @@ export function validateBrief(value) {
   if (brand.year_started != null && brand.year_started < 1800) fail("Check year started.");
   if (!Array.isArray(value.products) || value.products.length < 1 || value.products.length > 5) fail("Add one to five products.");
   const products = value.products.map((raw, index) => {
-    const p = object(raw, ["id","name","price_paise","compare_at_paise","gst_rate","hsn","stock","photo_ids","material",
+    const p = object(raw, ["id","name","description","price_paise","compare_at_paise","gst_rate","hsn","stock","photo_ids","material",
       "variants","care","features","how_to_use","size_chart","ai_images","image_styles"], `product ${index+1}`);
     if (!CURRENT_GST_RATES.includes(p.gst_rate)&&!(p.id&&[12,28].includes(p.gst_rate))) fail("Choose a GST rate explicitly for every product.");
     if (!Array.isArray(p.photo_ids) || p.photo_ids.length < 1 || p.photo_ids.length > 5) fail("Each product needs one to five real photos.");
@@ -66,6 +66,7 @@ export function validateBrief(value) {
     if (styles.some(style => !["background","lifestyle","flatlay","closeup","model"].includes(style))) fail("Choose a supported image style.");
     const product = {
       id:id(p.id,"product",true), name:text(p.name,200,"product name",true),
+      description:text(p.description,5000,"product description"),
       price_paise:integer(p.price_paise,1000000000,"product price"),
       compare_at_paise:integer(p.compare_at_paise,1000000000,"compare-at price",true),
       gst_rate:p.gst_rate, hsn:text(p.hsn,8,"HSN"), stock:p.id&&p.stock===null?null:integer(p.stock,1000000,"stock"),
