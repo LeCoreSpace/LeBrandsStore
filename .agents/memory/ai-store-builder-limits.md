@@ -14,6 +14,17 @@ description: User's revised build allowance, image regeneration and cost control
 
 **How to apply:** Use these limits when scoping the AI store builder. They are product requirements, not evidence that the builder or billing enforcement exists.
 
+## Approved provider and spending choices
+
+Use OpenAI for text and image generation and Resend for verification emails.
+The global monthly AI spending cap is USD 20 across all stores.
+Allow up to six extra section images per build, separately from the product-image allowance.
+Every generated image still requires explicit brand approval.
+
+**Why:** The user selected these providers, budget and section-image allowance.
+
+**How to apply:** Preserve these limits in the Phase 3 builder and its setup.
+
 ## Skeleton first and progressive generation
 
 First create and test the Aura skeleton for home, collection, product, cart
