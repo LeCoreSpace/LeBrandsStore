@@ -181,6 +181,12 @@ export async function syncPublishedProducts(tx,id,productId,activate = false) {
   const product = draft.products.find((p) => p.id === productId && p.status === "active");
   const products = [...(publication.snapshot.products || [])];
   const index = products.findIndex((p) => p.id === productId);
+  // A stock/price/archive or explicit catalogue save is not a theme publish.
+  // Retain published per-product content and collection assignment until republish.
+  if (product) {
+    product.content = index >= 0 ? products[index].content || {} : {};
+    product.collection_ids = index >= 0 ? products[index].collection_ids || [] : [];
+  }
   if (index >= 0) {
     if (product) products[index] = product; else products.splice(index,1);
   } else if (product) products.push(product);

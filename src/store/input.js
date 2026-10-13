@@ -1,6 +1,7 @@
 import { CATEGORIES, UUID, validateTheme } from "../public/validation.js";
 import { CURRENT_GST_RATES, LEGACY_GST_RATES, INDIAN_STATES, gstinError, validInvoicePrefix } from "../public/commerce-rules.js";
 import { validateLayoutMedia } from "../public/aura-layout.js";
+import { validateProductContent } from "../public/catalog-content.js";
 
 export const badInput = (message, errors) => Object.assign(new Error(message), { status: 400, errors });
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -69,6 +70,7 @@ export function productPatch(value) {
   if (!object(value)) throw badInput("Use the product form.");
   const result = {}, textFields = { title: 80, description: 2000, sku: 80, hsn_code: 8 };
   for (const [key, val] of Object.entries(value)) {
+    if (key === "content") { result.content = validateProductContent(val); continue; }
     if (key in textFields) { result[key] = string(val, textFields[key], key); continue; }
     if (["price_paise", "compare_at_paise", "stock"].includes(key)) {
       if ((key !== "price_paise" && val === null) ||

@@ -19,11 +19,11 @@ export function renderEditor(data = {}, user = {}, options = {}) {
   const payload = {
     store: { store_id: storeId, name: store.name, subdomain: store.subdomain, status: store.status },
     settings,
-    products: (data.products || []).map(item => ({ id: item.id, title: item.title, price_paise: item.price_paise, status: item.status, images: (item.images || []).slice(0, 8), description: item.description, stock: item.stock, compare_at_paise: item.compare_at_paise, tags: item.tags, sku: item.sku, collection_ids: Array.isArray(item.collection_ids) ? item.collection_ids : undefined })),
+    products: (data.products || []).map(item => ({ id: item.id, title: item.title, price_paise: item.price_paise, status: item.status, images: (item.images || []).slice(0, 8), description: item.description, stock: item.stock, compare_at_paise: item.compare_at_paise, tags: item.tags, sku: item.sku, collection_ids: Array.isArray(item.collection_ids) ? item.collection_ids : undefined, content: item.content && typeof item.content === "object" ? item.content : undefined })),
     policies: (data.policies || []).map(item => ({ kind: item.kind, title: item.title, body: item.body })),
     reviews: (data.reviews || []).slice(0, 9).map(item => ({ body: item.body || item.text, author: item.author || item.name })),
     aura_skeleton_enabled: data.aura_skeleton_enabled === true,
-    collections: (data.collections || []).map(item => ({ id: item.id, title: item.title || item.name, name: item.name || item.title })),
+    collections: (data.collections || []).map(item => ({ id: item.id, title: item.title || item.name, name: item.name || item.title, slug: item.slug, description: item.description, product_ids: Array.isArray(item.product_ids) ? item.product_ids : undefined, cover: item.cover || null, faq: Array.isArray(item.faq) ? item.faq : [], related_ids: Array.isArray(item.related_ids) ? item.related_ids : [] })),
     published_settings: data.published_settings ?? null,
     layouts: data.layouts || {},
     page_versions: data.page_versions || {},

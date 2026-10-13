@@ -1,5 +1,5 @@
 import { renderAura } from "/assets/aura.js";
-import { attachAuraSearch } from "/assets/aura-ui.js";
+import { attachAuraSearch, attachAuraCatalog } from "/assets/aura-ui.js";
 import { SECTION_SCHEMAS, defaultPageLayouts, safeLayoutLink } from "/assets/aura-layout.js";
 import { uploadAuraImage } from "/assets/aura-upload.js";
 import * as S from "/assets/editor-state.js";
@@ -759,8 +759,9 @@ function renderPreview() {
   const settings = { ...(data.settings || {}) }; settings.brand_name = settings.brand_name || data.store?.name; settings.subdomain = settings.subdomain || data.store?.subdomain;
   let html;
   const pick = previewItem[current];
-  const shown = current === "collection" && pick ? (data.products || []).filter(item => (item.collection_ids || []).includes(pick)) : data.products;
-  try { html = renderAura({ ...data, products: shown, settings, layouts }, { ...S.previewOptions(current), productId: (current === "product" && pick) || data.products?.[0]?.id, preview: true, embeddedPreview: true, editorAnnotate: true, editorSkeleton: skeleton, readOnly: true }); }
+  const pickedCollection = current === "collection" && pick ? (data.collections || []).find(k => k.id === pick) : null;
+  const shown = current === "collection" && pick && !pickedCollection?.product_ids ? (data.products || []).filter(item => (item.collection_ids || []).includes(pick)) : data.products;
+  try { html = renderAura({ ...data, products: shown, settings, layouts }, { ...S.previewOptions(current), productId: (current === "product" && pick) || data.products?.[0]?.id, collectionId: pickedCollection ? pickedCollection.id : undefined, preview: true, embeddedPreview: true, editorAnnotate: true, editorSkeleton: skeleton, readOnly: true }); }
   catch (error) { html = `<!doctype html><body style="font-family:sans-serif;padding:24px">Preview could not be drawn: ${esc(error.message)}</body>`; }
   frame.srcdoc = html.replace("</head>", `${PREVIEW_STYLE}</head>`);
 }
@@ -794,6 +795,7 @@ function startInline(el, info, section) {
 function wirePreview() {
   const frame = $("#ed-preview"), doc = frame.contentDocument; if (!doc) return;
   attachAuraSearch(doc,{products:data.products||[]});
+  attachAuraCatalog(doc);
   if (lastScroll) doc.scrollingElement.scrollTop = lastScroll;
   doc.querySelectorAll("[data-lb-section]").forEach(el => {
     const section = layoutNow().find(item => item.id === el.dataset.lbSection);

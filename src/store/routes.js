@@ -11,6 +11,7 @@ import {
   regeneratePolicies, savePolicy, publish,
 } from "./repository.js";
 import { audit, syncPublishedProducts, dashboardAccess } from "../dashboard/repository.js";
+import { saveCollection, deleteCollection } from "./catalog.js";
 
 export const isStoreRoute = (path) => /^\/(?:api\/)?stores\/(?!new(?:\/|$))[^/]+(?:\/|$)/.test(path);
 const json = (value, status = 200) => new Response(JSON.stringify(value), {
@@ -19,7 +20,7 @@ const json = (value, status = 200) => new Response(JSON.stringify(value), {
 const unavailable = () => Object.assign(new Error("Store services are temporarily unavailable. Please try again."), { status: 503 });
 export async function handleStoreRoutes(request, env, db, user, tokenHash) {
   const url = new URL(request.url), api = url.pathname.startsWith("/api/");
-  const match = url.pathname.match(/^\/(?:api\/)?stores\/([^/]+)\/(setup|products|media|policies|publish|unpublish)(?:\/([^/]+))?$/);
+  const match = url.pathname.match(/^\/(?:api\/)?stores\/([^/]+)\/(setup|products|collections|media|policies|publish|unpublish)(?:\/([^/]+))?$/);
   if (!match || !UUID.test(match[1])) return json({ error: "Page not found." }, 404);
   if (!user || user.must_change_password) return json({ error: "Sign in and complete any required password change first." }, 401);
   const [, id, action, child] = match;
@@ -37,12 +38,25 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
     const route = `${verb} ${action}${child ? "/child" : ""}`;
     const supported = [
       "GET setup", "PATCH setup", "POST products", "PATCH products/child", "DELETE products/child",
+      "GET collections", "POST collections", "PATCH collections/child", "DELETE collections/child",
       "GET media", "POST media", "PATCH media/child", "PUT policies/child", "POST policies/child", "POST publish", "POST unpublish",
     ];
-    if (!supported.includes(route) || (action === "products" && child && !UUID.test(child)) ||
+    if (!supported.includes(route) || (["products", "collections"].includes(action) && child && !UUID.test(child)) ||
       (action === "policies" && verb === "POST" && child !== "generate")) return json({ error: "Method or page not available." }, 405);
     // Authorize before reading or storing an upload. No bytes reach R2 for outsiders.
     const result = await db.withMemberStore(id, tokenHash, async (tx) => {
+      if (action === "collections") {
+        await dashboardAccess(tx, id, user.id, verb !== "GET");
+        if (route === "GET collections") return { collections: (await loadDraft(tx, id)).collections || [] };
+        if (verb === "DELETE") {
+          await deleteCollection(tx, id, child);
+          await audit(tx, id, user.id, "collection.deleted", "collection", child);
+          return loadDraft(tx, id);
+        }
+        const saved = await saveCollection(tx, id, child, await readJson(request));
+        await audit(tx, id, user.id, child ? "collection.edited" : "collection.created", "collection", saved);
+        return { ...await loadDraft(tx, id), saved_collection_id: saved };
+      }
       if (route === "GET setup") return loadDraft(tx, id);
       if(route==="GET media"){
         const offset=Number(new URL(request.url).searchParams.get("offset")||0);

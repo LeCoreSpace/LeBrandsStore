@@ -1,6 +1,7 @@
 import { renderCommerceBody } from "./commerce-view.js";
 import { formatPhone } from "./commerce-rules.js";
 import { sanitizeRichText } from "./aura-layout.js";
+import { normalisePageSize } from "./catalog-page.js";
 
 export const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const UU = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
@@ -41,6 +42,22 @@ const heading = (t, extra = "") => t ? `<div class="au-head"><h2>${esc(t)}</h2>$
 const rich = (v) => { try { return sanitizeRichText(String(v || ""), 10000); } catch { return esc(String(v || "").replace(/<[^>]*>/g, "")); } };
 const link = (u) => /^\/(?!\/)/.test(String(u || "")) || /^https:\/\//.test(String(u || "")) ? String(u) : "";
 const available = (p) => p.stock == null || Number(p.stock) > 0;
+const collectionsOf = (c) => (Array.isArray(c.data.collections) ? c.data.collections : []).filter((k) => k?.id && str(k.title || k.name));
+const colHref = (k) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(k.slug || "")) && k.slug !== "all" ? "/collections/" + k.slug : "";
+const activeCollection = (c) => { const id = c.options?.collectionId; return id ? collectionsOf(c).find((k) => String(k.id) === String(id)) || null : null; };
+const inCollection = (k, p) => Array.isArray(k.product_ids) ? k.product_ids.includes(p.id) : (p.collection_ids || []).includes(k.id);
+const gridProducts = (c, cid) => {
+  const k = activeCollection(c) || (cid ? collectionsOf(c).find((i) => String(i.id) === String(cid)) : null);
+  if (k && (Array.isArray(k.product_ids) || c.products.some((p) => Array.isArray(p.collection_ids)))) return c.products.filter((p) => inCollection(k, p));
+  if (cid && c.products.some((p) => Array.isArray(p.collection_ids))) return c.products.filter((p) => (p.collection_ids || []).includes(cid));
+  return c.products;
+};
+const colCover = (k, c) => k.cover?.url ? k.cover : c.products.find((p) => inCollection(k, p) && p.images?.[0]?.url)?.images[0];
+const withCollections = (html, ids) => ids.length ? html.replace(/ data-collections="[^"]*"/, "").replace("<a ", `<a data-collections="${esc(ids.join(" "))}" `) : html;
+const content = (c) => (c.product && c.product.content && typeof c.product.content === "object") ? c.product.content : {};
+const has = (c, key) => { const v = content(c)[key]; return v !== undefined && v !== null; };
+const ownsFaq = (c) => (c.options?.page === "collection" && activeCollection(c)) || has(c, "faq");
+const entityFaq = (c) => { const k = c.options?.page === "collection" ? activeCollection(c) : null; const src = k ? k.faq : content(c).faq; return (Array.isArray(src) ? src : []).filter((b) => str(b?.question) && plainText(b?.answer)); };
 const GROUPS = {
   cart: [["Cart items", "Lines the customer added, with quantity and remove controls."], ["Optional extras", "Supported extras such as gift options, when the store offers them."], ["Recommendations", "Products suggested next to the bag."], ["Summary", "Subtotal, shipping and total."], ["Checkout", "The button that moves the customer on."]],
   checkout: [["Contact", "Name, email and phone."], ["Address", "Delivery address with pincode."], ["Shipping", "Delivery options and charges."], ["Payment", "Payment methods the store has enabled."], ["Notes (optional)", "A note for the order."], ["Summary", "Items, charges and total."], ["Place order", "Final confirmation button."]],
@@ -55,7 +72,7 @@ const SKEL = {
   reviews: ["Reviews", "Real customer reviews only."], faq: ["FAQ", "Questions and answers."],
   "collection-heading": ["Collection heading", "Intro line for this collection."], "collection-nav": ["Collection navigation", "Links between collections."],
   "collection-tools": ["Filters and sort", "Sort and stock filter for the grid."], "product-grid": ["Product grid", "Products in this collection."],
-  "collection-pagination": ["Pagination", "Not active yet. All products show on one page."], "collection-description": ["Collection description", "Longer text about the collection."],
+  "collection-pagination": ["Pagination", "Page controls appear on the live store only when needed."], "collection-description": ["Collection description", "Longer text about the collection."],
   "related-collections": ["Related collections", "Other collections to browse."],
   "product-details": ["Product gallery and buy controls", "Images, price, quantity and add to cart."], "shipping-info": ["Delivery and returns", "Shipping and return notes."],
   "product-specs": ["Description and features", "Details and specifications."], "material-care": ["Materials and care", "Fabric and care notes."], "size-guide": ["Size guide", "Measurements by size."],
@@ -106,9 +123,13 @@ export const SECTION_RENDERERS = {
   },
   "featured-collection"(s, c) {
     if (off(s)) return "";
-    let list = c.products;
+    const cols = collectionsOf(c).filter((k) => colHref(k));
     const cid = s.settings?.collection;
-    if (cid && list.some((p) => Array.isArray(p.collection_ids))) list = list.filter((p) => (p.collection_ids || []).includes(cid));
+    if (cols.length && !cid) {
+      const n = [3, 6, 9].includes(Number(s.settings?.limit)) ? Number(s.settings.limit) : 3;
+      return `<section class="au-section">${heading(str(s.settings?.title), '<a class="au-link" href="/collections/all">View all</a>')}<div class="au-grid au-collection-cards">${cols.slice(0, n).map((k) => { const im = img(colCover(k, c), { label: k.title, sizes: "(max-width: 680px) 50vw, 33vw" }); return `<a class="au-card au-collection-card" href="${esc(colHref(k))}"><span class="au-card-media">${im || `<span class="au-card-blank">${esc(String(k.title).slice(0, 1))}</span>`}</span><span class="au-card-name">${esc(k.title)}</span></a>`; }).join("")}</div></section>`;
+    }
+    let list = gridProducts(c, cid);
     if (!list.length) return "";
     const n = [3, 6, 9].includes(Number(s.settings?.limit)) ? Number(s.settings.limit) : 3;
     return `<section class="au-section">${heading(str(s.settings?.title), '<a class="au-link" href="/collections/all">View all</a>')}<div class="au-grid">${list.slice(0, n).map((p) => card(p, c)).join("")}</div></section>`;
@@ -167,13 +188,16 @@ export const SECTION_RENDERERS = {
     return `<footer class="aura-footer au-footer"><div><a class="au-wordmark" href="/">${esc(c.brand)}</a>${line ? `<p>${esc(line)}</p>` : ""}</div><nav aria-label="Store links and policies">${mine || '<a href="/collections/all">Collection</a><a href="/pages/about">About</a><a href="/pages/contact">Contact</a>'}<a href="/track">Track order</a>${POLICIES.map((k) => `<a href="/policies/${k}">${policyTitle(k)}</a>`).join("")}</nav>${social ? `<nav class="au-social" aria-label="Social">${social}</nav>` : ""}</footer>`;
   },
   "product-grid"(s, c) {
-    let list = c.products;
-    const cid = s.settings?.collection;
-    if (cid && list.some((p) => Array.isArray(p.collection_ids))) list = list.filter((p) => (p.collection_ids || []).includes(cid));
-    const title = str(s.settings?.title) || "Collection";
+    const k = activeCollection(c);
+    const list = gridProducts(c, s.settings?.collection);
+    const headSec = (c.layout || []).some((i) => i.type === "collection-heading" && i.settings?.enabled !== false);
+    const title = k ? k.title : str(s.settings?.title) || "Collection";
     const separate = (c.layout || []).some((i) => i.type === "collection-tools" && i.settings?.enabled !== false);
+    const pag = (c.layout || []).find((i) => i.type === "collection-pagination" && i.settings?.enabled !== false);
+    const size = pag ? normalisePageSize(pag.settings?.page_size) : 0;
+    const desc = k ? str(k.description) : c.settings.description;
     const tools = list.length > 1 && !separate ? `<div class="au-tools"><p class="au-count" data-catalog-count role="status"></p>${list.some((p) => !available(p)) ? '<label class="au-check"><input type="checkbox" data-catalog-stock> In stock only</label>' : ""}<label class="au-sr" for="au-sort">Sort products</label><select id="au-sort" data-catalog-sort><option value="">Featured</option><option value="price-asc">Price, low to high</option><option value="price-desc">Price, high to low</option><option value="available">Availability</option></select></div>` : "";
-    return `<section class="au-page"><h1>${esc(title)}</h1>${c.settings.description ? `<p class="au-lede">${esc(c.settings.description)}</p>` : ""}${tools}${list.length ? `<div class="au-grid" data-catalog>${list.map((p, i) => card(p, c, false, i)).join("")}</div><p class="au-noresult" data-catalog-empty hidden>No products match your search.</p>` : `<div class="au-empty"><h2>The collection is taking shape.</h2></div>`}</section>`;
+    return `<section class="au-page">${headSec ? "" : `<h1>${esc(title)}</h1>${desc ? `<p class="au-lede">${esc(desc)}</p>` : ""}`}${tools}${list.length ? `<div class="au-grid" data-catalog${size ? ` data-page-size="${size}"` : ""}>${list.map((p, i) => withCollections(card(p, c, false, i), collectionsOf(c).filter((x) => inCollection(x, p)).map((x) => x.id))).join("")}</div><p class="au-noresult" data-catalog-empty hidden>No products match your search.</p>` : `<div class="au-empty"><h2>The collection is taking shape.</h2></div>`}</section>`;
   },
   "product-details"(s, c) {
     const p = c.product;
@@ -214,30 +238,35 @@ export const SECTION_RENDERERS = {
 const plainText = (v) => str(v).replace(/<[^>]*>/g, "").trim();
 const cardsOf = (list, c) => `<div class="au-grid">${list.map((p) => card(p, c)).join("")}</div>`;
 Object.assign(SECTION_RENDERERS, {
-  faq(s) {
-    const items = blocks(s).filter((b) => str(b.question) && plainText(b.answer));
+  faq(s, c) {
+    const mine = entityFaq(c);
+    const items = mine.length || ownsFaq(c) ? mine : blocks(s).filter((b) => str(b.question) && plainText(b.answer));
     if (off(s) || !items.length) return "";
     return `<section class="au-section au-faq">${heading(str(s.settings?.title))}<div class="au-faq-list">${items.map((b) => `<details><summary>${esc(b.question)}</summary><div class="au-rich">${rich(b.answer)}</div></details>`).join("")}</div></section>`;
   },
-  "material-care"(s) {
-    if (off(s) || !plainText(s.settings?.body)) return "";
-    return `<section class="au-section au-info">${heading(str(s.settings.title) || "Materials and care")}<div class="au-rich">${rich(s.settings.body)}</div></section>`;
+  "material-care"(s, c) {
+    const body = has(c, "materials_care") ? content(c).materials_care : s.settings?.body;
+    if (off(s) || !plainText(body)) return "";
+    return `<section class="au-section au-info">${heading(str(s.settings.title) || "Materials and care")}<div class="au-rich">${rich(body)}</div></section>`;
   },
-  "how-to-use"(s) {
-    const items = blocks(s).filter((b) => str(b.title));
+  "how-to-use"(s, c) {
+    const mine = (Array.isArray(content(c).how_to_use) ? content(c).how_to_use : []).filter((b) => str(b?.title));
+    const items = mine.length || has(c, "how_to_use") ? mine : blocks(s).filter((b) => str(b.title));
     if (off(s) || !items.length) return "";
     return `<section class="au-section au-info">${heading(str(s.settings?.title) || "How to use")}<ol class="au-steps">${items.map((b) => `<li><strong>${esc(b.title)}</strong>${str(b.text) ? `<span>${esc(b.text)}</span>` : ""}</li>`).join("")}</ol></section>`;
   },
   "product-specs"(s, c) {
-    const rows = blocks(s).filter((b) => str(b.label) && str(b.value)).map((b) => [b.label, b.value]);
+    const mine = (Array.isArray(content(c).features) ? content(c).features : []).filter((b) => str(b?.label) && str(b?.value)).map((b) => [b.label, b.value]);
+    const rows = mine.length || has(c, "features") ? mine : blocks(s).filter((b) => str(b.label) && str(b.value)).map((b) => [b.label, b.value]);
     if (s.settings?.show_sku !== false && str(c.product?.sku)) rows.push(["SKU", c.product.sku]);
     if (off(s) || !rows.length) return "";
     return `<section class="au-section au-info">${heading(str(s.settings?.title) || "Specifications")}<dl class="au-specs">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl></section>`;
   },
-  "size-guide"(s) {
-    const rows = blocks(s).filter((b) => str(b.size));
+  "size-guide"(s, c) {
+    const mine = (Array.isArray(content(c).size_guide) ? content(c).size_guide : []).filter((b) => str(b?.size));
+    const rows = mine.length || has(c, "size_guide") ? mine : blocks(s).filter((b) => str(b.size));
     if (off(s) || !rows.length) return "";
-    const x = s.settings || {};
+    const x = { ...(s.settings || {}), ...(has(c, "size_note") ? { note: content(c).size_note ? `<p>${esc(content(c).size_note)}</p>` : "" } : {}) };
     return `<section class="au-section au-info">${heading(str(x.title) || "Size guide")}<table class="au-size"><thead><tr><th scope="col">${esc(str(x.heading_a) || "Size")}</th><th scope="col">${esc(str(x.heading_b) || "Measurement")}</th></tr></thead><tbody>${rows.map((b) => `<tr><th scope="row">${esc(b.size)}</th><td>${esc(b.measurement || "")}</td></tr>`).join("")}</tbody></table>${plainText(x.note) ? `<div class="au-rich">${rich(x.note)}</div>` : ""}</section>`;
   },
   "shipping-info"(s, c) {
@@ -245,8 +274,9 @@ Object.assign(SECTION_RENDERERS, {
     const x = s.settings || {};
     const policies = Array.isArray(c.data.policies) ? c.data.policies : [];
     const links = x.show_policy_links === false ? [] : [["shipping", "Shipping policy"], ["cancellation-refund", "Cancellation and refund policy"]].filter(([k]) => policies.some((p) => p.kind === k && p.body)).map(([k, l]) => `<a class="au-link" href="/policies/${k}">${l}</a>`);
-    if (!plainText(x.body) && !links.length) return "";
-    return `<section class="au-section au-info">${heading(str(x.title) || "Shipping and returns")}${plainText(x.body) ? `<div class="au-rich">${rich(x.body)}</div>` : ""}${links.length ? `<p class="au-info-links">${links.join("")}</p>` : ""}</section>`;
+    const body = has(c, "delivery_returns") ? content(c).delivery_returns : x.body;
+    if (!plainText(body) && !links.length) return "";
+    return `<section class="au-section au-info">${heading(str(x.title) || "Shipping and returns")}${plainText(body) ? `<div class="au-rich">${rich(body)}</div>` : ""}${links.length ? `<p class="au-info-links">${links.join("")}</p>` : ""}</section>`;
   },
   "related-products"(s, c) {
     if (off(s) || !c.product) return "";
@@ -261,26 +291,39 @@ Object.assign(SECTION_RENDERERS, {
     if (off(s) || !list.length) return "";
     return `<section class="au-section">${heading(str(s.settings?.title))}${cardsOf(list, c)}</section>`;
   },
-  "collection-heading"(s) {
-    const x = s.settings || {};
-    if (off(s) || (!str(x.kicker) && !str(x.intro))) return "";
-    return `<section class="au-section au-collection-head">${str(x.kicker) ? `<p class="au-eyebrow">${esc(x.kicker)}</p>` : ""}${str(x.intro) ? `<p class="au-lede">${esc(x.intro)}</p>` : ""}</section>`;
+  "collection-heading"(s, c) {
+    const x = s.settings || {}, k = activeCollection(c);
+    const desc = k ? str(k.description) : str(x.intro);
+    if (off(s) || (!k && !str(x.kicker) && !desc)) return "";
+    return `<section class="au-section au-collection-head">${str(x.kicker) ? `<p class="au-eyebrow">${esc(x.kicker)}</p>` : ""}${k ? `<h1>${esc(k.title)}</h1>` : ""}${desc ? `<p class="au-lede">${esc(desc)}</p>` : ""}</section>`;
   },
   "collection-nav"(s, c) {
-    const cols = (Array.isArray(c.data.collections) ? c.data.collections : []).filter((k) => k?.id && (k.title || k.name) && c.products.some((p) => (p.collection_ids || []).includes(k.id)));
+    const cur = activeCollection(c);
+    const cols = collectionsOf(c).filter((k) => colHref(k) || c.products.some((p) => (p.collection_ids || []).includes(k.id)));
     if (off(s) || !cols.length) return "";
-    return `<nav class="au-section au-collection-nav" aria-label="${esc(str(s.settings?.title) || "Browse")}"><button type="button" class="au-chip" data-catalog-collection="" aria-pressed="true">All</button>${cols.map((k) => `<button type="button" class="au-chip" data-catalog-collection="${esc(k.id)}" aria-pressed="false">${esc(k.title || k.name)}</button>`).join("")}</nav>`;
+    const chip = (k) => colHref(k) ? `<a class="au-chip" href="${esc(colHref(k))}" aria-current="${cur && cur.id === k.id ? "page" : "false"}">${esc(k.title || k.name)}</a>` : `<button type="button" class="au-chip" data-catalog-collection="${esc(k.id)}" aria-pressed="false">${esc(k.title || k.name)}</button>`;
+    const all = cols.some((k) => colHref(k)) ? `<a class="au-chip" href="/collections/all" aria-current="${cur ? "false" : "page"}">All</a>` : `<button type="button" class="au-chip" data-catalog-collection="" aria-pressed="true">All</button>`;
+    return `<nav class="au-section au-collection-nav" aria-label="${esc(str(s.settings?.title) || "Browse")}">${all}${cols.map(chip).join("")}</nav>`;
   },
   "collection-tools"(s, c) {
     let list = c.products;
     if (off(s) || list.length < 2) return "";
     return `<section class="au-section au-tools" aria-label="${esc(str(s.settings?.title) || "Filter and sort")}"><p class="au-count" data-catalog-count role="status"></p>${list.some((p) => !available(p)) ? '<label class="au-check"><input type="checkbox" data-catalog-stock> In stock only</label>' : ""}<label class="au-sr" for="au-sort">Sort products</label><select id="au-sort" data-catalog-sort><option value="">Featured</option><option value="price-asc">Price, low to high</option><option value="price-desc">Price, high to low</option><option value="available">Availability</option></select></section>`;
   },
-  "collection-pagination"() { return ""; },
+  "collection-pagination"(s, c) {
+    if (off(s)) return "";
+    const size = normalisePageSize(s.settings?.page_size);
+    const total = gridProducts(c, c.layout?.find((i) => i.type === "product-grid")?.settings?.collection).length;
+    if (c.options?.editorSkeleton && total <= size) return `<nav class="au-section au-pagination au-skel" aria-label="Pagination outline"><span class="au-chip">Previous</span><span class="au-chip">Page 1</span><span class="au-chip">Next</span></nav>`;
+    if (total <= size) return "";
+    return `<nav class="au-section au-pagination" data-catalog-pagination aria-label="Pagination"><button type="button" class="au-chip" data-page-prev>Previous</button><span data-page-status role="status"></span><button type="button" class="au-chip" data-page-next>Next</button></nav>`;
+  },
   "related-collections"(s, c) {
-    const cols = (Array.isArray(c.data.collections) ? c.data.collections : []).filter((k) => k?.id && (k.title || k.name) && c.products.some((p) => (p.collection_ids || []).includes(k.id)));
+    const cur = activeCollection(c), all = collectionsOf(c).filter((k) => colHref(k) && (!cur || k.id !== cur.id));
+    const picked = cur && Array.isArray(cur.related_ids) && cur.related_ids.length ? cur.related_ids.map((id) => all.find((k) => k.id === id)).filter(Boolean) : [];
+    const cols = picked.length ? picked : all;
     if (off(s) || !cols.length) return "";
-    return `<section class="au-section">${heading(str(s.settings?.title) || "More collections")}<nav class="au-collection-nav" aria-label="Related collections">${cols.map((k) => `<button type="button" class="au-chip" data-catalog-collection="${esc(k.id)}" aria-pressed="false">${esc(k.title || k.name)}</button>`).join("")}</nav></section>`;
+    return `<section class="au-section">${heading(str(s.settings?.title) || "More collections")}<nav class="au-collection-nav" aria-label="Related collections">${cols.map((k) => `<a class="au-chip" href="${esc(colHref(k))}">${esc(k.title)}</a>`).join("")}</nav></section>`;
   },
   "collection-description"(s) {
     if (off(s) || !plainText(s.settings?.body)) return "";

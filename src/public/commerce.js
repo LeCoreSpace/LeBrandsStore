@@ -150,6 +150,10 @@ function renderCommerce() {
   const items = validated?.items || [];
   const cartLines = document.querySelector("[data-cart-page-lines]");
   if (cartLines) cartLines.innerHTML = linesMarkup(items, true);
+  const inBag = new Set(items.map((item) => String(item.product_id)));
+  document.querySelectorAll("[data-rec-id]").forEach((node) => { node.hidden = inBag.has(node.dataset.recId); });
+  const recs = document.querySelector("[data-cart-recs]");
+  if (recs) recs.hidden = ![...recs.querySelectorAll("[data-rec-id]")].some((node) => !node.hidden);
   const cartSummary = document.querySelector("[data-cart-summary]");
   if (cartSummary) cartSummary.innerHTML = summaryMarkup(validated);
   const checkoutSummary = document.querySelector("[data-checkout-summary]");

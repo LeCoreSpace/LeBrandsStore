@@ -82,13 +82,14 @@ export function renderAura(data = {}, options = {}) {
   const product = products.find((i) => String(i.id) === String(options.productId)) || (page === "product" ? undefined : products[0]);
   const prodForPage = page === "product" ? (products.find((i) => String(i.id) === String(options.productId)) || products[0]) : product;
   const commercePage = options.commerce && ["cart", "checkout", "track", "confirmation"].includes(page);
-  const title = page === "home" ? brand : page === "collection" ? `Shop all · ${brand}` : page === "about" ? `Our story · ${brand}`
+  const activeCol = page === "collection" && options.collectionId ? (Array.isArray(data.collections) ? data.collections : []).find((k) => String(k.id) === String(options.collectionId)) : null;
+  const title = page === "home" ? brand : page === "collection" ? `${activeCol?.title || "Shop all"} · ${brand}` : page === "about" ? `Our story · ${brand}`
     : page === "contact" ? `Contact · ${brand}` : page === "policy" ? `${policyName(options.policyKind)} · ${brand}`
       : page === "404" ? `Page not found · ${brand}` : page === "product" ? `${prodForPage?.title || "Product"} · ${brand}`
         : page === "cart" ? `Your bag · ${brand}` : page === "checkout" ? `Checkout · ${brand}` : page === "track" ? `Track your order · ${brand}`
           : page === "confirmation" ? `Order confirmed · ${brand}` : brand;
-  const descriptionText = String(description).replace(/\s+/g, " ").slice(0, 155);
-  const canonicalPath = page === "collection" ? "/collections/all" : page === "product" ? `/products/${encodeURIComponent(prodForPage?.id || "")}`
+  const descriptionText = String(activeCol?.description || description).replace(/\s+/g, " ").slice(0, 155);
+  const canonicalPath = page === "collection" ? (activeCol && /^[a-z0-9-]+$/.test(String(activeCol.slug || "")) ? `/collections/${activeCol.slug}` : "/collections/all") : page === "product" ? `/products/${encodeURIComponent(prodForPage?.id || "")}`
     : page === "about" ? "/pages/about" : page === "contact" ? "/pages/contact" : page === "policy" ? `/policies/${slug(options.policyKind)}` : "/";
   const canonicalUrl = subdomain && !commercePage ? `https://${subdomain}.lebrands.store${canonicalPath}` : "";
   const logoUrl = safeImage(settings.logo_url);

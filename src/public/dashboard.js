@@ -3,6 +3,7 @@ import { statusLabel, stateName, indianDate, allowedTransitions } from "/assets/
 import { registeredSupplierErrors, validInvoicePrefix, INDIAN_STATES } from "/assets/commerce-rules.js";
 import { matchesOrderTab, loadedSalesSummary, paymentState } from "/assets/dashboard-view-model.js";
 import {observeGSTINForms} from "/assets/gstin-ui.js";
+import { textToRich, cleanRows } from "/assets/content-form.js";
 
 const root = document.querySelector(".lb-app");
 const storeId = root?.dataset.storeId || "";
@@ -206,9 +207,52 @@ function productPayload(form) {
     sku: String(fd.get("sku") || "").trim(),
     hsn_code: String(fd.get("hsn_code") || "").trim(),
     gst_rate: fd.get("gst_rate") === "" || fd.get("gst_rate") == null ? null : Number(fd.get("gst_rate")),
+    ...(form.querySelector("[data-content-form]") ? { content: contentPayload(form).content } : {}),
     ...(!isNewForm(form) ? { expected_stock: form.dataset.expectedStock === "null" ? null : Number(form.dataset.expectedStock) } : {}),
   };
 }
+// Untouched rich fields keep their saved HTML so bold, italic and lists survive unrelated saves.
+const richKeep = (area, value) => area && area.dataset.originalHtml !== undefined && area.value === area.defaultValue ? area.dataset.originalHtml : textToRich(value);
+function readRows(box) {
+  const keys = box.dataset.keys.split(",").map(k => k.split(":")[0]);
+  const rich = new Set(box.dataset.keys.split(",").filter(k => k.endsWith(":rich")).map(k => k.split(":")[0]));
+  const required = [box.dataset.required, ...(box.dataset.rows === "faq" ? ["answer"] : [])].filter((v, i, a) => keys.includes(v) && a.indexOf(v) === i);
+  const rows = [], errors = [];
+  [...box.querySelectorAll("[data-row]")].forEach((node, index) => {
+    const raw = Object.fromEntries(keys.map(k => [k, node.querySelector('[data-key="' + k + '"]')?.value ?? ""]));
+    const cleaned = cleanRows([raw], keys, required);
+    errors.push(...cleaned.errors.map(e => `${box.dataset.noun} ${e.replace("Row 1:", `Row ${index + 1}:`).toLowerCase()}`));
+    for (const row of cleaned.rows) rows.push(Object.fromEntries(Object.entries(row).map(([key, value]) =>
+      [key, rich.has(key) ? richKeep(node.querySelector('[data-key="' + key + '"]'), value) : value])));
+  });
+  return { rows, errors };
+}
+function contentPayload(form) {
+  const scope = form.querySelector("[data-content-form]");
+  const content = {}, errors = [];
+  if (!scope) return { content: undefined, errors };
+  for (const area of scope.querySelectorAll("[data-content]")) {
+    const value = area.hasAttribute("data-rich") ? richKeep(area, area.value) : area.value.trim();
+    content[area.dataset.content] = value;
+  }
+  for (const box of scope.querySelectorAll("[data-rows]")) {
+    const result = readRows(box);
+    errors.push(...result.errors);
+    content[box.dataset.rows] = result.rows;
+  }
+  return { content, errors };
+}
+document.addEventListener("click", event => {
+  const add = event.target.closest("[data-row-add]");
+  if (add) {
+    const box = add.closest("[data-rows]");
+    box.querySelector("[data-row-list]").append(box.querySelector("template").content.cloneNode(true));
+    box.querySelector("[data-row-list]").lastElementChild?.querySelector("input,textarea")?.focus();
+    return;
+  }
+  const remove = event.target.closest("[data-row-remove]");
+  if (remove && window.confirm("Remove this row? It is deleted when you save.")) remove.closest("[data-row]")?.remove();
+});
 function updateGSTWarning(form) {
   const warning = form.querySelector("[data-product-gst-warning]");
   if (!warning) return;
@@ -237,6 +281,7 @@ document.querySelector("[data-product-form]")?.addEventListener("submit", async 
   const payload = productPayload(form);
   const errorNode = form.querySelector("[data-form-error]");
   const errors = validateProduct(payload);
+  contentPayload(form).errors.forEach((message, i) => { errors["content_" + i] = message; });
   if (!Number.isSafeInteger(payload.price_paise)) errors.price_paise = "Enter a valid price in rupees.";
   if (payload.compare_at_paise != null && !Number.isSafeInteger(payload.compare_at_paise)) errors.compare_at_paise = "Enter a valid compare-at price.";
   if (errorNode) {
@@ -379,6 +424,92 @@ document.querySelector("[data-payment-collected]")?.addEventListener("click", as
 });
 
 void draftData;
+
+// ---------- collections ----------
+const collectionForm = document.querySelector("[data-collection-form]");
+if (collectionForm) {
+  const coverBox = collectionForm.querySelector("[data-cover]");
+  let cover = null;
+  try { cover = JSON.parse(coverBox.dataset.coverValue || "null"); } catch { cover = null; }
+  const paintCover = () => {
+    const preview = coverBox.querySelector("[data-cover-preview]");
+    preview.replaceChildren();
+    if (cover?.url) { const img = document.createElement("img"); img.src = cover.url; img.alt = cover.alt || ""; img.style.maxWidth = "240px"; preview.append(img); }
+    else { const p = document.createElement("p"); p.className = "lb-muted"; p.textContent = "No cover chosen. The first product image is used."; preview.append(p); }
+    coverBox.querySelector("[data-cover-clear]").hidden = !cover;
+  };
+  const setCover = media => { cover = media; coverBox.querySelector("[data-cover-alt]").value = media?.alt || ""; paintCover(); };
+  coverBox.querySelector("[data-cover-upload]").addEventListener("change", async event => {
+    const file = event.target.files?.[0]; if (!file) return;
+    try {
+      const body = new FormData(); body.append("file", file); body.append("type", "image"); body.append("alt", file.name.replace(/\.[^.]+$/, ""));
+      const result = await request(api + "/media", { method: "POST", body });
+      if (!result.media?.id) throw new Error("The upload did not return usable media.");
+      setCover(result.media); notify("Cover uploaded.");
+    } catch (error) { notify(error.message, true); } finally { event.target.value = ""; }
+  });
+  coverBox.querySelector("[data-cover-clear]").addEventListener("click", () => setCover(null));
+  coverBox.querySelector("[data-cover-library]").addEventListener("click", async () => {
+    const panel = coverBox.querySelector("[data-cover-library-panel]");
+    panel.hidden = !panel.hidden; if (panel.hidden) return;
+    panel.textContent = "Loading library...";
+    try {
+      const result = await request(api + "/media");
+      const images = (Array.isArray(result.media) ? result.media : []).filter(m => /\.(png|jpe?g|webp|svg)$/i.test(m.url || ""));
+      panel.replaceChildren();
+      if (!images.length) { panel.textContent = "Your library has no images yet. Upload one instead."; return; }
+      for (const media of images) {
+        const button = document.createElement("button"); button.type = "button"; button.className = "lb-text-button";
+        const img = document.createElement("img"); img.src = media.url; img.alt = media.alt || ""; img.style.cssText = "width:72px;height:72px;object-fit:cover";
+        button.append(img); button.addEventListener("click", () => { setCover(media); panel.hidden = true; }); panel.append(button);
+      }
+    } catch (error) { panel.textContent = error.message || "Library could not load."; }
+  });
+  const finite = v => typeof v === "number" && Number.isFinite(v);
+  const normalizeCover = (media, alt) => {
+    if (!media?.url) return null;
+    const out = { url: String(media.url), alt };
+    for (const k of ["width", "height"]) if (Number.isInteger(media[k]) && media[k] > 0) out[k] = media[k];
+    for (const k of ["focalX", "focalY"]) if (finite(media[k])) out[k] = media[k];
+    if (Array.isArray(media.sources)) out.sources = media.sources.filter(x => x && typeof x.url === "string" && Number.isInteger(x.width) && x.width > 0).map(x => ({ url: x.url, width: x.width }));
+    return out;
+  };
+  const collectionBody = () => {
+    const fd = new FormData(collectionForm), faq = readRows(collectionForm.querySelector('[data-rows="faq"]'));
+    const alt = coverBox.querySelector("[data-cover-alt]").value.trim();
+    return { errors: faq.errors, body: {
+      title: String(fd.get("title") || "").trim(), slug: String(fd.get("slug") || "").trim(), description: String(fd.get("description") || "").trim(),
+      product_ids: [...collectionForm.querySelectorAll("[data-product-pick]:checked")].map(i => i.value),
+      related_ids: [...collectionForm.querySelectorAll("[data-related-pick]:checked")].map(i => i.value),
+      cover: normalizeCover(cover, alt),
+      faq: faq.rows.map(row => ({ question: row.question, answer: row.answer })),
+    } };
+  };
+  const formError = message => { const node = collectionForm.querySelector("[data-form-error]"); node.textContent = message; node.hidden = !message; if (message) notify(message, true); };
+  collectionForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    const { body, errors } = collectionBody();
+    if (!body.title) errors.push("Enter a collection title.");
+    if (body.slug && (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(body.slug) || body.slug === "all")) errors.push("Use lowercase letters, numbers and hyphens for the web address. \"all\" is reserved.");
+    if (errors.length) { formError(errors.join(" ")); return; }
+    if (!body.slug) body.slug = body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80);
+    formError("");
+    const isNew = collectionForm.dataset.new === "true";
+    const buttons = [...document.querySelectorAll('button[form="lb-collection-form"]')];
+    buttons.forEach(b => busy(b, true, "Saving..."));
+    try {
+      await request(isNew ? api + "/collections" : api + "/collections/" + encodeURIComponent(collectionForm.dataset.collectionId), { method: isNew ? "POST" : "PATCH", body: JSON.stringify(body) });
+      notify("Collection saved as a draft.");
+      window.location.href = "/stores/" + encodeURIComponent(storeId) + "/collections";
+    } catch (error) { buttons.forEach(b => busy(b, false)); formError(error.message || "Collection could not be saved."); }
+  });
+  collectionForm.querySelector("[data-collection-delete]")?.addEventListener("click", async event => {
+    if (!window.confirm("Delete this collection? Products stay in your catalogue. Draft only until you publish.")) return;
+    busy(event.currentTarget, true, "Deleting...");
+    try { await request(api + "/collections/" + encodeURIComponent(collectionForm.dataset.collectionId), { method: "DELETE" }); window.location.href = "/stores/" + encodeURIComponent(storeId) + "/collections"; }
+    catch (error) { busy(event.currentTarget, false); formError(error.message || "Collection could not be deleted."); }
+  });
+}
 
 const sidebar = document.querySelector("[data-sidebar]");
 const openBadge=document.querySelector("[data-open-order-count]");

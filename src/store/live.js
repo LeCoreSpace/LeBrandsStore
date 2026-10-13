@@ -2,11 +2,16 @@ import { renderAura } from "../public/aura.js";
 import { POLICY_KINDS, UUID } from "../public/validation.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import { handleCheckout, isCheckoutPath } from "../checkout/routes.js";
-import { pagesEnabled, pageLayouts } from "./pages.js";
+import { pagesEnabled, pageLayouts, skeletonEnabled } from "./pages.js";
 
 export function storefrontPage(path, data) {
   if (path === "/") return { page: "home", status: 200 };
   if (path === "/collections/all") return { page: "collection", status: 200 };
+  const collection = path.match(/^\/collections\/([a-z0-9]+(?:-[a-z0-9]+)*)$/);
+  if (collection) {
+    const found = data.collections?.find(item => item.slug === collection[1]);
+    if (found) return { page: "collection", collectionId: found.id, status: 200 };
+  }
   if (["/about", "/pages/about"].includes(path)) return { page: "about", status: 200 };
   if (["/contact", "/pages/contact"].includes(path)) return { page: "contact", status: 200 };
   const product = path.match(/^\/products\/([^/]+)$/);
@@ -28,7 +33,7 @@ export async function serveStorefront(request, db, store, env = {}) {
     `;
     if (row?.snapshot && await pagesEnabled(tx)) {
       const pages = await pageLayouts(tx, store.store_id, { published: true });
-      row.snapshot = { ...row.snapshot, layouts: pages.layouts };
+      row.snapshot = { ...row.snapshot, layouts: pages.layouts, aura_skeleton_enabled: await skeletonEnabled(tx) };
     }
     return row ? [row] : [];
   });

@@ -3,6 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import postgres from "postgres";
 import { clearPgEnvironment, logDatabaseFailure, printConnectionTarget, validateSupabaseUrl } from "./connection.js";
 import { preparePageMigration } from "./page-schema-migration.js";
+import { migrationSelection } from "./migration-selection.js";
 
 clearPgEnvironment();
 try {
@@ -17,8 +18,9 @@ let sql;
 
 try {
   sql = postgres(process.env.SUPABASE_DB_URL, { ssl: "require", max: 1 });
-  const directory = new URL("./migrations/", import.meta.url);
-  const filenames = (await readdir(directory))
+  const selection = migrationSelection(process.argv.slice(2));
+  const directory = new URL(selection.staged ? "./staged/" : "./migrations/", import.meta.url);
+  const filenames = selection.staged ? [selection.filename] : (await readdir(directory))
     .filter((filename) => /^\d{4}_[a-z0-9_]+\.sql$/.test(filename))
     .sort();
   if (!filenames.length) throw new MigrationConfigurationError("No migration files found.");
@@ -42,6 +44,10 @@ try {
       )
     `;
     await tx`REVOKE ALL ON TABLE public.schema_migrations FROM PUBLIC`;
+    if (selection.staged) {
+      const [dependency] = await tx`SELECT filename FROM public.schema_migrations WHERE filename='0010_store_pages.sql'`;
+      if (!dependency) throw new MigrationConfigurationError("Apply and review 0010 before the Aura catalogue. No migrations were applied.");
+    }
 
     for (const filename of filenames) {
       const source = await preparePageMigration(filename, await readFile(new URL(filename, directory), "utf8"));

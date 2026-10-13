@@ -14,7 +14,7 @@ export function isDashboardPath(path,method = "GET") {
   if (/^\/(?:api\/)?stores\/new(?:\/|$)/.test(path)) return false;
   if (/^\/(?:api\/)?stores\/[^/]+$/.test(path)) return true;
   if (/^\/(?:api\/)?stores\/[^/]+\/(?:orders|customers|invoices)(?:\/[^/]+(?:\/(?:status|payment))?)?$/.test(path)) return true;
-  if (/^\/stores\/[^/]+\/(?:products(?:\/[^/]+)?|settings)$/.test(path)) return true;
+  if (/^\/stores\/[^/]+\/(?:(?:products|collections)(?:\/[^/]+)?|settings)$/.test(path)) return true;
   if (/^\/api\/stores\/[^/]+\/products(?:\/[^/]+)?$/.test(path) && ["GET","HEAD"].includes(method)) return true;
   return /^\/api\/stores\/[^/]+\/(?:products\/[^/]+\/(?:archive|stock)|exports\/(?:customers|orders|products))$/.test(path);
 }
@@ -27,7 +27,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
     if (!match || !UUID.test(match[1])) throw commerceError("Store not found.",undefined,404);
     if (!user || user.must_change_password) throw commerceError("Sign in to manage your store.",undefined,401);
     const [,id,section = "overview",child,action] = match;
-    if (child && !UUID.test(child) && !(section === "products" && child === "new") &&
+    if (child && !UUID.test(child) && !(["products", "collections"].includes(section) && child === "new") &&
       !(section === "exports" && ["orders","products","customers"].includes(child))) throw commerceError("Record not found.",undefined,404);
     const read = ["GET","HEAD"].includes(request.method);
     const mutation = request.method === "POST" && api && ((section === "orders" && child && ["status","payment"].includes(action)) ||
@@ -70,6 +70,11 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
       } else if (section === "invoices") {
         if (child) data.invoice = await invoiceDetail(tx,id,child);
         else data.invoices = await listInvoices(tx,id);
+      } else if (section === "collections") {
+        if (!draft.aura_skeleton_enabled) throw commerceError("Apply the Aura section catalogue update first.", undefined, 409);
+        data.collection_id = child === "new" ? undefined : child;
+        data.collection = child === "new" ? null : child ? draft.collections?.find(c => c.id === child) : undefined;
+        if (child && child !== "new" && !data.collection) throw commerceError("Collection not found.", undefined, 404);
       } else if (section === "products") {
         data.product = child === "new" ? null : child ? draft.products.find((p) => p.id === child) : undefined;
         if (child && child !== "new" && !data.product) throw commerceError("Product not found.",undefined,404);
@@ -79,7 +84,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
     if (section === "exports") return new Response(csv(result.headers,result.rows),{headers:{...headers,
       "content-type":"text/csv; charset=utf-8","content-disposition":`attachment; filename="${section}-${child}.csv"`}});
     if (api) return json(result);
-    const view = section === "products" && child ? child === "new" ? "product-new" : "product" : section === "orders" && child ? "order" : section === "customers" && child ? "customer" : section;
+    const view = section === "collections" && child ? child === "new" ? "collection-new" : "collection" : section === "products" && child ? child === "new" ? "product-new" : "product" : section === "orders" && child ? "order" : section === "customers" && child ? "customer" : section;
     return new Response(request.method === "HEAD" ? null : result.invoice ? renderInvoice(result.invoice,`/stores/${id}/orders`) : renderDashboard(view,result,user),
       {headers:{...headers,"content-type":"text/html; charset=utf-8"}});
   } catch (error) {

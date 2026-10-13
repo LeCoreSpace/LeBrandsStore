@@ -5,6 +5,7 @@ import { CURRENT_GST_RATES, INDIAN_STATES, registeredBusinessState, registeredSu
 import { statusLabel, stateName, indianDate, allowedTransitions, timelineSentence, accountIdentity } from "../public/dashboard-rules.js";
 import { paymentState, fulfilmentState } from "../public/dashboard-view-model.js";
 import { dashboardIcon } from "./dashboard-icons.js";
+import { richToText } from "../public/content-form.js";
 
 const esc = escapeHtml;
 const money = (value) => `₹${(Number(value || 0) / 100).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -34,7 +35,7 @@ function documentPage(view, data, user, body) {
   }
   const title = ({
     overview: "Home", orders: "Orders", order: "Order details", products: "Products",
-    "product-new": "Add product", product: "Edit product", customers: "Customers",
+    "product-new": "Add product", product: "Edit product", collections: "Collections", "collection-new": "Add collection", collection: "Edit collection", customers: "Customers",
     customer: "Customer details", invoices: "Invoices", settings: "Settings",
   })[view] || "Overview";
   return layout({
@@ -47,7 +48,7 @@ function documentPage(view, data, user, body) {
       ${header(data, user, view)}
        <main class="lb-main"><div class="lb-content">${store.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline; your data is unchanged. ${esc(store.approval_revocation_note || "")}${store.status === "awaiting_approval" ? " Your renewed approval request is awaiting review." : ""}</p>` : store.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is offline until a LeBrands reviewer approves it.</p>' : ""}${body}</div></main></div></div>
       <div class="lb-toast" role="status" aria-live="polite" data-toast hidden></div>
-      <script type="application/json" id="dashboard-data">${safeJson({ store, role: data.role, draft: data.draft, filters: data.filters, checkoutSettings: data.checkoutSettings })}</script>
+      <script type="application/json" id="dashboard-data">${safeJson({ store, role: data.role, draft: data.draft, aura_skeleton_enabled: data.aura_skeleton_enabled === true, collection_id: data.collection_id || "", filters: data.filters, checkoutSettings: data.checkoutSettings })}</script>
     </div>`,
   });
 }
@@ -64,8 +65,9 @@ function header(data, user, view) {
     ["products", "Products", `${root}/products`, "products"],
     ["customers", "Customers", `${root}/customers`, "customers"],
     ["invoices", "Invoices", `${root}/invoices`, "invoices"],
+    ...(data.aura_skeleton_enabled === true ? [["collections", "Collections", `${root}/collections`, "products"]] : []),
   ];
-  const active = view === "order" ? "orders" : view.startsWith("product") || view === "product" ? "products" : view === "customer" ? "customers" : view;
+  const active = view.startsWith("collection") ? "collections" : view === "order" ? "orders" : view.startsWith("product") || view === "product" ? "products" : view === "customer" ? "customers" : view;
   const storeUrl = store.subdomain ? `https://${encodeURIComponent(store.subdomain)}.lebrands.store/` : "#";
   return `<div class="lb-shell">
     <button type="button" class="lb-drawer-shade" data-drawer-close aria-label="Close navigation"></button>
@@ -248,6 +250,7 @@ function productEditor(data, isNew) {
       <section class="lb-side-box"><h2>Tax</h2><label class="lb-field">HSN code<input name="hsn_code" maxlength="8" value="${esc(product.hsn_code || "")}" placeholder="4, 6 or 8 digits"></label><label class="lb-field">GST rate<select name="gst_rate" required><option value="" ${product.gst_rate==null?"selected":""}>Choose a GST rate</option>${rates.map(rate => `<option value="${rate}" ${product.gst_rate!=null&&Number(product.gst_rate) === rate ? "selected" : ""}>${rate===0?"0% / Exempt":`${rate}%`}${CURRENT_GST_RATES.includes(rate) ? "" : " · legacy rate"}</option>`).join("")}</select></label><p class="lb-muted" data-product-gst-warning role="status" hidden></p>${legacy ? `<p class="lb-legacy-notice">This product uses a legacy ${esc(product.gst_rate)}% GST rate. Confirm the correct slab before updating.</p>` : ""}</section>
        ${!isNew && !isArchived ? `<section class="lb-side-box"><h2>Stock adjustment</h2><label class="lb-field">Quantity change<input type="number" step="1" name="stock_delta" value="1"></label><label class="lb-field">Reason<input name="stock_reason" maxlength="200" placeholder="Stock count correction"></label><button type="button" class="lb-button lb-button-outline lb-full" data-stock-adjust>Adjust stock</button></section>` : ""}
     </aside></div>
+    ${data.aura_skeleton_enabled === true ? productContentSection(obj(product.content)) : ""}
     <div class="lb-form-error" role="alert" data-form-error ${Object.keys(errors).length ? "" : "hidden"}>${Object.values(errors).map(esc).join(" ")}</div>
      <div class="lb-form-actions"><a class="lb-text-button" href="/stores/${storeId}/products">Cancel</a><button class="lb-button lb-button-outline" type="submit">${isNew ? "Save product" : "Save changes"}</button>${!isNew && !isArchived ? `<button type="button" class="lb-button lb-button-danger" data-archive>Archive product</button>` : ""}</div>
   </form>`;
@@ -343,9 +346,62 @@ function normalizeView(view) {
   if (["order-detail", "order"].includes(v)) return "order";
   if (["new-product", "new_product", "product-new", "products-new"].includes(v)) return "product-new";
   if (["edit-product", "product-edit", "product-editor", "product-detail", "product"].includes(v)) return "product";
+  if (["collections", "collection-new", "collection"].includes(v)) return v;
   if (["customer-detail", "customer"].includes(v)) return "customer";
   if (["orders", "products", "customers", "invoices", "settings"].includes(v)) return v;
   return "overview";
+}
+
+
+function rowsEditor(name, noun, rows, fields) {
+  const row = (r) => `<fieldset class="lb-content-row" data-row>${fields.map(f => f.rich
+    ? `<label class="lb-field">${esc(f.label)}<textarea data-key="${f.key}" data-original-html="${esc(r[f.key] ?? "")}" rows="3" maxlength="${f.max}">${esc(richToText(r[f.key]))}</textarea></label>`
+    : `<label class="lb-field">${esc(f.label)}<input data-key="${f.key}" maxlength="${f.max}" value="${esc(r[f.key] ?? "")}"></label>`).join("")}<button type="button" class="lb-text-button" data-row-remove>Remove this ${esc(noun)}</button></fieldset>`;
+  return `<div class="lb-rows" data-rows="${name}" data-noun="${esc(noun)}" data-keys="${fields.map(f => f.key + (f.rich ? ":rich" : "")).join(",")}" data-required="${esc(fields[0].key)}"><div data-row-list>${list(rows).map(row).join("")}</div><template data-row-template>${row({})}</template><button type="button" class="lb-button lb-button-outline lb-button-small" data-row-add>Add ${esc(noun)}</button></div>`;
+}
+function richField(name, label, value, max = 4000) {
+  return `<label class="lb-field">${esc(label)}<textarea data-content="${name}" data-rich data-original-html="${esc(value ?? "")}" rows="5" maxlength="${max}" placeholder="Plain paragraphs. Start lines with - for a list.">${esc(richToText(value))}</textarea></label>`;
+}
+function productContentSection(c) {
+  return `<section class="lb-card lb-content-card" data-content-form><div class="lb-card-heading"><h2>Product page content</h2></div><p class="lb-muted">Saved as a draft. Customers see this after you publish. Clear a field to remove that product's section content.</p>
+    ${richField("description_features", "Description features", c.description_features)}
+    <h3>Features</h3>${rowsEditor("features", "feature", c.features, [{ key: "label", label: "Label", max: 80 }, { key: "value", label: "Value", max: 200 }])}
+    ${richField("materials_care", "Materials and care", c.materials_care)}
+    <h3>Size guide</h3>${rowsEditor("size_guide", "size row", c.size_guide, [{ key: "size", label: "Size", max: 40 }, { key: "measurement", label: "Measurement", max: 120 }])}
+    <label class="lb-field">Size note<textarea data-content="size_note" rows="2" maxlength="500">${esc(c.size_note || "")}</textarea></label>
+    <h3>How to use</h3>${rowsEditor("how_to_use", "step", c.how_to_use, [{ key: "title", label: "Step title", max: 120 }, { key: "text", label: "Step text", max: 600 }])}
+    <h3>Questions and answers</h3>${rowsEditor("faq", "question", c.faq, [{ key: "question", label: "Question", max: 200 }, { key: "answer", label: "Answer", max: 2000, rich: true }])}
+    ${richField("delivery_returns", "Delivery and returns", c.delivery_returns)}
+  </section>`;
+}
+function draftCollections(data) { return list(data.draft?.collections || data.collections); }
+function collectionsPage(data) {
+  const storeId = encodeURIComponent(data.store?.store_id || ""), cols = draftCollections(data);
+  const rows = cols.length ? `<div class="lb-table-wrap"><table class="lb-table"><thead><tr><th>Collection</th><th>Address</th><th>Products</th><th></th></tr></thead><tbody>${cols.map(k => { const href = `/stores/${storeId}/collections/${encodeURIComponent(k.id)}`; const cover = safeHttps(k.cover?.url); return `<tr><td><div class="lb-product-cell">${cover ? `<img src="${esc(cover)}" alt="${esc(k.cover.alt || "")}">` : '<span class="lb-product-thumb" aria-hidden="true"></span>'}<a class="lb-row-link" href="${href}">${esc(k.title || "Untitled collection")}</a></div></td><td>/collections/${esc(k.slug || "")}</td><td>${list(k.product_ids).length}</td><td><a class="lb-edit-link" href="${href}">Edit</a></td></tr>`; }).join("")}</tbody></table></div>` : empty("No collections yet.", "Group products into collections. They appear on your home page and collection pages after you publish.", buttonLink(`/stores/${storeId}/collections/new`, "Add your first collection"));
+  return `${pageHeading("", "Collections", "", buttonLink(`/stores/${storeId}/collections/new`, "Add collection"))}${actionError(data)}${rows}`;
+}
+function collectionEditor(data, isNew) {
+  const storeId = encodeURIComponent(data.store?.store_id || ""), cols = draftCollections(data);
+  const k = isNew ? {} : obj(cols.find(i => String(i.id) === String(data.collection_id || data.id)));
+  const products = list(data.draft?.products || data.products).filter(p => p.status !== "archived" && !p.archived_at);
+  const picked = new Set(list(k.product_ids)), related = new Set(list(k.related_ids));
+  const cover = obj(k.cover), coverUrl = safeHttps(cover.url);
+  if (!isNew && !k.id) return `${pageHeading("", "Collection not found", "", buttonLink(`/stores/${storeId}/collections`, "Back to collections", "quiet"))}${empty("This collection does not exist.", "It may have been deleted.")}`;
+  const others = cols.filter(i => i.id !== k.id);
+  return `${pageHeading("", isNew ? "Add collection" : esc(k.title || "Edit collection"), "", `<button class="lb-button" type="submit" form="lb-collection-form">${isNew ? "Save collection" : "Save changes"}</button>${buttonLink(`/stores/${storeId}/collections`, "Back", "quiet")}`)}${actionError(data)}
+  <form id="lb-collection-form" class="lb-product-form" data-collection-form data-new="${isNew}" data-collection-id="${esc(k.id || "")}"><div class="lb-form-columns"><div class="lb-form-main">
+    <label class="lb-field">Title<input name="title" required maxlength="120" value="${esc(k.title || "")}"></label>
+    <label class="lb-field">Web address<input name="slug" maxlength="80" pattern="[a-z0-9]+(-[a-z0-9]+)*" value="${esc(k.slug || "")}" placeholder="summer-kurtas"><small>Lowercase letters, numbers and hyphens. Shown as /collections/your-address. Not &quot;all&quot;.</small></label>
+    <label class="lb-field">Description<textarea name="description" rows="5" maxlength="4000">${esc(k.description || "")}</textarea></label>
+    <section class="lb-side-box" data-cover data-cover-value="${esc(JSON.stringify(k.cover || null))}"><h2>Cover image</h2><div data-cover-preview>${coverUrl ? `<img src="${esc(coverUrl)}" alt="${esc(cover.alt || "")}" style="max-width:240px">` : '<p class="lb-muted">No cover chosen. The first product image is used.</p>'}</div>
+      <label class="lb-field">Alt text<input data-cover-alt maxlength="200" value="${esc(cover.alt || "")}"></label>
+      <div class="lb-heading-actions"><label class="lb-button lb-button-outline lb-file-label">Upload image<input type="file" accept="image/png,image/jpeg,image/webp" data-cover-upload hidden></label><button type="button" class="lb-button lb-button-outline" data-cover-library>Choose from library</button><button type="button" class="lb-text-button" data-cover-clear ${k.cover ? "" : "hidden"}>Remove cover</button></div><div data-cover-library-panel hidden></div></section>
+    <section class="lb-side-box"><h2>Questions and answers</h2>${rowsEditor("faq", "question", k.faq, [{ key: "question", label: "Question", max: 200 }, { key: "answer", label: "Answer", max: 2000 }])}</section>
+  </div><aside class="lb-form-side">
+    <section class="lb-side-box"><h2>Products</h2>${products.length ? `<div class="lb-check-list" style="max-height:320px;overflow:auto">${products.map(p => `<label class="lb-check-input"><input type="checkbox" data-product-pick value="${esc(p.id)}" ${picked.has(p.id) ? "checked" : ""}>${esc(p.title || "Untitled product")}</label>`).join("")}</div>` : '<p class="lb-muted">Add products first.</p>'}</section>
+    <section class="lb-side-box"><h2>Related collections</h2>${others.length ? `<div class="lb-check-list">${others.map(o => `<label class="lb-check-input"><input type="checkbox" data-related-pick value="${esc(o.id)}" ${related.has(o.id) ? "checked" : ""}>${esc(o.title || "Untitled collection")}</label>`).join("")}</div>` : '<p class="lb-muted">Other collections will be listed here. If none are chosen, all your collections are suggested.</p>'}</section>
+    ${!isNew ? '<button type="button" class="lb-button lb-button-quiet" data-collection-delete>Delete collection</button>' : ""}
+  </aside></div><div class="lb-form-error" role="alert" data-form-error hidden></div></form>`;
 }
 
 export function renderDashboard(view, data = {}, user = {}) {
@@ -362,6 +418,9 @@ export function renderDashboard(view, data = {}, user = {}) {
     case "products": body = productsPage(data); break;
     case "product-new": body = productEditor(data, true); break;
     case "product": body = productEditor(data, false); break;
+    case "collections": body = collectionsPage(data); break;
+    case "collection-new": body = collectionEditor(data, true); break;
+    case "collection": body = collectionEditor(data, false); break;
     case "customers": body = customersPage(data); break;
     case "customer": body = customerDetail(data); break;
     case "invoices": body = invoicesPage(data); break;

@@ -66,27 +66,38 @@ function setMenu(open) {
 opener?.addEventListener("click", () => setMenu(true));
 menu?.querySelector("[data-menu-close]")?.addEventListener("click", () => setMenu(false));
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && menu && !menu.hidden) setMenu(false); });
-const catalog = document.querySelector("[data-catalog]");
-if (catalog) {
-  const cards = [...catalog.children];
-  const sort = document.querySelector("[data-catalog-sort]");
-  const count = document.querySelector("[data-catalog-count]");
-  const none = document.querySelector("[data-catalog-empty]");
-  let stockOnly = false, col = "";
-  let q = (new URLSearchParams(location.search).get("q") || "").trim().toLowerCase();
-  document.querySelectorAll(".au-search input").forEach((i) => { i.value = q; });
+import { catalogPage } from "./catalog-page.js";
+// Also bound by trusted parent code for sandboxed previews. Without scripts every card stays visible.
+export function attachAuraCatalog(doc) {
+  const catalog = doc.querySelector("[data-catalog]");
+  if (!catalog || catalog.dataset.bound) return;
+  catalog.dataset.bound = "true";
+  const cards = [...catalog.children].filter((el) => el.matches(".au-card"));
+  const sort = doc.querySelector("[data-catalog-sort]"), count = doc.querySelector("[data-catalog-count]"), none = doc.querySelector("[data-catalog-empty]");
+  const pager = doc.querySelector("[data-catalog-pagination]"), status = pager?.querySelector("[data-page-status]");
+  const prev = pager?.querySelector("[data-page-prev]"), next = pager?.querySelector("[data-page-next]");
+  const pageSize = Number(catalog.dataset.pageSize) || 0;
+  let stockOnly = false, col = "", page = 1;
+  const q = (new URLSearchParams(doc.defaultView?.location?.search || "").get("q") || "").trim().toLowerCase();
+  doc.querySelectorAll(".au-search input").forEach((i) => { i.value = q; });
+  const items = cards.map((el, i) => ({ el, title: String(el.dataset.title || ""), price: Number(el.dataset.price) || 0, available: el.dataset.available === "1", index: Number(el.dataset.index) || i, collections: (el.dataset.collections || "").split(" ").filter(Boolean) }));
   const apply = () => {
-    const mode = sort?.value || "";
-    const n = (el, k) => Number(el.dataset[k]) || 0;
-    const ordered = [...cards].sort((a, b) => mode === "price-asc" ? n(a, "price") - n(b, "price") : mode === "price-desc" ? n(b, "price") - n(a, "price") : mode === "available" ? n(b, "available") - n(a, "available") || n(a, "index") - n(b, "index") : n(a, "index") - n(b, "index"));
-    let shown = 0;
-    for (const el of ordered) { const hit = (!q || el.dataset.title.includes(q)) && (!stockOnly || el.dataset.available === "1") && (!col || (el.dataset.collections || "").split(" ").includes(col)); el.hidden = !hit; if (hit) shown++; catalog.append(el); }
-    if (count) count.textContent = `${shown} ${shown === 1 ? "product" : "products"}`;
-    if (none) none.hidden = shown > 0;
+    const r = catalogPage(items, { sort: sort?.value || "", stockOnly, collection: col, q, page, pageSize });
+    page = r.page;
+    const shown = new Set(r.visible);
+    for (const it of items) it.el.hidden = !shown.has(it);
+    for (const it of r.ordered) catalog.append(it.el);
+    if (count) count.textContent = `${r.total} ${r.total === 1 ? "product" : "products"}`;
+    if (none) none.hidden = r.total > 0;
+    if (pager) { pager.hidden = r.pages < 2; if (status) status.textContent = `Page ${r.page} of ${r.pages}`; if (prev) prev.disabled = r.page <= 1; if (next) next.disabled = r.page >= r.pages; }
   };
-  sort?.addEventListener("change", apply);
-  document.querySelector("[data-catalog-stock]")?.addEventListener("change", (e) => { stockOnly = e.target.checked; apply(); });
-  const chips = [...document.querySelectorAll("[data-catalog-collection]")];
-  chips.forEach((chip) => chip.addEventListener("click", () => { col = chip.dataset.catalogCollection; chips.forEach((o) => o.setAttribute("aria-pressed", String(o === chip))); apply(); }));
+  const reset = (fn) => (e) => { fn(e); page = 1; apply(); };
+  sort?.addEventListener("change", reset(() => {}));
+  doc.querySelector("[data-catalog-stock]")?.addEventListener("change", reset((e) => { stockOnly = e.target.checked; }));
+  prev?.addEventListener("click", () => { page -= 1; apply(); });
+  next?.addEventListener("click", () => { page += 1; apply(); });
+  const chips = [...doc.querySelectorAll("button[data-catalog-collection]")];
+  chips.forEach((chip) => chip.addEventListener("click", reset(() => { col = chip.dataset.catalogCollection; chips.forEach((o) => o.setAttribute("aria-pressed", String(o === chip))); })));
   apply();
 }
+attachAuraCatalog(document);

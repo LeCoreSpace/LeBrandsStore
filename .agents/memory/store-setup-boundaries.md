@@ -16,6 +16,15 @@ generation service is not authorized. Razorpay, Shiprocket, email/SMS, custom
 domains and the drag-and-drop editor remain excluded from this phase. Add new
 migrations only; do not execute migrations or deploy.
 
+The user runs database migrations personally. Whenever a migration is needed,
+provide the exact Shell command rather than executing it.
+
+**Why:** The user explicitly requested this migration handoff.
+
+**How to apply:** Prepare and verify staged migrations in isolation, then give
+the command with its prerequisites and scope. Do not combine deferred migrations
+into an all-pending command when the release is intentionally staged.
+
 **Why:** The user's phase-specific instructions override the broader MVP roadmap.
 The full requirements are not permission to build every described capability.
 

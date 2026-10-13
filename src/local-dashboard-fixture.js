@@ -16,3 +16,25 @@ export function localDashboardFixture() {
     customers:[{id:"00000000-0000-4000-8000-000000000005",name:"Demo customer",phone:"+919000000000",email:"demo@example.invalid",orders_count:1,total_spent_paise:314790,last_order_at:orders[0].created_at}],
     invoices:[],overview:{today_orders:1,orders:3,revenue_paise:472185,aov_paise:236093,top_products:[{...product,quantity:3,revenue_paise:472185}],sources:[{source:"direct",orders:3}],needing_action:[orders[0]]}};
 }
+
+// Fictional Aura skeleton data for local previews only (?aura=1). Never persisted or live.
+export function auraDashboardFixture() {
+  const data = localDashboardFixture();
+  const p1 = { ...data.product, content: {
+    description_features: "<p>Heavy <strong>cotton canvas</strong> with a flat base.</p>",
+    features: [{ label: "Capacity", value: "14 litres" }],
+    materials_care: "<p>100% cotton. <em>Wash cold</em>, dry flat.</p><ul><li>No bleach</li></ul>",
+    size_guide: [{ size: "One size", measurement: "40 x 36 cm" }], size_note: "Handles drop 24 cm.",
+    how_to_use: [{ title: "Fill it", text: "Up to 8 kg." }],
+    faq: [{ question: "Is it washable?", answer: "<p>Yes, <strong>cold</strong> only.</p>" }],
+    delivery_returns: "<p>Ships in 3 days from Jaipur.</p>" } };
+  const p2 = { ...p1, id: "00000000-0000-4000-8000-000000000011", title: "Block print scarf", sku: "SCARF-01", content: {} };
+  const collections = [
+    { id: "00000000-0000-4000-8000-000000000021", title: "Everyday carry", slug: "everyday-carry", description: "Bags that earn their place.", product_ids: [p1.id], cover: null, faq: [{ question: "Are these restocked?", answer: "Twice a season." }], related_ids: ["00000000-0000-4000-8000-000000000022"] },
+    { id: "00000000-0000-4000-8000-000000000022", title: "Cool weather", slug: "cool-weather", description: "", product_ids: [p2.id], cover: null, faq: [], related_ids: [] },
+  ];
+  data.aura_skeleton_enabled = true;
+  data.draft = { ...data.draft, products: [p1, p2], collections };
+  data.products = [p1, p2]; data.product = p1; data.collections = collections;
+  return data;
+}

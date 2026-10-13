@@ -31,7 +31,7 @@ export function starterLayouts(data = {}) {
       else if (type === "shipping-info") set(hasPolicy(data, ["shipping", "cancellation-refund"]));
       else if (type === "related-products") set((data.products || []).length > 1);
       else if (type === "collection-tools") set((data.products || []).length > 1);
-      else if (type === "collection-pagination") set(false);
+      else if (type === "collection-pagination") set(true);
       else if (type === "related-collections") set((data.collections || []).length > 1);
       else if (type === "collection-nav") set((data.collections || []).length && (data.products || []).some(p => Array.isArray(p.collection_ids)));
       else if (["featured-products", "spotlight", "faq", "product-specs", "material-care", "size-guide", "how-to-use", "collection-heading", "collection-description"].includes(type)) set(false);

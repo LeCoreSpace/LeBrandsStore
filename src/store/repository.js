@@ -4,9 +4,10 @@ import { validateBasics, validateTheme, validateProduct, publishChecklist, POLIC
 import { badInput } from "./input.js";
 import { validateSubdomain } from "../auth/security.js";
 import { CURRENT_GST_RATES, businessGSTINErrors } from "../public/commerce-rules.js";
-import { pagesEnabled, pageLayouts } from "./pages.js";
+import { pagesEnabled, pageLayouts, skeletonEnabled } from "./pages.js";
 import { mergeSettingsToLayouts, validateLayout, defaultPageLayouts } from "../public/aura-layout.js";
 import {verificationState} from "../gstin/service.js";
+import { productContent, collectionContent, saveProductContent } from "./catalog.js";
 
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
@@ -64,6 +65,7 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
       tags: p.tags, sku: p.sku ?? "", stock: p.track_inventory ? p.stock : null,
       hsn_code: p.hsn_code ?? "", gst_rate: p.gst_rate == null ? null : Number(p.gst_rate),
       images: images.filter((m) => m.product_id === p.id).map(mediaRecord),
+      content: productContent(setup?.settings, p.id),
     })),
     policies: policies.map((p) => ({ kind: p.slug, title: p.title, body: p.content, reviewed: p.reviewed_at != null })),
     progress: { step: setup?.step ?? 1, completed: setup?.completed ?? [] },
@@ -72,9 +74,9 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
   if (await pagesEnabled(tx)) {
     const[publication]=await tx`SELECT snapshot->'settings' AS settings FROM public.store_publications WHERE store_id=${storeId}`;
     data.published_settings=publication?.settings||null;
-    const collections = await tx`SELECT id,title,slug FROM public.collections WHERE store_id=${storeId} ORDER BY created_at,id`;
+    const collections = await tx`SELECT id,title,slug,description FROM public.collections WHERE store_id=${storeId} ORDER BY created_at,id`;
     const memberships = await tx`SELECT collection_id,product_id FROM public.collection_products WHERE store_id=${storeId}`;
-    data.collections = collections.map(c => ({ ...c, product_ids: memberships.filter(m => m.collection_id === c.id).map(m => m.product_id) }));
+    data.collections = collections.map(c => ({ ...c, ...collectionContent(setup?.settings, c.id), product_ids: memberships.filter(m => m.collection_id === c.id).map(m => m.product_id) }));
     for (const product of data.products) product.collection_ids = memberships.filter(m => m.product_id === product.id).map(m => m.collection_id);
     const pages = await pageLayouts(tx, storeId);
     data.aura_skeleton_enabled = pages.aura_skeleton_enabled;
@@ -162,6 +164,7 @@ export async function saveProduct(tx, id, productId, patch) {
     throw badInput("Choose a GST rate explicitly.", {gst_rate:"Choose a GST rate explicitly."});
   }
   await ensureSetup(tx, id);
+  if (patch.content && !await skeletonEnabled(tx)) throw Object.assign(new Error("Apply the Aura section catalogue update before editing product content."), { status: 409 });
   const [existing] = productId ? await tx`SELECT *, to_json(tags) AS tags FROM public.products
     WHERE store_id = ${id} AND id = ${productId}` : [];
   if (productId && !existing) throw missing();
@@ -200,6 +203,7 @@ export async function saveProduct(tx, id, productId, patch) {
       INSERT INTO public.product_media (store_id, product_id, media_id, sort_order)
       VALUES (${id}, ${uuid}, ${image.id}, ${order})`;
   }
+  if (patch.content) await saveProductContent(tx, id, uuid, patch.content);
   await invalidatePolicies(tx, id);
   return { ...await loadDraft(tx, id), saved_product_id: uuid };
 }
@@ -275,6 +279,10 @@ export async function publish(tx, id, live) {
       await tx`SELECT set_config('app.publish_pages','true',true)`;
     }
     const { layouts, page_versions, gstinVerification, published_settings, ...publicationData } = data;
+    // Entity content is already resolved into public products/collections.
+    // Do not copy archived/deleted draft entity maps into the public snapshot.
+    const { aura_content, ...publicSettings } = publicationData.settings;
+    publicationData.settings = publicSettings;
     publicationData.store={store_id:data.store.store_id,name:data.store.name,subdomain:data.store.subdomain,status:data.store.status};
     await tx`INSERT INTO public.store_publications (store_id, snapshot)
       VALUES (${id}, ${tx.json(publicationData)}) ON CONFLICT (store_id) DO UPDATE
