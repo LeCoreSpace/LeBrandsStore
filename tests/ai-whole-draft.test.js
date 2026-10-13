@@ -8,6 +8,8 @@ import { getJob,startBuild,prospectiveDraft,ownedMedia } from "../src/ai/reposit
 import { advanceWholeDraft,resumeWholeDraft,isWholeDraft,imageSources } from "../src/ai/draft-flow.js";
 import { completeBuild } from "../src/ai/complete.js";
 import { loadDraft } from "../src/store/repository.js";
+import {storePrompt,validateStoreCopy} from "../src/ai/batch.js";
+import {fillDeferredImages} from "../src/ai/draft-flow.js";
 
 test("whole-store generation resumes legacy jobs, prepares every page and saves atomically without publishing",async t=>{
   const pg=await preAuraDatabase(),store=crypto.randomUUID(),other=crypto.randomUUID(),user=crypto.randomUUID(),
@@ -85,8 +87,10 @@ test("whole-store generation resumes legacy jobs, prepares every page and saves 
     t.mock.module("../src/db.js",{namedExports:{createDb:()=>({withStore:(id,fn)=>asLegacyApp(pg,id,null,fn),close:async()=>{}})}});
     t.mock.module("../src/ai/provider.js",{namedExports:{
       providerReady:()=>true,
-      generateText:async()=>{textCalls++;if(failures)throw Object.assign(new Error("Provider temporarily unavailable"),{status:503});
-        return{raw:'{"settings":{"text":"Cotton, considered."},"blocks":[]}',input_tokens:12,output_tokens:8,cost_usd:0.001};},
+      generateText:async(_env,prompt)=>{textCalls++;if(failures)throw Object.assign(new Error("Provider temporarily unavailable"),{status:503});
+        const schemaValue=schema=>schema.type==="object"?Object.fromEntries(Object.entries(schema.properties).map(([key,field])=>[key,schemaValue(field)])):
+          schema.type==="array"?Array.from({length:schema.minItems||0},()=>schemaValue(schema.items)):"Cotton, considered.";
+        return{raw:JSON.stringify(schemaValue(prompt.responseSchema)),input_tokens:12,output_tokens:8,cost_usd:0.001};},
       verifyFacts:async()=>({raw:'{"supported":true}',input_tokens:10,output_tokens:5,cost_usd:0.001}),
       generateImage:async()=>{throw new Error("Unexpected image generation");},
     }});
@@ -105,7 +109,12 @@ test("whole-store generation resumes legacy jobs, prepares every page and saves 
     assert.equal(messages.length,2);assert.equal(textCalls,3);
     failed=await app(tx=>resumeWholeDraft(tx,failed));
     failures=false;await processAiMessage(body,env);
-    const prepared=await app(tx=>getJob(tx,store,queued.id,null));
+    let prepared=await app(tx=>getJob(tx,store,queued.id,null));
+    if(prepared.status==="queued"){
+      await processAiMessage(body,env);await processAiMessage(body,env);
+      prepared=await app(tx=>getJob(tx,store,queued.id,null));
+      assert.fail(prepared.error||"Unexpected batch retry");
+    }
     assert.equal(prepared.status,"ready_to_save");assert.equal(prepared.cursor,1);
     assert.equal(prepared.approved[0].section.settings.text,"Cotton, considered.");
     await processAiMessage(body,env);assert.equal(textCalls,4,"Duplicate delivery does not regenerate");
@@ -119,6 +128,50 @@ test("whole-store generation resumes legacy jobs, prepares every page and saves 
     const started=await response.json();
     assert.equal(started.job.status,"queued");assert.equal(started.job.workflow,"whole-store");
     assert.equal(messages.at(-1).job_id,started.job.id);
+    const beforeCalls=textCalls,beforeMessages=messages.length;
+    await processAiMessage(messages.at(-1),env);
+    let entire=await app(tx=>getJob(tx,store,started.job.id,null));
+    if(entire.status==="queued"){
+      await processAiMessage(messages.at(-1),env);await processAiMessage(messages.at(-1),env);
+      entire=await app(tx=>getJob(tx,store,started.job.id,null));
+      assert.fail(entire.error||"Unexpected full-store retry");
+    }
+    assert.equal(entire.status,"ready_to_save");
+    assert.equal(entire.approved.length,entire.plan.length);
+    assert.ok(entire.plan.length>=50);
+    assert.equal(textCalls-beforeCalls,1,"All store content uses one generation request, not one per section");
+    assert.equal(messages.length,beforeMessages,"No per-section queue fan-out when images are not requested");
+    const publicState=await (await handleAiRoutes(new Request(`https://app.lebrands.store/api/stores/${store}/ai/state`),env,db,{id:user},hash)).json();
+    assert.ok(publicState.job.progress.preview_ready);
+    for(const page of ["home","collection","product","cart","checkout"]){
+      const response=await handleAiRoutes(new Request(`https://app.lebrands.store/api/stores/${store}/ai/draft?job_id=${entire.id}&page=${page}`),env,db,{id:user},hash);
+      assert.equal(response.status,200,page);
+      const html=await response.text();
+      assert.ok(html.includes("Cotton Studio"),page);
+      assert.ok(!/<script\b/i.test(html),page);
+      assert.equal(response.headers.get("cache-control"),"private, no-store");
+    }
+    const badPage=await handleAiRoutes(new Request(`https://app.lebrands.store/api/stores/${store}/ai/draft?job_id=${entire.id}&page=admin`),env,db,{id:user},hash);
+    assert.equal(badPage.status,400);
+    const currentDraft={...await app(tx=>loadDraft(tx,store)),media:await app(tx=>ownedMedia(tx,store))};
+    const batchPrompt=storePrompt({...entire,cursor:0,approved:[],candidate:null});
+    assert.ok(batchPrompt.responseSchema.required.length>10);
+    assert.equal(batchPrompt.schemaName,"aura_complete_store");
+    assert.throws(()=>validateStoreCopy({...entire,cursor:0,approved:[],candidate:null},{unexpected:"unsafe"},currentDraft,batchPrompt),/incomplete/);
+    const savedEntire=await app(tx=>completeBuild(tx,entire,hash));
+    assert.equal(savedEntire.status,"completed");
+    const noPhotoJob={...entire,cursor:0,approved:[],candidate:null,brief:structuredClone(entire.brief)};
+    noPhotoJob.brief.products[0].photo_ids=[];noPhotoJob.brief.products[0].ai_images=1;
+    noPhotoJob.brief.products[0].material="Cotton";noPhotoJob.brief.products[0].care="Wash cold.";
+    const noPhotoPrompt=storePrompt(noPhotoJob);
+    const noPhotoResult=await (await import("../src/ai/provider.js")).generateText(env,noPhotoPrompt);
+    const noPhotoPrepared=validateStoreCopy(noPhotoJob,JSON.parse(noPhotoResult.raw),currentDraft,noPhotoPrompt);
+    const deferred=noPhotoPrepared.filter(item=>item.deferred_images);
+    assert.ok(deferred.length,"Copy can finish before requested product images exist");
+    assert.ok(deferred.every(item=>item.section.settings.enabled===false));
+    fillDeferredImages(noPhotoPrepared,currentDraft.products);
+    assert.ok(deferred.every(item=>item.section.settings.enabled===true),"Approved product photos fill native image sections at save time");
+    assert.equal((await pg.query("SELECT count(*)::integer AS n FROM store_pages WHERE store_id=$1 AND published_layout IS NOT NULL",[store])).rows[0].n,0);
     assert.deepEqual(imageSources({width:1024,height:1024,sources:[{url:"test",width:480}]}),
       [{url:"test",width:480,height:480}]);
   }finally{await pg.close();}

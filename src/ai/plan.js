@@ -49,6 +49,10 @@ export function validateCandidate(step, raw, brief, draft) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw) || Object.keys(raw).some(k => !["settings","blocks"].includes(k))) throw aiError("AI returned an invalid section.");
   const section = {...structuredClone(step.section),settings:{...step.section.settings,...raw.settings},blocks:structuredClone(raw.blocks ?? [])};
   section.settings.enabled = optionalFacts(brief,step);
+  if(step.type==="spotlight"){
+    section.settings.product=draft.products[0]?.id||null;
+    section.settings.enabled=Boolean(section.settings.product);
+  }
   const schema = SECTION_SCHEMAS[step.type];
   if (!raw.settings || typeof raw.settings !== "object" || Array.isArray(raw.settings)) throw aiError("AI returned invalid settings.");
   // AI may write copy only, never entity references, links, HTML, code, colours or commerce controls.
@@ -71,7 +75,20 @@ export function validateCandidate(step, raw, brief, draft) {
       if(photo)block.settings.image=Object.fromEntries(Object.entries(photo).filter(([key])=>["url","alt","width","height","sources"].includes(key)));
     }
   }
+  if(schema.blockFields?.product){
+    section.blocks=draft.products.slice(0,schema.maxItems).map((product,index)=>({
+      id:`ai-item-${index+1}`,type:"item",settings:{product:product.id},
+    }));
+  }
+  if(schema.blockFields?.collection){
+    section.blocks=(draft.collections||[]).slice(0,schema.maxItems).map((collection,index)=>({
+      id:`ai-item-${index+1}`,type:"item",settings:{collection:collection.id},
+    }));
+  }
   // Collection/product references are established by the server, not chosen by the model.
+  if(schema.blockFields?.image?.required&&section.blocks.some(block=>!block.settings.image)){
+    section.settings.enabled=false;
+  }
   const context = {storeId:draft.store.store_id,productIds:new Set(draft.products.map(p=>p.id)),collectionIds:new Set((draft.collections||[]).map(c=>c.id))};
   const page = step.page;
   const layout = starterLayouts(draft)[page].map(item=>item.type===step.type?section:item);

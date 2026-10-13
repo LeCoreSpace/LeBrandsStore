@@ -45,9 +45,13 @@ images there if desired.
 **Why:** After repeated generation failures, the user explicitly replaced
 the earlier progressive approval workflow with complete-draft generation.
 
-**How to apply:** Keep the tested skeleton. Generation may use smaller
-background requests internally, but advances automatically and presents one
-overall progress view. Preserve resume checkpoints, bounded retries, provider
+**How to apply:** Keep the tested skeleton. Generate all store copy in one
+coordinated request, not a queue job or AI request for each of 51 sections.
+Use one factual verification pass for the complete output. Show rendered page
+previews as soon as copy is ready, with one final draft review. Extra section
+images are opt-in; uploaded photos are the faster default. Requested AI images
+use their separate API and must not introduce section approval gates.
+Preserve resume checkpoints, bounded retries, provider
 cost accounting and validation. Save the completed draft for theme-builder
 review; never publish automatically or alter the existing published snapshot.
 

@@ -6,6 +6,7 @@ import { generateText,verifyFacts,generateImage } from "./provider.js";
 import { aiError } from "./input.js";
 import { validateUpload,mediaUrl } from "../store/media.js";
 import { isWholeDraft,advanceWholeDraft } from "./draft-flow.js";
+import { storePrompt,validateStoreCopy } from "./batch.js";
 
 async function paid(db,storeId,jobId,kind,fn) {
   const operation = crypto.randomUUID();
@@ -29,11 +30,11 @@ function imageSlots(job,step,draft) {
       regenerations:0,product_id:product.id,source_key:source.key,label:product.image_styles[n%product.image_styles.length],style:product.image_styles[n%product.image_styles.length]}));
   }
   const count = job.approved.flatMap(a=>a.images||[]).filter(i=>!i.product_id).length;
-  if (count>=6 || step.page!=="home" || !["hero","spotlight","lookbook","craft"].includes(step.type)) return [];
+  if (job.brief.brand.section_images!==true || count>=6 || step.page!=="home" || !["hero","spotlight","lookbook","craft"].includes(step.type)) return [];
   const source = media.get(job.brief.products[0].photo_ids[0]);
   const number = step.type==="lookbook"?Math.min(3,6-count):1;
   return Array.from({length:number},()=>({id:crypto.randomUUID(),media_id:null,status:"pending",regenerations:0,
-    source_key:source.key,label:`${step.label} image`,style:"lifestyle"}));
+    source_key:source?.key||null,label:`${step.label} image`,style:"lifestyle"}));
 }
 function deterministic(job,step) {
   if (step.type==="product-content") return {content:productContent(job.brief.products.find(p=>p.id===step.product_id),job.brief.selling)};
@@ -75,8 +76,34 @@ export async function processAiMessage(body,env) {
     const step=job.plan[job.cursor];
     const draft=await db.withStore(job.store_id,async tx=>({...await loadDraft(tx,job.store_id),media:await ownedMedia(tx,job.store_id)}));
     const meta={_whole_store:isWholeDraft(job),_retry_count:job.candidate?._retry_count||0};
+    if(isWholeDraft(job)&&!job.candidate?._batch){
+      const prompt=storePrompt(job);
+      let raw={};
+      if(prompt.tasks.length){
+        const result=await paid(db,job.store_id,job.id,"text",async()=>{
+          const first=await generateText(env,prompt);
+          let prepared;
+          try{raw=JSON.parse(first.raw);prepared=validateStoreCopy(job,raw,draft,prompt);}
+          catch(error){return {...first,error:error.message};}
+          const second=await verifyFacts(env,job.brief,JSON.stringify(raw));
+          let supported=false;try{supported=JSON.parse(second.raw).supported===true;}catch{}
+          return {prepared,input_tokens:first.input_tokens+second.input_tokens,output_tokens:first.output_tokens+second.output_tokens,
+            cost_usd:first.cost_usd+second.cost_usd,...(!supported?{error:"AI returned unsupported facts. Resume to try again."}:{})};
+        });
+        if(result.error)throw aiError(result.error,503);
+      }
+      const prepared=validateStoreCopy(job,raw,draft,prompt),prefix=[];
+      for(let index=0;index<prepared.length;index++){
+        const item=prepared[index];
+        if(!item.images)item.images=imageSlots({...job,approved:prefix},job.plan[index],draft);
+        prefix.push(item);
+      }
+      const candidate={...meta,_batch:true,prepared,images:prepared.flatMap(item=>item.images||[])};
+      job=await db.withStore(job.store_id,tx=>updateJob(tx,job,{candidate}));
+    }
     let candidate=job.candidate;
-    if(candidate&&!candidate.section&&!candidate.content&&typeof candidate.body!=="string")candidate=null;
+    if(candidate?._batch)candidate.images=candidate.prepared.flatMap(item=>item.images||[]);
+    if(candidate&&!candidate._batch&&!candidate.section&&!candidate.content&&typeof candidate.body!=="string")candidate=null;
     if(!candidate){
       if(step.deterministic || step.type==="announcement" || !optionalFacts(job.brief,step))candidate=deterministic(job,step);
       else {
@@ -131,7 +158,10 @@ export async function processAiMessage(body,env) {
       });
       uploaded=[];
     }else job=await db.withStore(job.store_id,tx=>updateJob(tx,job,{status:"review",lease_until:null}));
-    if(job.status==="review"&&isWholeDraft(job)){
+    if(job.status==="review"&&candidate._batch){
+      job=await db.withStore(job.store_id,tx=>updateJob(tx,job,{approved:candidate.prepared,cursor:job.plan.length,
+        candidate:null,status:"ready_to_save",error:null,lease_until:null}));
+    }else if(job.status==="review"&&isWholeDraft(job)){
       job=await db.withStore(job.store_id,tx=>advanceWholeDraft(tx,job));
     }
     if(job.status==="queued")await env.AI_BUILD_QUEUE.send({type:"ai",store_id:job.store_id,job_id:job.id});

@@ -10,6 +10,8 @@ import { aiError } from "./input.js";
 import { aiEnabled,verified,currentJob,publicJob,getJob,updateJob,startBuild,ownedMedia } from "./repository.js";
 import { completeBuild } from "./complete.js";
 import { renderAiBuilder } from "../ui/ai-builder.js";
+import { batchPreview } from "./batch.js";
+import { renderAura } from "../public/aura.js";
 import { sendVerification } from "../email/service.js";
 
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{...SECURITY_HEADERS,"content-type":"application/json"}});
@@ -41,6 +43,20 @@ export async function handleAiRoutes(request,env,db,user,hash){
       return new Response(request.method==="HEAD"?null:renderAiBuilder(state,user),{headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8"}});
     }
     if(!api||view!=="ai")return json({error:"Page not found."},404);
+    if(request.method==="GET"&&action==="draft"){
+      const page=url.searchParams.get("page")||"home";
+      if(!["home","collection","product","cart","checkout"].includes(page))throw aiError("Choose a store page.");
+      const html=await db.withMemberStore(storeId,hash,async tx=>{
+        if(!["owner","admin"].includes(await dashboardAccess(tx,storeId,user.id)))throw aiError("Store access denied.",403);
+        const job=await getJob(tx,storeId,url.searchParams.get("job_id"),null);
+        const draft={...await loadDraft(tx,storeId),media:await ownedMedia(tx,storeId)};
+        const data=batchPreview(draft,job);
+        return renderAura(data,{page,productId:data.products[0]?.id,preview:true,commerce:true,readOnly:true,storeKey:storeId})
+          .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi,"")
+          .replace("</head>","<style>a,button,input,select,textarea{pointer-events:none}</style></head>");
+      });
+      return new Response(html,{headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"private, no-store"}});
+    }
     if(request.method==="GET"&&action==="image"){
       const item=await db.withMemberStore(storeId,hash,async tx=>{
         const [image]=await tx`SELECT object_key FROM public.media WHERE store_id=${storeId} AND id=${url.searchParams.get("media_id")||null}
@@ -66,7 +82,7 @@ export async function handleAiRoutes(request,env,db,user,hash){
       if(!await verified(tx,hash))throw aiError("Verify your email before using AI generation.",403);
       if(action==="start"){
         if(!providerReady(env)||!env.AI_BUILD_QUEUE)throw aiError("AI generation is not configured yet. Please try again later.",503);
-        const wantsImages=body.brief?.products?.some(p=>p.ai_images>0);
+        const wantsImages=body.brief?.brand?.section_images===true||body.brief?.products?.some(p=>p.ai_images>0);
         if(wantsImages&&(!env.MEDIA||!env.IMAGES))throw aiError("AI image storage is not configured yet.",503);
          const started=await startBuild(tx,storeId,user,hash,body.brief);
          message={type:"ai",store_id:storeId,job_id:started.id};

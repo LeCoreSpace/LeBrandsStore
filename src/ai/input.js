@@ -38,7 +38,8 @@ const id = (value, name, optional = false) => {
 export function validateBrief(value) {
   object(value, ["brand", "products", "selling"], "brand form");
   const b = object(value.brand, ["name","tagline","category","subcategory","sells","audience","differentiators",
-    "founder_story","year_started","city","vibe","reference_words","logo_id","colours","language"], "brand");
+    "founder_story","year_started","city","vibe","reference_words","logo_id","colours","language","section_images"], "brand");
+  if(b.section_images!=null&&typeof b.section_images!=="boolean")fail("Choose whether to generate section images.");
   if (b.language !== "English") fail("English is the supported store language.");
   const vibes = ["Minimal","Luxe","Earthy","Bold","Playful","Traditional","Modern Indian","Street"];
   if (!vibes.includes(b.vibe)) fail("Choose a brand vibe.");
@@ -51,7 +52,7 @@ export function validateBrief(value) {
     differentiators:strings(b.differentiators,3,240,"differences"), founder_story:text(b.founder_story,3000,"founder story"),
     year_started:integer(b.year_started,2100,"year started",true), city:text(b.city,120,"city"),
     vibe:b.vibe, reference_words:strings(b.reference_words,3,60,"reference words"),
-    logo_id:id(b.logo_id,"logo",true), colours, language:"English",
+    logo_id:id(b.logo_id,"logo",true), colours, language:"English",section_images:b.section_images===true,
   };
   if (brand.year_started != null && brand.year_started < 1800) fail("Check year started.");
   if (!Array.isArray(value.products) || value.products.length < 1 || value.products.length > 5) fail("Add one to five products.");

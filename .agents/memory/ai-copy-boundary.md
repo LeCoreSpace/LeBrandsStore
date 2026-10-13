@@ -2,6 +2,18 @@
 name: AI copy boundary
 description: Keep provider output constraints aligned with server-owned Aura controls
 ---
+## Required native references
+
+The server must populate required product/collection references in native
+sections and blocks, including sections with no AI-editable copy fields.
+Do not ask the model for IDs or relax reference validation.
+
+**Why:** A valid copy-only response cannot fill protected references. Missing
+server-owned references can otherwise make valid generated text fail layout
+validation, tempting unsafe changes to the AI contract.
+
+**How to apply:** Bind references to verified tenant-owned entities when
+assembling the draft, before validating the full layout.
 Constrain AI section responses to copy fields derived from the section schema.
 Keep server-side rejection of non-copy settings, HTML and unsupported facts.
 Never fix repeated protected-setting failures by allowing AI to own visibility,

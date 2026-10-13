@@ -16,6 +16,19 @@ export function imageSources(image) {
   return (image.sources||[]).map(source=>({...source,
     height:source.height||Math.round(image.height*source.width/image.width)}));
 }
+
+export function fillDeferredImages(prepared,products){
+  const photos=products.flatMap(product=>product.images||[]).filter(photo=>photo?.url);
+  for(const item of prepared){
+    if(!item.deferred_images||!item.section?.blocks.length)continue;
+    for(const [index,block] of item.section.blocks.entries()){
+      const photo=photos[index%photos.length];
+      if(!block.settings.image&&photo)block.settings.image=Object.fromEntries(
+        Object.entries(photo).filter(([key])=>["url","alt","width","height","sources"].includes(key)));
+    }
+    item.section.settings.enabled=item.section.blocks.every(block=>Boolean(block.settings.image));
+  }
+}
 export function attachImages(candidate) {
   const section=candidate.section,images=(candidate.images||[]).filter(i=>i.status==="approved");
   if(!section||!images.length)return;

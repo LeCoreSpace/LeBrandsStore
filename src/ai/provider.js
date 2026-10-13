@@ -15,9 +15,9 @@ async function request(env,path,body,{multipart=false}={}) {
 export async function generateText(env,prompt) {
   const result = await request(env,"chat/completions",{
     model:"gpt-5-mini",messages:[{role:"system",content:prompt.instructions},{role:"user",content:JSON.stringify(prompt.input)}],
-    reasoning_effort:"minimal",max_completion_tokens:2200,
+    reasoning_effort:"minimal",max_completion_tokens:Math.min(prompt.maxTokens||2200,14000),
     response_format:prompt.responseSchema
-      ? {type:"json_schema",json_schema:{name:"aura_section_copy",strict:true,schema:prompt.responseSchema}}
+      ? {type:"json_schema",json_schema:{name:prompt.schemaName||"aura_section_copy",strict:true,schema:prompt.responseSchema}}
       : {type:"json_object"},
   });
   const usage = {input_tokens:result.usage?.prompt_tokens,output_tokens:result.usage?.completion_tokens};

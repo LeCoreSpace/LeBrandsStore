@@ -6,7 +6,7 @@ import { savePage } from "../store/pages.js";
 import { saveCollection } from "../store/catalog.js";
 import { defaultPageLayouts,validateLayout } from "../public/aura-layout.js";
 import {validateBasics} from "../public/validation.js";
-import { isWholeDraft,attachImages,imageSources } from "./draft-flow.js";
+import { isWholeDraft,attachImages,imageSources,fillDeferredImages } from "./draft-flow.js";
 
 export async function completeBuild(tx,job,hash) {
   if(job.status!=="ready_to_save"||job.cursor!==job.plan.length||job.approved.length!==job.plan.length)throw aiError("Wait for the complete store draft before saving.",409);
@@ -63,6 +63,7 @@ export async function completeBuild(tx,job,hash) {
     await savePolicy(tx,storeId,approved.page.slice(7),{body:`Review before publishing.\n\n${approved.body}`,reviewed:false});
   }
   const data=await loadDraft(tx,storeId);
+  fillDeferredImages(job.approved,data.products.filter(product=>job.brief.products.some(selected=>selected.id===product.id)));
   const layouts={...defaultPageLayouts(data)};
   for(const page of ["home","collection","product","cart","checkout"]){
     layouts[page]=job.approved.filter(item=>item.page===page&&item.section).map(item=>item.section);

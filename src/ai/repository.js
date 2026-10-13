@@ -38,6 +38,10 @@ export async function publicJob(tx,job) {
     source_url:mediaUrl(image.source_key),
   }));
   return {id:job.id,status:job.status,version:job.version,cursor:job.cursor,total_steps:job.plan.length,
+    progress:{content_ready:job.candidate?._batch===true||["ready_to_save","completed"].includes(job.status),
+      preview_ready:job.candidate?._batch===true||job.status==="ready_to_save",
+      images_total:(job.candidate?._batch?job.candidate.images:job.approved.flatMap(item=>item.images||[])||[]).length,
+      images_completed:(job.candidate?._batch?job.candidate.images:job.approved.flatMap(item=>item.images||[])||[]).filter(image=>image.media_id||image.status==="discarded").length},
     workflow:job.plan[0]?.workflow==="whole-store"||job.approved?.[0]?.workflow==="whole-store"||
       job.candidate?._whole_store===true?"whole-store":"section-review",
     step:job.plan[job.cursor] ? {page:job.plan[job.cursor].page,type:job.plan[job.cursor].type,

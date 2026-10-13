@@ -70,7 +70,7 @@ const paise = (v) => v === "" || v == null ? null : Math.round(Number(v) * 100);
 function toBrief() {
   const b = S.brief.brand, s = S.brief.selling;
   return {
-    brand: { name: b.name.trim(), tagline: b.tagline.trim(), category: b.category.trim(), subcategory: b.subcategory.trim(), sells: b.sells.trim(), audience: b.audience.trim(), differentiators: lines(b.differentiators).slice(0, 3), founder_story: b.founder_story.trim(), year_started: b.year_started ? Number(b.year_started) : null, city: b.city.trim(), vibe: b.vibe, reference_words: csv(b.reference_words).slice(0, 3), logo_id: b.logo_id || "", colours: csv(b.colours).slice(0, 3), language: "English" },
+    brand: { name: b.name.trim(), tagline: b.tagline.trim(), category: b.category.trim(), subcategory: b.subcategory.trim(), sells: b.sells.trim(), audience: b.audience.trim(), differentiators: lines(b.differentiators).slice(0, 3), founder_story: b.founder_story.trim(), year_started: b.year_started ? Number(b.year_started) : null, city: b.city.trim(), vibe: b.vibe, reference_words: csv(b.reference_words).slice(0, 3), logo_id: b.logo_id || "", colours: csv(b.colours).slice(0, 3), language: "English",section_images:b.section_images===true },
     products: S.brief.products.map((p) => ({ ...(p.id ? { id: p.id } : {}), name: p.name.trim(), description: p.description.trim(), price_paise: paise(p.price), compare_at_paise: paise(p.compare), gst_rate: p.gst_rate === "" ? null : Number(p.gst_rate), hsn: p.hsn.trim(), stock: p.stock === "" ? null : Number(p.stock), photo_ids: p.photo_ids, material: p.material.trim(), variants: p.variants.trim(), care: p.care.trim(), features: lines(p.features).slice(0, 8), how_to_use: p.how_to_use.trim(),
       size_chart: lines(p.sizes).slice(0, 20).map((l) => { const [size, ...r] = l.split(":"); return { size: size.trim(), measurement: r.join(":").trim() }; }), ai_images: Number(p.ai_images) || 0, image_styles: p.image_styles })),
     selling: { delivery_time: s.delivery_time.trim(), free_shipping_threshold_paise: paise(s.free_shipping_threshold), cod: !!s.cod, returns_window: s.returns_window.trim(), returns_conditions: s.returns_conditions.trim(), contact_email: s.contact_email.trim(), phone: s.phone.trim(), whatsapp: s.whatsapp.trim(), address: s.address.trim(), first_order_offer: s.first_order_offer.trim(), prepaid_discount_paise: paise(s.prepaid_discount) },
@@ -146,7 +146,8 @@ function formView() {
     ${fld("s.first_order_offer", "First order offer (informational)", s.first_order_offer)}${fld("s.prepaid_discount", "Prepaid discount (INR, informational)", s.prepaid_discount, { type: "number", step: "0.01" })}</div>`;
   if (st === 3) { const br = toBrief(), n = br.products.reduce((a, p) => a + p.ai_images, 0); h = `<div class="aib-notice"><strong>Image warning.</strong> AI images are generated pictures, not photos of your goods. Review the complete draft and replace any unsuitable images in the theme editor before publishing. Your live store stays unchanged until you publish.</div>
     <h3>Your facts</h3><p><strong>${esc(br.brand.name)}</strong>, ${esc(br.brand.category)}, ${esc(br.brand.vibe)}. ${br.products.length} product${br.products.length > 1 ? "s" : ""}: ${br.products.map((p) => esc(p.name)).join(", ")}.</p>
-    <h3>Allowances</h3><ul><li>Up to 6 extra section images for the whole build</li><li>${n} product image${n === 1 ? "" : "s"} requested (at most 4 per product)</li><li>You can replace images in the theme editor after generation</li><li title="${esc(conversionNote)}">One completed build per store, ${esc(S.info.remaining_builds)} remaining. Shared monthly limit: approximately ${esc(costInr(S.info.monthly_cap_usd || 20))}.</li></ul>
+    <label class="aib-check"><input type="checkbox" data-f="b.section_images" data-check="1" ${S.brief.brand.section_images?"checked":""}>Generate up to six extra AI section images</label><p class="aib-hint">Leave this off for the fastest build using your uploaded photos. AI image generation takes additional time.</p>
+    <h3>Allowances</h3><ul><li>${S.brief.brand.section_images?"Up to 6 extra section images":"Your uploaded photos are used for page sections"}</li><li>${n} product image${n === 1 ? "" : "s"} requested (at most 4 per product)</li><li>You can replace images in the theme editor after generation</li><li title="${esc(conversionNote)}">One completed build per store, ${esc(S.info.remaining_builds)} remaining. Shared monthly limit: approximately ${esc(costInr(S.info.monthly_cap_usd || 20))}.</li></ul>
     <p class="aib-hint">We prepare your complete store in the background: home, collection, product, cart, checkout and supporting pages. Product and collection layouts use shared default templates. Review everything together in the theme editor. Nothing is published.</p>
     <label style="font-weight:400"><input type="checkbox" data-f="confirmed" ${S.brief.confirmed ? "checked" : ""} style="display:inline;width:auto"> These facts are accurate and I understand the image warning.</label>`; }
   return `<section class="aib-card"><p class="aib-hint">Saved store details and up to five existing products are prefilled where available. Review them and add any missing facts. Your existing builder answers are kept.</p><ol class="aib-steps">${STEPS.map((x, i) => `<li class="${i === st ? "on" : i < st ? "done" : ""}" ${i === st ? 'aria-current="step"' : ""}>${i + 1}. ${x}</li>`).join("")}</ol>${h}
@@ -162,19 +163,32 @@ function jobView() {
   const j = S.job, st = j.status, step = j.step || {};
   const working = ["queued", "generating"].includes(st), done = st === "completed" || st === "ready_to_save";
   const dis = S.busy || readOnly ? "disabled" : "";
-  let bar = `<div class="aib-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${j.total_steps}" aria-valuenow="${j.cursor}">${Array.from({ length: j.total_steps }, (_, i) => `<i class="${i < j.cursor || st === "completed" ? "d" : i === j.cursor && working ? "c" : ""}"></i>`).join("")}</div>`;
-  let h = `<section class="aib-card"><h2>${done ? "Your complete store draft is ready" : "Creating your complete store"}</h2><small>${j.cursor} of ${j.total_steps} tasks prepared${!done && step.page ? `. Working on ${esc(step.page)}: ${esc(step.label)}.` : ""}</small>${bar}`;
+  const progress=j.progress||{},phase=done?3:progress.content_ready?2:1;
+  let bar = `<div class="aib-progress aib-phases" role="progressbar" aria-label="Store generation" aria-valuemin="0" aria-valuemax="3" aria-valuenow="${done?3:phase-1}">${["Write all pages","Prepare images","Draft ready"].map((label,index)=>`<span class="${done||index<phase-1?"d":index===phase-1?"c":""}">${label}</span>`).join("")}</div>`;
+  let h = `<section class="aib-card"><h2>${done ? "Your complete store draft is ready" : progress.content_ready?"Your pages are ready. Preparing images.":"AI is creating your store"}</h2>${bar}`;
   if (["ready","review"].includes(st)) h += `<p>Continue this existing build using the complete-draft workflow. Your saved progress is kept; there are no more section-by-section approvals.</p><button class="aib-btn" data-act="generate" ${dis}>Continue complete build</button>`;
-  if (working) h += `<p role="status">We are preparing all pages and images automatically. You can leave this page and come back. Review and edit the complete draft when it is ready.</p>`;
+  if (working) h += `<p role="status">${progress.content_ready?`All page content is generated. ${Number(progress.images_completed||0)} of ${Number(progress.images_total||0)} requested images prepared. You can preview the pages below while images finish.`:"Writing the entire store in one AI request, not one section at a time. Your page preview appears as soon as the content is ready."}</p>`;
   if (st === "failed") h += `<div class="aib-notice err" role="alert">${esc(j.error || "Generation was interrupted.")} Your saved progress is kept. Resuming does not use another build.</div><button class="aib-btn" data-act="retry" ${dis}>Resume complete build</button>`;
   if (st === "ready_to_save") h += `<p>All pages are prepared. Open them as one draft in the theme editor to review the design, edit copy and replace images. Opening saves the completed draft and uses your one build. Nothing is published.</p><button class="aib-btn" data-open-draft ${dis}>Open draft in theme editor</button>`;
   if (st === "completed") h += `<div class="aib-notice ok">Saved as a draft. Review every page, change images and approve the result by publishing when you are ready. Your live store has not been changed.</div><button class="aib-btn" data-preview ${dis}>Open theme editor</button>`;
   if (st === "cancelled") h += `<p>This build was cancelled.</p>`;
   if (!["completed", "cancelled"].includes(st)) h += `<div class="aib-row"><button class="aib-btn danger" data-act="cancel" ${dis}>Cancel build</button></div>`;
   h += `</section>`;
+  if(progress.preview_ready)h+=`<section class="aib-card"><h3>Your AI-built pages</h3><div class="aib-row">${["home","collection","product","cart","checkout"].map(page=>`<button type="button" class="aib-btn ghost" data-page-preview="${page}" aria-pressed="${(S.previewPage||"home")===page}">${page[0].toUpperCase()+page.slice(1)}</button>`).join("")}</div><p class="aib-hint">Read-only page preview using your uploaded photos. Open the theme editor to edit and review any generated images.</p>${S.previewHtml?`<iframe class="aib-page-preview" sandbox="allow-same-origin" title="${esc(S.previewPage||"home")} page preview" srcdoc="${esc(S.previewHtml)}"></iframe>`:S.previewError?`<p role="alert">${esc(S.previewError)}</p><button class="aib-btn ghost" data-page-preview="${esc(S.previewPage||"home")}">Retry preview</button>`:`<p role="status">Loading your page preview.</p>`}</section>`;
   if (j.approved?.length) h += `<section class="aib-card"><h3>Pages prepared</h3><ul class="aib-done">${[...new Set(j.approved.map(a=>typeof a==="string"?a:a.page))].map(page=>`<li>${esc(page)}</li>`).join("")}</ul></section>`;
   if (j.usage) h += `<p class="aib-hint" title="${esc(conversionNote)}">Usage so far: ${esc(j.usage.images)} images, estimated cost ${esc(costInr(j.usage.cost_usd))} (approximate).</p>`;
   return h;
+}
+async function loadPagePreview(page="home"){
+  const jobId=S.job?.id;if(!jobId||S.previewBusy)return;
+  S.previewBusy=true;S.previewPage=page;S.previewError=null;S.previewHtml=null;S.previewJob=jobId;
+  try{
+    const response=await fetch(`/api/stores/${sid}/ai/draft?job_id=${encodeURIComponent(jobId)}&page=${page}`,{credentials:"same-origin"});
+    if(!response.ok)throw new Error("The preview could not load. Try again.");
+    const html=await response.text();
+    if(S.job?.id===jobId)S.previewHtml=html;
+  }catch(error){S.previewError=error.message;}
+  finally{S.previewBusy=false;draw();}
 }
 
 function draw() {
@@ -185,6 +199,10 @@ function draw() {
     ${readOnly ? `<div class="aib-notice">Read-only preview. You can look around but nothing will be sent.</div>` : ""}
     ${S.msg ? `<div class="aib-notice ${S.msg.t}" role="${S.msg.t === "err" ? "alert" : "status"}">${esc(S.msg.m)}</div>` : ""}
     ${gates()}${j && j.status === "cancelled" ? `<div class="aib-notice">Your last build was cancelled.</div>` : ""}${j && !showForm ? jobView() : showForm && !blocked() || (showForm && readOnly) ? formView() : ""}`;
+  if(j?.progress?.preview_ready&&S.previewJob!==j.id&&!S.previewBusy){
+    if(readOnly&&boot.preview_html){S.previewHtml=boot.preview_html;S.previewJob=j.id;return draw();}
+    if(!readOnly)loadPagePreview(S.previewPage||"home");
+  }
   root.querySelectorAll("[data-f]").forEach((el) => { const m = /^p\.(\d+)\.(price|gst_rate|stock)$/.exec(el.dataset.f); if (m && S.brief.products[+m[1]]?.locked) el.disabled = true; });
   if (keep) { const el = root.querySelector(`[data-f="${keep}"]`); if (el && el.type !== "checkbox") { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch {} } }
 }
@@ -246,6 +264,7 @@ async function upload(input) {
 }
 root?.addEventListener("click", async (e) => {
   const t = e.target.closest("button"); if (!t) return;
+  if(t.dataset.pagePreview){if(!readOnly){S.previewHtml=null;loadPagePreview(t.dataset.pagePreview);draw();}return;}
   if (t.dataset.act === "verify") { if (readOnly) return; S.busy = true; draw(); try { const d = await api("verify", { json: {} }); S.msg = { t: "ok", m: d.message || "Verification email sent." }; } catch (x) { S.msg = { t: "err", m: x.message }; } S.busy = false; return draw(); }
   if (t.dataset.act) return act(t.dataset.act);
   if (t.dataset.img) return act("image", { image_id: t.dataset.img, decision: t.dataset.dec });

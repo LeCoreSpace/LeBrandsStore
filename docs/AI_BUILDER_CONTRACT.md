@@ -37,8 +37,11 @@ Statuses: `ready`, `queued`, `generating`, `review`, `failed`,
 Image: `{id,media_id,url,source_url,label,status:"pending"|"approved"|"discarded",
 regenerations:0,product_id?}`. Private URL is the above API image URL.
 
-Poll state while queued/generating. The queue automatically prepares every
-page and image without section-by-section approvals. At most two automatic
+Poll state while queued/generating. One coordinated content-generation request
+prepares all remaining pages, followed by one complete-output factual check.
+The server binds protected product/collection references, native commerce
+controls and factual policy drafts. Do not fan out 51 section generation jobs.
+At most two automatic
 retries are allowed for a failing operation before the job pauses for manual
 resume. Saved progress and the current candidate are retained.
 
@@ -52,6 +55,17 @@ pages, edits copy and replaces images in the theme builder before explicit
 publication. Preview uses the existing
 `/stores/:id/editor` once the completed build is saved. Call `preview` only
 when the user opens that full preview, not automatically on completion.
+
+Job.progress reports content_ready, preview_ready, images_total and
+images_completed. The UI shows writing / images / ready phases, never 51
+approval steps. GET draft?job_id=UUID&page=home|collection|product|cart|checkout
+returns tenant-authorized, private/no-store read-only preview HTML. Strip
+scripts, disable controls and display it in a sandboxed iframe allowing only
+same-origin font/style loading, never scripts, forms, popups or top navigation.
+Previewing does not save or publish. Extra section images are opt-in through
+brand.section_images (boolean, default false). Product AI image counts remain
+explicit. Images use separate API operations with saved checkpoints; uploaded
+photos can preview the complete pages while requested generated images finish.
 
 No migration is needed: plan/brief stay immutable. New plans declare the
 whole-store workflow; legacy jobs opt into it using mutable candidate/prepared
