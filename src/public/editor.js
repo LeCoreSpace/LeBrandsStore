@@ -760,7 +760,7 @@ function renderPreview() {
   let html;
   const pick = previewItem[current];
   const shown = current === "collection" && pick ? (data.products || []).filter(item => (item.collection_ids || []).includes(pick)) : data.products;
-  try { html = renderAura({ ...data, products: shown, settings, layouts }, { ...S.previewOptions(current), productId: (current === "product" && pick) || data.products?.[0]?.id, preview: true, embeddedPreview: true, editorAnnotate: true, readOnly: true }); }
+  try { html = renderAura({ ...data, products: shown, settings, layouts }, { ...S.previewOptions(current), productId: (current === "product" && pick) || data.products?.[0]?.id, preview: true, embeddedPreview: true, editorAnnotate: true, editorSkeleton: skeleton, readOnly: true }); }
   catch (error) { html = `<!doctype html><body style="font-family:sans-serif;padding:24px">Preview could not be drawn: ${esc(error.message)}</body>`; }
   frame.srcdoc = html.replace("</head>", `${PREVIEW_STYLE}</head>`);
 }

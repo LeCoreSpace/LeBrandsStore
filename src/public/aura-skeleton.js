@@ -8,8 +8,8 @@ export const TEMPLATE_META = Object.freeze({
   collection: { id: "default", label: "Default collection", shared: true },
 });
 const ORDER = {
-  home: ["announcement", "header", "hero", "featured-collection", "featured-products", "statement", "spotlight", "lookbook", "craft", "founder", "gallery", "trust", "reviews", "faq", "footer"],
-  collection: ["header", "collection-heading", "collection-nav", "product-grid", "collection-description", "featured-products", "faq", "trust", "footer"],
+  home: ["announcement", "header", "hero", "featured-collection", "featured-products", "statement", "spotlight", "lookbook", "craft", "founder", "trust", "reviews", "faq", "footer"],
+  collection: ["header", "collection-heading", "collection-nav", "collection-tools", "product-grid", "collection-pagination", "collection-description", "related-collections", "footer"],
   product: ["header", "product-details", "shipping-info", "product-specs", "material-care", "size-guide", "how-to-use", "faq", "related-products", "reviews", "footer"],
   cart: ["header", "commerce", "shipping-info", "trust", "footer"],
   checkout: ["header", "commerce", "trust", "footer"],
@@ -30,9 +30,12 @@ export function starterLayouts(data = {}) {
       else if (type === "reviews") set((data.reviews || []).length);
       else if (type === "shipping-info") set(hasPolicy(data, ["shipping", "cancellation-refund"]));
       else if (type === "related-products") set((data.products || []).length > 1);
+      else if (type === "collection-tools") set((data.products || []).length > 1);
+      else if (type === "collection-pagination") set(false);
+      else if (type === "related-collections") set((data.collections || []).length > 1);
       else if (type === "collection-nav") set((data.collections || []).length && (data.products || []).some(p => Array.isArray(p.collection_ids)));
       else if (["featured-products", "spotlight", "faq", "product-specs", "material-care", "size-guide", "how-to-use", "collection-heading", "collection-description"].includes(type)) set(false);
-      else if (type === "trust" && page !== "home") set(hasPolicy(data, ["shipping", "cancellation-refund"]) || s.support_email);
+      else if (type === "trust" && page !== "home" && page !== "collection") set(hasPolicy(data, ["shipping", "cancellation-refund"]) || s.support_email);
       return item;
     });
   }

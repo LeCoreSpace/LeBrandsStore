@@ -144,7 +144,7 @@ export default {
       const page = ["home", "collection", "product", "cart", "checkout"].includes(original.searchParams.get("page")) ? original.searchParams.get("page") : "home";
       data.layouts = starterLayouts(data);
       return new Response(request.method === "HEAD" ? null : exampleMedia(renderAura(data, {
-        page, productId: data.products[0]?.id, preview: true, readOnly: true, commerce: true,
+        page, productId: data.products[0]?.id, preview: true, readOnly: true, commerce: true, editorSkeleton: true,
       })), { headers: { ...exampleHeaders, "content-type": "text/html; charset=utf-8" } });
     }
     if(original.pathname==="/__stonescence-aura-preview"){

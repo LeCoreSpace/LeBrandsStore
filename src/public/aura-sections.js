@@ -41,6 +41,32 @@ const heading = (t, extra = "") => t ? `<div class="au-head"><h2>${esc(t)}</h2>$
 const rich = (v) => { try { return sanitizeRichText(String(v || ""), 10000); } catch { return esc(String(v || "").replace(/<[^>]*>/g, "")); } };
 const link = (u) => /^\/(?!\/)/.test(String(u || "")) || /^https:\/\//.test(String(u || "")) ? String(u) : "";
 const available = (p) => p.stock == null || Number(p.stock) > 0;
+const GROUPS = {
+  cart: [["Cart items", "Lines the customer added, with quantity and remove controls."], ["Optional extras", "Supported extras such as gift options, when the store offers them."], ["Recommendations", "Products suggested next to the bag."], ["Summary", "Subtotal, shipping and total."], ["Checkout", "The button that moves the customer on."]],
+  checkout: [["Contact", "Name, email and phone."], ["Address", "Delivery address with pincode."], ["Shipping", "Delivery options and charges."], ["Payment", "Payment methods the store has enabled."], ["Notes (optional)", "A note for the order."], ["Summary", "Items, charges and total."], ["Place order", "Final confirmation button."]],
+};
+function commerceSkeleton(page) {
+  return `<section class="au-page au-cskel" data-editor-skeleton="${page}"><h1>${page === "cart" ? "Your bag" : "Checkout"}</h1><p class="au-skel-tag">Editor outline only. Customers see the live ${page} here. Nothing on this outline can be submitted.</p><ol class="au-cskel-list">${GROUPS[page].map(([h, t]) => `<li class="au-cskel-group"><h2>${h}</h2><p>${t}</p><div class="au-skel-lines" aria-hidden="true"><i></i><i></i></div></li>`).join("")}</ol></section>`;
+}
+const SKEL = {
+  hero: ["Home hero", "Headline, image and button."], "featured-collection": ["Featured collections", "Collection cards and cover images."], "featured-products": ["Featured products", "Hand picked products."],
+  statement: ["Brand statement", "One short statement."], spotlight: ["Product spotlight", "One product with a large image."], lookbook: ["Lookbook", "Image and text stories."],
+  craft: ["Materials and craft", "Images of how it is made."], founder: ["Founder story", "Name, portrait and story."], trust: ["Reassurance", "Shipping, returns and contact links."],
+  reviews: ["Reviews", "Real customer reviews only."], faq: ["FAQ", "Questions and answers."],
+  "collection-heading": ["Collection heading", "Intro line for this collection."], "collection-nav": ["Collection navigation", "Links between collections."],
+  "collection-tools": ["Filters and sort", "Sort and stock filter for the grid."], "product-grid": ["Product grid", "Products in this collection."],
+  "collection-pagination": ["Pagination", "Not active yet. All products show on one page."], "collection-description": ["Collection description", "Longer text about the collection."],
+  "related-collections": ["Related collections", "Other collections to browse."],
+  "product-details": ["Product gallery and buy controls", "Images, price, quantity and add to cart."], "shipping-info": ["Delivery and returns", "Shipping and return notes."],
+  "product-specs": ["Description and features", "Details and specifications."], "material-care": ["Materials and care", "Fabric and care notes."], "size-guide": ["Size guide", "Measurements by size."],
+  "how-to-use": ["How to use", "Steps for use."], "related-products": ["Related products", "Other products to browse."],
+};
+export function skeletonHtml(section) {
+  const e = SKEL[section.type];
+  if (!e) return "";
+  const hidden = section.settings?.enabled === false;
+  return `<section class="au-section au-skel"><p class="au-skel-tag">${hidden ? "Hidden" : "Empty"}. Not shown on the live store.</p><h2>${esc(e[0])}</h2><p class="au-skel-hint">${esc(e[1])}</p><div class="au-skel-lines" aria-hidden="true"><i></i><i></i><i></i></div></section>`;
+}
 export const SECTION_RENDERERS = {
   announcement(s) {
     const t = str(s.settings?.text);
@@ -145,7 +171,8 @@ export const SECTION_RENDERERS = {
     const cid = s.settings?.collection;
     if (cid && list.some((p) => Array.isArray(p.collection_ids))) list = list.filter((p) => (p.collection_ids || []).includes(cid));
     const title = str(s.settings?.title) || "Collection";
-    const tools = list.length > 1 ? `<div class="au-tools"><p class="au-count" data-catalog-count role="status"></p>${list.some((p) => !available(p)) ? '<label class="au-check"><input type="checkbox" data-catalog-stock> In stock only</label>' : ""}<label class="au-sr" for="au-sort">Sort products</label><select id="au-sort" data-catalog-sort><option value="">Featured</option><option value="price-asc">Price, low to high</option><option value="price-desc">Price, high to low</option><option value="available">Availability</option></select></div>` : "";
+    const separate = (c.layout || []).some((i) => i.type === "collection-tools" && i.settings?.enabled !== false);
+    const tools = list.length > 1 && !separate ? `<div class="au-tools"><p class="au-count" data-catalog-count role="status"></p>${list.some((p) => !available(p)) ? '<label class="au-check"><input type="checkbox" data-catalog-stock> In stock only</label>' : ""}<label class="au-sr" for="au-sort">Sort products</label><select id="au-sort" data-catalog-sort><option value="">Featured</option><option value="price-asc">Price, low to high</option><option value="price-desc">Price, high to low</option><option value="available">Availability</option></select></div>` : "";
     return `<section class="au-page"><h1>${esc(title)}</h1>${c.settings.description ? `<p class="au-lede">${esc(c.settings.description)}</p>` : ""}${tools}${list.length ? `<div class="au-grid" data-catalog>${list.map((p, i) => card(p, c, false, i)).join("")}</div><p class="au-noresult" data-catalog-empty hidden>No products match your search.</p>` : `<div class="au-empty"><h2>The collection is taking shape.</h2></div>`}</section>`;
   },
   "product-details"(s, c) {
@@ -179,6 +206,7 @@ export const SECTION_RENDERERS = {
     return `<section class="au-page au-notfound"><h1>${esc(s.settings.title)}</h1><p class="au-lede">${esc(s.settings.text)}</p><p><a class="au-btn" href="/collections/all">Browse the collection</a></p></section>`;
   },
   commerce(s, c) {
+    if (c.options.editorSkeleton && ["cart", "checkout"].includes(c.options.page)) return commerceSkeleton(c.options.page);
     return renderCommerceBody(c.data, c.options);
   },
 };
@@ -243,6 +271,17 @@ Object.assign(SECTION_RENDERERS, {
     if (off(s) || !cols.length) return "";
     return `<nav class="au-section au-collection-nav" aria-label="${esc(str(s.settings?.title) || "Browse")}"><button type="button" class="au-chip" data-catalog-collection="" aria-pressed="true">All</button>${cols.map((k) => `<button type="button" class="au-chip" data-catalog-collection="${esc(k.id)}" aria-pressed="false">${esc(k.title || k.name)}</button>`).join("")}</nav>`;
   },
+  "collection-tools"(s, c) {
+    let list = c.products;
+    if (off(s) || list.length < 2) return "";
+    return `<section class="au-section au-tools" aria-label="${esc(str(s.settings?.title) || "Filter and sort")}"><p class="au-count" data-catalog-count role="status"></p>${list.some((p) => !available(p)) ? '<label class="au-check"><input type="checkbox" data-catalog-stock> In stock only</label>' : ""}<label class="au-sr" for="au-sort">Sort products</label><select id="au-sort" data-catalog-sort><option value="">Featured</option><option value="price-asc">Price, low to high</option><option value="price-desc">Price, high to low</option><option value="available">Availability</option></select></section>`;
+  },
+  "collection-pagination"() { return ""; },
+  "related-collections"(s, c) {
+    const cols = (Array.isArray(c.data.collections) ? c.data.collections : []).filter((k) => k?.id && (k.title || k.name) && c.products.some((p) => (p.collection_ids || []).includes(k.id)));
+    if (off(s) || !cols.length) return "";
+    return `<section class="au-section">${heading(str(s.settings?.title) || "More collections")}<nav class="au-collection-nav" aria-label="Related collections">${cols.map((k) => `<button type="button" class="au-chip" data-catalog-collection="${esc(k.id)}" aria-pressed="false">${esc(k.title || k.name)}</button>`).join("")}</nav></section>`;
+  },
   "collection-description"(s) {
     if (off(s) || !plainText(s.settings?.body)) return "";
     return `<section class="au-section au-info">${heading(str(s.settings.title))}<div class="au-rich">${rich(s.settings.body)}</div></section>`;
@@ -254,6 +293,9 @@ export function renderSection(section, ctx) {
   const fn = Object.hasOwn(SECTION_RENDERERS,section?.type)?SECTION_RENDERERS[section.type]:null;
   if (!fn) return "";
   let html = alias(fn(section, ctx) || "");
+  if (ctx.options?.editorSkeleton && section.type === "hero" && !str(section.settings?.title) && !str(section.settings?.button_label)) html = "";
+  if (ctx.options?.editorSkeleton && section.type === "featured-collection" && !(ctx.data.collections || []).length && !section.settings?.collection) html = "";
+  if (!html && ctx.options?.editorSkeleton) html = alias(skeletonHtml(section));
   // Editor-only selection hook. Never set on the live storefront.
   if (html && ctx.options?.editorAnnotate && /^[A-Za-z0-9_-]{1,64}$/.test(section.id)) html = html.replace(/^(\s*<[a-z0-9]+)/i, `$1 data-lb-section="${section.id}"`);
   return section.type === "hero" && ctx.products?.length === 1

@@ -74,8 +74,13 @@ the section library.
 does not satisfy the required initial template.
 
 **How to apply:** Provide ordered starter layouts for home, default collection,
-default product, cart and restricted checkout customisation. Optional sections
-have their intended position but stay disabled when suitable content or
-functionality is absent. For existing stores, prepare the upgraded draft
+default product, cart and restricted checkout customisation. Every section and
+component must remain visible with its heading in the editor skeleton even
+when data is absent, ready for AI to fill in later phases. Do not hide empty
+sections from that preview; distinguish empty states from actual content.
+Keep empty placeholders out of published storefronts. For existing stores, prepare the upgraded draft
 preview without bulk backfilling or silently changing published layouts;
 persist changes only on explicit save/build.
+
+**Why for the visibility rule:** The user explicitly corrected the hidden
+empty-section approach after reviewing the initial skeleton screenshots.

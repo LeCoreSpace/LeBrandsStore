@@ -13,18 +13,19 @@ layouts and remains the live fallback.
 - Protected checkout saves allow only header, commerce, trust and footer; restoration remains unavailable. Calculations, payment and order placement logic are unchanged.
 
 ## Verification
-- Offline suite: 300 passing tests, zero failures.
+- Offline suite: 301 passing tests, zero failures.
+- Current fictional preview screenshots confirm visible empty home section headings and all seven checkout groups, with styled non-interactive outlines.
 - Disposable in-memory PostgreSQL: the staged catalogue accepts all five starter layouts; catalogue EXECUTE remains denied to the application role; cross-store writes raise 42501; draft saves leave published layouts unchanged.
 - Browser: ordered starter previews, protected product/commerce sections, loaded media, no writes on pristine page switches, no initial autosave, and conflict retention verified. The earlier index-as-force and false-success bugs were fixed and covered by regression tests.
 - Successful-save and final publish browser checks remain unverified: the local mocked GET response did not contain a recoverable layout payload. SQL persistence and publishing are covered offline, not by a live-database browser test.
 - No Supabase migrations, backfill, real store edits or deployment were performed.
 
 ## New schema types (`AURA_SKELETON_TYPES`, exported from `sections/index.js`)
-faq, material-care, how-to-use, product-specs, size-guide, shipping-info, related-products, featured-products, collection-heading, collection-nav, collection-description.
+faq, material-care, how-to-use, product-specs, size-guide, shipping-info, related-products, featured-products, collection-heading, collection-nav, collection-description, collection-tools, collection-pagination, related-collections.
 Only existing field types are used (text, richtext, toggle, select, product, list blocks). No existing schema was changed. The aura-v1 parity test needs the additive comparison. SQL registration is the main agent's job.
 
 ## Implemented
-- Renderers for all new types. Each renders nothing without real content.
+- Empty or disabled sections show labelled skeleton headings in the editor only. Live pages still omit missing optional content. Pagination is an editor slot, not a working live control.
 - Starter builder `aura-skeleton.js`: ordered layouts for home, collection, product, cart, checkout. `mergeStarter` keeps existing content and places leftover custom sections after their previous neighbour.
 - Editor, only when `data.aura_skeleton_enabled === true`: new catalog types, cart and checkout pages, "Use Aura starter layout" dialog, a starter preview banner, "Save starter draft" and "Discard preview". Pages whose draft equals the legacy default open directly as a starter preview. Preview pages are never autosaved and never count as dirty.
 - Product and collection labelled Default product and Default collection. `TEMPLATE_META` is the extension point. There are no template controls yet.
@@ -45,5 +46,5 @@ Only existing field types are used (text, richtext, toggle, select, product, lis
 - Collection routes: only `/collections/all` exists, so navigation is an in-page filter, not links.
 - Featured collections list (cards linking to collections) needs collection routes and images.
 - Backend must pass `aura_skeleton_enabled`, `collection_ids` on products, `policies` and `reviews`, and accept the new types and cart and checkout page keys. The preview endpoint's `productId` contract was not changed.
-- Cart extras (discount, gift, prepaid, notify, wishlist, newsletter) are not shown because none are functional.
-- Cart and checkout preview uses the read-only commerce body, so it is not interactive.
+- Cart extras have an editor-only outline, not a functional purchase option or invented offer.
+- The editor's protected commerce component shows all five cart groups and seven checkout groups in order, with no submit controls. Live commerce rendering is unchanged.

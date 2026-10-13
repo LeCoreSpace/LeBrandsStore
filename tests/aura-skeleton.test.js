@@ -19,7 +19,7 @@ const data = { store: { store_id: id, name: "Maison Test", subdomain: "m" }, set
 const ctx = { storeId: id };
 
 test("new schema ids are exported and legacy defaults remain untouched", () => {
-  assert.equal(AURA_SKELETON_TYPES.length, 11);
+  assert.equal(AURA_SKELETON_TYPES.length, 14);
   for (const t of AURA_SKELETON_TYPES) assert.ok(SECTION_SCHEMAS[t]);
   const legacy = defaultPageLayouts(data);
   assert.deepEqual(legacy.home.map(i => i.type), ["announcement", "header", "hero", "statement", "featured-collection", "lookbook", "founder", "craft", "reviews", "trust", "footer"]);
@@ -94,9 +94,24 @@ test("starter proposals never autosave and save only when forced", () => {
   assert.equal(S.mayAutosave("home", { ...base, invalid: "bad" }, true), false);
   assert.equal(S.mayAutosave("product", base), true);
 });
-test("starter gallery stays disabled without images", () => {
-  const home = starterLayouts(data).home;
-  assert.equal(home.find(i => i.type === "gallery").settings.enabled, false);
+test("starter has no gallery by default", () => {
+  assert.ok(!starterLayouts(data).home.some(i => i.type === "gallery"));
+});
+test("editor skeleton shows every required group, live hides empties", () => {
+  const layouts = starterLayouts(data);
+  const home = renderAura({ ...data, layouts }, { page: "home", editorSkeleton: true });
+  for (const t of ["Featured products", "Brand statement", "Product spotlight", "Lookbook", "Materials and craft", "Founder story", "Reviews", "FAQ"]) assert.ok(home.includes(`<h2>${t}</h2>`), t);
+  const col = renderAura({ ...data, layouts }, { page: "collection", editorSkeleton: true });
+  for (const t of ["Collection heading", "Pagination", "Collection description"]) assert.ok(col.includes(t), t);
+  assert.equal((col.match(/data-catalog-sort/g) || []).length, 1);
+  const cart = renderAura({ ...data, layouts }, { page: "cart", commerce: true, readOnly: true, editorSkeleton: true });
+  for (const t of ["Cart items", "Optional extras", "Recommendations", "Summary", "Checkout"]) assert.ok(cart.includes(`<h2>${t}</h2>`), t);
+  const out = renderAura({ ...data, layouts }, { page: "checkout", commerce: true, readOnly: true, editorSkeleton: true });
+  for (const t of ["Contact", "Address", "Shipping", "Payment", "Place order"]) assert.ok(out.includes(`<h2>${t}</h2>`), t);
+  assert.ok(!/au-cskel[\s\S]*<form/.test(out.split("</section>")[0] + out.split("au-cskel")[1].split("</section>")[0]));
+  const live = renderAura({ ...data, layouts }, { page: "collection" });
+  assert.ok(!live.includes("au-skel") && !live.includes("Pagination"));
+  assert.ok(!/[\u2014\u2013]/.test(home + col + cart + out));
 });
 test("save decisions never claim success when blocked and background saves skip pristine proposals", () => {
   const mk = (over = {}) => ({ proposed: new Set(), inflight: new Set(), conflicts: new Set(), dirty: true, invalid: "", ...over });

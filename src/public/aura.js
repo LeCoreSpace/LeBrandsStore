@@ -100,7 +100,7 @@ export function renderAura(data = {}, options = {}) {
   const heroResource = imageSourceSet(heroImage);
   const heroSizes = hero?.settings?.variant==="fullbleed"||hero?.settings?.variant==="video"?"100vw":HERO_IMAGE_SIZES;
   const heroPreload = heroResource.url ? `<link rel="preload" as="image" href="${esc(heroResource.url)}"${heroResource.srcset?` imagesrcset="${esc(heroResource.srcset)}" imagesizes="${esc(heroSizes)}"`:""} fetchpriority="high">` : "";
-  const ctx = { data, options: { ...options, page }, settings, brand, products, product: prodForPage, logoUrl, renderDescription };
+  const ctx = { layout: sections, data, options: { ...options, page }, settings, brand, products, product: prodForPage, logoUrl, renderDescription };
   const out = [];
   let mainOpen = false;
   for (const section of sections) {

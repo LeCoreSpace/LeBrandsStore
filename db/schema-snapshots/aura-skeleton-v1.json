@@ -11,6 +11,9 @@
     "featured-products": {"pages":["home","collection"],"fields":{"title":{"type":"text","maxLength":160,"default":"Featured products"}},"min":1,"max":8,"blocks":{"product":{"type":"product","required":true}}},
     "collection-heading": {"pages":["collection"],"fields":{"intro":{"type":"text","maxLength":240}}},
     "collection-nav": {"pages":["collection"],"fields":{"title":{"type":"text","maxLength":80,"default":"Browse"}}},
-    "collection-description": {"pages":["collection"],"fields":{"title":{"type":"text","maxLength":160},"body":{"type":"richtext","maxLength":3000}}}
+    "collection-description": {"pages":["collection"],"fields":{"title":{"type":"text","maxLength":160},"body":{"type":"richtext","maxLength":3000}}},
+    "collection-tools": {"pages":["collection"],"fields":{"title":{"type":"text","maxLength":80,"default":"Filter and sort"}}},
+    "collection-pagination": {"pages":["collection"],"fields":{"page_size":{"type":"select","values":["12","24","48"],"default":"24"}}},
+    "related-collections": {"pages":["collection"],"fields":{"title":{"type":"text","maxLength":160,"default":"More collections"}}}
   }
 }
