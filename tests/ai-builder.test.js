@@ -37,9 +37,10 @@ test("AI shares templates, keeps section order and omits unsupplied product fact
 test("AI layouts reject HTML, protected settings and invented social proof",()=>{
   const brief=validateBrief(exampleBrief()),d=draft(),step=buildPlan(d,brief).find(s=>s.type==="hero");
   assert.equal(validateCandidate(step,{settings:{title:"Cotton, considered.",description:"Cotton shirts for everyday routines."},blocks:[]},brief,d).settings.title,"Cotton, considered.");
-  for(const copy of ["Rated five stars","Only 2 left, hurry","Certified organic fabric","<strong>Cotton</strong>","Premium\u2014cotton"]){
+  for(const copy of ["Rated five stars","Only 2 left, hurry","Certified organic fabric","<strong>Cotton</strong>","Cotton\u0000shirts","x".repeat(5001)]){
     assert.throws(()=>plainCopy(copy,brief));
   }
+  assert.equal(plainCopy("Premium\u2014cotton\nGentle wash",brief),"Premium-cotton\nGentle wash");
   assert.throws(()=>validateCandidate(step,{settings:{button_url:"https://evil.example"},blocks:[]},brief,d));
 });
 test("manual migration selectors keep AI and email separate from GSTIN",()=>{

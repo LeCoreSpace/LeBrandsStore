@@ -4,7 +4,7 @@ import { dashboardAccess } from "../dashboard/repository.js";
 import { loadDraft } from "../store/repository.js";
 import { readJson } from "../store/input.js";
 import { mediaUrl } from "../store/media.js";
-import { SECTION_SCHEMAS } from "../public/aura-layout.js";
+import { attachImages,resumeWholeDraft,isWholeDraft } from "./draft-flow.js";
 import { providerReady } from "./provider.js";
 import { aiError } from "./input.js";
 import { aiEnabled,verified,currentJob,publicJob,getJob,updateJob,startBuild,ownedMedia } from "./repository.js";
@@ -25,24 +25,10 @@ export async function builderState(tx,storeId,hash,env,user) {
   const [cap]=await tx`SELECT public.ai_global_cap() AS cap`;
   let job=await currentJob(tx,storeId);
   if(job?.status==="generating"&&job.lease_until&&new Date(job.lease_until).getTime()<Date.now()){
-    job=await updateJob(tx,job,{status:"failed",error:"Generation was interrupted. Retry this section.",lease_until:null});
+    job=await updateJob(tx,job,{status:"failed",error:"Generation was interrupted. Resume your build to continue from the saved progress.",lease_until:null});
   }
   return {...base,verified:await verified(tx,hash),remaining_builds:Number(allowance.remaining),
     monthly_cap_usd:Number(cap.cap),job:await publicJob(tx,job)};
-}
-function attachImages(candidate) {
-  const section=candidate.section,images=candidate.images.filter(i=>i.status==="approved");
-  if(!section||!images.length)return;
-  const media=image=>({url:mediaUrl(image.key),alt:image.label,width:image.width,height:image.height,sources:image.sources||[]});
-  const schema=SECTION_SCHEMAS[section.type];
-  if(schema.fields.image)section.settings.image=media(images[0]);
-  if(schema.blockFields?.image){
-    for(const [index,image] of images.entries()){
-      if(!section.blocks[index])section.blocks.push({id:`ai-photo-${index+1}`,type:"item",settings:
-        Object.fromEntries(Object.entries(schema.blockFields).map(([key,field])=>[key,field.default??""]))});
-      section.blocks[index].settings.image=media(image);
-    }
-  }
 }
 export async function handleAiRoutes(request,env,db,user,hash){
   const url=new URL(request.url),match=url.pathname.match(/^\/(api\/)?stores\/([a-f0-9-]{36})\/(build|ai)(?:\/([a-z]+))?$/i);
@@ -82,7 +68,9 @@ export async function handleAiRoutes(request,env,db,user,hash){
         if(!providerReady(env)||!env.AI_BUILD_QUEUE)throw aiError("AI generation is not configured yet. Please try again later.",503);
         const wantsImages=body.brief?.products?.some(p=>p.ai_images>0);
         if(wantsImages&&(!env.MEDIA||!env.IMAGES))throw aiError("AI image storage is not configured yet.",503);
-        return {job:await publicJob(tx,await startBuild(tx,storeId,user,hash,body.brief))};
+         const started=await startBuild(tx,storeId,user,hash,body.brief);
+         message={type:"ai",store_id:storeId,job_id:started.id};
+         return {job:await publicJob(tx,await updateJob(tx,started,{status:"queued"}))};
       }
       const job=await getJob(tx,storeId,body.job_id,action==="preview"?null:body.version);
       if(action==="preview"){
@@ -96,11 +84,11 @@ export async function handleAiRoutes(request,env,db,user,hash){
       if(action==="complete")return {job:await publicJob(tx,await completeBuild(tx,job,hash))};
       if(["generate","retry"].includes(action)){
         if(!env.AI_BUILD_QUEUE)throw aiError("The AI job queue is not configured.",503);
-        if(!(action==="generate"?["ready"]:["failed"]).includes(job.status))throw aiError("This section is not ready to generate.",409);
         message={type:"ai",store_id:storeId,job_id:job.id};
-        return {job:await publicJob(tx,await updateJob(tx,job,{status:"queued",error:null}))};
+         return {job:await publicJob(tx,await resumeWholeDraft(tx,job))};
       }
-      if(job.status!=="review"||!job.candidate)throw aiError("Wait for this section to finish generating.",409);
+       if(isWholeDraft(job))throw aiError("The complete draft is being prepared automatically. Review it in the theme editor when it is ready.",409);
+       if(job.status!=="review"||!job.candidate)throw aiError("Wait for this section to finish generating.",409);
       if(action==="image"){
         const image=job.candidate.images.find(i=>i.id===body.image_id);
         if(!image||image.status!=="pending"||!image.media_id)throw aiError("This image is not awaiting approval.",409);
@@ -125,9 +113,9 @@ export async function handleAiRoutes(request,env,db,user,hash){
       catch{
         await db.withMemberStore(storeId,hash,async tx=>{
           const job=await getJob(tx,storeId,message.job_id,null);
-          if(job.status==="queued")await updateJob(tx,job,{status:"failed",error:"The generation queue is busy. Retry this section."});
+           if(job.status==="queued")await updateJob(tx,job,{status:"failed",error:"The generation queue is busy. Resume your build to continue."});
         });
-        throw aiError("The generation queue is busy. Retry this section.",503);
+         throw aiError("The generation queue is busy. Resume your build to continue.",503);
       }
     }
     if(message?.type==="verification")await sendVerification(env,db,message.email,message.token,storeId,hash);

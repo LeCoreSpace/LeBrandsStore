@@ -50,7 +50,7 @@ async function act(action, extra = {}) {
     if (d.message) S.msg = { t: "ok", m: d.message };
     return d;
   } catch (e) {
-    if (e.status === 409) { S.msg = { t: "err", m: "This build changed in another tab or step. We refreshed it, please check and try again." }; await refresh(true); }
+    if (e.status === 409) { S.msg = { t: "err", m: e.message }; await refresh(true); }
     else S.msg = { t: "err", m: e.message };
   } finally { S.busy = false; poll(); draw(); }
 }
@@ -144,10 +144,10 @@ function formView() {
     ${fld("s.returns_window", "Returns window", s.returns_window)}${fld("s.returns_conditions", "Returns conditions", s.returns_conditions)}
     ${fld("s.contact_email", "Contact email", s.contact_email, { type: "email" })}${fld("s.phone", "Phone", s.phone, { type: "tel" })}${fld("s.whatsapp", "WhatsApp", s.whatsapp, { type: "tel" })}${fld("s.address", "Address", s.address)}
     ${fld("s.first_order_offer", "First order offer (informational)", s.first_order_offer)}${fld("s.prepaid_discount", "Prepaid discount (INR, informational)", s.prepaid_discount, { type: "number", step: "0.01" })}</div>`;
-  if (st === 3) { const br = toBrief(), n = br.products.reduce((a, p) => a + p.ai_images, 0); h = `<div class="aib-notice"><strong>Image warning.</strong> AI images are generated pictures, not photos of your goods. Every one is shown next to your real photo and only appears after you approve it. Private until approved.</div>
+  if (st === 3) { const br = toBrief(), n = br.products.reduce((a, p) => a + p.ai_images, 0); h = `<div class="aib-notice"><strong>Image warning.</strong> AI images are generated pictures, not photos of your goods. Review the complete draft and replace any unsuitable images in the theme editor before publishing. Your live store stays unchanged until you publish.</div>
     <h3>Your facts</h3><p><strong>${esc(br.brand.name)}</strong>, ${esc(br.brand.category)}, ${esc(br.brand.vibe)}. ${br.products.length} product${br.products.length > 1 ? "s" : ""}: ${br.products.map((p) => esc(p.name)).join(", ")}.</p>
-    <h3>Allowances</h3><ul><li>Up to 6 extra section images for the whole build</li><li>${n} product image${n === 1 ? "" : "s"} requested (at most 4 per product)</li><li>Each product image can be regenerated twice</li><li title="${esc(conversionNote)}">One completed build per store, ${esc(S.info.remaining_builds)} remaining. Shared monthly limit: approximately ${esc(costInr(S.info.monthly_cap_usd || 20))}.</li></ul>
-    <p class="aib-hint">Pages are built in order: home, collection, product, cart, checkout. Product and collection layouts use one shared template. Nothing is published.</p>
+    <h3>Allowances</h3><ul><li>Up to 6 extra section images for the whole build</li><li>${n} product image${n === 1 ? "" : "s"} requested (at most 4 per product)</li><li>You can replace images in the theme editor after generation</li><li title="${esc(conversionNote)}">One completed build per store, ${esc(S.info.remaining_builds)} remaining. Shared monthly limit: approximately ${esc(costInr(S.info.monthly_cap_usd || 20))}.</li></ul>
+    <p class="aib-hint">We prepare your complete store in the background: home, collection, product, cart, checkout and supporting pages. Product and collection layouts use shared default templates. Review everything together in the theme editor. Nothing is published.</p>
     <label style="font-weight:400"><input type="checkbox" data-f="confirmed" ${S.brief.confirmed ? "checked" : ""} style="display:inline;width:auto"> These facts are accurate and I understand the image warning.</label>`; }
   return `<section class="aib-card"><p class="aib-hint">Saved store details and up to five existing products are prefilled where available. Review them and add any missing facts. Your existing builder answers are kept.</p><ol class="aib-steps">${STEPS.map((x, i) => `<li class="${i === st ? "on" : i < st ? "done" : ""}" ${i === st ? 'aria-current="step"' : ""}>${i + 1}. ${x}</li>`).join("")}</ol>${h}
     <div class="aib-row end"><button class="aib-btn ghost" data-back ${st === 0 ? "disabled" : ""}>Back</button>${st < 3 ? `<button class="aib-btn" data-next>Continue</button>` : `<button class="aib-btn" data-start ${!S.brief.confirmed || S.busy || blocked() || readOnly ? "disabled" : ""}>Start building</button>`}</div></section>`;
@@ -159,26 +159,20 @@ function copyView(c) {
   return `<dl class="aib-copy">${items.map((x) => typeof x === "string" ? `<dd>${esc(x)}</dd>` : `<dt>${esc(x.label || x.key || x.field || "")}</dt><dd>${esc(typeof (x.value ?? x.text) === "string" ? (x.value ?? x.text) : JSON.stringify(x.value ?? x.text ?? ""))}</dd>`).join("")}</dl>`;
 }
 function jobView() {
-  const j = S.job, st = j.status, cand = j.candidate, imgs = cand?.images || [], step = j.step || {};
-  const pend = imgs.some((x) => x.status === "pending"), working = ["queued", "generating"].includes(st);
+  const j = S.job, st = j.status, step = j.step || {};
+  const working = ["queued", "generating"].includes(st), done = st === "completed" || st === "ready_to_save";
   const dis = S.busy || readOnly ? "disabled" : "";
   let bar = `<div class="aib-progress" role="progressbar" aria-valuemin="0" aria-valuemax="${j.total_steps}" aria-valuenow="${j.cursor}">${Array.from({ length: j.total_steps }, (_, i) => `<i class="${i < j.cursor || st === "completed" ? "d" : i === j.cursor && working ? "c" : ""}"></i>`).join("")}</div>`;
-  let h = `<section class="aib-card"><h2>${esc(step.label || "Build")}</h2><small>Step ${Math.min(j.cursor + 1, j.total_steps)} of ${j.total_steps}${step.page ? `, ${esc(step.page)} page` : ""}${step.type === "product" ? " (shared product layout, this product's content)" : ""}</small>${bar}`;
-  if (st === "ready") h += `<p>Ready to prepare this section. Nothing is saved until you approve it.</p><button class="aib-btn" data-act="generate" ${dis}>Generate this section</button>`;
-  if (working) h += `<p role="status">${st === "queued" ? "Queued" : "Generating"}. You can leave this page and come back, your build resumes here.</p>`;
-  if (st === "review" && cand) {
-    h += copyView(cand.copy) + (imgs.length ? `<h3 style="margin-top:14px">Proposed images</h3><p class="aib-hint">Each image needs your decision before you can approve the section.</p>` : "");
-    h += `<div class="aib-side">${imgs.map((im) => { const left = Math.max(0, 2 - (im.regenerations || 0)), canRegen = !!im.product_id; return `<div class="aib-img"><img src="${esc(im.url)}" alt="${esc(im.label || "Proposed image")}" loading="lazy"><div class="st">${esc(im.label || "AI image")}: ${esc(im.status)}</div></div>${im.source_url ? `<div class="aib-img"><img src="${esc(im.source_url)}" alt="Your real photo for comparison" loading="lazy"><div class="st">Your real photo</div></div>` : `<div class="aib-img"><small>No real photo to compare for this section image.</small></div>`}
-      <div class="aib-row wide" style="grid-column:1/-1;margin:0 0 8px"><button class="aib-btn" data-img="${esc(im.id)}" data-dec="approve" ${dis} ${im.status === "approved" ? "disabled" : ""}>Approve image</button>${canRegen ? `<button class="aib-btn ghost" data-img="${esc(im.id)}" data-dec="regenerate" ${dis} ${left < 1 || im.status === "approved" ? "disabled" : ""}>Regenerate (${left} left)</button>` : ""}<button class="aib-btn danger" data-img="${esc(im.id)}" data-dec="discard" ${dis} ${im.status === "discarded" ? "disabled" : ""}>Discard</button></div>`; }).join("")}</div>`;
-    h += `<div class="aib-row"><button class="aib-btn" data-act="approve" ${dis} ${pend ? "disabled" : ""}>Approve section and continue</button></div>${pend ? `<p class="aib-hint">Decide on every image first.</p>` : ""}`;
-  }
-  if (st === "failed") h += `<div class="aib-notice err" role="alert">${esc(j.error || "This step failed.")} Retrying does not use another build.</div><button class="aib-btn" data-act="retry" ${dis}>Retry this step</button>`;
-  if (st === "ready_to_save") h += `<p>All sections are approved. Saving stores them as drafts. Nothing is published.</p><button class="aib-btn" data-act="complete" ${dis}>Save approved layouts as drafts</button>`;
-  if (st === "completed") h += `<div class="aib-notice ok">Saved as drafts. Review the full preview in the editor, then publish yourself when ready.</div><button class="aib-btn" data-preview ${dis}>Open full preview</button>`;
+  let h = `<section class="aib-card"><h2>${done ? "Your complete store draft is ready" : "Creating your complete store"}</h2><small>${j.cursor} of ${j.total_steps} tasks prepared${!done && step.page ? `. Working on ${esc(step.page)}: ${esc(step.label)}.` : ""}</small>${bar}`;
+  if (["ready","review"].includes(st)) h += `<p>Continue this existing build using the complete-draft workflow. Your saved progress is kept; there are no more section-by-section approvals.</p><button class="aib-btn" data-act="generate" ${dis}>Continue complete build</button>`;
+  if (working) h += `<p role="status">We are preparing all pages and images automatically. You can leave this page and come back. Review and edit the complete draft when it is ready.</p>`;
+  if (st === "failed") h += `<div class="aib-notice err" role="alert">${esc(j.error || "Generation was interrupted.")} Your saved progress is kept. Resuming does not use another build.</div><button class="aib-btn" data-act="retry" ${dis}>Resume complete build</button>`;
+  if (st === "ready_to_save") h += `<p>All pages are prepared. Open them as one draft in the theme editor to review the design, edit copy and replace images. Opening saves the completed draft and uses your one build. Nothing is published.</p><button class="aib-btn" data-open-draft ${dis}>Open draft in theme editor</button>`;
+  if (st === "completed") h += `<div class="aib-notice ok">Saved as a draft. Review every page, change images and approve the result by publishing when you are ready. Your live store has not been changed.</div><button class="aib-btn" data-preview ${dis}>Open theme editor</button>`;
   if (st === "cancelled") h += `<p>This build was cancelled.</p>`;
   if (!["completed", "cancelled"].includes(st)) h += `<div class="aib-row"><button class="aib-btn danger" data-act="cancel" ${dis}>Cancel build</button></div>`;
   h += `</section>`;
-  if (j.approved?.length) h += `<section class="aib-card"><h3>Approved so far</h3><ul class="aib-done">${j.approved.map((a) => `<li>${esc(typeof a === "string" ? a : a.label || a.type || "Section")}</li>`).join("")}</ul></section>`;
+  if (j.approved?.length) h += `<section class="aib-card"><h3>Pages prepared</h3><ul class="aib-done">${[...new Set(j.approved.map(a=>typeof a==="string"?a:a.page))].map(page=>`<li>${esc(page)}</li>`).join("")}</ul></section>`;
   if (j.usage) h += `<p class="aib-hint" title="${esc(conversionNote)}">Usage so far: ${esc(j.usage.images)} images, estimated cost ${esc(costInr(j.usage.cost_usd))} (approximate).</p>`;
   return h;
 }
@@ -187,7 +181,7 @@ function draw() {
   if (!root) return;
   const active = document.activeElement, keep = active?.dataset?.f;
   const j = S.job, showForm = !j || j.status === "cancelled";
-  root.innerHTML = `<div class="aib-head"><h1>Build your store</h1><p>Answer a few questions. We draft each page and you approve every section and image.</p></div>
+  root.innerHTML = `<div class="aib-head"><h1>Build your store</h1><p>Tell us about your brand. We prepare the complete store draft, then you review and edit it in the theme builder.</p></div>
     ${readOnly ? `<div class="aib-notice">Read-only preview. You can look around but nothing will be sent.</div>` : ""}
     ${S.msg ? `<div class="aib-notice ${S.msg.t}" role="${S.msg.t === "err" ? "alert" : "status"}">${esc(S.msg.m)}</div>` : ""}
     ${gates()}${j && j.status === "cancelled" ? `<div class="aib-notice">Your last build was cancelled.</div>` : ""}${j && !showForm ? jobView() : showForm && !blocked() || (showForm && readOnly) ? formView() : ""}`;
@@ -255,7 +249,15 @@ root?.addEventListener("click", async (e) => {
   if (t.dataset.act === "verify") { if (readOnly) return; S.busy = true; draw(); try { const d = await api("verify", { json: {} }); S.msg = { t: "ok", m: d.message || "Verification email sent." }; } catch (x) { S.msg = { t: "err", m: x.message }; } S.busy = false; return draw(); }
   if (t.dataset.act) return act(t.dataset.act);
   if (t.dataset.img) return act("image", { image_id: t.dataset.img, decision: t.dataset.dec });
-  if (t.hasAttribute("data-preview")) { await api("preview", { json: { job_id: S.job.id } }).catch(() => {}); location.href = `/stores/${sid}/editor`; return; }
+  if (t.hasAttribute("data-open-draft")) {
+    const result=await act("complete");
+    if(result?.job?.status==="completed"){
+      try{const preview=await api("preview",{json:{job_id:S.job.id}});location.href=preview.url||`/stores/${sid}/editor`;}
+      catch(error){S.msg={t:"err",m:error.message};draw();}
+    }
+    return;
+  }
+  if (t.hasAttribute("data-preview")) { if(readOnly)return;try { await api("preview", { json: { job_id: S.job.id } }); location.href = `/stores/${sid}/editor`; } catch(error) { S.msg={t:"err",m:error.message};draw(); } return; }
   if (t.dataset.rm != null) { touch("products"); S.brief.products.splice(Number(t.dataset.rm), 1); save(); return draw(); }
   if (t.dataset.add != null) { touch("products"); S.brief.products.push(blankProduct()); save(); return draw(); }
   if (t.dataset.back != null) { S.step = Math.max(0, S.step - 1); S.errors = {}; return draw(); }
@@ -266,7 +268,7 @@ root?.addEventListener("click", async (e) => {
     if (readOnly) return;
     S.busy = true; S.msg = null; draw();
     try { const d = await api("start", { json: { brief: toBrief() } }); S.job = d.job; try { localStorage.removeItem(LS); } catch {} }
-    catch (x) { S.msg = { t: "err", m: x.message }; if (x.fields && typeof x.fields === "object") S.msg.m += " " + Object.values(x.fields).flat().map(String).join(" "); }
+    catch (x) { S.msg = { t: "err", m: x.message }; if (x.fields && typeof x.fields === "object") S.msg.m += " " + Object.values(x.fields).flat().map(String).join(" "); await refresh(true); }
     S.busy = false; poll(); draw();
   }
 });

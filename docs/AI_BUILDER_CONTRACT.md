@@ -13,13 +13,13 @@ Use existing same-origin CSRF behaviour; JSON mutations carry
 
 - GET `state`: boot state and active/latest job.
 - POST `verify`: sends verification email; `{message}`.
-- POST `start`: `{brief}`; returns `{job}`.
-- POST `generate`: `{job_id,version}`; queues only the current section.
+- POST `start`: `{brief}`; returns the automatically queued whole-store `{job}`.
+- POST `generate`: `{job_id,version}`; resumes an existing build in whole-store mode.
 - POST `approve`: `{job_id,version}`; approves current section and advances.
 - POST `image`: `{job_id,version,image_id,decision:"approve"|"discard"|"regenerate"}`.
-- POST `retry`: `{job_id,version}`; retries a failed current step without consuming allowance.
+- POST `retry`: `{job_id,version}`; resumes the full build from saved progress without consuming allowance.
 - POST `cancel`: `{job_id,version}`; cancels incomplete job.
-- POST `complete`: `{job_id,version}`; saves approved layouts as drafts, never publishes.
+- POST `complete`: `{job_id,version}`; saves all prepared pages and images as one draft, never publishes.
 - POST `preview`: `{job_id}`; records the user opening the completed full draft preview.
 - GET `image?media_id=UUID`: authenticated private generated-image bytes.
 
@@ -37,13 +37,26 @@ Statuses: `ready`, `queued`, `generating`, `review`, `failed`,
 Image: `{id,media_id,url,source_url,label,status:"pending"|"approved"|"discarded",
 regenerations:0,product_id?}`. Private URL is the above API image URL.
 
-Poll state while queued/generating; never automatically approve or advance.
-Sections progress in home, collection, product, cart, checkout order. Product
-and collection layouts are shared defaults. Product content steps are per
-product, not separate product templates. The user must explicitly approve
-each section and every proposed image. Preview uses the existing
+Poll state while queued/generating. The queue automatically prepares every
+page and image without section-by-section approvals. At most two automatic
+retries are allowed for a failing operation before the job pauses for manual
+resume. Saved progress and the current candidate are retained.
+
+Sections progress internally in home, collection, product, cart, checkout
+order. Product and collection layouts are shared defaults. Product content
+steps are per product, not separate templates. Generated media stays pending
+until the user opens/saves the complete draft. That single action prepares
+the generated images for use in the editable draft. The existing published
+snapshot and published page layouts are unchanged. The user reviews all
+pages, edits copy and replaces images in the theme builder before explicit
+publication. Preview uses the existing
 `/stores/:id/editor` once the completed build is saved. Call `preview` only
 when the user opens that full preview, not automatically on completion.
+
+No migration is needed: plan/brief stay immutable. New plans declare the
+whole-store workflow; legacy jobs opt into it using mutable candidate/prepared
+checkpoints. Legacy per-section approval/image endpoints are compatibility-only
+and reject jobs already using whole-store mode.
 
 Four-step brief:
 1. `brand`: name, tagline, category, subcategory, sells (50–500 chars),

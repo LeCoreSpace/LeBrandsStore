@@ -6,14 +6,29 @@ import { savePage } from "../store/pages.js";
 import { saveCollection } from "../store/catalog.js";
 import { defaultPageLayouts,validateLayout } from "../public/aura-layout.js";
 import {validateBasics} from "../public/validation.js";
+import { isWholeDraft,attachImages,imageSources } from "./draft-flow.js";
 
 export async function completeBuild(tx,job,hash) {
-  if(job.status!=="ready_to_save"||job.cursor!==job.plan.length||job.approved.length!==job.plan.length)throw aiError("Approve every section before saving the AI draft.",409);
+  if(job.status!=="ready_to_save"||job.cursor!==job.plan.length||job.approved.length!==job.plan.length)throw aiError("Wait for the complete store draft before saving.",409);
   const storeId=job.store_id;
   const [unchanged]=await tx`SELECT updated_at IS NOT DISTINCT FROM ${job.base_updated_at} AS ok FROM public.store_setup WHERE store_id=${storeId}`;
   if(!unchanged?.ok)throw aiError("Store settings changed during the build. Your current draft is unchanged. Cancel this build and restart with the latest settings.",409);
   const rows=await tx`SELECT page_key,version FROM public.store_pages WHERE store_id=${storeId}`;
   for(const row of rows)if(row.version!==(job.base_versions[row.page_key]?.version??0))throw aiError("A page changed during the build. Your current draft is unchanged. Restart with the latest pages.",409);
+   if(isWholeDraft(job)){
+     for(const prepared of job.approved){
+       for(const image of prepared.images||[]){
+         if(image.status==="discarded")continue;
+         if(!image.media_id)throw aiError("Wait for all draft images to finish.",409);
+         const owned=await tx`UPDATE public.media SET approval_status='approved',renditions=${tx.json(imageSources(image))}
+           WHERE store_id=${job.store_id} AND id=${image.media_id} AND object_key=${image.key}
+             AND ai_generated AND approval_status IN('pending','approved') RETURNING id`;
+         if(!owned.length)throw aiError("A generated draft image is unavailable.",409);
+         image.status="approved";
+       }
+       attachImages(prepared);
+     }
+   }
   const b=job.brief.brand,s=job.brief.selling;
   const existing=await loadDraft(tx,storeId);
   const category=validateBasics({...existing.settings,category:b.category}).category?existing.settings.category:b.category;

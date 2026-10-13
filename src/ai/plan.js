@@ -18,6 +18,7 @@ export function buildPlan(draft, brief) {
   for (const page of AI_PAGES.slice(5)) {
     steps.push({page,type:"page-content",label:page.startsWith("policy-") ? `${page.slice(7)} policy draft` : page,deterministic:true});
   }
+  if(steps.length)steps[0].workflow="whole-store";
   return steps;
 }
 export function productContent(product, selling) {
@@ -46,7 +47,7 @@ export function optionalFacts(brief, step) {
 }
 export function validateCandidate(step, raw, brief, draft) {
   if (!raw || typeof raw !== "object" || Array.isArray(raw) || Object.keys(raw).some(k => !["settings","blocks"].includes(k))) throw aiError("AI returned an invalid section.");
-  const section = {...structuredClone(step.section),settings:{...step.section.settings,...raw.settings},blocks:raw.blocks ?? []};
+  const section = {...structuredClone(step.section),settings:{...step.section.settings,...raw.settings},blocks:structuredClone(raw.blocks ?? [])};
   section.settings.enabled = optionalFacts(brief,step);
   const schema = SECTION_SCHEMAS[step.type];
   if (!raw.settings || typeof raw.settings !== "object" || Array.isArray(raw.settings)) throw aiError("AI returned invalid settings.");
@@ -54,14 +55,14 @@ export function validateCandidate(step, raw, brief, draft) {
   for (const [key,value] of Object.entries(raw.settings)) {
     const field = schema.fields[key];
     if (!field || !["text","richtext"].includes(field.type)) throw aiError("AI attempted to alter a protected setting.");
-    plainCopy(value,brief);
+    section.settings[key]=plainCopy(value,brief);
   }
   for (const [index,block] of section.blocks.entries()) {
     if (!block || typeof block !== "object" || Object.keys(block).some(k => k !== "settings") || !block.settings) throw aiError("AI returned invalid blocks.");
     for (const [key,value] of Object.entries(block.settings)) {
       const field = schema.blockFields?.[key];
       if (!field || !["text","richtext"].includes(field.type)) throw aiError("AI attempted to alter a protected block.");
-      plainCopy(value,brief);
+      block.settings[key]=plainCopy(value,brief);
     }
     block.id = `ai-item-${index+1}`;
     block.type = "item";

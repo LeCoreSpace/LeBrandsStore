@@ -7,11 +7,15 @@ test("AI full-preview button recognizes its empty boolean data attribute",async(
  const statement=source.split("\n").find(line=>line.includes("location.href = `/stores/${sid}/editor`"));
  assert.ok(statement,"The full-preview navigation handler exists.");
  const AsyncFunction=Object.getPrototypeOf(async()=>{}).constructor;
- const click=new AsyncFunction("t","api","S","location","sid",statement);
+ const click=new AsyncFunction("t","api","S","location","sid","readOnly","draw",statement);
  const location={href:"/builder"},calls=[];
  const button={dataset:{preview:""},hasAttribute:name=>name==="data-preview"};
- await click(button,async(action,payload)=>{calls.push({action,payload});return{};},{job:{id:"fictional-job"}},location,"fictional-store");
+ await click(button,async(action,payload)=>{calls.push({action,payload});return{};},{job:{id:"fictional-job"}},location,"fictional-store",false,()=>{});
  assert.equal(calls[0]?.action,"preview");
  assert.equal(calls[0]?.payload.json.job_id,"fictional-job");
  assert.equal(location.href,"/stores/fictional-store/editor");
+ const failedLocation={href:"/builder"},state={job:{id:"fictional-job"}};
+ await click(button,async()=>{throw new Error("Preview unavailable");},state,failedLocation,"fictional-store",false,()=>{});
+ assert.equal(failedLocation.href,"/builder");
+ assert.equal(state.msg.m,"Preview unavailable");
 });

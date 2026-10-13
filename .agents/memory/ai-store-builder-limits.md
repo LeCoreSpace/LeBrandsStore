@@ -19,7 +19,8 @@ description: User's revised build allowance, image regeneration and cost control
 Use OpenAI for text and image generation and Resend for verification emails.
 The global monthly AI spending cap is USD 20 across all stores.
 Allow up to six extra section images per build, separately from the product-image allowance.
-Every generated image still requires explicit brand approval.
+Review generated images in the complete draft and replace unsuitable ones
+in the theme builder before publishing.
 
 Show merchant-facing AI usage amounts in INR, not USD. Label conversions
 as approximate and disclose the reference rate. Keep the approved provider
@@ -32,20 +33,23 @@ spending controls or provider billing.
 
 **How to apply:** Preserve these limits in the Phase 3 builder and its setup.
 
-## Skeleton first and progressive generation
+## Skeleton first and complete-draft generation
 
 First create and test the Aura skeleton for home, collection, product, cart
 and checkout, with all essential sections and components. Then include AI
-step by step after the user completes the fill-in-the-blanks prompt.
-The user sees each page being created one at a time, one section at a time,
-with the AI-generated image for that section approved by them before moving
-to the next section, rather than creating all sections in a page at once.
+after the user completes the fill-in-the-blanks prompt. Generate the entire
+store draft without stopping for section-by-section approvals. The user
+previews and approves the complete result in the theme builder and changes
+images there if desired.
 
-**Why:** The user changed the proposed workflow from generating everything
-in one go to a tested skeleton followed by progressive generation and approval.
+**Why:** After repeated generation failures, the user explicitly replaced
+the earlier progressive approval workflow with complete-draft generation.
 
-**How to apply:** Preserve this order when planning the builder. Section-image
-allowances beyond the specified product-image allowance remain undecided.
+**How to apply:** Keep the tested skeleton. Generation may use smaller
+background requests internally, but advances automatically and presents one
+overall progress view. Preserve resume checkpoints, bounded retries, provider
+cost accounting and validation. Save the completed draft for theme-builder
+review; never publish automatically or alter the existing published snapshot.
 
 ## Shared product and collection templates
 
@@ -62,7 +66,7 @@ though only the default product and collection templates are initially available
 building the structure of every product and collection page.
 
 **How to apply:** Keep shared layout settings separate from individual product
-and collection content. Progressive AI generation builds the shared templates
+and collection content. Complete-draft AI generation builds the shared templates
 once, while each page resolves its own entity data. Keep the template model and
 editor selection extensible so additional templates can be added later without
 replacing the default-template architecture.

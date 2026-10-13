@@ -38,6 +38,8 @@ export async function publicJob(tx,job) {
     source_url:mediaUrl(image.source_key),
   }));
   return {id:job.id,status:job.status,version:job.version,cursor:job.cursor,total_steps:job.plan.length,
+    workflow:job.plan[0]?.workflow==="whole-store"||job.approved?.[0]?.workflow==="whole-store"||
+      job.candidate?._whole_store===true?"whole-store":"section-review",
     step:job.plan[job.cursor] ? {page:job.plan[job.cursor].page,type:job.plan[job.cursor].type,
       label:job.plan[job.cursor].label,product_id:job.plan[job.cursor].product_id} : null,
     candidate,approved:job.approved.map(value=>({label:value.label,page:value.page})),

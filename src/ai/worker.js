@@ -5,6 +5,7 @@ import { systemPrompt,validateCandidate,optionalFacts,productContent } from "./p
 import { generateText,verifyFacts,generateImage } from "./provider.js";
 import { aiError } from "./input.js";
 import { validateUpload,mediaUrl } from "../store/media.js";
+import { isWholeDraft,advanceWholeDraft } from "./draft-flow.js";
 
 async function paid(db,storeId,jobId,kind,fn) {
   const operation = crypto.randomUUID();
@@ -50,6 +51,8 @@ function deterministic(job,step) {
   section.settings.enabled = optionalFacts(job.brief,step);
   // Core commerce and customer reviews are never generated or enabled by AI.
   if (["header","footer","commerce","product-details","product-grid"].includes(step.type)) section.settings.enabled=true;
+  if(step.type==="announcement")section.settings.text=job.brief.selling.first_order_offer
+    .replace(/[\u2013\u2014]/g,"-").replace(/\s+/g," ").slice(0,200);
   return {section};
 }
 function copyOf(candidate) {
@@ -71,9 +74,11 @@ export async function processAiMessage(body,env) {
     if(!job)return;
     const step=job.plan[job.cursor];
     const draft=await db.withStore(job.store_id,async tx=>({...await loadDraft(tx,job.store_id),media:await ownedMedia(tx,job.store_id)}));
+    const meta={_whole_store:isWholeDraft(job),_retry_count:job.candidate?._retry_count||0};
     let candidate=job.candidate;
+    if(candidate&&!candidate.section&&!candidate.content&&typeof candidate.body!=="string")candidate=null;
     if(!candidate){
-      if(step.deterministic || !optionalFacts(job.brief,step))candidate=deterministic(job,step);
+      if(step.deterministic || step.type==="announcement" || !optionalFacts(job.brief,step))candidate=deterministic(job,step);
       else {
         const data=await paid(db,job.store_id,job.id,"text",async()=>{
           let first,second;
@@ -92,7 +97,7 @@ export async function processAiMessage(body,env) {
         if(data.error)throw aiError(data.error,503);
         candidate={section:data.section};
       }
-      candidate={...candidate,images:imageSlots(job,step,draft)};
+      candidate={...meta,...candidate,images:imageSlots(job,step,draft)};
       candidate.copy=copyOf(candidate);
       job=await db.withStore(job.store_id,tx=>updateJob(tx,job,{candidate}));
     }
@@ -113,7 +118,7 @@ export async function processAiMessage(body,env) {
         const resized=await env.IMAGES.input(new Blob([output.bytes]).stream()).transform({width}).output({format:"image/webp"});
         const variant=`stores/${job.store_id}/${crypto.randomUUID()}.webp`;
         await env.MEDIA.put(variant,await resized.image(),{httpMetadata:{contentType:"image/webp",cacheControl:"private, no-store"},customMetadata:{ai_generated:"true"}});
-        uploaded.push(variant);renditions.push({url:mediaUrl(variant),width});
+        uploaded.push(variant);renditions.push({url:mediaUrl(variant),width,height:Math.round(metadata.height*width/metadata.width)});
       }
       await db.withStore(job.store_id,async tx=>{
         const[sourceRow]=await tx`SELECT id FROM public.media WHERE store_id=${job.store_id} AND object_key=${image.source_key} AND NOT ai_generated`;
@@ -126,14 +131,32 @@ export async function processAiMessage(body,env) {
       });
       uploaded=[];
     }else job=await db.withStore(job.store_id,tx=>updateJob(tx,job,{status:"review",lease_until:null}));
+    if(job.status==="review"&&isWholeDraft(job)){
+      job=await db.withStore(job.store_id,tx=>advanceWholeDraft(tx,job));
+    }
     if(job.status==="queued")await env.AI_BUILD_QUEUE.send({type:"ai",store_id:job.store_id,job_id:job.id});
   }catch(error){
     for(const key of uploaded)try{await env.MEDIA.delete(key);}catch{}
-    if(job)await db.withStore(job.store_id,async tx=>{
+    if(job){
+      const retryJob=await db.withStore(job.store_id,async tx=>{
       const current=await getJob(tx,job.store_id,job.id,null);
-      if(["generating","queued"].includes(current.status))await updateJob(tx,current,{status:"failed",lease_until:null,
-        error:error.status?error.message:error.code==="P0001"?error.message:"Generation was interrupted. Retry this section; your build allowance has not been used."});
+      if(["generating","queued","review"].includes(current.status)){
+        const retries=Number(current.candidate?._retry_count||0);
+        const retry=isWholeDraft(current)&&current.status!=="queued"&&retries<2;
+        const next=await updateJob(tx,current,{candidate:{...current.candidate,_whole_store:isWholeDraft(current),
+          _retry_count:retry?retries+1:retries},status:retry?"queued":"failed",lease_until:null,
+          error:retry?null:error.status?error.message:error.code==="P0001"?error.message:"Generation was interrupted. Resume your build; your build allowance has not been used."});
+        return retry?next:null;
+      }
     });
+      if(retryJob){
+        try{await env.AI_BUILD_QUEUE.send({type:"ai",store_id:retryJob.store_id,job_id:retryJob.id});}
+        catch{await db.withStore(job.store_id,async tx=>{
+          const current=await getJob(tx,job.store_id,job.id,null);
+          if(current.status==="queued")await updateJob(tx,current,{status:"failed",error:"The generation queue is busy. Resume your build to continue."});
+        });}
+      }
+    }
     else throw error;
   }finally{await db.close();}
 }

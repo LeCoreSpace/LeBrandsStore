@@ -101,7 +101,8 @@ export function validateBrief(value) {
 }
 
 export function plainCopy(value, facts) {
-  if (typeof value !== "string" || value.length > 5000 || /[<>\u2013\u2014\u0000-\u001f]/.test(value)) fail("AI returned unsafe or oversized copy.");
+  if (typeof value !== "string" || value.length > 5000 || /[<>\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value)) fail("AI returned unsafe or oversized copy.");
+  value=value.replace(/[\u2013\u2014]/g,"-").replace(/\r\n?/g,"\n");
   // No reviews, numerical social proof, urgency, ratings or unsupported certification.
   if (/\b(?:rated|rating|testimonials?|five.star|5.star|customers love|selling fast|only \d+ left|hurry|best.selling)\b/i.test(value)) fail("AI returned unsupported social proof or urgency.");
   const source = JSON.stringify(facts).toLowerCase();
