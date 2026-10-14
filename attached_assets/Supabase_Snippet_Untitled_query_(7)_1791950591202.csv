@@ -1,0 +1,341 @@
+id,name,slug,category_id,created_at
+1,Mens Clothing,mens-clothing,1,2025-08-28 08:21:23.215295
+2,Womens Clothing,womens-clothing,1,2025-08-28 08:21:23.215295
+3,Kids Wear,kids-wear,1,2025-08-28 08:21:23.215295
+4,Ethnic & Traditional Wear,ethnic-and-traditional-wear,1,2025-08-28 08:21:23.215295
+5,Streetwear,streetwear,1,2025-08-28 08:21:23.215295
+6,Sportswear & Activewear,sportswear-and-activewear,1,2025-08-28 08:21:23.215295
+7,Innerwear & Loungewear,innerwear-and-loungewear,1,2025-08-28 08:21:23.215295
+8,Footwear,footwear,1,2025-08-28 08:21:23.215295
+9,Bags & Wallets,bags-and-wallets,1,2025-08-28 08:21:23.215295
+10,Luxury & Designer Wear,luxury-and-designer-wear,1,2025-08-28 08:21:23.215295
+11,Denim & Casuals,denim-and-casuals,1,2025-08-28 08:21:23.215295
+12,Formal Wear,formal-wear,1,2025-08-28 08:21:23.215295
+13,Outerwear & Jackets,outerwear-and-jackets,1,2025-08-28 08:21:23.215295
+14,Sleepwear,sleepwear,1,2025-08-28 08:21:23.215295
+15,Swimwear & Beachwear,swimwear-and-beachwear,1,2025-08-28 08:21:23.215295
+16,Sarees & Lehengas,sarees-and-lehengas,1,2025-08-28 08:21:23.215295
+17,Kurtas & Kurtis,kurtas-and-kurtis,1,2025-08-28 08:21:23.215295
+18,Seasonal Fashion,seasonal-fashion,1,2025-08-28 08:21:23.215295
+19,Uniforms & Workwear,uniforms-and-workwear,1,2025-08-28 08:21:23.215295
+20,Maternity Wear,maternity-wear,1,2025-08-28 08:21:23.215295
+21,Skincare,skincare,2,2025-08-28 08:21:23.215295
+22,Haircare,haircare,2,2025-08-28 08:21:23.215295
+23,Makeup & Cosmetics,makeup-and-cosmetics,2,2025-08-28 08:21:23.215295
+24,Bath & Body,bath-and-body,2,2025-08-28 08:21:23.215295
+25,Fragrances,fragrances,2,2025-08-28 08:21:23.215295
+26,Mens Grooming,mens-grooming,2,2025-08-28 08:21:23.215295
+27,Beauty Tools & Appliances,beauty-tools-and-appliances,2,2025-08-28 08:21:23.215295
+28,Nail Care,nail-care,2,2025-08-28 08:21:23.215295
+29,Oral Care,oral-care,2,2025-08-28 08:21:23.215295
+30,Natural & Ayurvedic Beauty,natural-and-ayurvedic-beauty,2,2025-08-28 08:21:23.215295
+31,Sunscreens & Protection,sunscreens-and-protection,2,2025-08-28 08:21:23.215295
+32,Anti-Aging Solutions,anti-aging-solutions,2,2025-08-28 08:21:23.215295
+33,Face Masks & Treatments,face-masks-and-treatments,2,2025-08-28 08:21:23.215295
+34,Eye Care,eye-care,2,2025-08-28 08:21:23.215295
+35,Lip Care,lip-care,2,2025-08-28 08:21:23.215295
+36,Shaving & Beard Care,shaving-and-beard-care,2,2025-08-28 08:21:23.215295
+37,Hair Color & Styling,hair-color-and-styling,2,2025-08-28 08:21:23.215295
+38,Baby & Kids Care,baby-and-kids-care,2,2025-08-28 08:21:23.215295
+39,Travel Packs,travel-packs,2,2025-08-28 08:21:23.215295
+40,Spa & Salon Essentials,spa-and-salon-essentials,2,2025-08-28 08:21:23.215295
+41,Fine Jewelry,fine-jewelry,3,2025-08-28 08:21:23.215295
+42,Silver Jewelry,silver-jewelry,3,2025-08-28 08:21:23.215295
+43,Fashion Jewelry,fashion-jewelry,3,2025-08-28 08:21:23.215295
+44,Luxury Watches,luxury-watches,3,2025-08-28 08:21:23.215295
+45,Smartwatches,smartwatches,3,2025-08-28 08:21:23.215295
+46,Rings,rings,3,2025-08-28 08:21:23.215295
+47,Earrings,earrings,3,2025-08-28 08:21:23.215295
+48,Necklaces & Pendants,necklaces-and-pendants,3,2025-08-28 08:21:23.215295
+49,Bracelets & Bangles,bracelets-and-bangles,3,2025-08-28 08:21:23.215295
+50,Bridal Jewelry,bridal-jewelry,3,2025-08-28 08:21:23.215295
+51,Antique Jewelry,antique-jewelry,3,2025-08-28 08:21:23.215295
+52,Customized Jewelry,customized-jewelry,3,2025-08-28 08:21:23.215295
+53,Birthstone Jewelry,birthstone-jewelry,3,2025-08-28 08:21:23.215295
+54,Nose Pins,nose-pins,3,2025-08-28 08:21:23.215295
+55,Anklets & Toe Rings,anklets-and-toe-rings,3,2025-08-28 08:21:23.215295
+56,Mens Jewelry,mens-jewelry,3,2025-08-28 08:21:23.215295
+57,Minimalist Jewelry,minimalist-jewelry,3,2025-08-28 08:21:23.215295
+58,Temple Jewelry,temple-jewelry,3,2025-08-28 08:21:23.215295
+59,Jewelry Sets,jewelry-sets,3,2025-08-28 08:21:23.215295
+60,Watch Accessories,watch-accessories,3,2025-08-28 08:21:23.215295
+61,Furniture,furniture,4,2025-08-28 08:21:23.215295
+62,Home Decor,home-decor,4,2025-08-28 08:21:23.215295
+63,Bedding & Linen,bedding-and-linen,4,2025-08-28 08:21:23.215295
+64,Kitchen & Dining,kitchen-and-dining,4,2025-08-28 08:21:23.215295
+65,Storage & Organization,storage-and-organization,4,2025-08-28 08:21:23.215295
+66,Lighting & Lamps,lighting-and-lamps,4,2025-08-28 08:21:23.215295
+67,Curtains & Furnishings,curtains-and-furnishings,4,2025-08-28 08:21:23.215295
+68,Gardening & Outdoor,gardening-and-outdoor,4,2025-08-28 08:21:23.215295
+69,Cleaning Essentials,cleaning-essentials,4,2025-08-28 08:21:23.215295
+70,Tableware & Serveware,tableware-and-serveware,4,2025-08-28 08:21:23.215295
+71,Rugs & Carpets,rugs-and-carpets,4,2025-08-28 08:21:23.215295
+72,Wall Art & Frames,wall-art-and-frames,4,2025-08-28 08:21:23.215295
+73,Clocks & Mirrors,clocks-and-mirrors,4,2025-08-28 08:21:23.215295
+74,Bath Essentials,bath-essentials,4,2025-08-28 08:21:23.215295
+75,Festive Decor,festive-decor,4,2025-08-28 08:21:23.215295
+76,Smart Furnishings,smart-furnishings,4,2025-08-28 08:21:23.215295
+77,Workspace Furniture,workspace-furniture,4,2025-08-28 08:21:23.215295
+78,Kids Room Furniture,kids-room-furniture,4,2025-08-28 08:21:23.215295
+79,Eco-Friendly Home Products,eco-friendly-home-products,4,2025-08-28 08:21:23.215295
+80,Air Purifiers & Appliances,air-purifiers-and-appliances,4,2025-08-28 08:21:23.215295
+81,Smartphones,smartphones,5,2025-08-28 08:21:23.215295
+82,Laptops & Tablets,laptops-and-tablets,5,2025-08-28 08:21:23.215295
+83,Audio Devices,audio-devices,5,2025-08-28 08:21:23.215295
+84,Wearables,wearables,5,2025-08-28 08:21:23.215295
+85,Gaming Consoles & Gear,gaming-consoles-and-gear,5,2025-08-28 08:21:23.215295
+86,Smart Home Devices,smart-home-devices,5,2025-08-28 08:21:23.215295
+87,Cameras & Photography,cameras-and-photography,5,2025-08-28 08:21:23.215295
+88,Drones & Robotics,drones-and-robotics,5,2025-08-28 08:21:23.215295
+89,PC Components,pc-components,5,2025-08-28 08:21:23.215295
+90,Tech Accessories,tech-accessories,5,2025-08-28 08:21:23.215295
+91,Printers & Scanners,printers-and-scanners,5,2025-08-28 08:21:23.215295
+92,Smart TVs & Projectors,smart-tvs-and-projectors,5,2025-08-28 08:21:23.215295
+93,Power Banks & Batteries,power-banks-and-batteries,5,2025-08-28 08:21:23.215295
+94,Computer Peripherals,computer-peripherals,5,2025-08-28 08:21:23.215295
+95,Networking Devices,networking-devices,5,2025-08-28 08:21:23.215295
+96,VR & AR Devices,vr-and-ar-devices,5,2025-08-28 08:21:23.215295
+97,E-Readers,e-readers,5,2025-08-28 08:21:23.215295
+98,Dashcams & Car Tech,dashcams-and-car-tech,5,2025-08-28 08:21:23.215295
+99,Office Tech Gadgets,office-tech-gadgets,5,2025-08-28 08:21:23.215295
+100,Storage Devices,storage-devices,5,2025-08-28 08:21:23.215295
+101,Snacks & Namkeen,snacks-and-namkeen,6,2025-08-28 08:21:23.215295
+102,Chocolates & Sweets,chocolates-and-sweets,6,2025-08-28 08:21:23.215295
+103,Packaged Meals,packaged-meals,6,2025-08-28 08:21:23.215295
+104,Health Foods,health-foods,6,2025-08-28 08:21:23.215295
+105,Beverages,beverages,6,2025-08-28 08:21:23.215295
+106,Dairy & Bakery,dairy-and-bakery,6,2025-08-28 08:21:23.215295
+107,Ready-to-Cook Mixes,ready-to-cook-mixes,6,2025-08-28 08:21:23.215295
+108,Spices & Condiments,spices-and-condiments,6,2025-08-28 08:21:23.215295
+109,Gourmet & Organic Foods,gourmet-and-organic-foods,6,2025-08-28 08:21:23.215295
+110,Regional & Traditional Foods,regional-and-traditional-foods,6,2025-08-28 08:21:23.215295
+111,Sauces & Pickles,sauces-and-pickles,6,2025-08-28 08:21:23.215295
+112,Breakfast Cereals,breakfast-cereals,6,2025-08-28 08:21:23.215295
+113,Dry Fruits & Nuts,dry-fruits-and-nuts,6,2025-08-28 08:21:23.215295
+114,Protein Foods,protein-foods,6,2025-08-28 08:21:23.215295
+115,Instant Foods & Noodles,instant-foods-and-noodles,6,2025-08-28 08:21:23.215295
+116,Frozen Foods,frozen-foods,6,2025-08-28 08:21:23.215295
+117,Baby Foods,baby-foods,6,2025-08-28 08:21:23.215295
+118,Energy Bars & Shakes,energy-bars-and-shakes,6,2025-08-28 08:21:23.215295
+119,Mocktails & Non-Alcoholic Drinks,mocktails-and-non-alcoholic-drinks,6,2025-08-28 08:21:23.215295
+120,Cooking Oils & Ghee,cooking-oils-and-ghee,6,2025-08-28 08:21:23.215295
+121,Workout Gear,workout-gear,7,2025-08-28 08:21:23.215295
+122,Home Gym Equipment,home-gym-equipment,7,2025-08-28 08:21:23.215295
+123,Yoga Essentials,yoga-essentials,7,2025-08-28 08:21:23.215295
+124,Athleisure Wear,athleisure-wear,7,2025-08-28 08:21:23.215295
+125,Supplements & Nutrition,supplements-and-nutrition,7,2025-08-28 08:21:23.215295
+126,Sports Drinks,sports-drinks,7,2025-08-28 08:21:23.215295
+127,Health Trackers,health-trackers,7,2025-08-28 08:21:23.215295
+128,Recovery Products,recovery-products,7,2025-08-28 08:21:23.215295
+129,Mental Wellness Tools,mental-wellness-tools,7,2025-08-28 08:21:23.215295
+130,Fitness Gadgets,fitness-gadgets,7,2025-08-28 08:21:23.215295
+131,Weight Training Equipment,weight-training-equipment,7,2025-08-28 08:21:23.215295
+132,Martial Arts Gear,martial-arts-gear,7,2025-08-28 08:21:23.215295
+133,Outdoor Sports Gear,outdoor-sports-gear,7,2025-08-28 08:21:23.215295
+134,Running Essentials,running-essentials,7,2025-08-28 08:21:23.215295
+135,Cycling Gear,cycling-gear,7,2025-08-28 08:21:23.215295
+136,Hiking Gear,hiking-gear,7,2025-08-28 08:21:23.215295
+137,Physiotherapy Tools,physiotherapy-tools,7,2025-08-28 08:21:23.215295
+138,Posture Correctors,posture-correctors,7,2025-08-28 08:21:23.215295
+139,Meditation Aids,meditation-aids,7,2025-08-28 08:21:23.215295
+140,Spa & Relaxation Equipment,spa-and-relaxation-equipment,7,2025-08-28 08:21:23.215295
+141,Vitamins,vitamins,8,2025-08-28 08:21:23.215295
+142,Immunity Boosters,immunity-boosters,8,2025-08-28 08:21:23.215295
+143,Herbal Remedies,herbal-remedies,8,2025-08-28 08:21:23.215295
+144,Protein Powders,protein-powders,8,2025-08-28 08:21:23.215295
+145,First Aid Kits,first-aid-kits,8,2025-08-28 08:21:23.215295
+146,Personal Health Devices,personal-health-devices,8,2025-08-28 08:21:23.215295
+147,Orthopedic Aids,orthopedic-aids,8,2025-08-28 08:21:23.215295
+148,Eye Care & Lenses,eye-care-and-lenses,8,2025-08-28 08:21:23.215295
+149,Hygiene Products,hygiene-products,8,2025-08-28 08:21:23.215295
+150,Sexual Wellness,sexual-wellness,8,2025-08-28 08:21:23.215295
+151,Womens Health,womens-health,8,2025-08-28 08:21:23.215295
+152,Mens Health,mens-health,8,2025-08-28 08:21:23.215295
+153,Joint Care,joint-care,8,2025-08-28 08:21:23.215295
+154,Digestive Health,digestive-health,8,2025-08-28 08:21:23.215295
+155,Sleep Aids,sleep-aids,8,2025-08-28 08:21:23.215295
+156,Diabetes Care,diabetes-care,8,2025-08-28 08:21:23.215295
+157,Respiratory Health,respiratory-health,8,2025-08-28 08:21:23.215295
+158,Hair & Nail Supplements,hair-and-nail-supplements,8,2025-08-28 08:21:23.215295
+159,Child Nutrition,child-nutrition,8,2025-08-28 08:21:23.215295
+160,Elderly Care Products,elderly-care-products,8,2025-08-28 08:21:23.215295
+161,Baby Clothing,baby-clothing,9,2025-08-28 08:21:23.215295
+162,Diapers & Baby Care,diapers-and-baby-care,9,2025-08-28 08:21:23.215295
+163,Baby Food & Formula,baby-food-and-formula,9,2025-08-28 08:21:23.215295
+164,Strollers & Carriers,strollers-and-carriers,9,2025-08-28 08:21:23.215295
+165,Nursery Furniture,nursery-furniture,9,2025-08-28 08:21:23.215295
+166,Toys,toys,9,2025-08-28 08:21:23.215295
+167,Kids Grooming,kids-grooming,9,2025-08-28 08:21:23.215295
+168,Learning Kits,learning-kit,9,2025-08-28 08:21:23.215295
+169,Kids Footwear,kids-footwear,9,2025-08-28 08:21:23.215295
+170,Educational Books,educational-books,9,2025-08-28 08:21:23.215295
+171,Car Seats & Safety Gear,car-seats-and-safety-gear,9,2025-08-28 08:21:23.215295
+172,Feeding Bottles,feeding-bottles,9,2025-08-28 08:21:23.215295
+173,Baby Bath Essentials,baby-bath-essentials,9,2025-08-28 08:21:23.215295
+174,Baby Bedding,baby-bedding,9,2025-08-28 08:21:23.215295
+175,Activity Gyms,activity-gyms,9,2025-08-28 08:21:23.215295
+176,Teething Products,teething-products,9,2025-08-28 08:21:23.215295
+177,Baby Monitors,baby-monitors,9,2025-08-28 08:21:23.215295
+178,Seasonal Kids Wear,seasonal-kids-wear,9,2025-08-28 08:21:23.215295
+179,Eco-Friendly Baby Goods,eco-friendly-baby-goods,9,2025-08-28 08:21:23.215295
+180,Baby Gift Hampers,baby-gift-hampers,9,2025-08-28 08:21:23.215295
+181,Dog Food,dog-food,10,2025-08-28 08:21:23.215295
+182,Cat Food,cat-food,10,2025-08-28 08:21:23.215295
+183,Small Pet Food,small-pet-food,10,2025-08-28 08:21:23.215295
+184,Pet Treats,pet-treats,10,2025-08-28 08:21:23.215295
+185,Pet Grooming,pet-grooming,10,2025-08-28 08:21:23.215295
+186,Pet Healthcare,pet-healthcare,10,2025-08-28 08:21:23.215295
+187,Collars & Leashes,collars-and-leashes,10,2025-08-28 08:21:23.215295
+188,Pet Beds,pet-beds,10,2025-08-28 08:21:23.215295
+189,Pet Toys,pet-toys,10,2025-08-28 08:21:23.215295
+190,Pet Clothing,pet-clothing,10,2025-08-28 08:21:23.215295
+191,Training Gear,training-gear,10,2025-08-28 08:21:23.215295
+192,Aquatic Supplies,aquatic-supplies,10,2025-08-28 08:21:23.215295
+193,Bird Cages,bird-cages,10,2025-08-28 08:21:23.215295
+194,Small Pet Habitats,small-pet-habitats,10,2025-08-28 08:21:23.215295
+195,Pet Bowls,pet-bowls,10,2025-08-28 08:21:23.215295
+196,Travel Accessories,travel-accessories,10,2025-08-28 08:21:23.215295
+197,Pet Vitamins,pet-vitamins,10,2025-08-28 08:21:23.215295
+198,Eco-Friendly Pet Goods,eco-friendly-pet-goods,10,2025-08-28 08:21:23.215295
+199,Litter & Waste,litter-and-waste,10,2025-08-28 08:21:23.215295
+200,Pet First Aid,pet-first-aid,10,2025-08-28 08:21:23.215295
+201,School Stationery,school-stationery,11,2025-08-28 08:21:23.215295
+202,Notebooks & Journals,notebooks-and-journals,11,2025-08-28 08:21:23.215295
+203,Academic Textbooks,academic-textbooks,11,2025-08-28 08:21:23.215295
+204,Childrens Books,childrens-books,11,2025-08-28 08:21:23.215295
+205,Exam Prep & Reference Books,exam-prep-and-reference-books,11,2025-08-28 08:21:23.215295
+212,Art Supplies,art-supplies,11,2025-08-28 08:21:23.215295
+213,Craft Materials & DIY Kits,craft-materials-and-diy-kits,11,2025-08-28 08:21:23.215295
+214,Sketchbooks & Drawing Pads,sketchbooks-and-drawing-pads,11,2025-08-28 08:21:23.215295
+215,Digital Drawing Tablets,digital-drawing-tablets,11,2025-08-28 08:21:23.215295
+216,Wall Posters & Educational Charts,wall-posters-and-educational-charts,11,2025-08-28 08:21:23.215295
+217,Calendars & Planners,calendars-and-planners,11,2025-08-28 08:21:23.215295
+218,Coloring Books & Activity Books,coloring-books-and-activity-books,11,2025-08-28 08:21:23.215295
+220,Art Prints & Designer Stationery,art-prints-and-designer-stationery,11,2025-08-28 08:21:23.215295
+208,Drums & Percussion,drums-percussion,11,2025-08-28 08:21:23.215295
+209,Pianos & Keyboards,piano-keyboard,11,2025-08-28 08:21:23.215295
+210,Wind Instruments,wind-instruments,11,2025-08-28 08:21:23.215295
+211,String Instruments,string-instruments,11,2025-08-28 08:21:23.215295
+219,Office Stationery,office-stationery,11,2025-08-28 08:21:23.215295
+207,Guitars & Basses,guitars-bases,11,2025-08-28 08:21:23.215295
+206,Classical Music Instruments,classical-music0instruments,11,2025-08-28 08:21:23.215295
+221,Car Accessories,car-accessories,12,2025-08-28 08:21:23.215295
+222,Bike Accessories,bike-accessories,12,2025-08-28 08:21:23.215295
+223,Helmets & Riding Gear,helmets-and-riding-gear,12,2025-08-28 08:21:23.215295
+224,Car Care,car-care,12,2025-08-28 08:21:23.215295
+225,Oils & Lubricants,oils-and-lubricants,12,2025-08-28 08:21:23.215295
+226,Tyres & Tubes,tyres-and-tubes,12,2025-08-28 08:21:23.215295
+227,EV Accessories,ev-accessories,12,2025-08-28 08:21:23.215295
+228,Dashcams,dashcams,12,2025-08-28 08:21:23.215295
+229,Vehicle Lighting,vehicle-lighting,12,2025-08-28 08:21:23.215295
+230,Custom Mods,custom-mods,12,2025-08-28 08:21:23.215295
+231,Car Covers,car-covers,12,2025-08-28 08:21:23.215295
+232,Car Audio Systems,car-audio-systems,12,2025-08-28 08:21:23.215295
+233,Alloy Wheels,alloy-wheels,12,2025-08-28 08:21:23.215295
+234,Luggage Boxes,luggage-boxes,12,2025-08-28 08:21:23.215295
+235,Jackets & Gloves,jackets-and-gloves,12,2025-08-28 08:21:23.215295
+236,Riding Boots,riding-boots,12,2025-08-28 08:21:23.215295
+237,Vehicle Security,vehicle-security,12,2025-08-28 08:21:23.215295
+238,Roof Racks,roof-racks,12,2025-08-28 08:21:23.215295
+239,Child Car Seats,child-car-seats,12,2025-08-28 08:21:23.215295
+240,Tools,Tools,12,2025-08-28 08:21:23.215295
+241,E-Books,e-books,13,2025-08-28 08:21:23.215295
+242,Audiobooks,audiobooks,13,2025-08-28 08:21:23.215295
+243,Online Courses,online-courses,13,2025-08-28 08:21:23.215295
+245,Design Templates,design-templates,13,2025-08-28 08:21:23.215295
+246,Fonts,fonts,13,2025-08-28 08:21:23.215295
+247,Stock Photos,stock-photos,13,2025-08-28 08:21:23.215295
+248,Stock Videos,stock-videos,13,2025-08-28 08:21:23.215295
+250,Sound Effects,sound-effects,13,2025-08-28 08:21:23.215295
+251,Software Plugins,software-plugins,13,2025-08-28 08:21:23.215295
+252,Mobile Apps,mobile-apps,13,2025-08-28 08:21:23.215295
+253,Website Themes,website-themes,13,2025-08-28 08:21:23.215295
+254,Lightroom Presets,lightroom-presets,13,2025-08-28 08:21:23.215295
+255,Video LUTs,video-luts,13,2025-08-28 08:21:23.215295
+256,Game Assets,game-assets,13,2025-08-28 08:21:23.215295
+257,3D Models,3d-models,13,2025-08-28 08:21:23.215295
+258,NFTs & Collectibles,nfts-and-collectibles,13,2025-08-28 08:21:23.215295
+259,Printables,printables,13,2025-08-28 08:21:23.215295
+260,Digital Art Packs,digital-art-packs,13,2025-08-28 08:21:23.215295
+249,Music,licensed-music,13,2025-08-28 08:21:23.215295
+244,Movies,licensed-movies,13,2025-08-28 08:21:23.215295
+261,Fashion Resale,fashion-resale,14,2025-08-28 08:21:23.215295
+263,Jewelry Resale,jewelry-resale,14,2025-08-28 08:21:23.215295
+264,Watch Resale,watch-resale,14,2025-08-28 08:21:23.215295
+265,Sneaker Resale,sneaker-resale,14,2025-08-28 08:21:23.215295
+266,Electronics Refurbished,electronics-refurbished,14,2025-08-28 08:21:23.215295
+267,Laptop Refurbished,laptop-refurbished,14,2025-08-28 08:21:23.215295
+268,Smartphone Refurbished,smartphone-refurbished,14,2025-08-28 08:21:23.215295
+269,Furniture Resale,furniture-resale,14,2025-08-28 08:21:23.215295
+270,Kids Goods Resale,kids-goods-resale,14,2025-08-28 08:21:23.215295
+271,Baby Products Resale,baby-products-pre-owned,14,2025-08-28 08:21:23.215295
+273,Home Appliances Refurbished,home-appliances-refurbished,14,2025-08-28 08:21:23.215295
+274,Car Accessories Pre-owned,car-accessories-pre-owned,14,2025-08-28 08:21:23.215295
+275,Bike Gear Pre-owned,bike-gear-pre-owned,14,2025-08-28 08:21:23.215295
+276,Book Resale,book-resale,14,2025-08-28 08:21:23.215295
+277,Collectibles Resale,collectibles-resale,14,2025-08-28 08:21:23.215295
+278,Antique Resale,antique-resale,14,2025-08-28 08:21:23.215295
+279,Camera Gear Resale,camera-gear-resale,14,2025-08-28 08:21:23.215295
+272,Musical Instruments Resale,musical-preowned,14,2025-08-28 08:21:23.215295
+280,Sustainable Thrift,sustainable-thrift,14,2025-08-28 08:21:23.215295
+262,Luxury Resale,luxury-resale,14,2025-08-28 08:21:23.215295
+281,Gift Hampers,gift-hampers,15,2025-08-28 08:21:23.215295
+282,Personalized Gifts,personalized-gifts,15,2025-08-28 08:21:23.215295
+283,Flowers,flowers,15,2025-08-28 08:21:23.215295
+284,Cakes & Desserts,cakes-and-desserts,15,2025-08-28 08:21:23.215295
+285,Chocolates & Confectionery Gifts,chocolates-and-confectionery-gifts,15,2025-08-28 08:21:23.215295
+286,Wedding Gifts,wedding-gifts,15,2025-08-28 08:21:23.215295
+287,Anniversary Gifts,anniversary-gifts,15,2025-08-28 08:21:23.215295
+288,Birthday Gifts,birthday-gifts,15,2025-08-28 08:21:23.215295
+289,Corporate Gifts,corporate-gifts,15,2025-08-28 08:21:23.215295
+290,Handmade Gifts,handmade-gifts,15,2025-08-28 08:21:23.215295
+291,Photo Frames & Memory Books,photo-frames-and-memory-books,15,2025-08-28 08:21:23.215295
+292,Festive Hampers,festive-hampers,15,2025-08-28 08:21:23.215295
+293,Party Supplies,party-supplies,15,2025-08-28 08:21:23.215295
+294,Custom Jewelry Gifts,custom-jewelry-gifts,15,2025-08-28 08:21:23.215295
+295,Baby Shower Gifts,baby-shower-gifts,15,2025-08-28 08:21:23.215295
+296,Eco-Friendly Gifts,eco-friendly-gifts,15,2025-08-28 08:21:23.215295
+297,Luxury Gifting,luxury-gifting,15,2025-08-28 08:21:23.215295
+298,Greeting Cards,greeting-cards,15,2025-08-28 08:21:23.215295
+299,Subscription Gift Boxes,subscription-gift-boxes,15,2025-08-28 08:21:23.215295
+300,Wedding Favors,wedding-favors,15,2025-08-28 08:21:23.215295
+301,Handloom Textiles,handloom-textiles,16,2025-08-28 08:21:23.215295
+302,Block Printing & Natural Dye Fabrics,block-printing-natural-dye-fabrics,16,2025-08-28 08:21:23.215295
+303,Embroidery & Needlework,embroidery-needlework,16,2025-08-28 08:21:23.215295
+306,Wooden Carvings & Toys,wooden-carvings-toys,16,2025-08-28 08:21:23.215295
+307,"Metal Crafts (Brass, Copper, Bidri)",metal-crafts-brass-copper-bidri,16,2025-08-28 08:21:23.215295
+308,Stone Carvings & Sculptures,stone-carvings-sculptures,16,2025-08-28 08:21:23.215295
+311,"Folk Paintings (Madhubani, Warli, Pattachitra)",folk-paintings-madhubani-warli-pattachitra,16,2025-08-28 08:21:23.215295
+312,Tribal & Indigenous Art,tribal-indigenous-art,16,2025-08-28 08:21:23.215295
+313,"Handmade Jewelry (Terracotta, Beads, Tribal Silver)",handmade-jewelry-terracotta-beads-tribal-silver,16,2025-08-28 08:21:23.215295
+314,Handmade Candles & Aromatics,handmade-candles-aromatics,16,2025-08-28 08:21:23.215295
+315,Handmade Soaps & Bath Products,handmade-soaps-bath-products,16,2025-08-28 08:21:23.215295
+316,Craft Supplies & DIY Tools,craft-supplies-diy-tools,16,2025-08-28 08:21:23.215295
+317,Paper & Party Supplies,paper-party-supplies,16,2025-08-28 08:21:23.215295
+318,Handmade Toys & Games,handmade-toys-games,16,2025-08-28 08:21:23.215295
+319,Collectibles & Miniatures,collectibles-miniatures,16,2025-08-28 08:21:23.215295
+320,Upcycled & Eco-Friendly Artisan Goods,upcycled-eco-friendly-artisan-goods,16,2025-08-28 08:21:23.215295
+310,Digital Print & Collage Art,digital-print-collage,16,2025-08-28 08:21:23.215295
+309,Bamboo & Cane & Jute Products,bamboo-cane-jute-products,16,2025-08-28 08:21:23.215295
+304,Pottery & Ceramics & Terracotta,pottery-ceramics -terracota,16,2025-08-28 08:21:23.215295
+305,"Painting (Acrylic, oil, WaterColor)",painting,16,2025-08-28 08:21:23.215295
+322,Telemedicine & Online Consults,telemedicine-and-online-consults,17,2025-08-28 09:40:26.123599
+323,Physiotherapy Clinics,physiotherapy-clinics,17,2025-08-28 09:40:26.123599
+324,Dental Clinics,dental-clinics,17,2025-08-28 09:40:26.123599
+325,Eye Care Clinics,eye-care-clinics,17,2025-08-28 09:40:26.123599
+326,Ayurveda & Naturopathy,ayurveda-and-naturopathy,17,2025-08-28 09:40:26.123599
+327,Homeopathy,homeopathy,17,2025-08-28 09:40:26.123599
+328,Wellness Retreats,wellness-retreats,17,2025-08-28 09:40:26.123599
+329,Alternative Therapies,alternative-therapies,17,2025-08-28 09:40:26.123599
+330,Mental Health Counseling,mental-health-counseling,17,2025-08-28 09:40:26.123599
+331,Speech Therapy,speech-therapy,17,2025-08-28 09:40:26.123599
+332,Occupational Therapy,occupational-therapy,17,2025-08-28 09:40:26.123599
+333,Nutrition & Diet Services,nutrition-and-diet-services,17,2025-08-28 09:40:26.123599
+334,Yoga Studios,yoga-studios,17,2025-08-28 09:40:26.123599
+335,Meditation Centers,meditation-centers,17,2025-08-28 09:40:26.123599
+336,Chiropractic Clinics,chiropractic-clinics,17,2025-08-28 09:40:26.123599
+337,Dermatology Clinics,dermatology-clinics,17,2025-08-28 09:40:26.123599
+338,Diagnostic Centers,diagnostic-centers,17,2025-08-28 09:40:26.123599
+339,Wellness Apps,wellness-apps,17,2025-08-28 09:40:26.123599
+340,Rehabilitation Centers,rehabilitation-centers,17,2025-08-28 09:40:26.123599
+321,Spiritual & Devotional Services,spiritual-devotional,17,2025-08-28 09:40:26.123599

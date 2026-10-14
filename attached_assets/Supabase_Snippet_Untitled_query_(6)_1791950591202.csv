@@ -1,0 +1,18 @@
+id,brand_type,name,slug,image_url,created_at
+1,product,Fashion & Apparel,fashion-and-apparel,https://res.cloudinary.com/dtxislcvl/image/upload/Fashion_Apparel_r7iasa.jpg,2025-08-28 08:21:23.215295
+13,product,Digital Goods(sold in Physcial form),digital-goods,https://res.cloudinary.com/dtxislcvl/image/upload/Digital_Goods_ccmfos.jpg,2025-08-28 08:21:23.215295
+14,product,Resale & Pre-owned,recommerce-and-pre-owned,https://res.cloudinary.com/dtxislcvl/image/upload/Recommerce_Pre-owned_pnwod8.jpg,2025-08-28 08:21:23.215295
+2,product,Beauty & Personal Care,beauty-and-personal-care,https://res.cloudinary.com/dtxislcvl/image/upload/Beauty_Personal_Care_zj1syg.jpg,2025-08-28 08:21:23.215295
+3,product,Jewelry & Watches,jewelry-and-watches,https://res.cloudinary.com/dtxislcvl/image/upload/Jewelry_Watches_ksibnn.jpg,2025-08-28 08:21:23.215295
+38,product,"Mobility, Cycling & Outdoor Sports",mobility-cycling-outdoor-sports,null,2025-12-30 11:09:26.329701
+4,product,Home & Living,home-and-living,https://res.cloudinary.com/dtxislcvl/image/upload/Home_Living_c10poz.jpg,2025-08-28 08:21:23.215295
+5,product,Electronics & Tech,electronics-and-tech,https://res.cloudinary.com/dtxislcvl/image/upload/Electronics_Tech_duc2at.jpg,2025-08-28 08:21:23.215295
+6,product,Food & Beverages,food-and-beverages,https://res.cloudinary.com/dtxislcvl/image/upload/Food_Beverages_it9prw.jpg,2025-08-28 08:21:23.215295
+7,product,"Fitness, Health & Wellness",fitness-health-and-wellness,https://res.cloudinary.com/dtxislcvl/image/upload/Fitness_Health_Wellness_u8jscq.jpg,2025-08-28 08:21:23.215295
+8,product,Health & Pharmacy,health-and-pharmacy,https://res.cloudinary.com/dtxislcvl/image/upload/Health_Pharmacy_sc5rfb.jpg,2025-08-28 08:21:23.215295
+9,product,Baby & Kids Essentials,baby-and-kids-essentials,https://res.cloudinary.com/dtxislcvl/image/upload/Baby_Kids_Essentials_wxksqc.jpg,2025-08-28 08:21:23.215295
+10,product,Pet Care,pet-care,https://res.cloudinary.com/dtxislcvl/image/upload/Pet_Care_biiwhy.jpg,2025-08-28 08:21:23.215295
+15,product,Gifting & Occasions,gifting-and-occasions,https://res.cloudinary.com/dtxislcvl/image/upload/Gifting_Occasions_rfryqb.jpg,2025-08-28 08:21:23.215295
+16,product,Artisan & Handicrafts,artisan-handicrafts,https://res.cloudinary.com/dtxislcvl/image/upload/Artisan_Handicrafts_rvk1lh.jpg,2025-08-28 08:21:23.215295
+12,product,"Hardware & Automotive ",Hardware and Autmotive,https://res.cloudinary.com/dtxislcvl/image/upload/Automotive_Mobility_ecslkm.jpg,2025-08-28 08:21:23.215295
+11,product,"School, Office & Art Supplies & Musical instruments",school-office-and-art-supplies-musical,https://res.cloudinary.com/dtxislcvl/image/upload/School_Office_Art_Supplies_ph1yi3.jpg,2025-08-28 08:21:23.215295
