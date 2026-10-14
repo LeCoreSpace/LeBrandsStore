@@ -35,6 +35,10 @@ spending controls or provider billing.
 
 ## Skeleton first and complete-draft generation
 
+The primary setup direction has since changed to prefilled category-based
+starter content. See [Aura starter content](aura-starter-content.md). The
+generation workflow below is historical scope, not the current primary setup.
+
 First create and test the Aura skeleton for home, collection, product, cart
 and checkout, with all essential sections and components. Then include AI
 after the user completes the fill-in-the-blanks prompt. Generate the entire
