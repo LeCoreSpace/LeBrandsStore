@@ -82,6 +82,25 @@ test("demo products are preview-only; real inventory takes precedence", () => {
   const real={...d,products:[{id:store,title:"Real merchant product",price_paise:50000,images:[]}]};
   assert.deepEqual(starterPreview(real,"home").products,real.products);
 });
+test("unsaved starter previews show the full demo catalogue even with existing inventory", () => {
+  const d=data();
+  d.products=[{id:store,title:"Real merchant product",price_paise:50000,images:[]}];
+  d.layouts=starterLayouts(d);
+  const before=JSON.stringify(d);
+  const shown=starterPreview(d,"home",{sampleCatalog:true});
+  assert.equal(shown.products.length,6);
+  assert.equal(shown.collections.length,3);
+  assert.ok(shown.collections.every(c=>c.cover?.url && c.product_ids.length));
+  assert.ok(shown.layouts.home.find(s=>s.type==="featured-products").blocks.every(b=>b.settings.product!==store));
+  assert.equal(JSON.stringify(d),before);
+  assert.equal(d.layouts.home.find(s=>s.type==="spotlight").settings.product,store);
+  const html=renderAura(shown,{page:"home",preview:true,readOnly:true,editorSkeleton:true});
+  assert.match(html,/au-collection-cards/);
+  assert.match(html,/Sample Ecru/);
+  assert.match(html,/c001-s001-collection-/);
+  assert.doesNotMatch(html,/Real merchant product/);
+  assert.deepEqual(starterPreview(d,"home").products,d.products);
+});
 test("staged starter migration compiles, validates seeds and restricts app writes in isolated PostgreSQL",async()=>{
   assert.equal(migrationSelection(["--staged-starters"]).requires,"0012_aura_skeleton_sections.sql");
   const pg=new PGlite();

@@ -150,6 +150,8 @@ export default {
       if(original.searchParams.get("starter")==="mens-clothing"){
         data.settings.category="fashion";data.settings.subcategory="mens-clothing";
         data.aura_starter_enabled=true;data.products=[];data.collections=[];
+        if(original.searchParams.get("catalog")==="existing-product")
+          data.products=[{id:"11111111-1111-4111-8111-111111111111",title:"Existing merchant product",price_paise:50000,status:"active",images:[]}];
       }
       data.layouts=defaultPageLayouts(data);
       data.page_versions=Object.fromEntries(Object.keys(data.layouts).map(key=>[key,{version:1}]));

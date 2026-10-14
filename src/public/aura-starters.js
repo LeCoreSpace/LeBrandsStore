@@ -48,11 +48,11 @@ export function prefilledSection(type, page, data, id = `default-${type}`) {
 }
 
 /** Preview-only catalogue. Never sent to save APIs or used on a live storefront. */
-export function starterPreview(data, page) {
+export function starterPreview(data, page, { sampleCatalog = false } = {}) {
   if (!starterAvailable(data)) return data;
   const result = structuredClone(data);
   result.starter_preview = true;
-  if (!(data.products || []).length) {
+  if (sampleCatalog || !(data.products || []).length) {
     const catalog = MENS_STARTER.content.sample_catalog;
     const productId = key => `c0010001-0000-4000-9000-${key.slice(1).padStart(12, "0")}`;
     const collectionId = key => `c0010001-0000-4000-9001-${String(catalog.collections.findIndex(c => c.collection_key === key) + 1).padStart(12, "0")}`;
@@ -64,15 +64,18 @@ export function starterPreview(data, page) {
     }));
     result.collections = catalog.collections.map(c => ({
       id: collectionId(c.collection_key), title: c.name, slug: c.collection_key,
-      description: c.description.replace(/<[^>]*>/g, ""), image: starterImage(c.cover),
+      description: c.description.replace(/<[^>]*>/g, ""), cover: starterImage(c.cover),
       product_ids: c.product_keys.map(productId),
     }));
     // These substitutions live only in the preview clone, never the persisted layout.
     for (const layout of Object.values(result.layouts || {})) for (const section of layout) {
-      if (section.type === "spotlight" && !section.settings.product) {
+      if (section.type === "featured-collection" && sampleCatalog) {
+        section.settings.collection = null;
+      }
+      if (section.type === "spotlight" && (sampleCatalog || !section.settings.product)) {
         section.settings.product = result.products[0].id; section.settings.enabled = true;
       }
-      if (section.type === "featured-products" && !section.blocks.length) {
+      if (section.type === "featured-products" && (sampleCatalog || !section.blocks.length)) {
         section.settings.enabled = true;
         section.blocks = result.products.map((p, i) => ({ id: `demo-${i + 1}`, type: "item", settings: { product: p.id } }));
       }

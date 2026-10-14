@@ -478,8 +478,9 @@ function renderStarter() {
     banner.innerHTML = proposed.has(current) ? `<p><strong>Aura starter layout preview.</strong> Nothing is saved yet. Your saved page is unchanged until you save.</p><div class="ed-banner-actions"><button type="button" class="ed-btn ed-small ed-primary" data-starter="save" ${readOnly() ? "disabled" : ""}>Save starter draft</button><button type="button" class="ed-btn ed-small" data-starter="discard">Discard preview</button></div>` : "";
   }
   if (!pickBox) return;
-  const withCollections = (data.products || []).some(item => Array.isArray(item.collection_ids));
-  const items = current === "product" ? (data.products || []).map(item => [item.id, item.title]) : current === "collection" && withCollections ? (data.collections || []).map(item => [item.id, item.title || item.name]) : [];
+  const catalogue = starterPreview(data,current,{sampleCatalog:proposed.has(current)});
+  const withCollections = (catalogue.products || []).some(item => Array.isArray(item.collection_ids));
+  const items = current === "product" ? (catalogue.products || []).map(item => [item.id, item.title]) : current === "collection" && withCollections ? (catalogue.collections || []).map(item => [item.id, item.title || item.name]) : [];
   pickBox.hidden = !items.length;
   if (items.length) {
     pickBox.querySelector("label").textContent = current === "product" ? "Preview product" : "Preview collection";
@@ -779,8 +780,10 @@ function renderPreview() {
   const pickedCollection = current === "collection" && pick ? (data.collections || []).find(k => k.id === pick) : null;
   const shown = current === "collection" && pick && !pickedCollection?.product_ids ? (data.products || []).filter(item => (item.collection_ids || []).includes(pick)) : data.products;
   try {
-    const preview=starterPreview({ ...data, products: shown, settings, layouts },current);
-    html = renderAura(preview, { ...S.previewOptions(current), productId: (current === "product" && pick) || preview.products?.[0]?.id, collectionId: pickedCollection ? pickedCollection.id : undefined, preview: true, embeddedPreview: true, editorAnnotate: true, editorSkeleton: skeleton, readOnly: true });
+    const preview=starterPreview({ ...data, products: shown, settings, layouts },current,{sampleCatalog:proposed.has(current)});
+    const productId=current==="product"&&preview.products?.some(p=>p.id===pick)?pick:preview.products?.[0]?.id;
+    const collectionId=current==="collection"&&preview.collections?.some(c=>c.id===pick)?pick:undefined;
+    html = renderAura(preview, { ...S.previewOptions(current), productId, collectionId, preview: true, embeddedPreview: true, editorAnnotate: true, editorSkeleton: skeleton, readOnly: true });
     if(preview.starter_preview)html=html.replace(/(<body[^>]*>)/, '$1<div style="padding:10px 20px;background:#fff;color:#333;font:13px sans-serif;border-bottom:1px solid #ddd">Illustrative starter content. Replace sample text and media before publishing. Sample products and prices are preview-only.</div>');
   }
   catch (error) { html = `<!doctype html><body style="font-family:sans-serif;padding:24px">Preview could not be drawn: ${esc(error.message)}</body>`; }

@@ -21,3 +21,14 @@ and at least three sample products.
 **How to apply:** Include a labelled demonstration catalogue and demo prices
 in starter previews, rather than empty catalogue sections. Keep examples
 separate from actual merchant inventory and financial settings.
+
+An explicit unsaved starter proposal should display its complete demonstration
+catalogue even when the merchant already has real products.
+
+**Why:** Existing inventory must not prevent the merchant from visualising
+the starter's products, prices and collections before adopting it.
+
+**How to apply:** Use demonstration catalogue references only in the preview
+clone, including preview selectors. Saved layouts and normal catalogue views
+continue to use the merchant's real inventory; never import demo stock by
+saving a theme.
