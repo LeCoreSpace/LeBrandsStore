@@ -1,4 +1,5 @@
 import { SECTION_SCHEMAS, PAGE_KEYS } from "./sections/index.js";
+import { isStarterImage } from "./aura-starter-assets.js";
 export { SECTION_SCHEMAS, PAGE_KEYS };
 export const AI_PAGE_KEYS=Object.freeze([...PAGE_KEYS,"faq"]);
 // Keep the shipped migration registries immutable. AI extends them additively.
@@ -39,7 +40,8 @@ export function validateLayoutMedia(value, type, context = {}) {
    if (!plain(value) || Object.keys(value).some(key => !["url", "alt", "width", "height", "focalX", "focalY","sources"].includes(key))) fail("Invalid media object.");
   const extension = type === "video" ? "(?:mp4|webm)" : "(?:png|jpe?g|svg|webp|avif)";
   const match = String(value.url || "").match(new RegExp(`^https://media\\.lebrands\\.store/stores/(${UUID.source.slice(1, -1)})/${UUID.source.slice(1, -1)}\\.${extension}$`, "i"));
-  if (!match || (context.storeId && match[1].toLowerCase() !== context.storeId.toLowerCase())) fail("Media must belong to this store.");
+  const shared = type === "image" && isStarterImage(value.url);
+  if (!shared && (!match || (context.storeId && match[1].toLowerCase() !== context.storeId.toLowerCase()))) fail("Media must belong to this store.");
   if (typeof value.alt !== "string" || !value.alt.trim() || value.alt.length > 500 || /[<>]/.test(value.alt)) fail("Media alt text is required.");
   for (const key of ["width", "height"]) if (own(value, key) && (!Number.isInteger(value[key]) || value[key] < 1 || value[key] > 20000)) fail("Invalid image dimensions.");
   for (const key of ["focalX", "focalY"]) if (own(value, key) && (typeof value[key] !== "number" || value[key] < 0 || value[key] > 1)) fail("Invalid focal point.");

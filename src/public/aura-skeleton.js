@@ -1,5 +1,6 @@
 // Ordered Aura starter layouts for the editor. Never used as the live fallback (see defaultPageLayouts).
 import { SECTION_SCHEMAS, defaultPageLayouts } from "./aura-layout.js";
+import { prefilledSection } from "./aura-starters.js";
 
 export const STARTER_PAGES = ["home", "collection", "product", "cart", "checkout"];
 /** Extensible template metadata. Only the shared defaults exist for now; no assignment controls. */
@@ -36,7 +37,7 @@ export function starterLayouts(data = {}) {
       else if (type === "collection-nav") set((data.collections || []).length && (data.products || []).some(p => Array.isArray(p.collection_ids)));
       else if (["featured-products", "spotlight", "faq", "product-specs", "material-care", "size-guide", "how-to-use", "collection-heading", "collection-description"].includes(type)) set(false);
       else if (type === "trust" && page !== "home" && page !== "collection") set(hasPolicy(data, ["shipping", "cancellation-refund"]) || s.support_email);
-      return item;
+      return prefilledSection(type, page, data, item.id) || item;
     });
   }
   return out;

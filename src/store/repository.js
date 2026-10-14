@@ -8,10 +8,11 @@ import { pagesEnabled, pageLayouts, skeletonEnabled } from "./pages.js";
 import { mergeSettingsToLayouts, validateLayout, defaultPageLayouts } from "../public/aura-layout.js";
 import {verificationState} from "../gstin/service.js";
 import { productContent, collectionContent, saveProductContent } from "./catalog.js";
+import { validCategoryPair } from "../public/aura-taxonomy.js";
 
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
-  support_email: "", support_phone: "", gstin: "", business_state: "", category: "",
+  support_email: "", support_phone: "", gstin: "", business_state: "", category: "", subcategory: "",
   business_line1:"",business_line2:"",business_city:"",business_pincode:"",signature_media_id:null,
   theme: "aura", accent_color: "#214a3d", font_preset: "modern", color_preset: "white", button_style: "rounded",
 };
@@ -83,6 +84,13 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
     data.aura_skeleton_enabled = pages.aura_skeleton_enabled;
     data.layouts = { ...defaultPageLayouts(data), ...pages.layouts };
     data.page_versions = pages.page_versions;
+    const [library] = await tx`SELECT to_regclass('public.aura_library_packs') IS NOT NULL AS available`;
+    data.aura_starter_enabled = false;
+    if (library?.available) {
+      const [pilot] = await tx`SELECT EXISTS(SELECT 1 FROM public.aura_library_packs
+        WHERE pack_id='c0010001-0000-4000-8000-000000000001' AND status='published') AS available`;
+      data.aura_starter_enabled = pilot?.available === true;
+    }
   }
   if(store.approval_enabled)data.gstinVerification=await verificationState(tx,storeId,data.settings);
   return data;
@@ -107,6 +115,9 @@ function completion(data, progress) {
 export async function saveSetup(tx, id, settings, progress) {
   await ensureSetup(tx, id);
   const data = await loadDraft(tx, id);
+  if (settings && !validCategoryPair(settings.category ?? data.settings.category, settings.subcategory ?? data.settings.subcategory)) {
+    throw badInput("Choose a matching subcategory.", { subcategory: "Choose a subcategory belonging to this category." });
+  }
   if (data.store.status === "live" && settings &&
       ["gstin","business_state","address"].some(key => Object.hasOwn(settings,key))) {
     const errors = businessGSTINErrors({...data.settings,...settings});

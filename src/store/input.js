@@ -2,6 +2,7 @@ import { CATEGORIES, UUID, validateTheme } from "../public/validation.js";
 import { CURRENT_GST_RATES, LEGACY_GST_RATES, INDIAN_STATES, gstinError, validInvoicePrefix } from "../public/commerce-rules.js";
 import { validateLayoutMedia } from "../public/aura-layout.js";
 import { validateProductContent } from "../public/catalog-content.js";
+import { validCategoryPair } from "../public/aura-taxonomy.js";
 
 export const badInput = (message, errors) => Object.assign(new Error(message), { status: 400, errors });
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -15,7 +16,7 @@ export function settingsPatch(value, context = {}) {
     brand_name: 40, subdomain: 30, tagline: 60, description: 500,
     legal_name: 120, trade_name:120, address: 500, support_email: 254,notification_email:254, support_phone: 25,
     business_line1:150,business_line2:150,business_city:80,business_pincode:6,invoice_prefix:4,
-    gstin: 15, business_state: 2, category: 30, theme: 20, accent_color: 7, font_preset: 20, button_style: 20,
+    gstin: 15, business_state: 2, category: 200, subcategory: 200, theme: 20, accent_color: 7, font_preset: 20, button_style: 20,
     color_preset: 20, statement: 500, founder_name: 160, founder_story: 4000,
   };
   for (const [key, val] of Object.entries(value)) {
@@ -37,6 +38,7 @@ export function settingsPatch(value, context = {}) {
   }
   // Incomplete text is a valid autosaved draft, but never a published address.
   if (result.category && !CATEGORIES.some((c) => c.value === result.category)) throw badInput("Choose a store category.", { category: "Choose a store category from the list." });
+  if (result.category && !validCategoryPair(result.category, result.subcategory)) throw badInput("Choose a matching subcategory.", { subcategory: "Choose a subcategory belonging to this category." });
   if (result.gstin) result.gstin = result.gstin.toUpperCase();
   const formatErrors = {};
   if ("invoice_prefix" in result && !validInvoicePrefix(result.invoice_prefix)) formatErrors.invoice_prefix = "Use 1 to 4 uppercase letters or digits.";

@@ -1,4 +1,5 @@
 import { defaultPageLayouts, validateLayout, PAGE_KEYS } from "../public/aura-layout.js";
+import { starterAvailable, STARTER_PACK_ID } from "../public/aura-starters.js";
 import { AURA_SKELETON_TYPES } from "../public/sections/index.js";
 export async function skeletonEnabled(tx) {
   const [row] = await tx`SELECT to_regprocedure('public.aura_skeleton_available()') IS NOT NULL AS enabled`;
@@ -32,6 +33,9 @@ export async function savePage(tx, id, page, layout, expected, tokenHash, data) 
     throw Object.assign(new Error("Checkout only supports the protected checkout flow, header, reassurance and footer."), { status: 400 });
   }
   const [row] = await tx`SELECT * FROM public.save_store_page(${id},${page},${tx.json(normalized)},${expected},${tokenHash})`;
+  if(starterAvailable(data)&&["home","collection","product","cart","checkout"].includes(page)) {
+    await tx`SELECT public.pin_aura_starter_pack(${id},${STARTER_PACK_ID},${tokenHash})`;
+  }
   return row;
 }
 export async function restorePage(tx, id, page, version, expected, tokenHash) {

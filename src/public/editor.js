@@ -4,6 +4,7 @@ import { AI_SECTION_SCHEMAS as SECTION_SCHEMAS, defaultPageLayouts, safeLayoutLi
 import { uploadAuraImage } from "/assets/aura-upload.js";
 import * as S from "/assets/editor-state.js";
 import { starterLayouts, mergeStarter, isLegacyDefault, TEMPLATE_META } from "/assets/aura-skeleton.js";
+import { prefilledSection, starterPreview, starterAvailable } from "/assets/aura-starters.js";
 
 const $ = (selector, scope = document) => scope.querySelector(selector);
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -495,6 +496,15 @@ function applyStarter(key) {
 }
 $("#ed-starter")?.addEventListener("click", () => {
   if (readOnly()) return;
+  if(starterAvailable(data)) {
+    const modal=openModal("Preview Mens Clothing starter", `<p>This replaces the current ${esc(pageName(current))} preview with the prefilled menswear layout, text and images. Your saved page stays unchanged until you choose Save starter draft. Other pages are not changed.</p><p>Sample products and prices are for preview only. Replace sample stories and images before publishing.</p>`, '<button type="button" class="ed-btn" data-close>Cancel</button><button type="button" class="ed-btn ed-primary" id="ed-mens-preview">Preview menswear starter</button>');
+    modal.footer.querySelector("#ed-mens-preview").onclick=()=>{
+      proposed.set(current,proposed.get(current)||structuredClone(layoutNow()));
+      cur().history=S.commit(cur().history,starterLayouts(data)[current],{now:Date.now()});
+      selectedId=null;modal.close();renderAll();
+    };
+    return;
+  }
   const modal = openModal("Use Aura starter layout", `<p>This arranges the ${esc(pageName(current))} page in the Aura starter order. Your existing text, images, links and custom sections are kept. Sections without content are added hidden.</p><p class="ed-help">It opens as a preview. Nothing is saved or published until you choose Save starter draft.</p>`, `<button type="button" class="ed-btn" data-close>Cancel</button><button type="button" class="ed-btn ed-primary" id="ed-starter-go">Preview starter layout</button>`);
   modal.footer.querySelector("#ed-starter-go").addEventListener("click", () => { modal.close(); applyStarter(current); });
 });
@@ -532,6 +542,13 @@ function openAddSection() {
     if (!card) return;
     const result = S.addSection(layoutNow(), card.dataset.type, current, context, undefined, skeleton);
     if (!result.id) { toast("That section could not be added."); return; }
+    if(starterAvailable(data)) {
+      const replacement=prefilledSection(card.dataset.type,current,data,result.id);
+      if(replacement) {
+        result.layout=result.layout.map(s=>s.id===result.id?replacement:s);
+        result.hidden=replacement.settings.enabled===false;
+      }
+    }
     mutate(() => result.layout);
     selectedId = result.id; modal.close(); renderAll();
     if (result.hidden) toast("Added as hidden. Fill in the required settings, then turn on Show on page.");
@@ -761,7 +778,11 @@ function renderPreview() {
   const pick = previewItem[current];
   const pickedCollection = current === "collection" && pick ? (data.collections || []).find(k => k.id === pick) : null;
   const shown = current === "collection" && pick && !pickedCollection?.product_ids ? (data.products || []).filter(item => (item.collection_ids || []).includes(pick)) : data.products;
-  try { html = renderAura({ ...data, products: shown, settings, layouts }, { ...S.previewOptions(current), productId: (current === "product" && pick) || data.products?.[0]?.id, collectionId: pickedCollection ? pickedCollection.id : undefined, preview: true, embeddedPreview: true, editorAnnotate: true, editorSkeleton: skeleton, readOnly: true }); }
+  try {
+    const preview=starterPreview({ ...data, products: shown, settings, layouts },current);
+    html = renderAura(preview, { ...S.previewOptions(current), productId: (current === "product" && pick) || preview.products?.[0]?.id, collectionId: pickedCollection ? pickedCollection.id : undefined, preview: true, embeddedPreview: true, editorAnnotate: true, editorSkeleton: skeleton, readOnly: true });
+    if(preview.starter_preview)html=html.replace(/(<body[^>]*>)/, '$1<div style="padding:10px 20px;background:#fff;color:#333;font:13px sans-serif;border-bottom:1px solid #ddd">Illustrative starter content. Replace sample text and media before publishing. Sample products and prices are preview-only.</div>');
+  }
   catch (error) { html = `<!doctype html><body style="font-family:sans-serif;padding:24px">Preview could not be drawn: ${esc(error.message)}</body>`; }
   frame.srcdoc = html.replace("</head>", `${PREVIEW_STYLE}</head>`);
 }

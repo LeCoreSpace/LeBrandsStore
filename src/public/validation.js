@@ -1,17 +1,19 @@
 // Shared by the Worker and wizard. No browser-only or server-only dependencies.
 import { CURRENT_GST_RATES, LEGACY_GST_RATES, businessGSTINErrors } from "./commerce-rules.js";
+import { PRODUCT_CATEGORIES, validCategoryPair } from "./aura-taxonomy.js";
 export const RESERVED_SUBDOMAINS = [
   "www", "app", "admin", "api", "brands", "customers", "mail", "notify", "news",
   "help", "support", "status", "shop", "store", "checkout", "cart", "pay",
   "payments", "login", "account", "dashboard", "blog", "docs", "cdn", "static",
   "assets", "media", "lebrands", "lebrandsspace",
 ];
-export const CATEGORIES = [
+export const LEGACY_CATEGORIES = [
   ["beauty", "Beauty"], ["fashion", "Fashion"], ["jewellery", "Jewellery"],
   ["home-decor", "Home & décor"], ["food-beverages", "Food & beverages"],
   ["wellness", "Wellness"], ["kids", "Kids"], ["pets", "Pets"],
   ["gifting", "Gifting"], ["other", "Other"],
 ].map(([value, label]) => ({ value, label }));
+export const CATEGORIES = [...PRODUCT_CATEGORIES, ...LEGACY_CATEGORIES];
 export const POLICY_KINDS = ["privacy", "terms", "shipping", "cancellation-refund", "contact", "pricing"];
 export const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const length = (value) => typeof value === "string" ? [...value.trim()].length : 0;
@@ -36,6 +38,7 @@ export function validateBasics(s = {}) {
   if (!/^\+?[0-9 ()-]{7,25}$/.test(s.support_phone ?? "")) errors.support_phone = "Enter a valid support phone or WhatsApp number.";
   Object.assign(errors,businessGSTINErrors(s));
   if (!CATEGORIES.some((c) => c.value === s.category)) errors.category = "Choose a store category.";
+  if (!validCategoryPair(s.category, s.subcategory)) errors.subcategory = "Choose a subcategory belonging to this category.";
   return errors;
 }
 export function validateTheme(s = {}) {

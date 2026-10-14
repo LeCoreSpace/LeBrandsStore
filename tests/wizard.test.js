@@ -45,7 +45,8 @@ test("wizard basics, theme and product rules match requested boundaries", () => 
   assert.deepEqual(validateBasics(data.settings), {});
   assert.deepEqual(validateTheme(data.settings), {});
   assert.deepEqual(validateProduct(data.products[0]), {});
-  assert.equal(CATEGORIES.length, 10);
+  // 17 source product categories plus 10 accepted legacy saved values.
+  assert.equal(CATEGORIES.length, 27);
   assert.ok(validateBasics({ ...data.settings, description: "too short", logo_media_id: null }).description);
   assert.ok(validateBasics({ ...data.settings, brand_name: "x" }).brand_name);
   assert.ok(validateBasics({ ...data.settings, subdomain: "app" }).subdomain);

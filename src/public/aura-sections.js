@@ -31,7 +31,9 @@ function img(image, { eager = false, cls = "", label = "", sizes = HERO_IMAGE_SI
   const w = Number(image.width) > 0 ? ` width="${Math.round(image.width)}"` : "";
   const h = Number(image.height) > 0 ? ` height="${Math.round(image.height)}"` : "";
   const responsive=srcset?` srcset="${esc(srcset)}" sizes="${esc(sizes)}"`:"";
-  return `<img class="${cls}" src="${esc(url)}"${responsive} alt="${esc(image.alt || label)}"${w}${h} ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" fetchpriority="low"'} decoding="async">`;
+  const focal=Number.isFinite(image.focalX)&&image.focalX>=0&&image.focalX<=1&&Number.isFinite(image.focalY)&&image.focalY>=0&&image.focalY<=1
+    ? ` style="object-position:${image.focalX*100}% ${image.focalY*100}%"`:"";
+  return `<img class="${cls}" src="${esc(url)}"${responsive}${focal} alt="${esc(image.alt || label)}"${w}${h} ${eager ? 'loading="eager" fetchpriority="high"' : 'loading="lazy" fetchpriority="low"'} decoding="async">`;
 }
 function card(p, ctx, eager = false, index = 0) {
   const im = img(p.images?.[0], { label: p.title, sizes:"(max-width: 680px) 50vw, (max-width: 1024px) 33vw, 25vw" });
@@ -109,9 +111,12 @@ export const SECTION_RENDERERS = {
     const variant = ["split", "fullbleed", "video"].includes(x.variant) ? x.variant : "split";
     const title = str(x.title);
     const video = variant === "video" && x.video?.url && safeImage(x.poster?.url) && /^https:\/\/media\.lebrands\.store\//.test(x.video.url);
-    const media = video
+    let media = video
       ? `<video src="${esc(x.video.url)}" poster="${esc(x.poster.url)}" autoplay muted loop playsinline preload="none" aria-label="${esc(x.video.alt || "")}"></video>`
       : img(image, { eager: true, label: c.brand });
+    if(!video&&image?.url==="/assets/img/aura-starters/c001-s001/v01/c001-s001-hero-desktop-v01.webp") {
+      media=`<picture style="display:block;width:100%;height:100%"><source media="(max-width: 767px)" srcset="/assets/img/aura-starters/c001-s001/v01/c001-s001-hero-mobile-v01.webp">${media}</picture>`;
+    }
     const label = str(x.button_label), url = link(x.button_url) || "/collections/all";
     const copy = `<div class="au-hero-copy">${str(x.kicker) ? `<p class="au-eyebrow">${esc(x.kicker)}</p>` : ""}${title ? `<h1>${esc(title)}</h1>` : ""}${str(x.description) ? `<div class="au-rich">${rich(x.description)}</div>` : ""}${label ? `<a class="au-btn" href="${esc(url)}">${esc(label)}</a>` : ""}</div>`;
     const mode = media ? variant : "split";

@@ -1,4 +1,5 @@
 import { RESERVED_SUBDOMAINS } from "./reserved.js";
+import { isStarterImage } from "./public/aura-starter-assets.js";
 import { createDb } from "./db.js";
 import { handleAccounts } from "./auth/routes.js";
 import { SECURITY_HEADERS } from "./auth/security.js";
@@ -88,8 +89,9 @@ export default {
     if (url.pathname.startsWith("/assets/")) {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
       const filename = url.pathname.slice("/assets/".length);
+      const starterAsset = isStarterImage(url.pathname) || ["aura-taxonomy.js","aura-taxonomy-data.js","aura-starters.js","aura-starter-data.js","aura-starter-assets.js"].includes(filename);
       const sectionAsset = ["sections/index.js", "sections/schema-helpers.js"].includes(filename) || Object.keys(SECTION_SCHEMAS).some(type => filename === `sections/${type}.schema.js`);
-      if (!sectionAsset && !["ai-builder.js","ai-builder-prefill.js","ai-builder.css","catalog-page.js","content-form.js","catalog-content.js","account-home.css","editor.js","editor.css","editor-state.js","gstin-ui.js","aura.js", "aura.css", "aura-sections.js", "aura-layout.js", "aura-skeleton.js", "aura-ui.js", "aura-upload.js", "aura-editorial.ttf", "aura-classic.ttf", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
+      if (!sectionAsset && !starterAsset && !["ai-builder.js","ai-builder-prefill.js","ai-builder.css","catalog-page.js","content-form.js","catalog-content.js","account-home.css","editor.js","editor.css","editor-state.js","gstin-ui.js","aura.js", "aura.css", "aura-sections.js", "aura-layout.js", "aura-skeleton.js", "aura-ui.js", "aura-upload.js", "aura-editorial.ttf", "aura-classic.ttf", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce.js", "commerce.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "marketing.css", "marketing.js", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
       if (!env.ASSETS) return new Response("Assets unavailable", { status: 503 });
       url.pathname = `/${filename}`;
       const asset = await env.ASSETS.fetch(new Request(url, request));

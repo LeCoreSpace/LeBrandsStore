@@ -5,6 +5,9 @@ import { mergeSettingsToLayouts } from "/assets/aura-layout.js";
 import { uploadAuraImage } from "/assets/aura-upload.js";
 import {observeGSTINForms} from "/assets/gstin-ui.js";
 import { CATEGORIES, validateBasics, validateTheme, validateProduct, productGSTWarning, publishChecklist, resumeStep } from "/assets/validation.js";
+import { PRODUCT_CATEGORIES, subcategoriesFor } from "/assets/aura-taxonomy.js";
+import { starterLayouts, isLegacyDefault } from "/assets/aura-skeleton.js";
+import { starterAvailable, starterPreview } from "/assets/aura-starters.js";
 import { INDIAN_STATES, registeredBusinessState, businessGSTINErrors } from "/assets/commerce-rules.js";
 
 const root = document.getElementById("wizard");
@@ -53,7 +56,7 @@ let policyQueue = Promise.resolve();
 const SETTING_FIELDS = new Set([
   "brand_name", "subdomain", "description", "tagline", "logo_media_id",
   "legal_name", "address", "support_email", "support_phone", "gstin", "business_state",
-  "category", "theme", "accent_color", "font_preset", "button_style", "color_preset",
+  "category", "subcategory", "theme", "accent_color", "font_preset", "button_style", "color_preset",
   "hero_image", "hero_video", "hero_poster", "statement", "founder_story", "founder_name", "founder_portrait", "craft_images", "gallery_images",
 ]);
 
@@ -231,7 +234,11 @@ function footerNav(){
 function shellStep(kicker,title,intro,content){return `${progressBar()}<div class="step-card"><div class="step-kicker">${esc(kicker)}</div><h2>${esc(title)}</h2><p class="step-intro">${esc(intro)}</p>${formErrors._general?`<div class="form-error" role="alert">${esc(formErrors._general)}</div>`:""}${content}${footerNav()}</div>`}
 function renderBasics(){
  const s=currentSettings();
- const cats=(CATEGORIES||[]).map(x=>typeof x==="string"?{value:x,label:x}:x);
+ const cats=[...PRODUCT_CATEGORIES];
+ if(s.category&&!cats.some(c=>c.value===s.category)) {
+   const legacy=CATEGORIES.find(c=>c.value===s.category);
+   if(legacy)cats.unshift(legacy);
+ }
  const logo=s.logo_url;
  return shellStep("Step 01 · Your foundation","Start with the essentials.","A few useful details help customers know who you are and how to find you.",`
    ${field("brand_name","Brand name",s.brand_name||data.store?.name||"",{max:40,placeholder:"Moru Studio",help:"2 to 40 characters."})}
@@ -243,7 +250,9 @@ function renderBasics(){
    ${field("address","Business address",s.address||"",{textarea:true,max:500,rows:2})}
    ${field("business_state","Registered business state",registeredBusinessState(s),{select:true,placeholder:"Choose the registered address state",options:INDIAN_STATES.map(s=>({value:s.code,label:s.name}))})}
    <div class="field-grid">${field("support_email","Support email",s.support_email||"",{type:"email",max:254,autocomplete:"email"})}${field("support_phone","Support phone / WhatsApp",formatPhone(s.support_phone),{type:"tel",max:20,autocomplete:"tel"})}</div>
-   ${field("category","What best describes your brand?",s.category||"",{select:true,options:cats})}`);
+   ${field("category","What best describes your brand?",s.category||"",{select:true,options:cats})}
+   ${field("subcategory","Subcategory",s.subcategory||"",{select:true,placeholder:"Choose a subcategory",options:subcategoriesFor(s.category).map(c=>({value:c.slug,label:c.name}))})}
+   <p class="hint">Fashion &amp; Apparel / Mens Clothing includes a prefilled Aura starter. Other categories use the standard Aura skeleton.</p>`);
 }
 
 const PRESET_LABELS=[["ivory","Ivory & Ink","#f6f0e6","#2a251d"],["stone","Stone","#e9e8e4","#1f2020"],["midnight","Midnight","#12151d","#eeeef2"],["white","Pure White","#ffffff","#1c1c1b"]];
@@ -389,10 +398,14 @@ function renderPanel(){
 }
 function renderPreview(){
  if(!previewPanel)return;
- const draft=clone(data);
+ let draft=clone(data);
  draft.settings={...(draft.settings||{}),brand_name:draft.settings?.brand_name||draft.store?.name,subdomain:draft.settings?.subdomain||draft.store?.subdomain};
+ if(starterAvailable(draft)&&isLegacyDefault(draft.layouts?.[previewPage],previewPage,draft)) {
+   draft.layouts={...draft.layouts,[previewPage]:starterLayouts(draft)[previewPage]};
+   draft=starterPreview(draft,previewPage);
+ }
  const title=previewPage==="product"?currentProduct()?.id||data.products?.[0]?.id:null;
- const html=renderAura(draft,{page:previewPage,productId:title,preview:true,embeddedPreview:true});
+ const html=renderAura(draft,{page:previewPage,productId:title||draft.products?.[0]?.id,preview:true,embeddedPreview:true,readOnly:true});
  const body=`<div class="preview-bar"><div class="preview-label">Live preview<small>Preview · not yet live</small></div><div class="preview-controls"><div class="segmented" aria-label="Preview size"><button type="button" data-device="mobile" aria-pressed="${device==="mobile"}">Mobile</button><button type="button" data-device="desktop" aria-pressed="${device==="desktop"}">Desktop</button></div></div></div><nav class="preview-tabs" aria-label="Preview page">${[["home","Home"],["collection","Collection"],["product","Product"]].map(([p,l])=>`<button type="button" data-preview-page="${p}" aria-selected="${previewPage===p}">${l}</button>`).join("")}</nav><div class="preview-stage"><div class="preview-frame" data-device="${device}"><iframe title="Aura storefront preview" sandbox="allow-same-origin" srcdoc="${esc(html)}"></iframe></div></div>`;
  previewPanel.innerHTML=body;
  const frame=previewPanel.querySelector("iframe");
@@ -690,6 +703,7 @@ function onInput(event){
    if(name==="gstin"){value=value.trim().toUpperCase();el.value=value}
    if(name==="subdomain"){value=value.toLowerCase().trim();if(value!==el.value)el.value=value;checkSubdomain(false)}
    changedSetting(name,value);
+   if(name==="category"){changedSetting("subcategory","");renderPanel()}
    if(name==="accent_color"){const other=[...document.querySelectorAll('[data-settings="accent_color"]')].find(x=>x!==el);if(other)other.value=value}
  }else if(el.matches("[data-product]")){
    const name=el.dataset.product;let value=el.value;

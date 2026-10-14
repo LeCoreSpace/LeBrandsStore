@@ -7,6 +7,7 @@ import { renderWizard } from "./ui/wizard.js";
 import {renderEditor} from "./ui/editor.js";
 import {defaultPageLayouts} from "./public/aura-layout.js";
 import {starterLayouts} from "./public/aura-skeleton.js";
+import {starterPreview} from "./public/aura-starters.js";
 import {publicStonescence} from "./local-stonescence-fixture.js";
 import { renderAura } from "./public/aura.js";
 import { DEFAULT_SETTINGS } from "./store/repository.js";
@@ -155,10 +156,16 @@ export default {
     if (original.pathname === "/__aura-skeleton-preview") {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Preview route is read-only", { status: 405 });
       const data = exampleFixture();
+      const mens=original.searchParams.get("starter")==="mens-clothing";
+      if(mens) {
+        data.settings.category="fashion-and-apparel";data.settings.subcategory="mens-clothing";
+        data.aura_starter_enabled=true;data.products=[];data.collections=[];
+      }
       const page = ["home", "collection", "product", "cart", "checkout"].includes(original.searchParams.get("page")) ? original.searchParams.get("page") : "home";
       data.layouts = starterLayouts(data);
-      return new Response(request.method === "HEAD" ? null : exampleMedia(renderAura(data, {
-        page, productId: data.products[0]?.id, preview: true, readOnly: true, commerce: true, editorSkeleton: true,
+      const shown=mens?starterPreview(data,page):data;
+      return new Response(request.method === "HEAD" ? null : exampleMedia(renderAura(shown, {
+        page, productId: shown.products[0]?.id, preview: true, readOnly: true, commerce: true, editorSkeleton: true,
       })), { headers: { ...exampleHeaders, "content-type": "text/html; charset=utf-8" } });
     }
     if(original.pathname==="/__stonescence-aura-preview"){

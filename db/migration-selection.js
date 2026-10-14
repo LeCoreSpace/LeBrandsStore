@@ -10,5 +10,8 @@ export function migrationSelection(args) {
   if (values.length === 1 && values[0] === "--staged-email") {
     return { staged: true, filename: "0014_transactional_email.sql", requires: "0013_ai_builder.sql" };
   }
-  throw new Error("Use no arguments for regular migrations, --staged-aura, --staged-ai or --staged-email.");
+  if (values.length === 1 && values[0] === "--staged-starters") {
+    return { staged: true, filename: "0015_aura_starter_library.sql", requires: "0012_aura_skeleton_sections.sql" };
+  }
+  throw new Error("Use no arguments for regular migrations, --staged-aura, --staged-ai, --staged-email or --staged-starters.");
 }
