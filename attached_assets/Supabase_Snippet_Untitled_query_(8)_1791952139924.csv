@@ -1,0 +1,39 @@
+id,brand_type,name,slug,image_url,created_at
+1,product,Fashion & Apparel,fashion-and-apparel,https://res.cloudinary.com/dtxislcvl/image/upload/Fashion_Apparel_r7iasa.jpg,2025-08-28 08:21:23.215295
+13,product,Digital Goods(sold in Physcial form),digital-goods,https://res.cloudinary.com/dtxislcvl/image/upload/Digital_Goods_ccmfos.jpg,2025-08-28 08:21:23.215295
+14,product,Resale & Pre-owned,recommerce-and-pre-owned,https://res.cloudinary.com/dtxislcvl/image/upload/Recommerce_Pre-owned_pnwod8.jpg,2025-08-28 08:21:23.215295
+2,product,Beauty & Personal Care,beauty-and-personal-care,https://res.cloudinary.com/dtxislcvl/image/upload/Beauty_Personal_Care_zj1syg.jpg,2025-08-28 08:21:23.215295
+3,product,Jewelry & Watches,jewelry-and-watches,https://res.cloudinary.com/dtxislcvl/image/upload/Jewelry_Watches_ksibnn.jpg,2025-08-28 08:21:23.215295
+38,product,"Mobility, Cycling & Outdoor Sports",mobility-cycling-outdoor-sports,null,2025-12-30 11:09:26.329701
+4,product,Home & Living,home-and-living,https://res.cloudinary.com/dtxislcvl/image/upload/Home_Living_c10poz.jpg,2025-08-28 08:21:23.215295
+5,product,Electronics & Tech,electronics-and-tech,https://res.cloudinary.com/dtxislcvl/image/upload/Electronics_Tech_duc2at.jpg,2025-08-28 08:21:23.215295
+6,product,Food & Beverages,food-and-beverages,https://res.cloudinary.com/dtxislcvl/image/upload/Food_Beverages_it9prw.jpg,2025-08-28 08:21:23.215295
+7,product,"Fitness, Health & Wellness",fitness-health-and-wellness,https://res.cloudinary.com/dtxislcvl/image/upload/Fitness_Health_Wellness_u8jscq.jpg,2025-08-28 08:21:23.215295
+8,product,Health & Pharmacy,health-and-pharmacy,https://res.cloudinary.com/dtxislcvl/image/upload/Health_Pharmacy_sc5rfb.jpg,2025-08-28 08:21:23.215295
+9,product,Baby & Kids Essentials,baby-and-kids-essentials,https://res.cloudinary.com/dtxislcvl/image/upload/Baby_Kids_Essentials_wxksqc.jpg,2025-08-28 08:21:23.215295
+10,product,Pet Care,pet-care,https://res.cloudinary.com/dtxislcvl/image/upload/Pet_Care_biiwhy.jpg,2025-08-28 08:21:23.215295
+15,product,Gifting & Occasions,gifting-and-occasions,https://res.cloudinary.com/dtxislcvl/image/upload/Gifting_Occasions_rfryqb.jpg,2025-08-28 08:21:23.215295
+16,product,Artisan & Handicrafts,artisan-handicrafts,https://res.cloudinary.com/dtxislcvl/image/upload/Artisan_Handicrafts_rvk1lh.jpg,2025-08-28 08:21:23.215295
+17,service,Health & Wellness Services,health-wellness-services,https://res.cloudinary.com/dtxislcvl/image/upload/Health_Wellness_Services_yfuxqv.jpg,2025-08-28 09:40:26.123599
+18,service,Education & Learning,education-learning,https://res.cloudinary.com/dtxislcvl/image/upload/Education_Learning_fqsmy6.jpg,2025-08-28 09:40:26.123599
+19,service,Professional Services,professional-services,https://res.cloudinary.com/dtxislcvl/image/upload/Professional_Services_yaoijr.jpg,2025-08-28 09:40:26.123599
+20,service,Financial & Legal Services,financial-legal-services,https://res.cloudinary.com/dtxislcvl/image/upload/Financial_Legal_Services_qz52hl.jpg,2025-08-28 09:40:26.123599
+21,service,Home Services,home-services,https://res.cloudinary.com/dtxislcvl/image/upload/Home_Services_pnvpid.jpg,2025-08-28 09:40:26.123599
+22,service,Events & Entertainment,events-entertainment,https://res.cloudinary.com/dtxislcvl/image/upload/Events_Entertainment_zz8em5.jpg,2025-08-28 09:40:26.123599
+23,service,Travel & Tourism,travel-tourism,https://res.cloudinary.com/dtxislcvl/image/upload/Travel_Tourism_zitenv.jpg,2025-08-28 09:40:26.123599
+24,service,Food & Beverages Services,food-beverages-services,https://res.cloudinary.com/dtxislcvl/image/upload/Food_Beverages_Services_esovap.jpg,2025-08-28 09:40:26.123599
+25,service,Digital & IT Services,digital-it-services,https://res.cloudinary.com/dtxislcvl/image/upload/Digital_IT_Services_lkwo3d.jpg,2025-08-28 09:40:26.123599
+26,service,Creative & Design Services,creative-design-services,https://res.cloudinary.com/dtxislcvl/image/upload/Creative_Design_Services_kohvzq.jpg,2025-08-28 09:40:26.123599
+27,service,Marketing & Advertising,marketing-advertising,https://res.cloudinary.com/dtxislcvl/image/upload/Marketing_Advertising_shfes3.jpg,2025-08-28 09:40:26.123599
+28,service,Logistics & Delivery,logistics-delivery,https://res.cloudinary.com/dtxislcvl/image/upload/Logistics_Delivery_gblltp.jpg,2025-08-28 09:40:26.123599
+30,service,Sports & Fitness Training,sports-fitness-training,https://res.cloudinary.com/dtxislcvl/image/upload/Sports_Fitness_Training_yy58zv.jpg,2025-08-28 09:40:26.123599
+31,service,Beauty & Grooming Services,beauty-grooming-services,https://res.cloudinary.com/dtxislcvl/image/upload/Beauty_Grooming_Services_g4zlgg.jpg,2025-08-28 09:40:26.123599
+32,service,Media & Content Creation,media-content-creation,https://res.cloudinary.com/dtxislcvl/image/upload/Media_Content_Creation_nxijec.jpg,2025-08-28 09:40:26.123599
+33,service,Real Estate & Property Services,real-estate-property-services,https://res.cloudinary.com/dtxislcvl/image/upload/Real_Estate_Property_Services_o7askr.jpg,2025-08-28 09:40:26.123599
+34,service,Consulting Services,consulting-services,https://res.cloudinary.com/dtxislcvl/image/upload/Consulting_Services_gmsf1a.jpg,2025-08-28 09:40:26.123599
+35,service,Community & Social Services,community-social-services,https://res.cloudinary.com/dtxislcvl/image/upload/Community_Social_Services_aomfru.jpg,2025-08-28 09:40:26.123599
+36,service,Pet Care Services,pet-care-services,https://res.cloudinary.com/dtxislcvl/image/upload/Pet_Care_Services_n8zy9s.jpg,2025-08-28 09:40:26.123599
+37,service,Digital Goods (Downloadable),digital-goods-downloadbale,https://res.cloudinary.com/dtxislcvl/image/upload/Digital_Goods_ccmfos.jpg,2025-11-02 07:42:34.279676
+12,product,"Hardware & Automotive ",Hardware and Autmotive,https://res.cloudinary.com/dtxislcvl/image/upload/Automotive_Mobility_ecslkm.jpg,2025-08-28 08:21:23.215295
+29,service,Maintenance Services,repair-maintenance,https://res.cloudinary.com/dtxislcvl/image/upload/Repair_Maintenance_o3ng7c.jpg,2025-08-28 09:40:26.123599
+11,product,"School, Office & Art Supplies & Musical instruments",school-office-and-art-supplies-musical,https://res.cloudinary.com/dtxislcvl/image/upload/School_Office_Art_Supplies_ph1yi3.jpg,2025-08-28 08:21:23.215295
