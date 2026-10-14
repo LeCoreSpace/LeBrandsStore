@@ -238,3 +238,31 @@ mtime_ms = 1791811673679
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/8cb50a76-d65f-4c63-9a83-220205d77b9a/35ba351c-64ff-4d28-9bf6-486e781d68f0"
 storage_version_token = "1791811688814772"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "9dAyZ5kED_3XacUkGm3vG"
+uri = "file://generated-artifacts/c001-s001-mens-clothing-v01-brief.zip"
+type = "unspecified"
+title = "Mens Clothing starter-pack brief"
+description = "Complete image prompts, dimensions and filenames; prefilled section-content JSON; six demo-priced products and three populated collections. Add your generated WebP images and return the ZIP. No images are included yet."
+logical_id = "b6c10a90-bfa7-41cb-8430-a97eef1285cd"
+content_hash = "sha256:7e5a3fd3bfa4d08edf0584b8f478f262f6f22325ffc9ca4703a15ea94809409f"
+size = 15715
+mtime_ms = 1791955326558
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/b6c10a90-bfa7-41cb-8430-a97eef1285cd/d05753fd-8bce-49c6-aace-0b63ea56ea97"
+storage_version_token = "1791955337225533"
+content_type = "application/octet-stream"
+
+[[outputs]]
+id = "t8NusE1UwuXEDN-om25gu"
+uri = "file://content-briefs/c001-s001-v01/README.txt"
+type = "text"
+title = "Image and rich-text generation instructions"
+description = "Read the master image prompt, text-generation prompt, naming rules, allowed rich-text formatting and submission checklist."
+logical_id = "a777c009-cbb5-4d75-addf-cd98dade462a"
+content_hash = "sha256:a8b3214004891cd8ed578f03ba12a21775b31bd5b5a51573f8b2cd1c0573c06b"
+size = 11705
+mtime_ms = 1791955254014
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/a777c009-cbb5-4d75-addf-cd98dade462a/c72ff8e7-1a37-4748-9b85-28d9648e8209"
+storage_version_token = "1791955338484304"
+content_type = "text/plain"
