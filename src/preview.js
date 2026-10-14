@@ -147,6 +147,10 @@ export default {
     if(original.pathname==="/__editor-preview"){
       if(!["GET","HEAD"].includes(request.method))return new Response("Preview route is read-only",{status:405});
       const data=exampleFixture();data.role="owner";data.aura_skeleton_enabled=true;
+      if(original.searchParams.get("starter")==="mens-clothing"){
+        data.settings.category="fashion";data.settings.subcategory="mens-clothing";
+        data.aura_starter_enabled=true;data.products=[];data.collections=[];
+      }
       data.layouts=defaultPageLayouts(data);
       data.page_versions=Object.fromEntries(Object.keys(data.layouts).map(key=>[key,{version:1}]));
       return new Response(request.method==="HEAD"?null:renderEditor(data,{name:"Example reviewer",email:"example@example.invalid"}).replace('src="/assets/editor.js"', 'src="/__example-module/editor.js"'),{

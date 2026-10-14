@@ -7,11 +7,12 @@ import { migrationSelection } from "../db/migration-selection.js";
 import { TAXONOMY } from "../src/public/aura-taxonomy-data.js";
 import { subcategoriesFor, validCategoryPair } from "../src/public/aura-taxonomy.js";
 import { starterLayouts, mergeStarter } from "../src/public/aura-skeleton.js";
-import { prefilledSection, starterPreview, STARTER_PACK_ID } from "../src/public/aura-starters.js";
+import { prefilledSection, starterPreview, starterAvailable, STARTER_PACK_ID } from "../src/public/aura-starters.js";
 import { STARTER_IMAGE_URLS } from "../src/public/aura-starter-assets.js";
 import { validateLayout, validateLayoutMedia } from "../src/public/aura-layout.js";
 import { settingsPatch } from "../src/store/input.js";
 import { renderAura } from "../src/public/aura.js";
+import { renderEditor } from "../src/ui/editor.js";
 
 const store = "11111111-1111-4111-8111-111111111111";
 const other = "22222222-2222-4222-8222-222222222222";
@@ -20,6 +21,19 @@ const data = () => ({
   aura_starter_enabled: true, aura_skeleton_enabled: true,
   settings: { category: "fashion-and-apparel", subcategory: "mens-clothing", brand_name: "Preview brand" },
   products: [], collections: [], policies: [],
+});
+test("editor HTML preserves the starter capability and legacy fashion selection", () => {
+  const d = data();
+  d.settings.category = "fashion";
+  const payload = input => JSON.parse(renderEditor(input).match(/id="editor-data">([\s\S]*?)<\/script>/)[1]);
+  const enabled = payload(d);
+  assert.equal(enabled.aura_starter_enabled, true);
+  assert.equal(starterAvailable(enabled), true);
+  assert.equal(starterLayouts(enabled).home.find(s => s.type === "hero").settings.heading,
+    starterLayouts(d).home.find(s => s.type === "hero").settings.heading);
+  assert.equal(starterAvailable(payload({ ...d, aura_starter_enabled: undefined })), false);
+  assert.equal(starterAvailable(payload({ ...d, aura_starter_enabled: false })), false);
+  assert.equal(starterAvailable(payload({ ...d, settings: { ...d.settings, subcategory: "" } })), false);
 });
 test("product taxonomy preserves 17 parents, 340 unique children and legacy category values", () => {
   assert.equal(TAXONOMY.categories.length, 17);
