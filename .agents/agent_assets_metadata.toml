@@ -266,3 +266,17 @@ mtime_ms = 1791955254014
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/a777c009-cbb5-4d75-addf-cd98dade462a/c72ff8e7-1a37-4748-9b85-28d9648e8209"
 storage_version_token = "1791955338484304"
 content_type = "text/plain"
+
+[[outputs]]
+id = "SK7mJOtxSK8HE_68hOWRC"
+uri = "file://generated-artifacts/c001-s001-mens-clothing-v01-complete-preview.zip"
+type = "unspecified"
+title = "Complete Mens Clothing starter pack"
+description = "All 20 WebP images, 43 sections, six priced sample products and three collections, consolidated with the latest corrections. Includes validation and source reports. Preview-ready; visual and rights review notes remain."
+logical_id = "135b86c8-f4bf-4b8a-8dc9-d7b96a223c6e"
+content_hash = "sha256:738255eb261993c61bbc89c130296184eb725f07ff647ce8ebf6357cd150c462"
+size = 2279331
+mtime_ms = 1791978564443
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/135b86c8-f4bf-4b8a-8dc9-d7b96a223c6e/b4f20d4b-1fe4-4a63-960c-ad629c30251c"
+storage_version_token = "1791978573786872"
+content_type = "application/octet-stream"
