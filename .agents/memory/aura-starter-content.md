@@ -157,6 +157,23 @@ idea must not reset merchant work or checkout-adjusted inventory.
 details. Preserve existing records and collection members when binding a plan;
 use the ordinary catalogue editor for intentional changes to those records.
 
+## Adopting and editing an Ann design
+
+The user explicitly authorized “Use this design”, editing text and images
+directly in the canvas, saving the draft and publishing it through the normal
+store checks. The selected composition must become the actual storefront, not
+a separate demonstration followed by an unrelated older theme.
+
+**Why:** The user wants to save the chosen theme and publish it as it is, then
+change content and images in that same design instead of repeating setup.
+
+**How to apply:** Design adoption is explicit, draft-only and independent of
+completing the Ann conversation. Keep the theme editor and Ann canvas on the
+same saved design. Saving does not publish, and subsequent draft edits must not
+alter the existing live snapshot. Real catalogue records remain authoritative;
+never publish demo inventory, fabricated reviews, operational badges or efficacy
+evidence. Preserve business, policy, GSTIN and first-go-live approval checks.
+
 ## Ann setup and live checkout
 
 Keep Ann's interview, draft application and live selling settings distinct.

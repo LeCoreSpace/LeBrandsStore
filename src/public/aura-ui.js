@@ -1,3 +1,11 @@
+// The saved design uses the same progressive motion enhancement as its preview.
+// Cart actions remain owned by commerce.js, not by the demonstration layer.
+if (typeof document !== "undefined" && document.body?.dataset.designPage) {
+  import("./aura-showcase-interactions.js").then(({ attachShowcaseInteractions }) => {
+    document.body.dataset.showcase = document.body.dataset.style;
+    attachShowcaseInteractions(document, [], new Map(), href => location.assign(href));
+  }).catch(() => document.body.classList.remove("sc-motion-ready"));
+}
 // Storefront-only vanilla interactions: mobile menu, catalog search and sort.
 const reduced=matchMedia("(prefers-reduced-motion: reduce)");
 function respectVideoMotion(){if(reduced.matches)for(const video of document.querySelectorAll("video[autoplay]")){video.pause();video.removeAttribute("autoplay");video.preload="none";video.load();}}

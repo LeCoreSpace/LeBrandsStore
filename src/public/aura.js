@@ -57,6 +57,7 @@ export function renderDescription(value) {
 const PRESETS = ["ivory", "stone", "midnight", "white"];
 const PRESET_ALIAS = { porcelain: "ivory", sand: "ivory", ink: "midnight" };
 const policyName = policyTitle;
+import { renderSavedDesign } from "./aura-design.js";
 export function renderAura(data = {}, options = {}) {
   const settings = data.settings || {};
   const store = data.store || {};
@@ -103,9 +104,10 @@ export function renderAura(data = {}, options = {}) {
   const heroSizes = hero?.settings?.variant==="fullbleed"||hero?.settings?.variant==="video"?"100vw":HERO_IMAGE_SIZES;
   const heroPreload = heroResource.url ? `<link rel="preload" as="image" href="${esc(heroResource.url)}"${heroResource.srcset?` imagesrcset="${esc(heroResource.srcset)}" imagesizes="${esc(heroSizes)}"`:""} fetchpriority="high">` : "";
   const ctx = { layout: sections, data, options: { ...options, page }, settings, brand, products, product: prodForPage, logoUrl, renderDescription };
+  const designed = renderSavedDesign({ ...data, products }, { ...options, page, productId: prodForPage?.id, collectionId: activeCol?.id });
   const out = [];
   let mainOpen = false;
-  for (const section of sections) {
+  for (const section of (designed ? [] : sections)) {
     const html = renderSection(section, ctx);
     if (!html) continue;
     const framing = ["header", "footer", "announcement"].includes(section.type) || section.type === "commerce";
@@ -114,7 +116,7 @@ export function renderAura(data = {}, options = {}) {
     out.push(html);
   }
   if (mainOpen) out.push("</main>");
-  const body = out.join("");
+  const body = designed ? designed.body : out.join("");
   const noindex = page === "404" || options.preview || commercePage;
   return `<!doctype html>
   <html lang="en">
@@ -132,12 +134,12 @@ export function renderAura(data = {}, options = {}) {
       <meta property="og:description" content="${esc(descriptionText)}">
       ${canonicalUrl ? `<link rel="canonical" href="${esc(canonicalUrl)}"><meta property="og:url" content="${esc(canonicalUrl)}">` : ""}
       <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
-      <link rel="stylesheet" href="/assets/aura.css">
+      ${designed ? `<style>${designed.css}</style>` : '<link rel="stylesheet" href="/assets/aura.css">'}
       <style>:root{--accent:${accent};--accent-ink:${accentInk};--accent-label:${accentLabel};--display:${font.display};--body:${font.body};--radius:${radius}}</style>
       ${options.commerce ? `<link rel="stylesheet" href="/assets/commerce.css">` : ""}
-      ${STYLE_IDS.includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-styles.css">' : ""}
-      ${["minimal", "vintage"].includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-extra-styles.css">' : ""}
+      ${!designed && STYLE_IDS.includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-styles.css">' : ""}
+      ${!designed && ["minimal", "vintage"].includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-extra-styles.css">' : ""}
     </head>
-    <body data-aura data-preset="${preset}" ${STYLE_IDS.includes(settings.style_preset) ? `data-style="${settings.style_preset}"` : ""} data-font="${esc(fonts[settings.font_preset] ? settings.font_preset : "modern")}">${body}${options.commerce && !commercePage ? `<template data-commerce-config data-store-key="${esc(store.store_id || options.storeKey || "")}" data-site-key="${esc(options.siteKey || "")}" data-page="${esc(page)}" data-read-only="${options.readOnly === true ? "true" : "false"}"></template>` : ""}${options.embeddedPreview ? "" : '<script type="module" src="/assets/aura-ui.js"></script>'}${options.commerce ? `<div id="commerce-mount"></div>${options.embeddedPreview ? "" : '<script type="module" src="/assets/commerce.js"></script>'}` : ""}</body>
+    <body ${designed ? `class="${designed.bodyClass}" data-style="${designed.style}" data-design-page="${esc(page)}"` : "data-aura"} data-preset="${preset}" ${!designed && STYLE_IDS.includes(settings.style_preset) ? `data-style="${settings.style_preset}"` : ""} data-font="${esc(fonts[settings.font_preset] ? settings.font_preset : "modern")}">${body}${options.commerce && !commercePage ? `<template data-commerce-config data-store-key="${esc(store.store_id || options.storeKey || "")}" data-site-key="${esc(options.siteKey || "")}" data-page="${esc(page)}" data-read-only="${options.readOnly === true ? "true" : "false"}"></template>` : ""}${options.embeddedPreview ? "" : '<script type="module" src="/assets/aura-ui.js"></script>'}${options.commerce ? `<div id="commerce-mount"></div>${options.embeddedPreview ? "" : '<script type="module" src="/assets/commerce.js"></script>'}` : ""}</body>
   </html>`;
 }

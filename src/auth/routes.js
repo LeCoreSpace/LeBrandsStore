@@ -112,6 +112,8 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
         const[member]=await tx`SELECT role FROM public.store_members WHERE store_id=${editorMatch[1]} AND user_id=${user.id}`;
         return{...draft,role:member?.role};
       });
+      if (data.settings?.ann_design?.version === 1)
+        return redirect(`/stores/${editorMatch[1]}/build/ann?edit=design`);
       return new Response(renderEditor(data,user),{headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
     }
     if (isDashboardPath(path,request.method)) return await handleDashboard(request,db,user,tokenHash,env);

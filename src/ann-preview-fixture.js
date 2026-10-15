@@ -164,14 +164,22 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       response = new Response(req.method === "HEAD" ? null : html,
       { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     } else {
-      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness|media)$/);
+      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness|media|design)$/);
       if (!match) response = new Response("Not found", { status: 404 });
       else {
         url.pathname = `/api/stores/${storeId}/ann/${match[1]}`;
         const headers = new Headers(req.headers);
         // The production handler requires its account origin. Translate only
         // the explicitly configured same-origin development request.
-        if (headers.get("origin") === url.origin) headers.set("origin", APP_ORIGIN);
+        const incomingOrigin = headers.get("origin");
+        // The shared development proxy strips its public port. This translation
+        // applies only to the isolated fixture, never to production CSRF checks.
+        let fixtureOrigin = incomingOrigin === url.origin;
+        try {
+          const hostname = new URL(incomingOrigin).hostname;
+          fixtureOrigin ||= ["localhost", "127.0.0.1", new URL(previewOrigin).hostname, process.env.REPLIT_DEV_DOMAIN].includes(hostname);
+        } catch { /* Missing or invalid origins remain rejected. */ }
+        if (fixtureOrigin) headers.set("origin", APP_ORIGIN);
         const init = { method: req.method, headers };
         if (!["GET", "HEAD"].includes(req.method)) Object.assign(init, { body: Readable.toWeb(req), duplex: "half" });
         response = await handleAnnRoutes(new Request(url, init), {MEDIA:fixtureMedia}, db, user, hash);

@@ -9,7 +9,7 @@ export function previewBundleIds(value, products = []) {
 }
 
 export function attachShowcaseInteractions(doc, catalogue, bag, navigate) {
-  if (!doc?.body?.dataset.showcase || attached.has(doc)) return;
+  if (!(doc?.body?.dataset.showcase || doc?.body?.dataset.designPage) || attached.has(doc)) return;
   attached.add(doc);
   const win = doc.defaultView;
   const reduced = Boolean(win?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);

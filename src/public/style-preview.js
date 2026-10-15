@@ -40,6 +40,17 @@ export function demoCommerce(data, bag = new Map((data.products || []).slice(0, 
   const summary = `<h2>Order summary</h2>${picks.map(p => `<p>${esc(p.title)} × ${bag.get(p.id)} <strong>${money(p.price_paise * bag.get(p.id))}</strong></p>`).join("")}<p>Subtotal <strong>${money(subtotal)}</strong></p><p>Shipping and final totals are confirmed at live checkout.</p><button class="commerce-button" type="button" data-preview-checkout ${picks.length ? "" : "disabled"}>Explore checkout</button>`;
   return { lines, summary };
 }
+/** Real draft store with a saved design: never swaps in demo inventory. */
+export function designPreviewData(source, design) {
+  const data = structuredClone(source);
+  data.products = (data.products || []).filter(p => p.status !== "archived");
+  data.collections = data.collections || [];
+  const defaults = starterLayouts(data);
+  data.layouts = Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, data.layouts?.[key]?.length ? data.layouts[key] : value]));
+  data.settings = { ...(data.settings || {}), ann_design: structuredClone(design) };
+  data.style_demo = false;
+  return data;
+}
 export function renderStylePreview(data, settings, options = {}) {
   const styled = styleDemonstration(data, settings.style_preset);
   const merged = { ...styled.settings, ...settings };

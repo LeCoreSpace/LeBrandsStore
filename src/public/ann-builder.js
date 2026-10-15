@@ -1,7 +1,8 @@
 import { SHOWCASE_WORLD } from "./aura-showcase.js";
 import { ANN_STEPS, ANN_PALETTES, ANN_FONTS, ANN_EXTRA_SECTIONS, annPreviewConfiguration } from "./ann-config.js";
 import { AURA_STYLES, styleSettings } from "./aura-styles.js";
-import { stylePreviewData, renderStylePreview } from "./style-preview.js";
+import { stylePreviewData, renderStylePreview, designPreviewData } from "./style-preview.js";
+import { attachAnnDesign } from "./ann-design-ui.js";
 import { attachStyleInteractions } from "./style-preview-interactions.js";
 import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
 import { attachAuraMotion } from "./aura-motion.js";
@@ -61,10 +62,22 @@ const bag = new Map((base.products || []).slice(0, 2).map(p => [p.id, 1]));
 const frame = $("#ann-preview"), canvas = $("#ann-canvas"), log = $("#ann-log"), foot = $("#ann-foot"), statusEl = $("#ann-status");
 const app = $("#ann-app");
 const say = t => { statusEl.textContent = t; };
-
-const dirtyPatch = () => diffAnswers(saved, answers);
-const isDirty = () => touched && Object.keys(dirtyPatch()).length > 0;
 const config = () => annPreviewConfiguration(answers, { ...boot.settings, ...(boot.sessionResponse?.preview?.theme || {}) });
+let designUI = null;
+designUI = attachAnnDesign({ api, root, readOnly, mount: canvas, say,
+  getAnswers: () => answers, getPreviewMode: () => previewMode, getBrand: () => boot.settings?.brand_name || boot.store?.name,
+  getStyle: () => config().theme.style_preset,
+  applyPlan: plan => { answers = structuredClone(plan); },
+  onDraft: draft => { previewSource = draft; },
+  onActivated: () => { saved = structuredClone(answers); touched = false; autosavePaused = false; saveProblem = ""; conflict = false; setPreviewMode("store", previewSource); page = "home"; draw("keep"); renderPreview(false); say(readOnly ? "Viewing the saved design. Only an owner or admin can edit it." : "Your design is saved to draft. You can edit its text and photos. Your live site is unchanged."); },
+  onChange: () => { schedule(); drawFoot(); },
+  openCanvas: () => { setPreviewMode("store"); page = "home"; app.dataset.view = "canvas"; syncSwitch(); renderPreview(false); setTimeout(fit, 0); },
+  backToDesign: plan => { answers = { ...answers, ...structuredClone(plan) }; setPreviewMode("store"); draw("keep"); renderPreview(false); },
+});
+
+const designDirty = () => Boolean(designUI?.hasUnsavedChanges());
+const dirtyPatch = () => diffAnswers(saved, answers);
+const isDirty = () => (touched && Object.keys(dirtyPatch()).length > 0) || designDirty();
 const subsFor = c => (ref?.subcategories || []).filter(s => Number(s.category_id) === Number(c));
 const catName = id => (ref?.categories || []).find(c => Number(c.category_id) === Number(id))?.name;
 const subName = id => (ref?.subcategories || []).find(s => Number(s.subcategory_id) === Number(id))?.name;
@@ -97,8 +110,10 @@ function renderPreview(remember = true) {
   clearTimeout(timer);
   if (remember) rememberScroll();
   const cfg = config();
+  designUI?.refresh();
   const projected = projectAnnPreview(base, cfg, { prefilled: prefilledSection, attributes: attrState.get(answers.subcategory_id)?.attrs || [] });
-  current = projected.data;
+  const dsg = previewMode === "store" ? designUI?.previewDesign() : null;
+  current = dsg ? designPreviewData(previewSource, dsg) : projected.data;
   const bagKey = `${previewMode}:${current.style_demo ? cfg.theme.style_preset : "real"}`;
   if (bagKey !== activeBagKey) {
     if (activeBagKey) previewBags.set(activeBagKey, new Map(bag));
@@ -113,13 +128,14 @@ function renderPreview(remember = true) {
   if (!productId || !current.products.some(p => p.id === productId)) productId = current.products[0]?.id;
   displayedKey = posKey();
   frame.title = `${previewMode === "showcase" ? "Style showcase" : "Your store"}, ${styleName(cfg.theme.style_preset)}, ${canvas.dataset.device} preview`;
-  const html = renderStylePreview(current, cfg.theme, { page, productId, collectionId, policyKind });
+  const html = renderStylePreview(current, cfg.theme, { page, productId, collectionId, policyKind, designEdit: Boolean(dsg) && designUI.editing() });
   if (html !== frameMarkup) { frameMarkup = html; frameLoading = true; frame.srcdoc = html; }
   else if (!frameLoading) previewLoaded();
   const niche = subName(answers.subcategory_id) || catName(answers.category_id);
   $("#ann-preview-note").textContent = (previewMode === "showcase" ? `Each style shows its own illustrative sample world (${SHOWCASE_WORLD[cfg.theme.style_preset] || "sample"} photos here), which is a placeholder and not a limit on what you can sell${niche ? `. Your selected niche is ${niche}` : ""}. Sample products and prices are illustrative. Select Your store to see your existing catalogue. ` : base.style_demo ? "No real products yet. Sample images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
     "Preview controls never create products, orders or publications. Use the confirmed actions in Review to save real draft changes." +
     (projected.unavailable.length ? ` Some optional sections cannot be previewed here: ${projected.unavailable.map(u => label(u.split(":")[1])).join(", ")}.` : "");
+  if (dsg) $("#ann-preview-note").textContent = "This is your draft design with your real products. Select text or a photo to change it. Nothing is published until you review and publish. Your live site is unchanged.";
   paintStage();
 }
 const schedule = (ms = 70) => { clearTimeout(timer); canvas.dataset.updating = "true"; const u = $("#ann-updated"); if (u) { u.hidden = false; u.dataset.state = "pending"; u.textContent = "Updating preview"; } timer = setTimeout(() => renderPreview(), ms); };
@@ -155,6 +171,7 @@ frame.addEventListener("load", () => {
   attachAuraCatalog(doc, current, { page, collectionId });
   attachAuraMotion(doc);
   attachStyleInteractions(doc, current, bag, page, productId, next => { page = next; renderPreview(); });
+  designUI.bindPreview(doc);
   const key = displayedKey;
   doc.defaultView?.scrollTo({ top: scrolls.get(key) || 0, behavior: "instant" });
   doc.defaultView?.addEventListener("scroll", () => scrolls.set(key, doc.scrollingElement?.scrollTop ?? 0), { passive: true });
@@ -359,7 +376,7 @@ function drawComposer(force) {
 function drawSteps() {
   const answered = annAnsweredStages(answers, ref || {});
   const doneN = answered.size, total = UI_STEPS.filter(([k]) => k !== "review").length;
-  const state = isDirty() ? "Unsaved changes" : session ? `Saved, revision ${revision}` : "Nothing saved yet";
+  const state = isDirty() ? "Unsaved changes" : designUI?.active() ? "Design saved to draft" : session ? `Saved, revision ${revision}` : "Nothing saved yet";
   $("#ann-steps").innerHTML = `<div class="ann-rail">${UI_STEPS.map(([k, n], i) => { const st = k === step ? "current" : answered.has(k) ? "done" : "todo";
     return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === step ? "step" : "false"}"><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
     <div class="ann-meter" role="progressbar" aria-label="Planning progress" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${doneN}"><i style="transform:scaleX(${doneN / total})"></i></div>
@@ -420,7 +437,7 @@ function advance() {
 }
 function edit(mutator, redraw = false) {
   if (readOnly) return;
-  mutator(); touched = true; schedule();
+  mutator(); touched = !designUI?.active(); designUI?.planChanged(); schedule();
   drawFoot(); drawSteps();
   if (redraw) drawKeep();
 }
@@ -517,7 +534,7 @@ function reviewStep() {
     ["products", "Product ideas", `${(a.product_ideas || []).length} planned`], ["story", "Story", a.store_name || "Not set"]];
   return bubble(`<p>${session || !dirty ? "Here is your plan." : "Here is your plan. Save it so you can come back to it."} Preview choices alone do not change the store. Use the confirmed draft and setup actions below to save changes. Publishing is always separate.</p>`) +
     bubble(`<dl class="ann-summary">${rows.map(([k, n, v]) => `<div><dt>${n}</dt><dd>${esc(v)}</dd><button type="button" class="ann-link" data-go="${k}">Change</button></div>`).join("")}</dl>
-      <p class="ann-note">${dirty ? "You have unsaved changes." : session ? `Saved, revision ${revision}.` : "Not saved yet."}</p>`, "ann-card") +
+      <p class="ann-note">${dirty ? "You have unsaved changes." : designUI?.active() ? "Design saved to draft." : session ? `Saved, revision ${revision}.` : "Not saved yet."}</p>`, "ann-card") +
     bubble(`<h2>Make the store yours</h2><p>Apply your confirmed page and catalogue choices, then complete the business, shipping and policy checks below. Store address confirmation, verified supplier selection and final publishing stay in the existing setup and editor.</p>`, "ann-card") +
     `<section class="ann-card" id="ann-application-slot"></section><section class="ann-card" id="ann-readiness-slot"></section>`;
 }
@@ -644,6 +661,7 @@ function save(nextStep = step, forceRevision, { automatic = false } = {}) {
 }
 async function doSave(nextStep, forceRevision) {
   if (readOnly) return true;
+  if (designUI?.active()) return designUI.save();
   const stepName = ANN_STEPS.includes(nextStep) ? nextStep : "review";
   const patch = dirtyPatch();
   const problems = planProblems(answers);
@@ -682,7 +700,7 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges())) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
 if ((window.innerWidth || 1280) < 700) { canvas.dataset.device = "mobile"; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.device === "mobile"))); }

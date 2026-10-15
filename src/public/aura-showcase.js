@@ -64,8 +64,8 @@ const DEF = {
 
 /** Exact curated demo images, or merchant images that pass the storefront validator. */
 const okUrl = u => typeof u === "string" && (isShowcaseImage(u) || Boolean(safeImage(u))) && !/[\s"'<>]/.test(u);
-const img = (o, alt) => o && okUrl(o.url)
-  ? `<img src="${esc(o.url)}" alt="${esc(alt ?? o.alt ?? "")}" width="${Number(o.width) || 1024}" height="${Number(o.height) || 1024}" loading="lazy" decoding="async">` : "";
+const img = (o, alt, key) => o && okUrl(o.url)
+  ? `<img${key && LIVE?.edit ? ` data-design-image="${key}"` : ""} src="${esc(o.url)}" alt="${esc(alt ?? o.alt ?? "")}" width="${Number(o.width) || 1024}" height="${Number(o.height) || 1024}" loading="lazy" decoding="async">` : "";
 
 export const showcaseCopy = style => DEF[style]?.copy || null;
 
@@ -95,6 +95,47 @@ export function isShowcase(data, style) {
   return data?.style_demo === true && SHOWCASE_STYLES.includes(style) && Boolean(SHOWCASE_MEDIA?.[style]);
 }
 
+/* ---- saved design: neutral, editable brand copy (no demo or instruction text) ---- */
+const NEUTRAL = {
+  editorial: { kicker: "Issue 01", description: b => `The latest from ${b}, presented one story at a time.`, button: "Shop the edit", products: "The edit", collections: "Contents" },
+  boutique: { kicker: "New in store", description: b => `Welcome to ${b}. Explore the range and take your time.`, button: "Shop now", products: "Your next favourites", collections: "Browse the collections" },
+  architectural: { kicker: "Drop 01", description: b => `${b}. Clear lines, strong choices and a range built to stand out.`, button: "Shop the line-up", products: "The line-up", collections: "Index" },
+  minimal: { kicker: "The range", description: b => `A quiet look at the ${b} range.`, button: "View the range", products: "Index", collections: "Collections" },
+  vintage: { kicker: "Catalogue No. 1", description: b => `A catalogue of favourites from ${b}, chosen with care.`, button: "Browse the catalogue", products: "From the catalogue", collections: "The plates" },
+};
+const COPY_CAP = { kicker: 80, title: 120, description: 300, button: 40, statement: 200, products: 60, collections: 60, about: 80, story0: 400, story1: 400, story2: 400, footer: 160 };
+export function designNeutralCopy(style, brand = "Your brand") {
+  const d = DEF[style], n = NEUTRAL[style];
+  if (!d || !n) return null;
+  return { kicker: n.kicker, title: d.copy.title, description: n.description(brand), button: n.button, statement: d.copy.statement,
+    products: n.products, collections: n.collections, about: d.copy.about,
+    story0: `Every product at ${brand} is chosen with care. Tell visitors what makes your range yours.`,
+    story1: "Share how you make, source or choose what you sell, and who is behind the brand.",
+    story2: "Add the values and the details your customers should know before they buy.",
+    footer: brand };
+}
+export function designSeedCopy(data, settings = {}) {
+  const style = settings.style_preset, def = DEF[style];
+  if (!def) return null;
+  const brand = settings.brand_name || data?.store?.name || "Your brand";
+  const n = designNeutralCopy(style, brand);
+  const home = data?.layouts?.home || [];
+  const hero = home.find(s => s.type === "hero")?.settings || {};
+  const stmt = home.find(s => s.type === "statement")?.settings?.text;
+  const t = v => String(v ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  const current = context(data, settings, {}).copy;
+  const pick = (v, d, nv) => { const s = t(v); return s || t(d) || nv; };
+  const out = { ...n,
+    kicker: pick(hero.kicker, def.copy.kicker, n.kicker), title: pick(hero.title, def.copy.title, n.title),
+    description: pick(hero.description, def.copy.description, n.description), button: pick(hero.button_label, def.copy.button, n.button),
+    statement: pick(stmt, current.statement, n.statement),
+    products: pick(current.products, def.copy.products, n.products),
+    collections: pick(current.collections, def.copy.collections, n.collections),
+    about: pick(current.about, def.copy.about, n.about) };
+  for (const k of Object.keys(out)) out[k] = String(out[k]).slice(0, COPY_CAP[k]);
+  return out;
+}
+
 /* ------------------------------------------------------------------ */
 /* Composition                                                         */
 /* ------------------------------------------------------------------ */
@@ -120,78 +161,103 @@ function context(data, settings, options) {
 const pImg = (p, i = 0) => p?.images?.[i]?.url ? img(p.images[i]) : "";
 const pHref = p => `/products/${encodeURIComponent(p.id)}`;
 const cHref = c => `/collections/${encodeURIComponent(c.slug || c.id)}`;
-const cImg = (c, x) => img(c.image || x.products.find(p => (c.product_ids || []).includes(p.id))?.images?.[0], c.title);
+const cImg = (c, x, i) => img(c.image || x.products.find(p => (c.product_ids || []).includes(p.id))?.images?.[0], c.title, LIVE && c.image && i < 2 ? `collection${i}` : undefined);
 const rv = (i = 0) => `class="rv" style="--i:${i}"`;
+let LIVE = null;
+const dc = key => LIVE?.edit ? ` data-design-copy="${key}"` : "";
 const rvc = (cls, i = 0) => `class="rv ${cls}" style="--i:${i}"`;
 
-const card = (p, i, extra = "") => `<a class="sc-card rv" style="--i:${i}" href="${pHref(p)}"><span class="sc-img">${pImg(p)}</span><span class="sc-meta"><span class="sc-n">${num(i)}</span><b>${esc(p.title)}</b><span class="sc-price">${rupees(p.price_paise)}<small>illustrative</small></span>${extra}</span></a>`;
+const card = (p, i, extra = "") => `<a class="sc-card rv${LIVE ? " au-card" : ""}"${LIVE ? ` data-title="${esc(String(p.title || "").toLowerCase())}" data-price="${Number(p.price_paise) || 0}" data-available="${p.stock == null || Number(p.stock) > 0 ? 1 : 0}" data-index="${i}"` : ""} style="--i:${i}" href="${pHref(p)}"><span class="sc-img">${pImg(p)}</span><span class="sc-meta"><span class="sc-n">${num(i)}</span><b>${esc(p.title)}</b><span class="sc-price">${rupees(p.price_paise)}${LIVE ? "" : "<small>illustrative</small>"}</span>${extra}</span></a>`;
 
 const NAV = [["Home", "/"], ["Shop", "/collections/all"], ["About", "/pages/about"], ["Contact", "/pages/contact"]];
 
 function header(x) {
   const links = NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("");
-  const topper = {
+  const topper = LIVE ? (x.copy.kicker ? ({
+    architectural: `<div class="sc-ticker" aria-hidden="true"><div>${Array(8).fill(`<span>${esc(x.copy.kicker)}</span>`).join("")}</div></div>`,
+    boutique: `<div class="sc-announce">${esc(x.copy.kicker)}</div>`, vintage: `<div class="sc-announce">${esc(x.copy.kicker)}</div>`,
+    editorial: `<div class="sc-announce"><span>${esc(x.copy.kicker)}</span></div>`, minimal: "" })[x.style] : "") : {
     architectural: `<div class="sc-ticker" aria-hidden="true"><div>${Array(8).fill(`<span>${esc(x.brand)} / sample drop / illustrative prices</span>`).join("")}</div></div>`,
     boutique: `<div class="sc-announce">Sample store. Browse, bag and check out in preview only.</div>`,
     vintage: `<div class="sc-announce">Sample edition. Prices are illustrative.</div>`,
     editorial: `<div class="sc-announce"><span>Style demo</span><span>Issue 01</span><span>Sample prices</span></div>`,
     minimal: "",
   }[x.style];
-  return `${topper}<header class="sc-hd"><button type="button" class="sc-burger" data-menu-open aria-expanded="false" aria-controls="au-menu">Menu</button><a class="sc-brand" href="/">${esc(x.brand)}</a><nav class="sc-nav" aria-label="Primary">${links}</nav><span class="sc-tools"><button type="button" class="sc-search" data-search-open aria-label="Search products" aria-haspopup="dialog" aria-controls="au-search-sc">Search</button><button type="button" class="sc-bag" data-cart-open>Bag <span data-cart-count>0</span></button></span></header>
-  <dialog class="au-search-dialog sc-searchbox" id="au-search-sc" aria-label="Search products"><div class="sc-sh"><h2>Search the sample range</h2><button type="button" data-search-close aria-label="Close search">Close</button></div><form class="au-search" role="search" action="/collections/all" method="get"><label class="sc-sr" for="au-q-sc">Search products</label><input id="au-q-sc" name="q" type="search" placeholder="Search products" autocomplete="off"><button type="submit">Search</button></form></dialog>
+  return `${topper}<header class="sc-hd${LIVE ? " aura-header" : ""}"><button type="button" class="sc-burger" data-menu-open aria-expanded="false" aria-controls="au-menu">Menu</button><a class="sc-brand" href="/">${esc(x.brand)}</a><nav class="sc-nav" aria-label="Primary">${links}</nav><span class="sc-tools"><button type="button" class="sc-search" data-search-open aria-label="Search products" aria-haspopup="dialog" aria-controls="au-search-sc">Search</button><button type="button" class="sc-bag" data-cart-open>Bag <span data-cart-count>0</span></button></span></header>
+  <dialog class="au-search-dialog sc-searchbox" id="au-search-sc" aria-label="Search products"><div class="sc-sh"><h2>${LIVE ? "Search products" : "Search the sample range"}</h2><button type="button" data-search-close aria-label="Close search">Close</button></div><form class="au-search" role="search" action="/collections/all" method="get"><label class="sc-sr" for="au-q-sc">Search products</label><input id="au-q-sc" name="q" type="search" placeholder="Search products" autocomplete="off"><button type="submit">Search</button></form></dialog>
   <nav id="au-menu" class="sc-menu" hidden aria-label="Menu"><button type="button" data-menu-close>Close</button>${links}</nav>`;
 }
 function footer(x) {
-  return `<footer class="sc-ft"><div class="sc-ft-in"><a class="sc-brand" href="/">${esc(x.brand)}</a><nav aria-label="Footer">${NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("")}</nav><p>Style demonstration. The ${esc(x.world)} products, photographs and prices are illustrative samples, not a real range. Nothing here is saved, ordered or published.</p></div></footer>${x.style === "boutique" ? `<nav class="sc-tabbar" aria-label="Quick"><a href="/">Home</a><a href="/collections/all">Shop</a><button type="button" data-cart-open>Bag <span data-cart-count>0</span></button></nav>` : ""}`;
+  return `<footer class="sc-ft"><div class="sc-ft-in"><a class="sc-brand" href="/">${esc(x.brand)}</a><nav aria-label="Footer">${NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("")}${LIVE ? (x.policies || []).filter(p => /^[a-z0-9-]+$/.test(String(p.kind || ""))).map(p => `<a href="/policies/${p.kind}">${esc(p.title || p.kind)}</a>`).join("") : ""}</nav>${LIVE ? `<p${dc("footer")}>${esc(x.copy.footer || x.brand)}</p>` : `<p>Style demonstration. The ${esc(x.world)} products, photographs and prices are illustrative samples, not a real range. Nothing here is saved, ordered or published.</p>`}</div></footer>${x.style === "boutique" ? `<nav class="sc-tabbar" aria-label="Quick"><a href="/">Home</a><a href="/collections/all">Shop</a><button type="button" data-cart-open>Bag <span data-cart-count>0</span></button></nav>` : ""}`;
 }
-const cta = (label, href = "/collections/all", cls = "") => `<a class="sc-btn ${cls}" href="${href}">${esc(label)}</a>`;
+const cta = (label, href = "/collections/all", cls = "", attr = "") => `<a class="sc-btn ${cls}"${attr} href="${href}">${esc(label)}</a>`;
 
 /* ---- home compositions: five different section mixes ---- */
 const HOME = {
   editorial: x => { const [a, b, c, d, e] = x.products, cs = x.collections;
-    return `<section class="ed-hero"><div class="ed-hero-copy"><p ${rv()}>${esc(x.copy.kicker)}</p><h1 ${rv(1)}>${esc(x.copy.title)}</h1><p class="ed-lede rv" style="--i:2">${esc(x.copy.description)}</p>${cta(x.copy.button, "/collections/all")}</div><figure class="ed-hero-img">${img(x.media.hero)}<figcaption>Plate 01. Illustrative sample photograph</figcaption></figure></section>
-    <section class="ed-quote"><blockquote ${rv()}>${esc(x.copy.statement)}</blockquote></section>
-    <section class="ed-spreads"><h2 ${rv()}>${esc(x.copy.products)}</h2><div class="ed-spread-grid">${[a, b, c, d, e].filter(Boolean).map((p, i) => card(p, i)).join("")}</div></section>
-    <section class="ed-plate"><figure>${img(x.media.lifestyle)}<figcaption><span>Plate 02</span>${esc(x.media.lifestyle?.alt || "")}</figcaption></figure></section>
-    <section class="ed-contents"><h2 ${rv()}>${esc(x.copy.collections)}</h2><ol>${cs.map((c, i) => `<li ${rv(i)}><a href="${cHref(c)}"><span>${num(i)}</span><strong>${esc(c.title)}</strong><em>${esc(c.description || "")}</em><span class="ed-thumb">${cImg(c, x)}</span></a></li>`).join("")}</ol></section>
-    <section class="ed-note"><h2 ${rv()}>${esc(x.copy.about)}</h2><p ${rv(1)}>${esc(x.copy.story[0])}</p>${cta("Read the note", "/pages/about", "ghost")}</section>`; },
+    return `<section class="ed-hero"><div class="ed-hero-copy"><p ${rv()}${dc("kicker")}>${esc(x.copy.kicker)}</p><h1 ${rv(1)}${dc("title")}>${esc(x.copy.title)}</h1><p class="ed-lede rv" style="--i:2"${dc("description")}>${esc(x.copy.description)}</p>${cta(x.copy.button, "/collections/all", "", dc("button"))}</div><figure class="ed-hero-img">${img(x.media.hero, undefined, "hero")}${LIVE ? "" : "<figcaption>Plate 01. Illustrative sample photograph</figcaption>"}</figure></section>
+    <section class="ed-quote"><blockquote ${rv()}${dc("statement")}>${esc(x.copy.statement)}</blockquote></section>
+    <section class="ed-spreads"><h2 ${rv()}${dc("products")}>${esc(x.copy.products)}</h2><div class="ed-spread-grid">${[a, b, c, d, e].filter(Boolean).map((p, i) => card(p, i)).join("")}</div></section>
+    <section class="ed-plate"><figure>${img(x.media.lifestyle, undefined, "lifestyle")}<figcaption><span>Plate 02</span>${esc(x.media.lifestyle?.alt || "")}</figcaption></figure></section>
+    <section class="ed-contents"><h2 ${rv()}${dc("collections")}>${esc(x.copy.collections)}</h2><ol>${cs.map((c, i) => `<li ${rv(i)}><a href="${cHref(c)}"><span>${num(i)}</span><strong>${esc(c.title)}</strong><em>${esc(c.description || "")}</em><span class="ed-thumb">${cImg(c, x, i)}</span></a></li>`).join("")}</ol></section>
+    <section class="ed-note"><h2 ${rv()}${dc("about")}>${esc(x.copy.about)}</h2><p ${rv(1)}${dc("story0")}>${esc(x.copy.story[0])}</p>${cta("Read the note", "/pages/about", "ghost")}</section>`; },
   boutique: x => { const ps = x.products, cs = x.collections;
-    return `<section class="bq-hero"><div class="bq-hero-copy"><span class="bq-chip rv">${esc(x.copy.kicker)}</span><h1 ${rv(1)}>${esc(x.copy.title)}</h1><p ${rv(2)}>${esc(x.copy.description)}</p><div class="bq-actions rv" style="--i:3">${cta(x.copy.button)}${cta("Our story", "/pages/about", "ghost")}</div></div><div class="bq-hero-media rv" style="--i:2"><div class="bq-arch">${img(x.media.hero)}</div>${ps[0] ? `<a class="bq-float" href="${pHref(ps[0])}"><span class="bq-float-img">${pImg(ps[0])}</span><span><b>${esc(ps[0].title)}</b><small>${rupees(ps[0].price_paise)} illustrative</small></span></a>` : ""}</div></section>
-    <section class="bq-shelf"><div class="bq-head"><h2 ${rv()}>${esc(x.copy.products)}</h2><span>Swipe the shelf</span></div><div class="bq-rail">${ps.map((p, i) => card(p, i)).join("")}</div></section>
-    <section class="bq-routine"><h2 ${rv()}>A simple daily rhythm</h2><ol>${[["Cleanse", ps[2]], ["Treat", ps[0]], ["Settle", ps[1]]].map(([t, p], i) => `<li ${rv(i)}><span>${i + 1}</span><b>${t}</b>${p ? `<a href="${pHref(p)}">${esc(p.title)}</a>` : ""}</li>`).join("")}</ol></section>
-    <section class="bq-cols">${cs.map((c, i) => `<a class="bq-col rv" style="--i:${i}" href="${cHref(c)}"><span class="bq-col-img">${cImg(c, x)}</span><b>${esc(c.title)}</b><small>${esc(c.description || "")}</small></a>`).join("")}</section>
-    <section class="bq-moment"><div class="bq-moment-img rv">${img(x.media.lifestyle)}</div><div class="bq-moment-copy"><h2 ${rv()}>${esc(x.copy.statement)}</h2>${cta("Browse everything")}</div></section>`; },
+    return `<section class="bq-hero"><div class="bq-hero-copy"><span class="bq-chip rv"${dc("kicker")}>${esc(x.copy.kicker)}</span><h1 ${rv(1)}${dc("title")}>${esc(x.copy.title)}</h1><p ${rv(2)}${dc("description")}>${esc(x.copy.description)}</p><div class="bq-actions rv" style="--i:3">${cta(x.copy.button, "/collections/all", "", dc("button"))}${cta("Our story", "/pages/about", "ghost")}</div></div><div class="bq-hero-media rv" style="--i:2"><div class="bq-arch">${img(x.media.hero, undefined, "hero")}</div>${ps[0] ? `<a class="bq-float" href="${pHref(ps[0])}"><span class="bq-float-img">${pImg(ps[0])}</span><span><b>${esc(ps[0].title)}</b><small>${rupees(ps[0].price_paise)}${LIVE ? "" : " illustrative"}</small></span></a>` : ""}</div></section>
+    <section class="bq-shelf"><div class="bq-head"><h2 ${rv()}${dc("products")}>${esc(x.copy.products)}</h2><span>Swipe the shelf</span></div><div class="bq-rail">${ps.map((p, i) => card(p, i)).join("")}</div></section>
+    ${LIVE ? "" : `<section class="bq-routine"><h2 ${rv()}>A simple daily rhythm</h2><ol>${[["Cleanse", ps[2]], ["Treat", ps[0]], ["Settle", ps[1]]].map(([t, p], i) => `<li ${rv(i)}><span>${i + 1}</span><b>${t}</b>${p ? `<a href="${pHref(p)}">${esc(p.title)}</a>` : ""}</li>`).join("")}</ol></section>`}
+    <section class="bq-cols">${cs.map((c, i) => `<a class="bq-col rv" style="--i:${i}" href="${cHref(c)}"><span class="bq-col-img">${cImg(c, x, i)}</span><b>${esc(c.title)}</b><small>${esc(c.description || "")}</small></a>`).join("")}</section>
+    <section class="bq-moment"><div class="bq-moment-img rv">${img(x.media.lifestyle, undefined, "lifestyle")}</div><div class="bq-moment-copy"><h2 ${rv()}${dc("statement")}>${esc(x.copy.statement)}</h2>${cta("Browse everything")}</div></section>`; },
   architectural: x => { const ps = x.products, cs = x.collections;
-    return `<section class="ar-hero"><div class="ar-hero-copy"><p class="ar-tag rv">${esc(x.copy.kicker)}</p><h1 ${rv(1)}>${esc(x.copy.title)}</h1><p ${rv(2)}>${esc(x.copy.description)}</p>${cta(x.copy.button)}</div><div class="ar-hero-img rv">${img(x.media.hero)}<span class="ar-stamp">01</span></div></section>
-    <section class="ar-stats"><div><b>${String(ps.length).padStart(2, "0")}</b><span>sample pieces</span></div><div><b>${String(cs.length).padStart(2, "0")}</b><span>collections</span></div><div><b>00</b><span>real orders</span></div></section>
-    <section class="ar-grid-sec"><h2 ${rv()}>${esc(x.copy.products)}</h2><div class="ar-bento">${ps.map((p, i) => card(p, i)).join("")}</div></section>
-    <section class="ar-band"><p ${rv()}>${esc(x.copy.statement)}</p></section>
-    <section class="ar-index"><h2 ${rv()}>${esc(x.copy.collections)}</h2>${cs.map((c, i) => `<a class="ar-row rv" style="--i:${i}" href="${cHref(c)}"><span>${num(i)}</span><strong>${esc(c.title)}</strong><em>${esc(c.description || "")}</em><span class="ar-row-img">${cImg(c, x)}</span><span class="ar-arrow">Go</span></a>`).join("")}</section>
-    <section class="ar-duo"><div class="rv">${img(x.media.lifestyle)}</div><div class="ar-duo-copy"><h2 ${rv()}>${esc(x.copy.about)}</h2><p ${rv(1)}>${esc(x.copy.story[0])}</p>${cta("Read the brief", "/pages/about", "ghost")}</div></section>`; },
+    return `<section class="ar-hero"><div class="ar-hero-copy"><p class="ar-tag rv"${dc("kicker")}>${esc(x.copy.kicker)}</p><h1 ${rv(1)}${dc("title")}>${esc(x.copy.title)}</h1><p ${rv(2)}${dc("description")}>${esc(x.copy.description)}</p>${cta(x.copy.button, "/collections/all", "", dc("button"))}</div><div class="ar-hero-img rv">${img(x.media.hero, undefined, "hero")}<span class="ar-stamp">01</span></div></section>
+    <section class="ar-stats"><div><b>${String(ps.length).padStart(2, "0")}</b><span>${LIVE ? "products" : "sample pieces"}</span></div><div><b>${String(cs.length).padStart(2, "0")}</b><span>collections</span></div>${LIVE ? "" : "<div><b>00</b><span>real orders</span></div>"}</section>
+    <section class="ar-grid-sec"><h2 ${rv()}${dc("products")}>${esc(x.copy.products)}</h2><div class="ar-bento">${ps.map((p, i) => card(p, i)).join("")}</div></section>
+    <section class="ar-band"><p ${rv()}${dc("statement")}>${esc(x.copy.statement)}</p></section>
+    <section class="ar-index"><h2 ${rv()}${dc("collections")}>${esc(x.copy.collections)}</h2>${cs.map((c, i) => `<a class="ar-row rv" style="--i:${i}" href="${cHref(c)}"><span>${num(i)}</span><strong>${esc(c.title)}</strong><em>${esc(c.description || "")}</em><span class="ar-row-img">${cImg(c, x, i)}</span><span class="ar-arrow">Go</span></a>`).join("")}</section>
+    <section class="ar-duo"><div class="rv">${img(x.media.lifestyle, undefined, "lifestyle")}</div><div class="ar-duo-copy"><h2 ${rv()}${dc("about")}>${esc(x.copy.about)}</h2><p ${rv(1)}${dc("story0")}>${esc(x.copy.story[0])}</p>${cta("Read the brief", "/pages/about", "ghost")}</div></section>`; },
   minimal: x => { const ps = x.products, cs = x.collections;
-    return `<section class="mn-hero"><p ${rv()}>${esc(x.copy.kicker)}</p><h1 ${rv(1)}>${esc(x.copy.title)}</h1><figure class="rv" style="--i:2">${img(x.media.hero)}</figure><p class="mn-lede rv" style="--i:3">${esc(x.copy.description)}</p>${cta(x.copy.button, "/collections/all", "text")}</section>
-    <section class="mn-index"><h2 ${rv()}>${esc(x.copy.products)}</h2><ul>${ps.map((p, i) => `<li class="rv" style="--i:${i}"><a href="${pHref(p)}"><span class="mn-i">${num(i)}</span><b>${esc(p.title)}</b><span class="mn-pr">${rupees(p.price_paise)}</span><span class="mn-pop">${pImg(p)}</span></a></li>`).join("")}</ul></section>
-    <section class="mn-feature">${ps[3] ? `<a class="rv" href="${pHref(ps[3])}"><span class="sc-img">${pImg(ps[3])}</span><span class="mn-cap"><b>${esc(ps[3].title)}</b><small>${rupees(ps[3].price_paise)} illustrative</small></span></a>` : ""}</section>
-    <section class="mn-rooms"><h2 ${rv()}>${esc(x.copy.collections)}</h2><div>${cs.map((c, i) => `<a class="rv" style="--i:${i}" href="${cHref(c)}"><span class="sc-img">${cImg(c, x)}</span><b>${esc(c.title)}</b><small>${esc(c.description || "")}</small></a>`).join("")}</div></section>
-    <section class="mn-end"><p ${rv()}>${esc(x.copy.statement)}</p></section>`; },
+    return `<section class="mn-hero"><p ${rv()}${dc("kicker")}>${esc(x.copy.kicker)}</p><h1 ${rv(1)}${dc("title")}>${esc(x.copy.title)}</h1><figure class="rv" style="--i:2">${img(x.media.hero, undefined, "hero")}</figure><p class="mn-lede rv" style="--i:3"${dc("description")}>${esc(x.copy.description)}</p>${cta(x.copy.button, "/collections/all", "text", dc("button"))}</section>
+    <section class="mn-index"><h2 ${rv()}${dc("products")}>${esc(x.copy.products)}</h2><ul>${ps.map((p, i) => `<li class="rv" style="--i:${i}"><a href="${pHref(p)}"><span class="mn-i">${num(i)}</span><b>${esc(p.title)}</b><span class="mn-pr">${rupees(p.price_paise)}</span><span class="mn-pop">${pImg(p)}</span></a></li>`).join("")}</ul></section>
+    <section class="mn-feature">${ps[3] ? `<a class="rv" href="${pHref(ps[3])}"><span class="sc-img">${pImg(ps[3])}</span><span class="mn-cap"><b>${esc(ps[3].title)}</b><small>${rupees(ps[3].price_paise)}${LIVE ? "" : " illustrative"}</small></span></a>` : ""}</section>
+    <section class="mn-rooms"><h2 ${rv()}${dc("collections")}>${esc(x.copy.collections)}</h2><div>${cs.map((c, i) => `<a class="rv" style="--i:${i}" href="${cHref(c)}"><span class="sc-img">${cImg(c, x, i)}</span><b>${esc(c.title)}</b><small>${esc(c.description || "")}</small></a>`).join("")}</div></section>
+    <section class="mn-end"><p ${rv()}${dc("statement")}>${esc(x.copy.statement)}</p></section>`; },
   vintage: x => { const ps = x.products, cs = x.collections;
-    return `<section class="vt-hero"><div class="vt-orn rv" aria-hidden="true"><i></i><span>&#9830;</span><i></i></div><p class="vt-kick rv" style="--i:1">${esc(x.copy.kicker)}</p><h1 ${rv(2)}>${esc(x.copy.title)}</h1><div class="vt-mat rv" style="--i:3">${img(x.media.hero)}<span class="vt-seal">Sample<br>edition</span></div><p class="vt-lede rv" style="--i:4">${esc(x.copy.description)}</p>${cta(x.copy.button)}</section>
-    <section class="vt-cat"><h2 ${rv()}>${esc(x.copy.products)}</h2><div class="vt-tags">${ps.map((p, i) => `<a class="vt-tag rv" style="--i:${i}" href="${pHref(p)}"><span class="vt-hole"></span><span class="vt-tagimg">${pImg(p)}</span><b>${esc(p.title)}</b><small>No. ${num(i)}</small><span class="sc-price">${rupees(p.price_paise)}<small>illustrative</small></span></a>`).join("")}</div></section>
-    <section class="vt-plates"><h2 ${rv()}>${esc(x.copy.collections)}</h2><div>${cs.map((c, i) => `<a class="vt-plate rv" style="--i:${i}" href="${cHref(c)}"><span class="vt-plate-img">${cImg(c, x)}</span><span class="vt-cap">Plate ${i + 1}. ${esc(c.title)}</span><small>${esc(c.description || "")}</small></a>`).join("")}</div></section>
-    <section class="vt-story"><div class="vt-oval rv">${img(x.media.lifestyle)}</div><div><h2 ${rv()}>${esc(x.copy.about)}</h2><p ${rv(1)}>${esc(x.copy.statement)}</p>${cta("Read on", "/pages/about", "ghost")}</div></section>`; },
+    return `<section class="vt-hero"><div class="vt-orn rv" aria-hidden="true"><i></i><span>&#9830;</span><i></i></div><p class="vt-kick rv" style="--i:1"${dc("kicker")}>${esc(x.copy.kicker)}</p><h1 ${rv(2)}${dc("title")}>${esc(x.copy.title)}</h1><div class="vt-mat rv" style="--i:3">${img(x.media.hero, undefined, "hero")}${LIVE ? "" : `<span class="vt-seal">Sample<br>edition</span>`}</div><p class="vt-lede rv" style="--i:4"${dc("description")}>${esc(x.copy.description)}</p>${cta(x.copy.button, "/collections/all", "", dc("button"))}</section>
+    <section class="vt-cat"><h2 ${rv()}${dc("products")}>${esc(x.copy.products)}</h2><div class="vt-tags">${ps.map((p, i) => `<a class="vt-tag rv" style="--i:${i}" href="${pHref(p)}"><span class="vt-hole"></span><span class="vt-tagimg">${pImg(p)}</span><b>${esc(p.title)}</b><small>No. ${num(i)}</small><span class="sc-price">${rupees(p.price_paise)}${LIVE ? "" : "<small>illustrative</small>"}</span></a>`).join("")}</div></section>
+    <section class="vt-plates"><h2 ${rv()}${dc("collections")}>${esc(x.copy.collections)}</h2><div>${cs.map((c, i) => `<a class="vt-plate rv" style="--i:${i}" href="${cHref(c)}"><span class="vt-plate-img">${cImg(c, x, i)}</span><span class="vt-cap">Plate ${i + 1}. ${esc(c.title)}</span><small>${esc(c.description || "")}</small></a>`).join("")}</div></section>
+    <section class="vt-story"><div class="vt-oval rv">${img(x.media.lifestyle, undefined, "lifestyle")}</div><div><h2 ${rv()}${dc("about")}>${esc(x.copy.about)}</h2><p ${rv(1)}${dc("statement")}>${esc(x.copy.statement)}</p>${cta("Read on", "/pages/about", "ghost")}</div></section>`; },
 };
 
 /* ---- shared page bodies, restyled and re-arranged by each style ---- */
 function collectionPage(x) {
   const id = x.options.collectionId;
-  const rich = collectionRich(x.style, x);
+  const rich = LIVE ? { top: "", bottom: "" } : collectionRich(x.style, x);
   const col = id ? x.collections.find(c => String(c.id) === String(id) || c.slug === id) : null;
   const list = col ? x.products.filter(p => (col.product_ids || []).includes(p.id)) : x.products;
   const chips = [`<a class="${col ? "" : "on"}" href="/collections/all">All</a>`, ...x.collections.map(c => `<a class="${col?.id === c.id ? "on" : ""}" href="${cHref(c)}">${esc(c.title)}</a>`)].join("");
-  return `<section class="sc-chead"><p ${rv()}>${esc(x.world)} sample range</p><h1 ${rv(1)}>${esc(col?.title || "Shop all")}</h1><p ${rv(2)}>${esc(col?.description || x.copy.statement)}</p></section><nav class="sc-chips" aria-label="Collections">${chips}</nav>
-  ${rich.top}<section class="sc-list ${list.length ? "" : "empty"}">${list.length ? list.map((p, i) => card(p, i)).join("") : `<p class="sc-empty">No sample products in this collection yet.</p>`}</section>${rich.bottom}`;
+  return `<section class="sc-chead"><p ${rv()}>${LIVE ? "Collection" : `${esc(x.world)} sample range`}</p><h1 ${rv(1)}>${esc(col?.title || "Shop all")}</h1><p ${rv(2)}>${esc(col?.description || (LIVE ? "" : x.copy.statement))}</p></section><nav class="sc-chips" aria-label="Collections">${chips}</nav>
+  ${rich.top}<section class="sc-list ${list.length ? "" : "empty"}"${LIVE && list.length ? " data-catalog" : ""}>${list.length ? list.map((p, i) => card(p, i)).join("") : `<p class="sc-empty">${LIVE ? "Products are being added to this collection." : "No sample products in this collection yet."}</p>`}</section>${LIVE ? `<p class="sc-empty" data-catalog-empty hidden>No products match your search.</p>` : ""}${rich.bottom}`;
+}
+function productPageLive(x) {
+  const p = x.products.find(i => String(i.id) === String(x.options.productId)) || x.products[0];
+  if (!p) return `<section class="sc-chead"><h1>Product not found</h1><p><a class="sc-btn" href="/collections/all">Browse the range</a></p></section>`;
+  const pics = (p.images || []).slice(0, 6).map((im, i) => img(im, p.title).replace("<img ", `<img data-gallery-image="${i}" `)).filter(Boolean);
+  const features = (p.content?.features || []).map(f => `<li><span>${esc(f.label)}</span>${esc(f.value)}</li>`).join("");
+  const rest = x.products.filter(i => i.id !== p.id).slice(0, 4), o = x.options;
+  const avail = p.stock == null || Number(p.stock) > 0, on = o.commerce && (!o.readOnly || o.embeddedPreview);
+  const max = p.stock == null ? 99 : Math.max(1, Math.min(99, Number(p.stock)));
+  const buy = on ? `<div class="au-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="${max}" value="1" inputmode="numeric" aria-label="Quantity"><button class="au-btn" type="button" data-add-product="${esc(p.id)}"${avail ? "" : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div><p class="au-feedback" data-commerce-feedback role="status"></p>`
+    : `<div class="au-buy"><button class="au-btn" type="button" disabled aria-disabled="true">${o.commerce ? "Add to cart on the live store" : "Shopping unavailable"}</button></div>`;
+  return `<section class="sc-prod"><div class="sc-gal"><div class="sc-gal-main">${pics[0] || ""}</div>${pics.length > 1 ? `<div class="sc-gal-sub">${pics.slice(1).map(i => `<div>${i}</div>`).join("")}</div>` : ""}</div>
+  <div class="sc-info"><p class="sc-crumb"><a href="/">Home</a> / <a href="/collections/all">Shop</a></p><h1>${esc(p.title)}</h1><p class="sc-pp">${rupees(p.price_paise)}${p.compare_at_paise ? ` <del>${rupees(p.compare_at_paise)}</del>` : ""}</p><p class="sc-desc" style="white-space:pre-line">${esc(p.description || "")}</p>${features ? `<ul class="sc-feat">${features}</ul>` : ""}${buy}</div></section>
+  ${rest.length ? `<section class="sc-rel"><h2>You may also like</h2><div class="sc-list">${rest.map((r, i) => card(r, i)).join("")}</div></section>` : ""}${on ? `<div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button" class="au-btn"${avail ? ` data-add-product="${esc(p.id)}"` : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div>` : ""}`;
+}
+function contactPageLive(x) {
+  const st = x.settings || {};
+  const rows = [st.support_email && `<a href="mailto:${esc(st.support_email)}">${esc(st.support_email)}</a>`, st.support_phone && `<a href="tel:${esc(String(st.support_phone).replace(/[^\d+]/g, ""))}">${esc(st.support_phone)}</a>`, st.address && `<p>${esc(st.address).replace(/\n/g, "<br>")}</p>`].filter(Boolean);
+  return `<section class="sc-contact"><div><p>Contact</p><h1>Get in touch.</h1>${rows.length ? `<div class="sc-crow">${rows.join("")}</div>` : "<p>Contact details will appear here soon.</p>"}</div><div class="sc-about-img">${img(x.media.lifestyle, undefined, "lifestyle")}</div></section>`;
 }
 function productPage(x) {
+  if (LIVE) return productPageLive(x);
   const p = x.products.find(i => String(i.id) === String(x.options.productId)) || x.products[0];
   if (!p) return `<section class="sc-chead"><h1>No sample product</h1></section>`;
   const features = (p.content?.features || []).map(f => `<li><span>${esc(f.label)}</span>${esc(f.value)}</li>`).join("");
@@ -208,8 +274,8 @@ function productPage(x) {
 }
 const cartPage = () => `<section class="sc-chead"><h1>Your bag</h1><p>A sample bag. Nothing here is a real order.</p></section><section class="sc-cart"><div data-cart-page-lines class="commerce-lines"></div><aside class="sc-sum" data-cart-summary></aside></section>`;
 const checkoutPage = () => `<section class="sc-chead"><h1>Checkout</h1><p class="commerce-readonly-note">Interactive preview only. This sample bag never creates an order or takes a payment.</p></section><section class="sc-cart"><form class="sc-form"><fieldset disabled><legend>Contact</legend><label>Email<input type="email" placeholder="you@example.com"></label><legend>Delivery</legend><label>Full name<input type="text"></label><label>Address<input type="text"></label><label>City<input type="text"></label><label>PIN code<input type="text"></label></fieldset></form><aside class="sc-sum" data-checkout-summary></aside></section>`;
-const aboutPage = x => `<section class="sc-about"><div class="sc-about-copy"><p ${rv()}>About</p><h1 ${rv(1)}>${esc(x.copy.about)}</h1>${x.copy.story.map((t, i) => `<p ${rv(i + 2)}>${esc(t)}</p>`).join("")}${cta("Browse the sample range")}</div><div class="sc-about-img rv">${img(x.media.lifestyle)}</div></section>`;
-const contactPage = x => `<section class="sc-contact"><div><p ${rv()}>Contact</p><h1 ${rv(1)}>Say hello.</h1><p ${rv(2)}>This page shows where your contact details and enquiry form will sit. Add real details when you build the store.</p><div class="sc-cimg rv">${img(x.media.hero)}</div></div><form class="sc-form"><fieldset disabled><label>Name<input type="text"></label><label>Email<input type="email"></label><label>Message<textarea rows="5"></textarea></label><button type="button">Send (preview only)</button></fieldset></form></section>`;
+const aboutPage = x => `<section class="sc-about"><div class="sc-about-copy"><p ${rv()}>About</p><h1 ${rv(1)}${dc("about")}>${esc(x.copy.about)}</h1>${x.copy.story.map((t, i) => `<p ${rv(i + 2)}${dc("story" + i)}>${esc(t)}</p>`).join("")}${cta(LIVE ? "Browse the range" : "Browse the sample range")}</div><div class="sc-about-img rv">${img(x.media.lifestyle, undefined, "lifestyle")}</div></section>`;
+const contactPage = x => LIVE ? contactPageLive(x) : `<section class="sc-contact"><div><p ${rv()}>Contact</p><h1 ${rv(1)}>Say hello.</h1><p ${rv(2)}>This page shows where your contact details and enquiry form will sit. Add real details when you build the store.</p><div class="sc-cimg rv">${img(x.media.hero, undefined, "hero")}</div></div><form class="sc-form"><fieldset disabled><label>Name<input type="text"></label><label>Email<input type="email"></label><label>Message<textarea rows="5"></textarea></label><button type="button">Send (preview only)</button></fieldset></form></section>`;
 
 const EXTRA_PAGES = { home: ["statement", "lookbook", "craft", "founder", "trust", "reviews", "faq"], about: ["statement", "craft", "founder", "faq"], collection: ["collection-description", "related-collections"], product: ["material-care", "size-guide", "how-to-use", "faq", "reviews"] };
 const clean = v => String(v ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
@@ -242,6 +308,22 @@ function withHomeRich(html, rich) {
   ins.set(parts.length - 2 < 0 ? 0 : parts.length - 2, (ins.get(parts.length - 2 < 0 ? 0 : parts.length - 2) || "") + rich.bottom);
   return parts.map((part, i) => part + "</section>" + (ins.get(i) || "")).join("") + last;
 }
+function themeOverrides(style, settings) {
+  const accent = /^#[0-9a-f]{6}$/i.test(settings.accent_color || "") ? settings.accent_color : null;
+  const font = ["modern","serif","classic"].includes(settings.font_preset) ? settings.font_preset : styleSettings(style).font_preset;
+  const display = { modern: '"Instrument Sans",system-ui,sans-serif', serif: '"Aura Editorial",Georgia,serif', classic: '"Aura Classic",Georgia,serif' }[font];
+  const preset = ["white","ivory","stone","midnight"].includes(settings.color_preset) ? settings.color_preset : "white";
+  const palette = { ivory: ["#f6f0e6","#29241e","#ebe3d4","#d7ccbb"], stone: ["#e9e8e4","#252723","#dddcd6","#c7c7c0"], midnight: ["#12151d","#eeeef2","#1b2030","#41485b"] }[preset];
+  const radius = { square: "2px", rounded: "6px", pill: "999px" }[settings.button_style];
+  const overrides = [
+    accent ? `.sc{--acc:${accent};--acc-ink:${contrastColor(accent) || "#ffffff"}}.sc .sc-btn:not(.ghost):not(.text){color:var(--acc-ink)}` : "",
+    font !== styleSettings(style).font_preset ? `.sc{--disp:${display};--body:"Instrument Sans",system-ui,sans-serif;--hw:400}` : "",
+    palette ? `.sc{--paper:${palette[0]};--ink:${palette[1]};--tint:${palette[2]};--line:${palette[3]};background:var(--paper)}.sc .sc-hd,.sc .sc-searchbox,.sc .sc-menu,.sc .sc-tabbar,.sc .sc-form input,.sc .sc-form textarea{background:var(--paper);color:var(--ink)}` : "",
+    radius ? `.sc .sc-btn{border-radius:${radius}}` : "",
+    ".sc .sc-btn.ghost{background:transparent;color:var(--ink)}.sc .sc-btn.text{background:none;color:var(--ink)}",
+  ].join("");
+  return { overrides, font, preset };
+}
 export function renderShowcase(data, settings, options = {}) {
   const page = options.page || "home";
   if (!isShowcase(data, settings.style_preset) || !SHOWCASE_PAGES.includes(page)) return null;
@@ -250,19 +332,7 @@ export function renderShowcase(data, settings, options = {}) {
   main += renderNicheSections(x, data) + extras(x, data);
   main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${KIND[x.style]}"`)
     .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${KIND[x.style]}"`);
-  const accent = /^#[0-9a-f]{6}$/i.test(settings.accent_color || "") ? settings.accent_color : null;
-  const font = ["modern","serif","classic"].includes(settings.font_preset) ? settings.font_preset : styleSettings(x.style).font_preset;
-  const display = { modern: '"Instrument Sans",system-ui,sans-serif', serif: '"Aura Editorial",Georgia,serif', classic: '"Aura Classic",Georgia,serif' }[font];
-  const preset = ["white","ivory","stone","midnight"].includes(settings.color_preset) ? settings.color_preset : "white";
-  const palette = { ivory: ["#f6f0e6","#29241e","#ebe3d4","#d7ccbb"], stone: ["#e9e8e4","#252723","#dddcd6","#c7c7c0"], midnight: ["#12151d","#eeeef2","#1b2030","#41485b"] }[preset];
-  const radius = { square: "2px", rounded: "6px", pill: "999px" }[settings.button_style];
-  const overrides = [
-    accent ? `.sc{--acc:${accent};--acc-ink:${contrastColor(accent) || "#ffffff"}}.sc .sc-btn:not(.ghost):not(.text){color:var(--acc-ink)}` : "",
-    font !== styleSettings(x.style).font_preset ? `.sc{--disp:${display};--body:"Instrument Sans",system-ui,sans-serif;--hw:400}` : "",
-    palette ? `.sc{--paper:${palette[0]};--ink:${palette[1]};--tint:${palette[2]};--line:${palette[3]};background:var(--paper)}.sc .sc-hd,.sc .sc-searchbox,.sc .sc-menu,.sc .sc-tabbar,.sc .sc-form input,.sc .sc-form textarea{background:var(--paper);color:var(--ink)}` : "",
-    radius ? `.sc .sc-btn{border-radius:${radius}}` : "",
-    ".sc .sc-btn.ghost{background:transparent;color:var(--ink)}.sc .sc-btn.text{background:none;color:var(--ink)}",
-  ].join("");
+  const { overrides, font, preset } = themeOverrides(x.style, settings);
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>${esc(x.brand)} style demo</title><style>${CSS}${RICH_CSS}${NICHE_SECTION_CSS}${overrides}</style></head>
 <body data-aura data-showcase="${x.style}" data-style="${x.style}" data-font="${font}" data-preset="${preset}" data-page="${page}" class="sc sc-${x.style}"><div class="sc-demo">Style demo. Sample ${esc(x.world)} products and illustrative prices. Nothing is saved, ordered or published.</div>${header(x)}<main class="sc-main sc-p-${page}">${main}</main>${footer(x)}</body></html>`;
 }
@@ -362,3 +432,32 @@ const CSS = `
 .mn-rooms>div,.vt-plates>div{grid-template-columns:1fr}.mn-hero{padding-top:3rem}.mn-pop{display:none}.sc-minimal .sc-prod{gap:2rem}.vt-seal{right:0}
 .au-sticky-buy{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:25;background:#fff;border-top:1px solid var(--line);padding:.7rem 1rem;gap:1rem;align-items:center;justify-content:space-between}.au-sticky-buy button{padding:.8rem 1.2rem;background:var(--acc);color:#fff;border:0;font-weight:600}.sc-boutique .au-sticky-buy{bottom:4.2rem}.commerce-line{grid-template-columns:70px 1fr auto}.commerce-line img{width:70px;height:70px}}
 `;
+
+/* ---- saved design (real catalogue, no demo content) ---- */
+const liveMedia = o => o && typeof o === "object" && okUrl(o.url) ? { url: o.url, alt: String(o.alt || "").replace(/^illustrative\s+/i, "").replace(/^./, c => c.toUpperCase()), width: Number(o.width) || 1024, height: Number(o.height) || 1024 } : null;
+export function renderDesignLive(data, settings, options, design) {
+  const style = design.style, page = options.page || "home";
+  if (!DEF[style] || !HOME[style] || !(page === "home" || ["collection", "product", "about", "contact"].includes(page))) return null;
+  const pack = SHOWCASE_MEDIA?.[style] || {}, m = design.media || {};
+  const brand = settings.brand_name || data.store?.name || "Your brand";
+  const dm = design.copy && typeof design.copy === "object" ? design.copy : {};
+  const base = designNeutralCopy(style, brand), copy = { ...base };
+  for (const k of Object.keys(base)) if (typeof dm[k] === "string" && dm[k].trim()) copy[k] = dm[k];
+  copy.story = [copy.story0, copy.story1, copy.story2].filter(Boolean);
+  const media = { hero: liveMedia(m.hero) || liveMedia(pack.hero), lifestyle: liveMedia(m.lifestyle) || liveMedia(pack.lifestyle), products: {}, collections: {} };
+  const collections = (Array.isArray(data.collections) ? data.collections : []).map((c, i) => ({ ...c,
+    image: i < 2 ? (liveMedia(m["collection" + i]) || liveMedia(pack.collections?.["c0" + (i + 1)])) : null }));
+  const products = (Array.isArray(data.products) ? data.products : []).filter(p => p.status !== "archived");
+  const x = { style, media, def: DEF[style], products, collections, brand, copy, world: "", profile: null, options, page, settings, policies: data.policies || [] };
+  const { overrides, font, preset } = themeOverrides(style, settings);
+  LIVE = { edit: options.designEdit === true };
+  try {
+    let main = page === "home" ? HOME[style](x) : BODY[page](x);
+    if (page === "home" && !products.length) main += '<section class="sc-sec"><p class="sc-empty">Products are being added. Check back soon.</p></section>';
+    main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${KIND[style]}"`)
+      .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${KIND[style]}"`);
+    return { body: `${header(x)}<main class="sc-main sc-p-${page}">${main}</main>${footer(x)}`,
+      css: `${CSS}${RICH_CSS}${overrides}${LIVE_CSS}`, bodyClass: `sc sc-${style}`, style, font, preset };
+  } finally { LIVE = null; }
+}
+const LIVE_CSS = `.sc .au-buy{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:1.2rem 0}.sc .au-buy input{width:4.5rem;padding:.7rem;border:1px solid var(--line,#ccc);background:transparent;color:inherit;font:inherit}.sc .au-btn{padding:.85rem 1.6rem;border:0;background:var(--acc);color:var(--acc-ink,#fff);font-weight:600;border-radius:var(--rad,0)}.sc .au-btn[disabled]{opacity:.5;cursor:not-allowed}.sc .au-feedback{font-size:.85rem}.sc .sc-crow{display:grid;gap:.5rem;margin:1rem 0}.sc .ar-stats{grid-template-columns:repeat(2,1fr)}.sc [hidden]{display:none!important}.sc [data-design-copy],.sc [data-design-image]{cursor:text}.sc [data-design-image]{cursor:pointer}.sc [data-design-copy]:hover,.sc [data-design-image]:hover{outline:2px dashed var(--acc);outline-offset:3px}.sc [data-design-selected]{outline:2px solid var(--acc)!important;outline-offset:3px}`;

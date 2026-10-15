@@ -22,6 +22,10 @@ export async function handlePageRoutes(request, env, db, user, tokenHash) {
       if (!await pagesEnabled(tx)) throw Object.assign(new Error("The page architecture migration has not been applied."), { status: 503 });
       if (read && action === "history") return pageHistory(tx, id, page);
       const data = await loadDraft(tx, id);
+      if (!read && data.settings?.ann_design?.version === 1 &&
+        ["home", "collection", "product", "about", "contact"].includes(page)) {
+        throw Object.assign(new Error("This page uses your saved Ann design. Open the design canvas to edit it."), { status: 409 });
+      }
       if (!read && page === "checkout" && !data.aura_skeleton_enabled) {
         throw Object.assign(new Error("Checkout layout is not editable."), { status: 403 });
       }

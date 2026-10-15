@@ -22,10 +22,11 @@
 - [Platform white surfaces](platform-white-surfaces.md) — beige homepage and application backgrounds become white; dark sections and merchant presets stay distinct.
 - [COD, returns and native components](cod-returns-native-components.md) — every-plan COD/RTO centre and built-in Aura commerce components; loyalty points later.
 - [AI store builder limits](ai-store-builder-limits.md) — one completed draft build per store, bounded approval-stage image regeneration and recorded costs.
-- [Aura starter content](aura-starter-content.md) — prefilled text/media replaces AI-first setup; use the product-only taxonomy, excluding service categories.
+- [Aura starter content](aura-starter-content.md) — prefilled library, Ann design adoption and editing; preserve demo/real catalogue and publication boundaries.
 - [AI copy boundary](ai-copy-boundary.md) — constrain model output to copy fields; never relax server-owned controls to fix repeated generation failures.
 - [Email queue recovery](email-queue-recovery.md) — private jobs must be recoverable after queue failure without exposing links or recipients.
 - [Database revision precision](database-revision-precision.md) — preserve timestamp microseconds across JavaScript optimistic-concurrency boundaries.
 - [Migration test foundations](migration-test-foundations.md) — use real foundational DDL; invented fixtures can mask incompatibilities with the existing database.
 - [Offline test memory](offline-test-memory.md) — keep concurrent PGlite tests bounded so verification does not exhaust the running workspace.
+- [Ann preview lifecycle](ann-preview-fixture-lifecycle.md) — backend edits can restart Vite and reset its in-memory store; stabilize the server before persistence checks.
 - [Image generation framing](image-generation-framing.md) — verify output dimensions; wide hero prompts can still return square images.
