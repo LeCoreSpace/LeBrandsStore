@@ -1,4 +1,4 @@
-import { SHOWCASE_WORLD } from "./aura-showcase.js";
+import { resolveShowcasePack } from "./aura-showcase-assets.js";
 import { ANN_STEPS, ANN_PALETTES, ANN_FONTS, ANN_EXTRA_SECTIONS, annPreviewConfiguration } from "./ann-config.js";
 import { AURA_STYLES, styleSettings } from "./aura-styles.js";
 import { stylePreviewData, renderStylePreview, designPreviewData } from "./style-preview.js";
@@ -114,7 +114,8 @@ function renderPreview(remember = true) {
   const projected = projectAnnPreview(base, cfg, { prefilled: prefilledSection, attributes: attrState.get(answers.subcategory_id)?.attrs || [] });
   const dsg = previewMode === "store" ? designUI?.previewDesign() : null;
   current = dsg ? designPreviewData(previewSource, dsg) : projected.data;
-  const bagKey = `${previewMode}:${current.style_demo ? cfg.theme.style_preset : "real"}`;
+  const pack = resolveShowcasePack(current);
+  const bagKey = `${previewMode}:${current.style_demo ? pack.key : "real"}`;
   if (bagKey !== activeBagKey) {
     if (activeBagKey) previewBags.set(activeBagKey, new Map(bag));
     bag.clear();
@@ -132,7 +133,7 @@ function renderPreview(remember = true) {
   if (html !== frameMarkup) { frameMarkup = html; frameLoading = true; frame.srcdoc = html; }
   else if (!frameLoading) previewLoaded();
   const niche = subName(answers.subcategory_id) || catName(answers.category_id);
-  $("#ann-preview-note").textContent = (previewMode === "showcase" ? `Each style shows its own illustrative sample world (${SHOWCASE_WORLD[cfg.theme.style_preset] || "sample"} photos here), which is a placeholder and not a limit on what you can sell${niche ? `. Your selected niche is ${niche}` : ""}. Sample products and prices are illustrative. Select Your store to see your existing catalogue. ` : base.style_demo ? "No real products yet. Sample images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
+  $("#ann-preview-note").textContent = (previewMode === "showcase" ? `The same ${pack.topic} sample images and products are used across all five styles.${!pack.exact ? ` These are placeholder images${niche ? ` for your selected niche, ${niche}` : ""}; a matching image set is not available yet.` : ""} Sample products and prices are illustrative. Select Your store to see your existing catalogue. ` : base.style_demo ? "No real products yet. Sample images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
     "Preview controls never create products, orders or publications. Use the confirmed actions in Review to save real draft changes." +
     (projected.unavailable.length ? ` Some optional sections cannot be previewed here: ${projected.unavailable.map(u => label(u.split(":")[1])).join(", ")}.` : "");
   if (dsg) $("#ann-preview-note").textContent = "This is your draft design with your real products. Select text or a photo to change it. Nothing is published until you review and publish. Your live site is unchanged.";

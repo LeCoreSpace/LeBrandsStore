@@ -1,3 +1,4 @@
+import { TAXONOMY } from "./aura-taxonomy-data.js";
 /** Curated AI-generated demonstration media, never merchant-owned inventory. */
 export const SHOWCASE_MEDIA_PREFIX = "/assets/img/aura-showcases/v01/";
 const image = (style, filename, alt) => Object.freeze({
@@ -85,6 +86,29 @@ export const SHOWCASE_MEDIA = Object.freeze({
     ],
     ["carry-a-good-story", "Illustrative traveller carrying a cognac-coloured satchel"]),
 });
+
+export const SHOWCASE_PACKS = Object.freeze({
+  editorial: { category_id: 1, slug: "womens-clothing", topic: "women's clothing" },
+  boutique: { category_id: 2, slug: "skincare", topic: "skincare" },
+  architectural: { category_id: 1, slug: "streetwear", topic: "streetwear" },
+  minimal: { category_id: 4, slug: "home-decor", topic: "home decor" },
+  vintage: { category_id: 1, slug: "bags-and-wallets", topic: "leather bags" },
+});
+
+/** Content identity is independent of the visual style, including fallbacks. */
+export function resolveShowcasePack(data = {}) {
+  const settings = data.settings || {};
+  const category = TAXONOMY.categories.find(c => c.slug === settings.category);
+  const niche = data.showcase_niche || {
+    category_id: category?.id || (settings.category === "fashion" ? 1 : undefined),
+    slug: settings.subcategory,
+  };
+  const exact = Object.entries(SHOWCASE_PACKS).find(([, p]) =>
+    p.category_id === Number(niche.category_id) &&
+    (p.slug === niche.slug || p.slug === "bags-and-wallets" && niche.slug === "leather-bags"));
+  const key = exact?.[0] || (Number(niche.category_id) === 2 ? "boutique" : Number(niche.category_id) === 4 ? "minimal" : "editorial");
+  return { key, exact: Boolean(exact), ...SHOWCASE_PACKS[key], media: SHOWCASE_MEDIA[key] };
+}
 
 const publicImages = new Set(Object.values(SHOWCASE_MEDIA).flatMap(media => [
   media.hero, ...Object.values(media.products), ...Object.values(media.collections), media.lifestyle,

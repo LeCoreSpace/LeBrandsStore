@@ -113,7 +113,10 @@ export function planProblems(answers = {}) {
  * imagery and prices. `prefilled(type, page, data, id)` supplies a section.
  */
 export function projectAnnPreview(base, config = {}, { prefilled, attributes = [] } = {}) {
-  const data = styleDemonstration(structuredClone(base), config.theme?.style_preset);
+  const previewBase = structuredClone(base);
+  const selectedNiche = annCategoryContext(config);
+  if (selectedNiche) previewBase.showcase_niche = { category_id: selectedNiche.category.id, slug: selectedNiche.subcategory?.slug || "", topic: selectedNiche.topic };
+  const data = styleDemonstration(previewBase, config.theme?.style_preset);
   if (data.style_demo) data.ann_style_copy_applied = config.theme?.style_preset;
   applyAnnCategoryCopy(data, config);
   const brand = config.brand || {};

@@ -7,7 +7,7 @@ import { validateDesignRequest } from "../src/store/ann-design.js";
 import { isAnnDesign } from "../src/public/ann-design-model.js";
 import { SHOWCASE_STYLES } from "../src/public/aura-showcase.js";
 import { renderAura } from "../src/public/aura.js";
-import { isShowcaseImage } from "../src/public/aura-showcase-assets.js";
+import { isShowcaseImage, SHOWCASE_MEDIA } from "../src/public/aura-showcase-assets.js";
 import { gstinChecksum } from "../src/public/commerce-rules.js";
 
 const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", owner = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -45,11 +45,13 @@ test("real restricted-role design save/reload/edit protects tenants, drafts, med
     assert.equal(first.body.design.plan.style_preset, "editorial", "the default style must remain active without clicking its tab");
     state = first.body;
     for (const style of SHOWCASE_STYLES) {
-      const saved = await call("POST", { expected_draft: state.expected_draft, confirm: true, answers: answers(style) });
+      const saved = await call("POST", { expected_draft: state.expected_draft, confirm: true, answers: { ...answers(style), category_id: 2, subcategory_id: 21 } });
       assert.equal(saved.status, 200, JSON.stringify(saved.body));
       state = saved.body;
       assert.ok(isAnnDesign(state.design));
       assert.equal(state.design.style, style);
+      assert.equal(state.design.media_pack, "boutique");
+      assert.equal(state.design.media.hero.url, SHOWCASE_MEDIA.boutique.hero.url);
       assert.ok(isShowcaseImage(state.design.media.hero.url));
       assert.deepEqual(state.draft.products, originalProducts, "never import sample inventory, prices or product photos");
       const reloaded = await call("GET");

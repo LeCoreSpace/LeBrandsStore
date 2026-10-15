@@ -14,7 +14,7 @@ const fixture = () => ({
   products: [], collections: [], layouts: {}, policies: [], reviews: [],
 });
 
-test("five complete showcase catalogues use separate coordinated media and editable sample prices", () => {
+test("five complete content packs can be reused without changing the comparison catalogue", () => {
   const source = fixture(), before = structuredClone(source);
   const base = stylePreviewData(source, { showcase: true });
   const original = structuredClone(base), seen = new Set(), sectionCounts = new Set();
@@ -32,16 +32,15 @@ test("five complete showcase catalogues use separate coordinated media and edita
     const projected = styleDemonstration(base, style);
     const html = renderStylePreview(projected, styleSettings(style));
     assert.match(html, new RegExp(`data-showcase="${style}"`));
-    assert.ok(html.includes(SHOWCASE_MEDIA[style].hero.url));
+    assert.ok(html.includes(SHOWCASE_MEDIA.editorial.hero.url));
     assert.ok(html.includes("illustrative"));
     sectionCounts.add((html.match(/<section\b/g) || []).length);
     for (const product of projected.products) {
-      assert.ok(product.images[0].url.startsWith(`${SHOWCASE_MEDIA_PREFIX}${style}/`));
-      assert.equal(seen.has(product.images[0].url), false);
+      assert.ok(product.images[0].url.startsWith(`${SHOWCASE_MEDIA_PREFIX}editorial/`));
       seen.add(product.images[0].url);
     }
   }
-  assert.equal(seen.size, 25);
+  assert.equal(seen.size, 5);
   assert.ok(sectionCounts.size >= 3, "styles vary their composition and section counts");
   assert.deepEqual(base, original);
   assert.deepEqual(source, before);

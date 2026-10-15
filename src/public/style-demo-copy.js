@@ -1,4 +1,5 @@
 import { showcaseCatalogue, showcaseCopy } from "./aura-showcase.js";
+import { resolveShowcasePack } from "./aura-showcase-assets.js";
 /** Curated demonstration copy, not AI output or a rewrite of merchant content. */
 const COPY = {
   editorial: {
@@ -36,7 +37,10 @@ export function styleDemonstration(data, style) {
   if (data.ann_style_copy_applied === style) return data;
   if (data.style_demo !== true || !COPY[style]) return data;
   const preview = structuredClone(data), copy = { ...COPY[style], ...(showcaseCopy(style) || {}) };
-  const catalogue = showcaseCatalogue(style);
+  const pack = resolveShowcasePack(data);
+  const catalogue = showcaseCatalogue(pack.key);
+  preview.showcase_media_key = pack.key;
+  preview.showcase_media_exact = pack.exact;
   // Clone-only: replaces the demonstration catalogue, never merchant data.
   if (catalogue) { preview.products = catalogue.products; preview.collections = catalogue.collections; }
   for (const section of preview.layouts?.home || []) {

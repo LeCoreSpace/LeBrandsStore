@@ -74,16 +74,20 @@ than silently substituting existing inventory during style comparison.
 
 The five styles must differ in complete composition, including section colours,
 highlights, animation, section arrangement and section count, not merely fonts.
-The user approved distinct image sets for five sample niches: women's clothing,
-skincare, streetwear, home decor and leather bags.
+The five sample image sets belong to subcategories, not styles: women's clothing,
+skincare, streetwear, home decor and leather bags. Reuse the selected subcategory's
+complete imagery and sample catalogue across all five styles.
 
-**Why:** The user rejected the font-led differences and requested separate
-photography across styles and subcategories.
+**Why:** The user superseded the earlier style-specific photography approach.
+They want people to compare their subcategory across styles without the work
+of creating a separate image bundle for each combination.
 
-**How to apply:** Treat these pairings as illustrative showcases, not a rule
-restricting which style a merchant can select. Keep white as the default base
-without forcing every section to be white. Preserve merchant-authored content,
-inventory and live publications when building or comparing previews.
+**How to apply:** Change composition, colours, typography, animation and copy
+presentation when switching styles, not product facts, prices or photography.
+Label imagery as illustrative when no matching subcategory set exists.
+Keep white as the default base without forcing every section to be white.
+Preserve merchant-authored content, inventory and live publications when
+building or comparing previews. Existing saved designs must not silently change.
 
 The user confirmed that the distinct website designs per style are "amazing"
 and wants them enhanced with animations and more sections. Choice pills in

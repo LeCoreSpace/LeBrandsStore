@@ -3,7 +3,7 @@
  * Used ONLY for the cloned style_demo catalogue. Real merchant pages, stored
  * layouts and the Standard Builder never pass through this module.
  */
-import { SHOWCASE_MEDIA, isShowcaseImage } from "./aura-showcase-assets.js";
+import { SHOWCASE_MEDIA, isShowcaseImage, resolveShowcasePack } from "./aura-showcase-assets.js";
 import { safeImage } from "./aura-sections.js";
 import { homeRich, productRich, collectionRich } from "./aura-showcase-sections.js";
 import { RICH_CSS } from "./aura-showcase-rich-css.js";
@@ -140,7 +140,8 @@ export function designSeedCopy(data, settings = {}) {
 /* Composition                                                         */
 /* ------------------------------------------------------------------ */
 function context(data, settings, options) {
-  const style = settings.style_preset, media = SHOWCASE_MEDIA[style], def = DEF[style];
+  const pack = resolveShowcasePack(data);
+  const style = settings.style_preset, media = pack.media, def = DEF[style];
   const products = (data.products || []).filter(p => p.status !== "archived");
   const collections = data.collections || [];
   const hero = (data.layouts?.home || []).find(s => s.type === "hero")?.settings || {};
@@ -156,7 +157,8 @@ function context(data, settings, options) {
     copy.about = `A considered view of ${world.toLowerCase()}.`;
     copy.story = [copy.description, "Explore this illustrative collection and make it your own with your products, imagery and verified details."];
   }
-  return { style, media, def, products, collections, brand, copy, world, profile: showcaseProfile(data, style), options, page: options.page || "home" };
+  return { style, media, def, products, collections, brand, copy, world: pack.topic,
+    profile: showcaseProfile({ ...data, showcase_niche: data.showcase_niche || pack }, style), options, page: options.page || "home" };
 }
 const pImg = (p, i = 0) => p?.images?.[i]?.url ? img(p.images[i]) : "";
 const pHref = p => `/products/${encodeURIComponent(p.id)}`;
@@ -438,7 +440,7 @@ const liveMedia = o => o && typeof o === "object" && okUrl(o.url) ? { url: o.url
 export function renderDesignLive(data, settings, options, design) {
   const style = design.style, page = options.page || "home";
   if (!DEF[style] || !HOME[style] || !(page === "home" || ["collection", "product", "about", "contact"].includes(page))) return null;
-  const pack = SHOWCASE_MEDIA?.[style] || {}, m = design.media || {};
+  const pack = SHOWCASE_MEDIA?.[design.media_pack || style] || {}, m = design.media || {};
   const brand = settings.brand_name || data.store?.name || "Your brand";
   const dm = design.copy && typeof design.copy === "object" ? design.copy : {};
   const base = designNeutralCopy(style, brand), copy = { ...base };

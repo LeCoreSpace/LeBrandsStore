@@ -7,7 +7,7 @@ import { settingsPatch, badInput } from "./input.js";
 import { annPreviewConfiguration } from "../public/ann-config.js";
 import { publishChecklist, UUID } from "../public/validation.js";
 import { DESIGN_COPY_LIMITS, DESIGN_MEDIA_KEYS, isAnnDesign } from "../public/ann-design-model.js";
-import { SHOWCASE_MEDIA } from "../public/aura-showcase-assets.js";
+import { SHOWCASE_MEDIA, resolveShowcasePack } from "../public/aura-showcase-assets.js";
 import { designSeedCopy } from "../public/aura-showcase.js";
 import { styleDemonstration } from "../public/style-demo-copy.js";
 import { stylePreviewData } from "../public/style-preview.js";
@@ -39,8 +39,8 @@ export function validateDesignRequest(body, creating = false) {
   if (new TextEncoder().encode(JSON.stringify(body)).length > 60000) throw badInput("This design is too large. Shorten the text before saving.");
   return body;
 }
-export function seedDesignMedia(style) {
-  const pack = SHOWCASE_MEDIA[style];
+export function seedDesignMedia(style, source) {
+  const pack = source ? resolveShowcasePack(source).media : SHOWCASE_MEDIA[style];
   return structuredClone({ hero: pack.hero, lifestyle: pack.lifestyle,
     collection0: pack.collections.c01, collection1: pack.collections.c02 });
 }
@@ -79,12 +79,13 @@ export async function saveAnnDesign(tx, storeId, userId, raw, creating = false) 
     config.theme.style_preset);
     design = { version: 1, style: config.theme.style_preset, plan,
       copy: designSeedCopy(demo, { ...demo.settings, ...config.theme }),
-      media: seedDesignMedia(config.theme.style_preset) };
+      media_pack: resolveShowcasePack(demo).key,
+      media: seedDesignMedia(config.theme.style_preset, demo) };
   } else design = { ...structuredClone(previous), plan,
     copy: { ...previous.copy, ...body.copy }, media: { ...previous.media } };
   if (body.media) {
     for (const [key, id] of Object.entries(body.media)) {
-      if (id === null) { design.media[key] = seedDesignMedia(design.style)[key]; continue; }
+      if (id === null) { design.media[key] = seedDesignMedia(design.media_pack || design.style)[key]; continue; }
       // Resolve each identifier against this tenant, not an arbitrary client URL
       // or a limited picker page. Previously uploaded images remain editable.
       const [image] = await tx`SELECT id,object_key,alt_text,width,height FROM public.media m WHERE store_id=${storeId}

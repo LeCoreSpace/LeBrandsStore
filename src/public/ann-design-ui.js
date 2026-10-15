@@ -52,7 +52,7 @@ export function attachAnnDesign(o) {
     const d = body.design;
     if (d && d.version === 1) {
       design = d;
-      model = { style: d.style, plan: d.plan || {}, copy: { ...d.copy }, media: structuredClone(d.media || {}) };
+      model = { style: d.style, media_pack: d.media_pack, plan: d.plan || {}, copy: { ...d.copy }, media: structuredClone(d.media || {}) };
       baseline = snapshot(); planDirty = false;
       if (hydrate) o.applyPlan?.(d.plan || {});
     }
@@ -242,7 +242,7 @@ export function attachAnnDesign(o) {
       <p class="ann-note">This description is saved with a new upload. Choosing an existing photo keeps its existing description.</p>
       <label class="ann-field">Upload a new photo<input type="file" accept="image/png,image/jpeg,image/webp" data-design-file ${busy ? "disabled" : ""}></label>
       ${uploadNote ? `<p class="ann-note" role="status">${esc(uploadNote)}</p>` : ""}
-      <div class="ann-actions"><button type="button" class="ann-btn alt sm" data-design-act="reset-image">Use the style photo</button><button type="button" class="ann-btn alt sm" data-design-act="done">Done</button></div></div>`;
+      <div class="ann-actions"><button type="button" class="ann-btn alt sm" data-design-act="reset-image">Use original photo</button><button type="button" class="ann-btn alt sm" data-design-act="done">Done</button></div></div>`;
   }
   const struct = () => JSON.stringify([loaded, loadError, mode(), active(), model?.style, browsingStyle(), editMode, selected, busy, error, conflict, ack, readOnly, images.length, uploadNote, model && selected?.kind === "image" ? model.media[selected.key]?.media_id : "", design?.style]);
   function paint(force) {
@@ -305,7 +305,7 @@ export function attachAnnDesign(o) {
     /** The design to preview, or null when the page should show the showcase instead. */
     previewDesign() {
       if (!active() || !sameStyle()) return null;
-      return { version: 1, style: model.style, plan: planPayload(), copy: { ...model.copy }, media: { ...model.media } };
+      return { version: 1, style: model.style, media_pack: model.media_pack, plan: planPayload(), copy: { ...model.copy }, media: { ...model.media } };
     },
     isActive: active,
   };
