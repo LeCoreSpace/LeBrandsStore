@@ -28,3 +28,4 @@
 - [Database revision precision](database-revision-precision.md) — preserve timestamp microseconds across JavaScript optimistic-concurrency boundaries.
 - [Migration test foundations](migration-test-foundations.md) — use real foundational DDL; invented fixtures can mask incompatibilities with the existing database.
 - [Offline test memory](offline-test-memory.md) — keep concurrent PGlite tests bounded so verification does not exhaust the running workspace.
+- [Image generation framing](image-generation-framing.md) — verify output dimensions; wide hero prompts can still return square images.

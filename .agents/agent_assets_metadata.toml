@@ -294,3 +294,87 @@ mtime_ms = 1792041392700
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/cbc41eda-61d1-470c-8944-beceff41e031/93557cb6-5ec6-412a-b5d5-e06ad1fb8865"
 storage_version_token = "1792041452297336"
 content_type = "text/plain"
+
+[[outputs]]
+id = "noKkJwA9kNjOfbBtCAQ1M"
+uri = "file://generated-artifacts/aura-style-heroes/v01/aura-editorial-womens-clothing-hero-desktop-v01.webp"
+type = "image"
+title = "Editorial · Women’s clothing"
+description = "Original AI-generated hero concept. 1024 × 1024 WebP, uncropped. Showcase imagery only; not installed in the store."
+logical_id = "c49163ed-69c9-4efe-acda-5807a877663c"
+content_hash = "sha256:4fa1302829a4990182bf1a8aac4d6f1423605684b33fe3f6fa4edd30c30ce522"
+size = 87828
+mtime_ms = 1792071888958
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/c49163ed-69c9-4efe-acda-5807a877663c/338ce0ea-89a9-4f5b-a598-f812a4f159da"
+storage_version_token = "1792071963719426"
+content_type = "image/webp"
+
+[[outputs]]
+id = "-bdV52KN7OoZ8mrGcGSrr"
+uri = "file://generated-artifacts/aura-style-heroes/v01/aura-boutique-skincare-hero-desktop-v01.webp"
+type = "image"
+title = "Modern Boutique · Skincare"
+description = "Original AI-generated hero concept. 1024 × 1024 WebP, uncropped. Showcase imagery only; not installed in the store."
+logical_id = "1c8adda2-171e-4026-b6cb-b7a68e96955e"
+content_hash = "sha256:b61848da3e383d0c7063869f1093b7c33685f0123262e5dfd4715cd38d62624c"
+size = 57814
+mtime_ms = 1792071888850
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/1c8adda2-171e-4026-b6cb-b7a68e96955e/0898fede-8387-4d45-b611-4f73a4d3a1e4"
+storage_version_token = "1792071965005122"
+content_type = "image/webp"
+
+[[outputs]]
+id = "gYjnpiUGtrfagzAAFT7Ia"
+uri = "file://generated-artifacts/aura-style-heroes/v01/aura-architectural-streetwear-hero-desktop-v01.webp"
+type = "image"
+title = "Bold Architectural · Streetwear"
+description = "Original AI-generated hero concept. 1024 × 1024 WebP, uncropped. Showcase imagery only; not installed in the store."
+logical_id = "3a0e4ecf-26cc-43ec-ad67-7a7d97fa606f"
+content_hash = "sha256:3a115581b95e27d429696beacacb045ae90d74ec51f0b978e0299f2ba380721c"
+size = 70808
+mtime_ms = 1792071888746
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/3a0e4ecf-26cc-43ec-ad67-7a7d97fa606f/c1b00443-6f8e-420b-8166-25a1d970c753"
+storage_version_token = "1792071966279776"
+content_type = "image/webp"
+
+[[outputs]]
+id = "tXTFUgMlyIntAPdz8ytKr"
+uri = "file://generated-artifacts/aura-style-heroes/v01/aura-minimal-home-decor-hero-desktop-v01.webp"
+type = "image"
+title = "Minimal · Home décor"
+description = "Original AI-generated hero concept. 1024 × 1024 WebP, uncropped. Showcase imagery only; not installed in the store."
+logical_id = "8b36a41d-fad2-475e-a674-d8a15896bb37"
+content_hash = "sha256:a4e90f11f62a7dbdd32eaa1d963a2deefd4889bc663bec2082508f2e06a77d19"
+size = 41040
+mtime_ms = 1792071889046
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/8b36a41d-fad2-475e-a674-d8a15896bb37/0bf64046-ae7b-450e-af08-24d901b742f3"
+storage_version_token = "1792071967536869"
+content_type = "image/webp"
+
+[[outputs]]
+id = "K5i35PoANSM05W-k3VRb3"
+uri = "file://generated-artifacts/aura-style-heroes/v01/aura-vintage-leather-bags-hero-desktop-v01.webp"
+type = "image"
+title = "Vintage · Leather bags"
+description = "Original AI-generated hero concept. 1024 × 1024 WebP, uncropped. Showcase imagery only; not installed in the store."
+logical_id = "ab290a97-aed1-4ced-99da-6fd54927f5e8"
+content_hash = "sha256:ff9daaeb8308e237561c26470538bcb500e3f3ec6b02609e91275db34497653d"
+size = 116054
+mtime_ms = 1792071889154
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/ab290a97-aed1-4ced-99da-6fd54927f5e8/bc1b42de-8e7e-4057-87bc-e88e4219ffa7"
+storage_version_token = "1792071968778406"
+content_type = "image/webp"
+
+[[outputs]]
+id = "8kXMw9fEbG-i2m2Dmm80N"
+uri = "file://generated-artifacts/aura-style-heroes/aura-five-style-hero-images-v01.zip"
+type = "unspecified"
+title = "Download all five style hero images"
+description = "Five JPEG originals, five optimized WebP images, a contact sheet and framing notes. Verified ZIP, approximately 960 KB."
+logical_id = "ad7cd368-1cdd-469d-a58b-a0ddb69cf960"
+content_hash = "sha256:1a35f28af687281f1ac10f78e27127f515a4e8c35de862fdec518e690dfd5928"
+size = 959602
+mtime_ms = 1792071951273
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/ad7cd368-1cdd-469d-a58b-a0ddb69cf960/c725df09-f8b6-430a-974a-b7e0dabaf743"
+storage_version_token = "1792071970059237"
+content_type = "application/octet-stream"
