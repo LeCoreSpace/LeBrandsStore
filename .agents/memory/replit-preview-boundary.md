@@ -45,14 +45,19 @@ database role checks or expose administrative credentials as a workaround.
 preview with persistent saves as separate environment work requiring an explicit
 decision about database isolation. Keep fictional fixtures local-only.
 
-Workflow restarts do not clear the screenshot browser's HTTP cache.
+Workflow restarts do not clear capture-browser caches or replace an existing
+tester's browser context.
 
 **Why:** The capture browser reused old marketing HTML after the Worker was
-restarted, while a direct request already returned the corrected page.
+restarted, while a direct request already returned the corrected page. A tester
+also retained old fixture state after a restart; a fresh browser context on the
+explicit current development host matched the reset fixture and passed.
 
 **How to apply:** Local HTML should override production cache lifetimes. If a
-capture contradicts current responses, check browser caching before changing
-working code; use a fresh query URL to verify the current revision.
+capture or tester contradicts current responses, compare its actual host and
+read-only fixture API state with a fresh workspace request before changing code
+or resetting data. Use a fresh browser context and query URL on the current
+development host to verify the current revision.
 
 Persistent browser-flow checks should use development-only isolated fixtures
 backed by the real handlers and local PostgreSQL, not a newly created live

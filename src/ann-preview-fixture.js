@@ -14,6 +14,9 @@ const storeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ownerId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const editorId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const prefix = "/__ann-builder-preview";
+// Use Aura's existing permitted local-image namespace. Never weaken the
+// production image allowlist to accommodate a development fixture URL.
+export const ANN_FIXTURE_MEDIA_PREFIX = "/assets/img/ann-preview/";
 const fixtureData = {
   store: { store_id: storeId, name: "Example Studio", subdomain: "example-studio" },
   settings: { ...DEFAULT_SETTINGS, brand_name: "Example Studio", category: "fashion", subcategory: "mens-clothing" },
@@ -84,11 +87,14 @@ export async function annPreviewFixture(req, res, previewOrigin) {
   const host = req.headers.host || "localhost";
   const origin = `${/^localhost|^127\./.test(host) ? "http" : "https"}://${host}`;
   const url = new URL(req.url || "/", previewOrigin || origin);
-  if (url.pathname !== prefix && !url.pathname.startsWith(prefix + "/")) return false;
+  if (url.pathname !== prefix && !url.pathname.startsWith(prefix + "/") &&
+      !url.pathname.startsWith(ANN_FIXTURE_MEDIA_PREFIX)) return false;
   try {
-    if(url.pathname.startsWith(`${prefix}/media/`)){
-      const file=url.pathname.slice(`${prefix}/media/`.length);
+    if(url.pathname.startsWith(ANN_FIXTURE_MEDIA_PREFIX) || url.pathname.startsWith(`${prefix}/media/`)){
+      const mediaPrefix=url.pathname.startsWith(ANN_FIXTURE_MEDIA_PREFIX)?ANN_FIXTURE_MEDIA_PREFIX:`${prefix}/media/`;
+      const file=url.pathname.slice(mediaPrefix.length);
       if(!["GET","HEAD"].includes(req.method)||!/^[a-f0-9-]{36}\.(?:png|jpg|webp)$/.test(file)){res.statusCode=404;res.end();return true;}
+      res.setHeader("cache-control","no-store");
       const item=memoryMedia.get(`stores/${storeId}/${file}`);
       if(item){res.setHeader("content-type",item.type);res.end(req.method==="HEAD"?undefined:item.bytes);}
       else if(file===`${samplePhotoId}.webp`){res.statusCode=302;res.setHeader("location","/assets/img/aura-starters/c001-s001/v01/c001-s001-product-p01-front-v01.webp");res.end();}
@@ -127,7 +133,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     // Fixture photos never request production media. All bytes and records
     // above belong to this isolated process, not a merchant's R2 bucket.
     if(response.body&&/application\/json|text\/html/.test(response.headers.get("content-type")||"")){
-      const text=(await response.text()).replaceAll(`https://media.lebrands.store/stores/${storeId}/`,`${prefix}/media/`);
+      const text=(await response.text()).replaceAll(`https://media.lebrands.store/stores/${storeId}/`,ANN_FIXTURE_MEDIA_PREFIX);
       response=new Response(text,{status:response.status,headers:response.headers});
     }
     res.statusCode = response.status;
