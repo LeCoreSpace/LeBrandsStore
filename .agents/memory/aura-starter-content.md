@@ -1,6 +1,6 @@
 ---
 name: Aura prefilled starter content
-description: User's category-based starter-content direction replaces merchant-facing AI generation as the primary setup approach.
+description: Prefilled Aura content and the user's two-path setup direction: Ann and Standard Builder.
 ---
 
 Aura sections should come prefilled with text and media, both when initially created and when dragged into a page. The user wants section IDs linked to text and media across every category/subcategory combination, rather than requiring an AI builder.
@@ -32,3 +32,15 @@ the starter's products, prices and collections before adopting it.
 clone, including preview selectors. Saved layouts and normal catalogue views
 continue to use the merchant's real inventory; never import demo stock by
 saving a theme.
+
+Offer "Build your Store with Ann" and "Standard Builder" instead of the
+earlier AI builder option. Standard Builder keeps the existing four-step
+setup followed by the Aura theme editor. Ann uses a conversation on the
+left and a whole-store canvas preview on the right.
+
+**Why:** The user asked for both paths and confirmed proceeding with this
+approach, rather than requiring every merchant to use the earlier AI flow.
+
+**How to apply:** Ann follows the interactive whole-store approach discussed
+with the user, with fast previews as choices change, not sequential
+page-building or per-section AI approvals. Preserve Standard Builder.
