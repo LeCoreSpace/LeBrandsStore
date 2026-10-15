@@ -81,6 +81,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         fieldNames = setupFieldNames(body);
         if (!Object.keys(body).length || Object.keys(body).some((k) => !["settings", "progress"].includes(k))) throw badInput("Use the setup form.");
         const parsedSettings=body.settings===undefined?undefined:settingsPatch(body.settings,{storeId:id});
+        if(parsedSettings && "style_preset" in parsedSettings) await dashboardAccess(tx,id,user.id,true);
         const parsedProgress=body.progress===undefined?undefined:progressPatch(body.progress);
         if(parsedSettings &&["gstin","legal_name","trade_name","address","business_line1","business_line2","business_city","business_state","business_pincode"].some(k=>k in parsedSettings)){
           const current=await loadDraft(tx,id);

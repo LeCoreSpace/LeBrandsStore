@@ -1,0 +1,143 @@
+import { STYLE_IDS, STYLE_THEME_KEYS, styleSettings, stylePatch } from "./aura-styles.js";
+import { stylePreviewData, renderStylePreview } from "./style-preview.js";
+import { attachStyleInteractions } from "./style-preview-interactions.js";
+import { themeSnapshot } from "./editor-state.js";
+import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
+
+const $ = selector => document.querySelector(selector);
+const boot = JSON.parse($("#style-studio-data").textContent);
+const original = themeSnapshot(boot.settings);
+const catalogue = stylePreviewData(boot);
+const bag = new Map((catalogue.products || []).slice(0, 2).map(p => [p.id, 1]));
+const frame = $("#as-preview"), canvas = $("#as-canvas"), status = $("#as-status");
+const readOnly = boot.readOnly === true || !["owner", "admin"].includes(boot.role);
+let settings = { ...original }, page = ["home","collection","product","cart","checkout","about","contact"].includes(boot.initialPage) ? boot.initialPage : "home", productId = catalogue.products?.[0]?.id;
+let collectionId, policyKind, dirty = false, saving = false;
+const api = `/api/stores/${encodeURIComponent(boot.store.store_id)}/setup`;
+const message = text => { status.textContent = text; };
+
+function controls() {
+  document.querySelectorAll("[data-style-choice]").forEach(button =>
+    button.setAttribute("aria-pressed", String(button.dataset.styleChoice === settings.style_preset)));
+  $("#as-palette").value = settings.color_preset;
+  $("#as-font").value = settings.font_preset;
+  $("#as-accent").value = settings.accent_color;
+  document.querySelectorAll("[data-page]").forEach(button =>
+    button.setAttribute("aria-pressed", String(button.dataset.page === page)));
+  $("#as-apply").disabled = readOnly || saving || !dirty || !STYLE_IDS.includes(settings.style_preset);
+}
+function preview() {
+  controls();
+  frame.srcdoc = renderStylePreview(catalogue, settings, { page, productId, collectionId, policyKind });
+  $("#as-catalog-note").textContent = catalogue.style_demo
+    ? "Menswear demonstration content and sample prices. These products are preview-only and will not be added to your catalogue."
+    : "Your existing catalogue and page content. Cart and checkout use illustrative items only, not a real order.";
+}
+function change(patch) {
+  Object.assign(settings, patch);
+  dirty = STYLE_THEME_KEYS.some(key => settings[key] !== original[key]);
+  message(dirty ? "Preview updated. Nothing saved yet." : "Your saved draft style. No changes to apply.");
+  preview();
+}
+document.querySelectorAll("[data-style-choice]").forEach(button =>
+  button.addEventListener("click", () => change(styleSettings(button.dataset.styleChoice))));
+$("#as-palette").addEventListener("change", event => change({ color_preset: event.target.value }));
+$("#as-font").addEventListener("change", event => change({ font_preset: event.target.value }));
+$("#as-accent").addEventListener("input", event => change({ accent_color: event.target.value }));
+document.querySelectorAll("[data-page]").forEach(button => button.addEventListener("click", () => {
+  page = button.dataset.page; collectionId = undefined; policyKind = undefined; preview();
+}));
+document.querySelectorAll("[data-device]").forEach(button => button.addEventListener("click", () => {
+  canvas.dataset.device = button.dataset.device;
+  fitViewport();
+  document.querySelectorAll("[data-device]").forEach(other =>
+    other.setAttribute("aria-pressed", String(other === button)));
+}));
+$("#as-reset").addEventListener("click", () => {
+  settings = { ...original }; dirty = false; message("Preview reset to your saved draft. Nothing changed."); preview();
+});
+frame.addEventListener("load", () => {
+  const doc = frame.contentDocument;
+  if (!doc) return;
+  // Child scripts/forms are sandboxed. All preview navigation is owned here.
+  doc.addEventListener("submit", event => event.preventDefault(), true);
+  doc.addEventListener("click", event => {
+    const link = event.target.closest("a");
+    if (!link) return;
+    event.preventDefault();
+    const path = new URL(link.getAttribute("href") || "/", location.origin).pathname;
+    if (path.startsWith("/products/")) { page = "product"; productId = decodeURIComponent(path.split("/")[2]); }
+    else if (path.startsWith("/collections/")) {
+      page = "collection";
+      const slug = decodeURIComponent(path.split("/")[2]);
+      collectionId = catalogue.collections?.find(c => c.slug === slug || c.id === slug)?.id;
+    } else if (path.startsWith("/policies/")) { page = "policy"; policyKind = path.split("/")[2]; }
+    else if (path === "/pages/about") page = "about";
+    else if (path === "/pages/contact") page = "contact";
+    else if (path === "/cart") page = "cart";
+    else if (path === "/checkout") page = "checkout";
+    else if (path === "/") page = "home";
+    else return;
+    preview();
+  });
+  attachAuraSearch(doc, catalogue);
+  attachAuraCatalog(doc, catalogue, { page, collectionId });
+  attachStyleInteractions(doc, catalogue, bag, page, productId, next => { page = next; preview(); });
+});
+$("#as-fullscreen").addEventListener("click", () => {
+  const active = document.body.classList.toggle("ss-immersive");
+  $("#as-fullscreen").textContent = active ? "Return to style controls" : "Open interactive preview";
+  $("#as-fullscreen").setAttribute("aria-pressed", String(active));
+  fitViewport();
+});
+function fitViewport() {
+  if (!frame.style) return;
+  const width = canvas.dataset.device === "mobile" ? 390 : 1280;
+  const available = Math.max(240, (canvas.clientWidth || 1316) - 36);
+  const scale = Math.min(1, available / width);
+  const immersive = document.body.classList.contains?.("ss-immersive") || false;
+  const height = immersive ? Math.max(300, (window.innerHeight || 900) - 120) : 720;
+  Object.assign(frame.style, {
+    width: `${width}px`, minWidth: `${width}px`, maxWidth: "none",
+    height: `${height / scale}px`, transform: `scale(${scale})`, transformOrigin: "top left",
+    left: `${Math.max(0, ((canvas.clientWidth || 1316) - width * scale) / 2)}px`,
+  });
+}
+if (typeof ResizeObserver !== "undefined") new ResizeObserver(fitViewport).observe(canvas);
+window.addEventListener("resize", fitViewport);
+async function request(options = {}) {
+  const response = await fetch(api, {
+    credentials: "same-origin", headers: { "content-type": "application/json" }, ...options,
+  });
+  const body = await response.json();
+  if (!response.ok) throw new Error(body.error || "Style could not be saved.");
+  return body;
+}
+$("#as-apply").addEventListener("click", async () => {
+  if (readOnly || saving || !dirty) return;
+  const sent = stylePatch(settings);
+  saving = true; controls(); message("Saving style to your draft...");
+  try {
+    const fresh = await request();
+    const latest = themeSnapshot(fresh.settings);
+    if (STYLE_THEME_KEYS.some(key => original[key] !== latest[key]))
+      throw new Error("Your draft theme changed in another tab. Reload this page before applying a style.");
+    await request({ method: "PATCH", body: JSON.stringify({ settings: sent }) });
+    Object.assign(original, sent); dirty = STYLE_THEME_KEYS.some(key => settings[key] !== sent[key]);
+    message("Style saved to your draft. Open the editor to review and publish. Your live store is unchanged.");
+  } catch (error) { message(error.message); }
+  finally { saving = false; controls(); }
+});
+window.addEventListener("beforeunload", event => {
+  if (dirty || saving) { event.preventDefault(); event.returnValue = ""; }
+});
+// Do not automatically change a merchant's saved styling on initial load.
+if ((window.innerWidth || 1280) < 640) {
+  canvas.dataset.device = "mobile";
+  document.querySelectorAll("[data-device]").forEach(button =>
+    button.setAttribute("aria-pressed", String(button.dataset.device === "mobile")));
+}
+if (boot.immersive) $("#as-fullscreen").click();
+preview();
+fitViewport();
+message("Choose a style to compare. Nothing is saved until you apply it.");

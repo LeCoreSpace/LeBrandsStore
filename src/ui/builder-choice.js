@@ -24,6 +24,7 @@ export function renderBuilderChoice(data = {}, user = {}, options = {}) {
         ${saved ? `<p class="bc-current">Current builder: <strong>${esc(MODE_LABELS[saved])}</strong></p>` : ""}
       </div>
       <nav class="bc-links" aria-label="Existing store">
+        <a href="${root}/styles">Explore Aura styles</a>
         <a href="${root}/editor">Open editor</a>
         <a href="${root}">Store dashboard</a>
       </nav>

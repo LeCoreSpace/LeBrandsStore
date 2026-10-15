@@ -54,3 +54,14 @@ the user requires the existing Standard Builder to remain usable.
 
 **How to apply:** Keep the builder preference write separate from setup
 operations that invalidate reviewed policies or replace layouts.
+
+Use complete interactive browser previews, with animation, to sell the
+storefront styles. Page-design images are optional reference material, not
+the primary theme-selection experience.
+
+**Why:** The user pointed to Webflow's template browser preview and said,
+"this is what sells. not a image of a website".
+
+**How to apply:** Render real Aura pages with working preview navigation
+and a clearly isolated demonstration shopping flow; never let a preview
+place an order, take payment or add demonstration inventory to a store.

@@ -18,6 +18,8 @@ import { EXAMPLE_STORE_ID,EXAMPLE_PRODUCTS,EXAMPLE_IMAGE_WIDTHS,exampleFixture,e
 import { renderInvoice } from "./ui/invoice.js";
 import { renderAccount } from "./ui/accounts.js";
 import { renderBuilderChoice } from "./ui/builder-choice.js";
+import { renderStyleStudio } from "./ui/style-studio.js";
+import { styleSettings, STYLE_IDS } from "./public/aura-styles.js";
 import { quoteCart } from "./public/commerce-rules.js";
 import { renderPremiumStore } from "./ui/premium-example.js";
 import { previewShell, renderAppSample } from "./local-app-preview.js";
@@ -55,6 +57,13 @@ export default {
       return new Response(request.method==="HEAD"?null:body||"Unknown template",{status:body?200:404,headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
     }
     const previewUrl=new URL(request.url);
+    if(previewUrl.pathname==="/__style-studio-preview"&&["GET","HEAD"].includes(request.method)){
+      const data=exampleFixture();data.role="owner";data.products=[];data.layouts={};
+      const style=previewUrl.searchParams.get("style");
+      if(STYLE_IDS.includes(style))Object.assign(data.settings,styleSettings(style));
+      return new Response(request.method==="HEAD"?null:renderStyleStudio(data,{name:"Demo merchant",email:"demo@example.invalid"},{readOnly:true,initialPage:previewUrl.searchParams.get("page"),immersive:previewUrl.searchParams.get("preview")==="1"}),
+        {headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
+    }
     if(previewUrl.pathname==="/__ai-builder-preview"&&["GET","HEAD"].includes(request.method))
       return new Response(null,{status:303,headers:{location:"/__builder-choice-preview","cache-control":"no-store"}});
     if(previewUrl.pathname==="/__builder-choice-preview"&&["GET","HEAD"].includes(request.method)){

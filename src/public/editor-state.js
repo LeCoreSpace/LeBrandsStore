@@ -159,8 +159,8 @@ export function mediaFromRecord(record, alt) {
 }
 
 // ---------- theme (joins undo history) ----------
-export const THEME_KEYS = ["color_preset", "accent_color", "font_preset", "button_style"];
-export const THEME_DEFAULTS = { color_preset: "white", accent_color: "#3d4a43", font_preset: "modern", button_style: "rounded" };
+export const THEME_KEYS = ["color_preset", "accent_color", "font_preset", "button_style", "style_preset"];
+export const THEME_DEFAULTS = { color_preset: "white", accent_color: "#3d4a43", font_preset: "modern", button_style: "rounded", style_preset: "" };
 export function themeSnapshot(settings = {}) {
   const alias = { porcelain: "ivory", sand: "ivory", ink: "midnight" };
   const out = {};
@@ -168,7 +168,7 @@ export function themeSnapshot(settings = {}) {
   out.color_preset = alias[out.color_preset] || out.color_preset;
   return out;
 }
-export const THEME_LABELS = { color_preset: "Colour preset", accent_color: "Accent colour", font_preset: "Type preset", button_style: "Button style" };
+export const THEME_LABELS = { color_preset: "Colour preset", accent_color: "Accent colour", font_preset: "Type preset", button_style: "Button style", style_preset: "Aura style" };
 /** Human lines for the publish review: published baseline (settings or null) against current settings. */
 export function themeChanges(publishedSettings, settings) {
   const from = themeSnapshot(publishedSettings || {}), to = themeSnapshot(settings || {});

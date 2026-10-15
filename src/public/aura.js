@@ -1,6 +1,7 @@
 import { contrastColor } from "./validation.js";
 import { renderSection, safeImage, policyTitle, imageSourceSet, HERO_IMAGE_SIZES } from "./aura-sections.js";
 import { getPageKey, defaultPageLayouts } from "./aura-layout.js";
+import { STYLE_IDS } from "./aura-styles.js";
 
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
   "&": "&amp;",
@@ -134,7 +135,8 @@ export function renderAura(data = {}, options = {}) {
       <link rel="stylesheet" href="/assets/aura.css">
       <style>:root{--accent:${accent};--accent-ink:${accentInk};--accent-label:${accentLabel};--display:${font.display};--body:${font.body};--radius:${radius}}</style>
       ${options.commerce ? `<link rel="stylesheet" href="/assets/commerce.css">` : ""}
+      ${STYLE_IDS.includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-styles.css">' : ""}
     </head>
-    <body data-aura data-preset="${preset}" data-font="${esc(fonts[settings.font_preset] ? settings.font_preset : "modern")}">${body}${options.commerce && !commercePage ? `<template data-commerce-config data-store-key="${esc(store.store_id || options.storeKey || "")}" data-site-key="${esc(options.siteKey || "")}" data-page="${esc(page)}" data-read-only="${options.readOnly === true ? "true" : "false"}"></template>` : ""}${options.embeddedPreview ? "" : '<script type="module" src="/assets/aura-ui.js"></script>'}${options.commerce ? `<div id="commerce-mount"></div>${options.embeddedPreview ? "" : '<script type="module" src="/assets/commerce.js"></script>'}` : ""}</body>
+    <body data-aura data-preset="${preset}" ${STYLE_IDS.includes(settings.style_preset) ? `data-style="${settings.style_preset}"` : ""} data-font="${esc(fonts[settings.font_preset] ? settings.font_preset : "modern")}">${body}${options.commerce && !commercePage ? `<template data-commerce-config data-store-key="${esc(store.store_id || options.storeKey || "")}" data-site-key="${esc(options.siteKey || "")}" data-page="${esc(page)}" data-read-only="${options.readOnly === true ? "true" : "false"}"></template>` : ""}${options.embeddedPreview ? "" : '<script type="module" src="/assets/aura-ui.js"></script>'}${options.commerce ? `<div id="commerce-mount"></div>${options.embeddedPreview ? "" : '<script type="module" src="/assets/commerce.js"></script>'}` : ""}</body>
   </html>`;
 }

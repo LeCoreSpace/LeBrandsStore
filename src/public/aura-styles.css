@@ -1,0 +1,104 @@
+/* Aura style systems. Scoped to a chosen data-style only. */
+body[data-style=editorial],body[data-style=boutique],body[data-style=architectural]{--st-accent:var(--accent)}
+
+/* Shared safety: long merchant content never clips */
+body[data-style] .au-eyebrow{color:var(--accent-label)}
+body[data-style] .au-card-name,body[data-style] .au-hero-copy h1,body[data-style] .au-pdetail h1,body[data-style] .au-page h1,body[data-style] .au-wordmark{overflow-wrap:anywhere;hyphens:auto}
+body[data-style] .au-card,body[data-style] .au-pdetail,body[data-style] .au-hero-copy{min-width:0}
+body[data-style] .au-footer nav a,body[data-style] .au-trust a{overflow-wrap:anywhere}
+body[data-style] .au-link,body[data-style] .commerce-text-link{color:var(--accent-label)}
+body[data-style] .au-btn:focus-visible,body[data-style] .commerce-button:focus-visible,body[data-style] .au-chip:focus-visible,body[data-style] .au-card:focus-visible{outline:2px solid var(--st-accent);outline-offset:3px}
+body[data-style] .au-card-media img,body[data-style] .au-btn,body[data-style] .commerce-button{transition:transform .4s ease,background-color .2s ease,color .2s ease}
+
+/* EDITORIAL: expressive serif, magazine restraint, claret accent */
+body[data-style=editorial] h1,body[data-style=editorial] h2,body[data-style=editorial] h3{font-family:var(--display);font-weight:400;letter-spacing:-.02em;line-height:1.05}
+body[data-style=editorial] .au-announce{background:var(--st-accent);color:#fff;letter-spacing:.06em}
+body[data-style=editorial] .au-header{height:88px;border-bottom:1px solid var(--line)}
+body[data-style=editorial] .au-wordmark{font-family:var(--display);font-weight:400;font-size:26px;letter-spacing:-.02em}
+body[data-style=editorial] .au-header nav{font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+body[data-style=editorial] .au-eyebrow{color:var(--st-accent);letter-spacing:.2em;font-size:11px;font-weight:600}
+body[data-style=editorial] .au-hero-copy h1{font-size:clamp(44px,7.4vw,112px);line-height:.95}
+body[data-style=editorial] .au-statement p{font-style:italic;font-size:clamp(28px,4vw,52px)}
+body[data-style=editorial] .au-head{border-bottom:1px solid var(--ink);padding-bottom:14px}
+body[data-style=editorial] .au-card-media{aspect-ratio:3/4}
+body[data-style=editorial] .au-card-name{font-family:var(--display);font-size:20px;font-weight:400}
+body[data-style=editorial] .au-btn,body[data-style=editorial] .commerce-button{background:var(--st-accent);color:#fff;border-radius:0;letter-spacing:.1em;text-transform:uppercase;font-size:11px}
+body[data-style=editorial] .au-btn:hover,body[data-style=editorial] .commerce-button:hover{background:var(--ink)}
+body[data-style=editorial] .au-spotlight{background:var(--surface)}
+body[data-style=editorial] .au-reviews blockquote{background:transparent;border-top:2px solid var(--st-accent);padding:20px 0}
+body[data-style=editorial] .au-reviews p{font-family:var(--display);font-size:22px;line-height:1.3}
+body[data-style=editorial] .au-page h1{font-size:clamp(44px,7vw,92px)}
+body[data-style=editorial] .au-price strong{font-family:var(--display);font-weight:400;font-size:24px}
+body[data-style=editorial] .commerce-panel,body[data-style=editorial] .commerce-summary,body[data-style=editorial] .receipt-card{background:var(--paper);border-radius:0;border-color:var(--ink)}
+body[data-style=editorial] .commerce-heading h1{font-family:var(--display);font-weight:400}
+body[data-style=editorial] .au-footer{border-top:1px solid var(--ink)}
+
+/* BOUTIQUE: clean contemporary retail, deep teal accent */
+body[data-style=boutique]{--radius:10px}
+body[data-style=boutique] h1,body[data-style=boutique] h2,body[data-style=boutique] h3{font-family:var(--display);font-weight:600;letter-spacing:-.035em}
+body[data-style=boutique] .au-announce{background:var(--st-accent);color:#fff;font-weight:500}
+body[data-style=boutique] .au-header{border-bottom:1px solid var(--line)}
+body[data-style=boutique] .au-wordmark{font-weight:700}
+body[data-style=boutique] .au-eyebrow{color:var(--st-accent);font-weight:600}
+body[data-style=boutique] .au-hero-media,body[data-style=boutique] .au-card-media,body[data-style=boutique] .au-pgallery img,body[data-style=boutique] .au-look img,body[data-style=boutique] .au-craft img{border-radius:14px}
+body[data-style=boutique] .au-card-media{aspect-ratio:1/1}
+body[data-style=boutique] .au-card-name{font-weight:600;font-size:16px}
+body[data-style=boutique] .au-card-price{color:var(--ink)}
+body[data-style=boutique] .au-btn,body[data-style=boutique] .commerce-button{background:var(--st-accent);color:#fff;border-radius:999px;padding-inline:28px}
+body[data-style=boutique] .au-btn:hover,body[data-style=boutique] .commerce-button:hover{background:var(--ink)}
+body[data-style=boutique] .au-chip[aria-pressed=true]{background:var(--st-accent);border-color:var(--st-accent);color:#fff}
+body[data-style=boutique] .au-reviews blockquote,body[data-style=boutique] .au-spotlight{border-radius:14px}
+body[data-style=boutique] .au-trust{border-radius:14px;border:1px solid var(--line);margin-block:24px}
+body[data-style=boutique] .commerce-panel,body[data-style=boutique] .commerce-summary,body[data-style=boutique] .receipt-card{border-radius:14px;background:var(--paper)}
+body[data-style=boutique] .commerce-field input,body[data-style=boutique] .commerce-field select{border-radius:8px}
+body[data-style=boutique] .payment-choice{border-color:var(--st-accent);background:var(--paper)}
+body[data-style=boutique] .payment-radio{border-color:var(--st-accent)}
+
+/* ARCHITECTURAL: heavy type, strong grid, sharp edges, vermilion accent */
+body[data-style=architectural] h1,body[data-style=architectural] h2,body[data-style=architectural] h3{font-family:var(--display);font-weight:700;letter-spacing:-.05em;line-height:.98;text-transform:uppercase}
+body[data-style=architectural] .au-announce{background:var(--st-accent);color:#fff;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+body[data-style=architectural] .au-header{border-bottom:2px solid var(--ink);height:72px}
+body[data-style=architectural] .au-wordmark{font-weight:800;text-transform:uppercase;letter-spacing:-.03em}
+body[data-style=architectural] .au-header nav{text-transform:uppercase;font-weight:600;letter-spacing:.06em;font-size:12px}
+body[data-style=architectural] .au-eyebrow{color:var(--st-accent);font-weight:700;letter-spacing:.14em}
+body[data-style=architectural] .au-hero-copy h1{font-size:clamp(40px,7vw,104px)}
+body[data-style=architectural] .au-hero-media{aspect-ratio:1/1}
+body[data-style=architectural] .au-head{border-top:4px solid var(--ink);padding-top:14px}
+body[data-style=architectural] .au-grid{gap:0;border-top:1px solid var(--ink);border-left:1px solid var(--ink)}
+body[data-style=architectural] .au-grid .au-card{padding:14px;border-right:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+body[data-style=architectural] .au-card-media{aspect-ratio:1/1}
+body[data-style=architectural] .au-card-name{font-weight:700;text-transform:uppercase;font-size:14px;letter-spacing:.02em}
+body[data-style=architectural] .au-btn,body[data-style=architectural] .commerce-button,body[data-style=architectural] .au-bag,body[data-style=architectural] .au-btn-quiet,body[data-style=architectural] .au-chip{border-radius:0;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+body[data-style=architectural] .au-btn,body[data-style=architectural] .commerce-button{background:var(--ink);color:var(--paper)}
+body[data-style=architectural] .au-btn:hover,body[data-style=architectural] .commerce-button:hover{background:var(--st-accent);color:#fff}
+body[data-style=architectural] .au-chip[aria-pressed=true]{background:var(--st-accent);border-color:var(--st-accent);color:#fff}
+body[data-style=architectural] .au-spotlight,body[data-style=architectural] .au-reviews blockquote{border:1px solid var(--ink);background:var(--paper);border-radius:0}
+body[data-style=architectural] .au-trust{border-top:2px solid var(--ink);border-bottom:2px solid var(--ink)}
+body[data-style=architectural] .au-specs div,body[data-style=architectural] .au-faq details{border-color:var(--ink)}
+body[data-style=architectural] .au-page h1{font-size:clamp(38px,6.4vw,88px)}
+body[data-style=architectural] .au-pgallery{gap:0}
+body[data-style=architectural] .commerce-panel,body[data-style=architectural] .commerce-summary,body[data-style=architectural] .receipt-card{border:2px solid var(--ink);border-radius:0;background:var(--paper)}
+body[data-style=architectural] .commerce-field input,body[data-style=architectural] .commerce-field select{border-radius:0;border-color:var(--ink)}
+body[data-style=architectural] .commerce-heading h1{font-family:var(--display);font-weight:700;text-transform:uppercase;letter-spacing:-.05em}
+body[data-style=architectural] .payment-choice{border:2px solid var(--st-accent);background:var(--paper)}
+body[data-style=architectural] .payment-radio{border-color:var(--st-accent)}
+body[data-style=architectural] .au-footer{border-top:4px solid var(--ink)}
+
+@media(max-width:760px){
+body[data-style=architectural] .au-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+body[data-style=architectural] .au-grid .au-card{padding:10px}
+body[data-style=editorial] .au-hero-copy h1{font-size:clamp(38px,12vw,64px)}
+body[data-style=editorial] .au-header{height:72px}
+}
+@media(prefers-reduced-motion:reduce){body[data-style] *,body[data-style] *::before,body[data-style] *::after{transition:none!important;animation:none!important}body[data-style] .au-card:hover .au-card-media img{transform:none}}
+/* User palette/font choices remain authoritative within a coordinated style. */
+body[data-style] .au-eyebrow,body[data-style] .au-link{color:var(--accent-label)}
+body[data-style] .au-btn,body[data-style] .commerce-button,body[data-style] .au-announce,
+body[data-style] .au-chip[aria-pressed=true]{background:var(--accent);color:var(--accent-ink)}
+body[data-style] .au-btn:hover,body[data-style] .commerce-button:hover{background:var(--accent);color:var(--accent-ink);filter:brightness(.94)}
+body[data-style] .au-btn,body[data-style] .commerce-button{border-radius:var(--radius)}
+body[data-style] .commerce-line{display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:16px;align-items:start}
+body[data-style] .commerce-preview-thumb{width:72px;aspect-ratio:3/4;object-fit:cover}
+body[data-style] .commerce-line label{display:flex;gap:8px;align-items:center}
+body[data-style] .commerce-line input{width:64px;min-height:38px;background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+@media(max-width:640px){body[data-style] .commerce-line{grid-template-columns:56px minmax(0,1fr);gap:12px}body[data-style] .commerce-line>strong{grid-column:2}body[data-style] .commerce-preview-thumb{width:56px}}

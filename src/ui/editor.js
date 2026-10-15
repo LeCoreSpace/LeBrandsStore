@@ -41,6 +41,7 @@ export function renderEditor(data = {}, user = {}, options = {}) {
         <button type="button" class="ed-btn ed-ghost" id="ed-redo" aria-label="Redo" title="Redo (Ctrl Shift Z)" disabled>Redo</button>
         <span class="ed-status" id="ed-status" role="status" aria-live="polite" data-state="saved">Saved</span>
         <button type="button" class="ed-btn ed-ghost" id="ed-theme">Theme</button>
+        <a class="ed-btn ed-ghost" href="${root}/styles" id="ed-styles">Explore styles</a>
         <button type="button" class="ed-btn ed-ghost" id="ed-history">Version history</button>
         ${publishAllowed ? `<button type="button" class="ed-btn ed-primary" id="ed-publish">Review and publish</button>` : `<span class="ed-note" id="ed-staff-note">Staff can save drafts. An owner or admin publishes.</span>`}
       </div>

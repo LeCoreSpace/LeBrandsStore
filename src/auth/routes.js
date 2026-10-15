@@ -9,6 +9,7 @@ import {isAiRoute,handleAiRoutes} from "../ai/routes.js";
 import {aiEnabled} from "../ai/repository.js";
 import {loadDraft} from "../store/repository.js";
 import {isBuilderRoute,handleBuilderRoutes} from "../store/builder-routes.js";
+import {isStyleStudioRoute,handleStyleStudio} from "../store/style-routes.js";
 import {isEmailAccountPath,handleEmailAccount,emailAccountDocument} from "../email/account-routes.js";
 import {handleStaffInvitation,isStaffPath} from "../email/staff.js";
 import { isMerchantCheckoutPath, merchantCheckout } from "../checkout/merchant.js";
@@ -35,7 +36,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
   const editorMatch=path.match(/^\/stores\/([0-9a-f-]{36})\/editor$/i);
-  const storeRoute = isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isAiRoute(path) || isBuilderRoute(path) || !!editorMatch || path==="/editor";
+  const storeRoute = isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";
   const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password", "/reset-password":"forgot-password","/invite":"forgot-password" };
   if (!["GET", "POST", "HEAD", ...(storeRoute ? ["PATCH", "PUT", "DELETE"] : [])].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
   if (!["GET", "HEAD"].includes(request.method) && !isValidOrigin(request)) {
@@ -92,6 +93,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     if (isPageRoute(path)) return await handlePageRoutes(request, env, db, user, tokenHash);
     if (isGSTINRoute(path)) return await handleGSTINRoutes(request,env,db,user,tokenHash);
     if (isBuilderRoute(path)) return await handleBuilderRoutes(request,env,db,user,tokenHash);
+    if (isStyleStudioRoute(path)) return await handleStyleStudio(request,env,db,user,tokenHash);
     if (isAiRoute(path)) return await handleAiRoutes(request,env,db,user,tokenHash);
     if (path==="/editor") {
       if(request.method!=="GET")return html("error",{error:"Method not allowed."},405);

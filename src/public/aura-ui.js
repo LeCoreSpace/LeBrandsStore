@@ -101,3 +101,5 @@ export function attachAuraCatalog(doc) {
   apply();
 }
 attachAuraCatalog(document);
+import { attachAuraMotion } from "./aura-motion.js";
+attachAuraMotion(document);

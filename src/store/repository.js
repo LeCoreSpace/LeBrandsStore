@@ -161,7 +161,8 @@ export async function saveSetup(tx, id, settings, progress) {
     }
     if (logo_media_id !== undefined) await tx`UPDATE public.store_setup SET logo_media_id = ${logo_media_id} WHERE store_id = ${id}`;
     // Preserve edited bodies; changing underlying details requires re-review.
-    if (Object.keys(settings).some((key) => data.settings[key] !== settings[key])) await invalidatePolicies(tx, id);
+    const visualKeys = ["theme", "color_preset", "accent_color", "font_preset", "button_style", "style_preset"];
+    if (Object.keys(settings).some((key) => !visualKeys.includes(key) && data.settings[key] !== settings[key])) await invalidatePolicies(tx, id);
   }
   if (progress) {
     const updated = await loadDraft(tx, id);
