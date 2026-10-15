@@ -25,7 +25,7 @@ CREATE INDEX ann_value_attribute ON public.ann_reference_values(attribute_id,sor
 __ANN_REFERENCE_SEED_V1__
 
 CREATE TABLE public.ann_builder_sessions (
-  store_id uuid PRIMARY KEY REFERENCES public.stores(id) ON DELETE CASCADE,
+  store_id uuid PRIMARY KEY REFERENCES public.stores(store_id) ON DELETE CASCADE,
   reference_version text NOT NULL DEFAULT 'ann-v1' CHECK (reference_version='ann-v1'),
   revision integer NOT NULL DEFAULT 1 CHECK (revision BETWEEN 1 AND 2147483646),
   current_step text NOT NULL CHECK (current_step IN

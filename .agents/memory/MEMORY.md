@@ -26,3 +26,4 @@
 - [AI copy boundary](ai-copy-boundary.md) — constrain model output to copy fields; never relax server-owned controls to fix repeated generation failures.
 - [Email queue recovery](email-queue-recovery.md) — private jobs must be recoverable after queue failure without exposing links or recipients.
 - [Database revision precision](database-revision-precision.md) — preserve timestamp microseconds across JavaScript optimistic-concurrency boundaries.
+- [Migration test foundations](migration-test-foundations.md) — use real foundational DDL; invented fixtures can mask incompatibilities with the existing database.

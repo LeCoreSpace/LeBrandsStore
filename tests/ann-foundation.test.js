@@ -129,13 +129,16 @@ test("API rejects anonymous/staff/foreign-origin writes and fails explicitly bef
 test("real offline SQL migration protects sessions, atomic revisions, tenant boundaries and reference writes", async () => {
   const pg=new PGlite();
   try{
+    // Use the real foundation schema so a fixture cannot hide wrong FK columns.
+    await pg.exec(await readFile(new URL("../db/migrations/0001_init.sql",import.meta.url),"utf8"));
     await pg.exec(`CREATE ROLE lebrands_app; GRANT USAGE ON SCHEMA public TO lebrands_app;
-      CREATE TABLE stores(id uuid PRIMARY KEY);CREATE TABLE users(id uuid PRIMARY KEY,must_change_password boolean DEFAULT false);
-      CREATE TABLE store_members(store_id uuid,user_id uuid,role text);
+      ALTER TABLE users ADD COLUMN must_change_password boolean DEFAULT false;
       CREATE TABLE sessions(token_hash text,user_id uuid,revoked_at timestamptz,expires_at timestamptz);
       CREATE TABLE aura_library_subcategories(subcategory_id bigint PRIMARY KEY);
-      INSERT INTO stores VALUES('${store}'),('${other}');INSERT INTO users(id) VALUES('${owner}'),('${staff}');
-      INSERT INTO store_members VALUES('${store}','${owner}','owner'),('${store}','${staff}','staff');
+      INSERT INTO brands(id,name,legal_name) VALUES('${store}','Test brand','Test brand');
+      INSERT INTO stores(store_id,brand_id,subdomain,name) VALUES('${store}','${store}','ann-test-one','Test store'),('${other}','${store}','ann-test-two','Other store');
+      INSERT INTO users(id,name,email) VALUES('${owner}','Test owner','owner@example.invalid'),('${staff}','Test editor','editor@example.invalid');
+      INSERT INTO store_members(store_id,user_id,role) VALUES('${store}','${owner}','owner'),('${store}','${staff}','editor');
       INSERT INTO sessions VALUES('${token}','${owner}',NULL,now()+interval '1 day'),('${staffToken}','${staff}',NULL,now()+interval '1 day');
       CREATE FUNCTION public.authorize_store_session(text,uuid) RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog AS $$
         SELECT EXISTS(SELECT 1 FROM public.sessions s JOIN public.users u ON u.id=s.user_id
