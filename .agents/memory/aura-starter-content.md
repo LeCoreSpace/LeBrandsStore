@@ -138,6 +138,17 @@ planning progress proves publishing readiness.
 
 ## Ann planning and catalogue boundary
 
+Ann's answer choices belong directly beneath the corresponding question in the
+scrolling conversation. Keep natural typing in a separate bottom composer,
+not a footer filled with the current question's options.
+
+**Why:** The user explicitly requested inline choices and ordinary LLM-style
+bottom typing after rejecting the disconnected footer choices.
+
+**How to apply:** Keep question-specific pills, section toggles and continuation
+actions with the active prompt, while preserving unsent replies, earlier-answer
+editing, keyboard input and honest save status.
+
 Attribute/value exports are global reference choices. The supplied ad-card
 assignments are not merchant ownership records or permission to create
 inventory. Ann's saved product ideas remain proposals until explicitly

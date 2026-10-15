@@ -167,3 +167,23 @@
 .ann-design-thumb img{display:block;width:100%;height:100%;object-fit:cover}
 .ann-design-thumb[aria-selected=true]{border-color:var(--ink)}
 .ann-design-thumb:focus-visible,.ann-design .ann-btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+
+/* Inline choices under the active question; bottom is a chat composer only */
+.ann-inline{margin:-2px 0 0 38px;display:grid;gap:10px;animation:annIn .2s ease both}
+.ann-inline .ann-chips{max-height:none;overflow:visible}
+.ann-inline .ann-comp-row{gap:8px 12px}
+.ann-foot{max-height:none;overflow:visible;flex:none}
+#ann-composer{overflow:visible;padding:10px 12px 4px;background:#fff}
+.ann-compose{padding:0;border:0;max-height:none;overflow:visible;gap:4px}
+.ann-compose .ann-input{align-items:flex-end;gap:6px;border:1px solid var(--line);border-radius:24px;padding:5px 5px 5px 14px;background:#fff;transition:border-color .15s}
+.ann-compose .ann-input:focus-within{border-color:var(--ink)}
+.ann-compose .ann-input textarea{border:0;padding:8px 0;outline:0;background:transparent;min-height:24px}
+.ann-compose .ann-input textarea:focus-visible{outline:0}
+.ann-compose .ann-input:focus-within{outline:3px solid var(--a);outline-offset:2px}
+.ann-compose .ann-send{width:38px;height:38px;min-height:38px;padding:0;border-radius:50%;justify-content:center;flex:none}
+.ann-hint{padding:0 8px;min-height:16px;font-size:11px}
+.ann-savebar-row{padding:4px 12px 8px;gap:6px}
+#ann-savebar>.ann-callout,#ann-savebar>.ann-conflict{margin:4px 12px 0}
+.ann-log{min-height:0}
+@media(max-width:900px){.ann-inline{margin-left:0}.ann-hint{display:none}}
+@media(prefers-reduced-motion:reduce){.ann-inline{animation:none}}

@@ -254,7 +254,7 @@ function def(p) {
       const r = changeSubcategory(answers, Number(v)); answers = r.answers;
       notice = r.cleared.attributes ? `Changing subcategory cleared ${r.cleared.attributes} product detail choice${r.cleared.attributes === 1 ? "" : "s"}. Your product names and descriptions are kept.` : "";
     });
-    case "style": return sel("Style", "Here are five looks. Each uses the same images, with copy written for that style. Pick one and the whole store on the right will switch.",
+    case "style": return sel("Style", `Here are ${AURA_STYLES.length} looks. Each uses the same images, with copy written for that style. Pick one and the whole store on the right will switch.`,
       AURA_STYLES.map(s => ({ v: s.id, t: s.name, sub: s.description, c: s.settings.accent_color })), t.style_preset, v => {
         const s = styleSettings(v); setPreviewMode("showcase");
         for (const key of ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"]) if (s[key] !== undefined) answers[key] = s[key];
@@ -304,6 +304,7 @@ function timeline() {
     else if (!active && d.kind !== "info" && (d.reply || i < ri)) out += meBubble(d.reply ? `<span class="ann-reply">${esc(d.reply)}</span>` : "<em>Skipped</em>", readOnly ? "" : `<button type="button" class="ann-edit" data-edit-prompt="${esc(p.id)}" aria-label="Edit your answer to ${esc(d.label)}">Edit</button>`);
     if (feeds[p.id]) out += feedHtml(feeds[p.id]);
     if (active && editing) out += annBubble(editQ());
+    if (active) out += inlineControls(p, d);
   });
   return out;
 }
@@ -323,55 +324,69 @@ const storyDetail = () => { const a = answers;
 const detailHtml = () => `<section class="ann-detail" aria-label="Detailed editor"><div class="ann-detail-h"><h2>Detailed editor</h2><button type="button" class="ann-link" data-toggle-detail>Close</button></div>${step === "products" ? productsStep() : step === "collections" ? collectionsDetail() : storyDetail()}</section>`;
 
 /* ---------- composer ---------- */
+function composerKeyFor(p, d) {
+  return JSON.stringify([p.id, editing ? { kind: editing.kind, key: item()?.key, field: editing.field, follow: editing.follow } : null, d.kind, readOnly]);
+}
+/* Inline controls: rendered in the timeline directly under the active Ann question. */
+function inlineControls(p, d) {
+  const tail = DETAIL_STEPS.includes(p.step) && d.kind !== "info" ? `<button type="button" class="ann-link" data-toggle-detail aria-expanded="${detail}">${detail ? "Close detailed editor" : "Open detailed editor"}</button>` : "";
+  let body = "", name = d.label;
+  if (d.kind === "choice" || d.kind === "accent") {
+    body = `<div class="ann-chips${d.stack ? " stack" : ""}">${d.opts.map(o => `<button type="button" class="ann-chip" data-pick="${esc(o.v)}" aria-pressed="${String(o.v).toLowerCase() === d.cur}"${o.c || d.kind === "accent" ? ` style="--c:${esc(o.c || o.v)}"` : ""}${dis}>${o.c || d.kind === "accent" ? `<i class="ann-sw" aria-hidden="true"></i>` : ""}<strong>${esc(o.t)}</strong>${o.sub ? `<span>${esc(o.sub)}</span>` : ""}</button>`).join("")}
+      ${d.kind === "accent" ? `<label class="ann-chip ann-color"><strong>Custom</strong><input type="color" data-accent-input value="${esc(d.color)}" aria-label="Custom accent colour"${dis}></label>` : ""}</div>
+      <div class="ann-comp-row">${d.reply || readOnly ? `<button type="button" class="ann-btn alt" data-continue>${readOnly ? "Continue" : `Keep ${esc(d.reply)} and continue`}</button>` : ""}${d.kind === "choice" && !d.opts.length ? `<p class="ann-note">Nothing to choose here yet.</p>` : ""}</div>`;
+  } else if (d.kind === "sections") {
+    name = "Optional sections";
+    body = `${Object.entries(ANN_EXTRA_SECTIONS).map(([pg, l]) => `<div class="ann-sec-row"><span>${label(pg)} page</span><div class="ann-chips">${l.map(s => `<button type="button" class="ann-chip sm" data-toggle-section="${pg}:${s}" aria-pressed="${shown(pg).includes(s)}"${dis}><strong>${esc(label(s))}</strong></button>`).join("")}</div></div>`).join("")}
+      <div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>${readOnly ? "Continue" : "Done, show my plan"}</button>${tail}</div>`;
+  } else if (d.kind === "text" || d.kind === "list") {
+    const btn = editing ? `<button type="button" class="ann-btn alt" data-cancel-edit>${editing.follow ? "Skip note" : "Cancel"}</button>` : d.kind === "list" ? `<button type="button" class="ann-btn alt" data-continue>${d.items.length ? "Continue" : "Skip for now"}</button>` : `<button type="button" class="ann-btn alt" data-continue>${d.reply ? "Keep and continue" : "Skip"}</button>`;
+    body = `<div class="ann-comp-row">${btn}${editing ? "" : tail}${p.step === "products" && !answers.subcategory_id ? `<button type="button" class="ann-link" data-go="category">Choose a subcategory for product questions</button>` : ""}</div>`;
+  } else if (d.kind === "info") {
+    body = `<div class="ann-comp-row"><button type="button" class="ann-btn" data-go="collections">Add a collection</button></div>`;
+  } else return "";
+  return `<div class="ann-inline" role="group" aria-label="${esc(name)} options">${body}</div>`;
+}
+
+/* ---------- composer: always-available message box at the bottom ---------- */
 function drawComposer(force) {
   const box = $("#ann-composer"); if (!box) return;
   const ps = prompts(), p = cur(ps), d = def(p);
-  const key = JSON.stringify([p.id, editing ? { kind: editing.kind, key: item()?.key, field: editing.field, follow: editing.follow } : null, d.kind, readOnly]);
+  const key = composerKeyFor(p, d);
   const ae = document.activeElement;
-  if (!force && key === composerKey && box.contains(ae) && ae.tagName === "TEXTAREA") return;
+  const hadFocus = box.contains(ae) && ae.tagName === "TEXTAREA";
+  if (!force && key === composerKey && hadFocus) return;
+  const sel = hadFocus ? [ae.selectionStart, ae.selectionEnd] : null;
+  // Input events already retain drafts. Do not recapture the old textarea here:
+  // a successful send deliberately clears it before moving to the next prompt.
   composerKey = key;
-  const tail = DETAIL_STEPS.includes(p.step) && d.kind !== "info" ? `<button type="button" class="ann-link" data-toggle-detail aria-expanded="${detail}">${detail ? "Close detailed editor" : "Open detailed editor"}</button>` : "";
-  let html = "";
-  if (d.kind === "choice" || d.kind === "accent") {
-    html = `<div class="ann-comp" role="group" aria-labelledby="ann-cq"><p class="ann-cq" id="ann-cq">${esc(d.label)}: choose one to answer</p>
-      <div class="ann-chips${d.stack ? " stack" : ""}">${d.opts.map(o => `<button type="button" class="ann-chip" data-pick="${esc(o.v)}" aria-pressed="${String(o.v).toLowerCase() === d.cur}"${o.c || d.kind === "accent" ? ` style="--c:${esc(o.c || o.v)}"` : ""}${dis}>${o.c || d.kind === "accent" ? `<i class="ann-sw" aria-hidden="true"></i>` : ""}<strong>${esc(o.t)}</strong>${o.sub ? `<span>${esc(o.sub)}</span>` : ""}</button>`).join("")}
-      ${d.kind === "accent" ? `<label class="ann-chip ann-color"><strong>Custom</strong><input type="color" data-accent-input value="${esc(d.color)}" aria-label="Custom accent colour"${dis}></label>` : ""}</div>
-      <form data-composer class="ann-form"><label class="ann-cq" for="ann-input">Or type your choice</label><div class="ann-input"><textarea id="ann-input" data-composer-input rows="1" maxlength="120" placeholder="Type a choice above, then press Enter"${dis}>${esc(composerDrafts.get(key) || "")}</textarea><button type="submit" class="ann-send"${dis}>Send</button></div></form>
-      <div class="ann-comp-row">${d.reply || readOnly ? `<button type="button" class="ann-btn alt" data-continue>${readOnly ? "Continue" : `Keep ${esc(d.reply)} and continue`}</button>` : ""}${d.kind === "choice" && !d.opts.length ? `<p class="ann-note">Nothing to choose here yet.</p>` : ""}</div></div>`;
-    composerOriginals.set(key, "");
-  } else if (d.kind === "sections") {
-    html = `<div class="ann-comp" role="group" aria-labelledby="ann-cq"><p class="ann-cq" id="ann-cq">Optional sections</p>
-      ${Object.entries(ANN_EXTRA_SECTIONS).map(([pg, l]) => `<div class="ann-sec-row"><span>${label(pg)} page</span><div class="ann-chips">${l.map(s => `<button type="button" class="ann-chip sm" data-toggle-section="${pg}:${s}" aria-pressed="${shown(pg).includes(s)}"${dis}><strong>${esc(label(s))}</strong></button>`).join("")}</div></div>`).join("")}
-      <div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>${readOnly ? "Continue" : "Done, show my plan"}</button>${tail}</div></div>`;
-  } else if (d.kind === "text" || d.kind === "list") {
-    const it = editing ? item() : null;
-    const lab = editing ? (editing.follow ? "Optional note" : editing.field === "name" ? "New name" : "New note") : d.label;
-    const field = editing ? editing.field : "name";
-    const max = editing ? (editing.kind === "col" ? (field === "name" ? 100 : 800) : (field === "name" ? 120 : 1200)) : d.max;
-    const original = editing ? (it?.[field] || "") : d.kind === "text" ? d.reply : "";
-    composerOriginals.set(key, original);
-    const val = composerDrafts.get(key) ?? original;
-    const area = editing ? field === "description" : d.area;
-    const full = !editing && d.kind === "list" && d.full;
-    html = `<form class="ann-form" data-composer novalidate><label class="ann-cq" id="ann-cq" for="ann-input">${esc(lab)}</label>
-      <div class="ann-input"><textarea id="ann-input" data-composer-input rows="${area ? 3 : 1}" maxlength="${max}" aria-describedby="ann-count" placeholder="${esc(full ? "Limit reached" : editing ? "" : d.ph || "")}"${readOnly || full ? " disabled" : ""}>${esc(val)}</textarea>
-      <button type="submit" class="ann-send"${readOnly || full ? " disabled" : ""}>Send <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 8h11M9 3.5L13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
-      <div class="ann-comp-row"><span id="ann-count" class="ann-note"><span data-count>${val.length}</span> of ${max}. Enter sends, Shift+Enter adds a line.</span>
-      ${editing ? `<button type="button" class="ann-btn alt" data-cancel-edit>${editing.follow ? "Skip note" : "Cancel"}</button>` : d.kind === "list" ? `<button type="button" class="ann-btn alt" data-continue>${d.items.length ? "Continue" : "Skip for now"}</button>` : `<button type="button" class="ann-btn alt" data-continue>${d.reply ? "Keep and continue" : "Skip"}</button>`}${tail}
-      ${p.step === "products" && !answers.subcategory_id ? `<button type="button" class="ann-link" data-go="category">Choose a subcategory for product questions</button>` : ""}</div></form>`;
-  } else if (d.kind === "info") {
-    html = `<div class="ann-comp"><p class="ann-cq">Products</p><div class="ann-comp-row"><button type="button" class="ann-btn" data-go="collections">Add a collection</button></div></div>`;
-  } else {
-    html = `<div class="ann-comp"><p class="ann-cq">Review</p><p class="ann-note">That is every stage. Use Change beside any row to revisit it, or save the plan and continue with the confirmed actions in the conversation.</p></div>`;
-  }
-  box.innerHTML = html;
-  if (focusComposer) {
+  const it = editing ? item() : null;
+  const choiceLike = d.kind === "choice" || d.kind === "accent";
+  const field = editing ? editing.field : "name";
+  const max = choiceLike ? 120 : editing ? (editing.kind === "col" ? (field === "name" ? 100 : 800) : (field === "name" ? 120 : 1200)) : d.max || 120;
+  const original = choiceLike ? "" : editing ? (it?.[field] || "") : d.kind === "text" ? d.reply : "";
+  composerOriginals.set(key, original);
+  const val = composerDrafts.get(key) ?? original;
+  const area = !choiceLike && (editing ? field === "description" : d.area);
+  const full = !editing && d.kind === "list" && d.full;
+  const idle = ["info", "review", "sections"].includes(d.kind);
+  const off = readOnly || full || idle;
+  const ph = readOnly ? "Viewing only" : full ? "Limit reached" : idle ? "Use the options above" : choiceLike ? `Type your ${d.label.toLowerCase()} choice` : editing ? (editing.follow ? "Type a note, or skip it above" : "Type your change") : d.ph || "Type your answer";
+  const lab = editing ? (editing.follow ? "Optional note" : editing.field === "name" ? "New name" : "New note") : d.label;
+  box.innerHTML = `<form class="ann-form ann-compose" data-composer novalidate><label class="ann-sr" id="ann-cq" for="ann-input">Reply to Ann: ${esc(lab)}</label>
+    <div class="ann-input"><textarea id="ann-input" data-composer-input rows="${area ? 3 : 1}" maxlength="${max}" aria-describedby="ann-count" placeholder="${esc(ph)}"${off ? " disabled" : ""}>${esc(val)}</textarea>
+    <button type="submit" class="ann-send" aria-label="Send"${off ? " disabled" : ""}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
+    <span id="ann-count" class="ann-note ann-hint">${off ? "" : `<span data-count>${val.length}</span> of ${max}. Enter sends, Shift+Enter adds a line. Your reply answers Ann's current question.`}</span></form>`;
+  const ta = box.querySelector("textarea");
+  if (ta && val) { ta.style.height = "auto"; ta.style.height = `${Math.min(140, ta.scrollHeight)}px`; }
+  if (ta && !ta.disabled && (focusComposer || hadFocus)) {
     focusComposer = false;
-    const el = box.querySelector("textarea:not(:disabled)") || box.querySelector(".ann-chip[aria-pressed=true]") || box.querySelector(".ann-chip:not(:disabled)");
-    el?.focus({ preventScroll: true });
-    if (el?.tagName === "TEXTAREA") el.setSelectionRange(el.value.length, el.value.length);
-  }
+    ta.focus({ preventScroll: true });
+    const s = sel || [ta.value.length, ta.value.length];
+    ta.setSelectionRange(Math.min(s[0], ta.value.length), Math.min(s[1], ta.value.length));
+  } else focusComposer = false;
 }
+
 
 /* ---------- panel drawing ---------- */
 function drawSteps() {
@@ -397,7 +412,8 @@ function scrollActive() {
   const ps = prompts(), ci = curIdx(ps), ri = reachedIdx(ps), behavior = reduce() ? "auto" : "smooth";
   const rev = $("#ann-review-start");
   if (ps[ci].id === "review" && rev) return log.scrollTo({ top: Math.max(0, rev.offsetTop - 12), behavior });
-  if (ci < ri) return void $("#ann-active")?.scrollIntoView({ block: "center", behavior });
+  const active = $("#ann-active");
+  if (active) return log.scrollTo({ top: Math.max(0, log.scrollTop + active.getBoundingClientRect().top - log.getBoundingClientRect().top - 12), behavior });
   log.scrollTo({ top: log.scrollHeight, behavior });
 }
 function draw(mode = "keep") {
