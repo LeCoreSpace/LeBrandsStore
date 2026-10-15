@@ -64,8 +64,11 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
       const merged = mergeAnnAnswers(session?.answers, body.answers);
       const reference = await annReference(tx, Number.isSafeInteger(merged.answers.subcategory_id) ? merged.answers.subcategory_id : null);
       const answers = validateAnnAnswers(merged.answers, reference);
+      // Bind serialized JSON as text first. A directly inferred jsonb parameter
+      // makes postgres.js JSON.stringify this string again (a JSON string, not
+      // the object required by ann_builder_sessions).
       await tx`SELECT public.ann_save_session(${storeId}::uuid,${tokenHash}::text,${body.expected_revision}::integer,
-        ${body.current_step}::text,${JSON.stringify(answers)}::jsonb) AS revision`;
+        ${body.current_step}::text,${JSON.stringify(answers)}::text::jsonb) AS revision`;
       session = await loadAnnSession(tx, storeId);
       return annSessionResponse(tx, storeId, session, merged.cleared);
     });
