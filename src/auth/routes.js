@@ -9,6 +9,7 @@ import {isAiRoute,handleAiRoutes} from "../ai/routes.js";
 import {aiEnabled} from "../ai/repository.js";
 import {loadDraft} from "../store/repository.js";
 import {isBuilderRoute,handleBuilderRoutes} from "../store/builder-routes.js";
+import {isAnnRoute,handleAnnRoutes} from "../store/ann-routes.js";
 import {isStyleStudioRoute,handleStyleStudio} from "../store/style-routes.js";
 import {isEmailAccountPath,handleEmailAccount,emailAccountDocument} from "../email/account-routes.js";
 import {handleStaffInvitation,isStaffPath} from "../email/staff.js";
@@ -93,6 +94,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     if (isPageRoute(path)) return await handlePageRoutes(request, env, db, user, tokenHash);
     if (isGSTINRoute(path)) return await handleGSTINRoutes(request,env,db,user,tokenHash);
     if (isBuilderRoute(path)) return await handleBuilderRoutes(request,env,db,user,tokenHash);
+    if (isAnnRoute(path)) return await handleAnnRoutes(request,env,db,user,tokenHash);
     if (isStyleStudioRoute(path)) return await handleStyleStudio(request,env,db,user,tokenHash);
     if (isAiRoute(path)) return await handleAiRoutes(request,env,db,user,tokenHash);
     if (path==="/editor") {

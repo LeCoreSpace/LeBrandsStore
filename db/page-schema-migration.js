@@ -14,6 +14,11 @@ export function compilePageSchemaSnapshot(snapshot) {
   }]));
 }
 export async function preparePageMigration(filename, source) {
+  if (filename === "0016_ann_foundation.sql") {
+    if (!source.includes("__ANN_REFERENCE_SEED_V1__")) throw new Error("Missing Ann reference seed token.");
+    const { annReferenceSeed } = await import("./ann-reference-seed.js");
+    return source.replace("__ANN_REFERENCE_SEED_V1__", (await annReferenceSeed()).sql);
+  }
   if (filename === "0012_aura_skeleton_sections.sql") {
     const legacy = JSON.parse(await readFile(new URL("./schema-snapshots/aura-v1.json", import.meta.url), "utf8"));
     const additions = JSON.parse(await readFile(new URL("./schema-snapshots/aura-skeleton-v1.json", import.meta.url), "utf8"));

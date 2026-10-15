@@ -68,3 +68,17 @@ images with text based on the style.
 **How to apply:** Render real Aura pages with working preview navigation
 and a clearly isolated demonstration shopping flow; never let a preview
 place an order, take payment or add demonstration inventory to a store.
+
+## Ann planning and catalogue boundary
+
+Attribute/value exports are global reference choices. The supplied ad-card
+assignments are not merchant ownership records or permission to create
+inventory. Ann's saved product ideas remain proposals until explicitly
+created through the existing store-owned catalogue APIs.
+
+**Why:** Ann must let merchants explore and change their store without
+silently importing another system's catalogue or altering real stock.
+
+**How to apply:** Keep planning answers separate from real products,
+verified business data, policies and publication. A saved Ann session or
+a completed interview step never proves that a store is ready to publish.
