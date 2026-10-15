@@ -1,6 +1,7 @@
 import { AURA_STYLES, STYLE_IDS, STYLE_THEME_KEYS, styleSettings, stylePatch } from "./aura-styles.js";
 import { stylePreviewData, renderStylePreview } from "./style-preview.js";
 import { attachStyleInteractions } from "./style-preview-interactions.js";
+import { attachAuraMotion } from "./aura-motion.js";
 import { themeSnapshot } from "./editor-state.js";
 import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
 
@@ -100,6 +101,7 @@ frame.addEventListener("load", () => {
   });
   attachAuraSearch(doc, catalogue);
   attachAuraCatalog(doc, catalogue, { page, collectionId });
+  attachAuraMotion(doc);
   attachStyleInteractions(doc, catalogue, bag, page, productId, next => { page = next; preview(); });
   const key = displayedKey;
   doc.defaultView?.scrollTo({ top: scrollPositions.get(key) || 0, behavior: "instant" });

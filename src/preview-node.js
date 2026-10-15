@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { resolve, sep } from "node:path";
 import { getPlatformProxy } from "wrangler";
 import preview from "./preview.js";
+import { annPreviewFixture } from "./ann-preview-fixture.js";
 
 const types = { js:"text/javascript; charset=utf-8", css:"text/css; charset=utf-8",
   svg:"image/svg+xml", png:"image/png", jpg:"image/jpeg", jpeg:"image/jpeg",
@@ -43,6 +44,7 @@ export function createNativePreview(root, runtime = process.env) {
     [method,async (...args)=>(await bucket())[method](...args)]));
 
   const middleware = async (req, res, next) => {
+    if (await annPreviewFixture(req, res, env.REPLIT_DEV_DOMAIN ? `https://${env.REPLIT_DEV_DOMAIN}` : undefined)) return;
     const pathname = new URL(req.url || "/", "http://localhost").pathname;
     if (!accountPath(pathname)) return next();
     try {

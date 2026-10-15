@@ -1,6 +1,7 @@
 # Stage 3: Ann reference data and private progress
 
-Ann remains disabled in the chooser until the guided interface is complete.
+At Stage 3 delivery, Ann remained disabled until the guided interface was complete.
+Stage 4 now supplies that interface; see [ANN_STAGE_4.md](ANN_STAGE_4.md).
 Standard Builder, Aura layouts, catalogue, policy reviews and publications are
 not modified by this stage. No real database migration or deployment was run.
 

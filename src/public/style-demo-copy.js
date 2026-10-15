@@ -32,6 +32,7 @@ const COPY = {
   },
 };
 export function styleDemonstration(data, style) {
+  if (data.ann_style_copy_applied === style) return data;
   if (data.style_demo !== true || !COPY[style]) return data;
   const preview = structuredClone(data), copy = COPY[style];
   for (const section of preview.layouts?.home || []) {

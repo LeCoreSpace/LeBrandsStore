@@ -33,8 +33,8 @@ export function renderBuilderChoice(data = {}, user = {}, options = {}) {
     <div class="bc-grid">
       <article class="bc-path" aria-labelledby="bc-ann">
         <div class="bc-top"><h2 id="bc-ann">Build your Store with Ann</h2>${savedNote("ann")}</div>
-        <p>A guided conversation that sets up your storefront from your brand details.</p>
-        <p class="bc-status ${annEnabled ? "" : "is-off"}">${annEnabled ? "Available for this store." : "Guided builder is being prepared."}</p>
+        <p>Choose a style, plan your collections and describe products with Ann. See your whole store change as you answer, then finish selling settings in the existing setup.</p>
+        <p class="bc-status ${annEnabled ? "" : "is-off"}">${annEnabled ? "Interactive preview and saved planning progress are available." : options.error ? "Standard Builder is available while Ann is unavailable." : "Guided builder is not enabled for this store."}</p>
         ${annEnabled && canChoose
           ? `<form method="post" action="${root}/build"><input type="hidden" name="mode" value="ann"><button class="bc-btn" type="submit">Build with Ann</button></form>`
           : `<button class="bc-btn" type="button" disabled aria-disabled="true">Build with Ann</button>`}

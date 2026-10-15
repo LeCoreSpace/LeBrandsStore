@@ -37,7 +37,9 @@ test("chooser offers the two builders, uses real paths, gates Ann and escapes me
   assert.match(escaped,/&lt;script&gt;/);
   const reader=renderBuilderChoice({...fixture,role:"staff"});
   assert.match(reader,/<button[^>]+disabled[^>]*>Use Standard Builder/);
-  assert.equal(annBuilderEnabled({ANN_BUILDER_ENABLED:"true"}),false);
+  assert.equal(annBuilderEnabled({ANN_BUILDER_ENABLED:"true"}),true);
+  assert.equal(annBuilderEnabled({}),true);
+  assert.equal(annBuilderEnabled({ANN_BUILDER_ENABLED:"false"}),false);
   assert.equal(isBuilderRoute(`/stores/${store}/build/standard`),true);
   assert.equal(isBuilderRoute(`/stores/${store}/build/ann`),true);
   assert.equal(isBuilderRoute(`/api/stores/${store}/build`),false);
@@ -76,7 +78,9 @@ test("builder selection is tenant-scoped and only merges its preference in isola
     const row=(await pg.query("SELECT settings,step,to_json(completed) completed FROM store_setup WHERE store_id=$1",[store])).rows[0];
     assert.deepEqual(row.settings,{...original,builder_mode:"standard"});
     assert.equal(row.step,3);assert.deepEqual(row.completed,[1,2]);assert.deepEqual(fixture,before);
-    assert.equal((await handleBuilderRoutes(post("ann"),{ANN_BUILDER_ENABLED:"true"},db,user,"a".repeat(64))).status,409);
+    assert.equal((await handleBuilderRoutes(post("ann"),{ANN_BUILDER_ENABLED:"false"},db,user,"a".repeat(64))).status,409);
+    assert.equal((await handleBuilderRoutes(post("ann"),{},db,user,"a".repeat(64))).status,503);
+    assert.equal((await pg.query("SELECT settings->>'builder_mode' mode FROM store_setup WHERE store_id=$1",[store])).rows[0].mode,"standard");
     assert.equal((await handleBuilderRoutes(post("unknown"),{},db,user,"a".repeat(64))).status,400);
     assert.equal((await handleBuilderRoutes(post("standard","https://foreign.example"),{},db,user,"a".repeat(64))).status,403);
     assert.equal((await handleBuilderRoutes(post("standard","https://app.lebrands.store",other),{},db,user,"a".repeat(64))).status,403);
@@ -90,7 +94,7 @@ test("builder selection is tenant-scoped and only merges its preference in isola
     assert.match(await page.text(),/Current builder: <strong>Standard Builder/);
     const head=await handleBuilderRoutes(new Request(get(),{method:"HEAD"}),{},db,user,"a".repeat(64));
     assert.equal(head.status,200);assert.equal(await head.text(),"");
-    const oldAnn=await handleBuilderRoutes(new Request(`https://app.lebrands.store/stores/${store}/build/ann`),{},db,user,"a".repeat(64));
+    const oldAnn=await handleBuilderRoutes(new Request(`https://app.lebrands.store/stores/${store}/build/ann`),{ANN_BUILDER_ENABLED:"false"},db,user,"a".repeat(64));
     assert.equal(oldAnn.headers.get("location"),`/stores/${store}/build`);
     // A brand new store has no setup row until its first explicit choice.
     await assert.rejects(pg.query("DELETE FROM store_setup WHERE store_id=$1",[store]),e=>e.code==="42501");

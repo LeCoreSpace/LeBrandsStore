@@ -67,14 +67,14 @@ test("earlier answers can be edited without discarding descriptions or silently 
   assert.deepEqual(mergeAnnAnswers(original,{description:null}).answers.description,undefined);
 });
 
-test("preview configuration is deterministic and never applies settings, creates products or marks Ann ready", () => {
+test("preview configuration is deterministic and never applies settings or creates products", () => {
   const saved={style_preset:"editorial",color_preset:"white",font_preset:"serif"},copy=structuredClone(saved);
   const answers={style_preset:"vintage",color_preset:"midnight",font_preset:"modern",accent_color:"#123456",store_name:"New idea"};
   const preview=annPreviewConfiguration(answers,saved);
   assert.equal(preview.preview_only,true);assert.equal(preview.theme.style_preset,"vintage");
   assert.equal(preview.theme.color_preset,"midnight");assert.equal(preview.theme.font_preset,"modern");
   assert.equal(preview.brand.store_name,"New idea");assert.deepEqual(saved,copy);assert.deepEqual(preview.product_ideas,[]);
-  assert.equal(ANN_WORKFLOW_READY,false);
+  assert.equal(ANN_WORKFLOW_READY,true);
 });
 
 function fakeDb({role="owner",ready=true,session=null,settings={}}={}){

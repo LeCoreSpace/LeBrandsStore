@@ -53,3 +53,14 @@ restarted, while a direct request already returned the corrected page.
 **How to apply:** Local HTML should override production cache lifetimes. If a
 capture contradicts current responses, check browser caching before changing
 working code; use a fresh query URL to verify the current revision.
+
+Persistent browser-flow checks should use development-only isolated fixtures
+backed by the real handlers and local PostgreSQL, not a newly created live
+merchant account.
+
+**Why:** The normal native preview connects to live Supabase. Testing saved
+plans must not create or alter real merchant data just to verify the interface.
+
+**How to apply:** Keep fixture imports outside the production Worker graph.
+When exercising account-origin-only handlers, translate only a verified
+same-origin development request; leave foreign origins rejected.

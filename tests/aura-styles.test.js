@@ -120,7 +120,7 @@ test("live studio controller previews immediately and saves styling only with st
       return fresh;
     }}),
     AURA_STYLES,STYLE_IDS:AURA_STYLES.map(s=>s.id),STYLE_THEME_KEYS,styleSettings,stylePatch,stylePreviewData,renderStylePreview,themeSnapshot,
-    attachAuraSearch(){},attachAuraCatalog(){},attachStyleInteractions(){},
+    attachAuraSearch(){},attachAuraCatalog(){},attachStyleInteractions(){},attachAuraMotion(){},
   };
   vm.runInNewContext(script,context);
   assert.equal(patches.length,0);
