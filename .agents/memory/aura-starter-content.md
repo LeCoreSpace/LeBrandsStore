@@ -85,6 +85,17 @@ restricting which style a merchant can select. Keep white as the default base
 without forcing every section to be white. Preserve merchant-authored content,
 inventory and live publications when building or comparing previews.
 
+The user confirmed that the distinct website designs per style are "amazing"
+and wants them enhanced with animations and more sections. Choice pills in
+the conversational window and above the preview should have rounded corners.
+
+**Why:** The user approved the existing design direction and specifically
+requested richer motion, more sections and rounded builder controls.
+
+**How to apply:** Refine the established five identities rather than replacing
+them. Scope the rounded-control request to Ann's conversation and preview
+toolbar; it does not require rounding every storefront's visual language.
+
 Shared demonstration images do not mean shared text: category and subcategory
 choices must immediately change the preview copy, including Skincare.
 
