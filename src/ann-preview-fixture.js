@@ -21,7 +21,14 @@ const fixtureData = {
   aura_skeleton_enabled: true, aura_starter_enabled: true, role: "owner",
 };
 let database;
-export async function setupAnnFixtureDatabase({samplePolicies=false}={}) {
+const sampleProductId="dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+const samplePhotoId="eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+const memoryMedia=new Map();
+const fixtureMedia={
+  async put(key,bytes,options){memoryMedia.set(key,{bytes:new Uint8Array(bytes),type:options.httpMetadata.contentType});},
+  async delete(key){memoryMedia.delete(key);},
+};
+export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false}={}) {
   const pg = new PGlite();
   try {
     await pg.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
@@ -44,10 +51,18 @@ export async function setupAnnFixtureDatabase({samplePolicies=false}={}) {
     if(samplePolicies)for(const kind of ["privacy","terms","shipping","cancellation-refund","contact","pricing"])
       await pg.query("INSERT INTO policy_pages(store_id,slug,title,content) VALUES($1,$2,$3,$4)",
         [storeId,kind,`Sample ${kind} policy`,"Fictional local preview policy only. Replace this example with the merchant's actual operating terms and review before publication."]);
+    if(sampleCatalogue){
+      await pg.query(`INSERT INTO products(id,store_id,title,slug,description,price_paise,gst_rate,stock,track_inventory,sku,hsn_code)
+        VALUES($1,$2,'Sample cotton shirt','sample-cotton-shirt','A fictional cotton shirt for isolated product editing tests only.',129909,12,7,true,'ANN-SAMPLE','')`,
+        [sampleProductId,storeId]);
+      await pg.query(`INSERT INTO media(id,store_id,object_key,kind,content_type,size_bytes,upload_type,alt_text)
+        VALUES($1,$2,$3,'image','image/webp',32,'image','Sample approved shirt photograph')`,
+        [samplePhotoId,storeId,`stores/${storeId}/${samplePhotoId}.webp`]);
+    }
     return pg;
   } catch (error) { await pg.close(); throw error; }
 }
-const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true}).catch(error => { database = null; throw error; });
+const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true,sampleCatalogue:true}).catch(error => { database = null; throw error; });
 export function annFixtureAdapter(pg) {
   return { withMemberStore: async (id, hash, fn) => {
     if (id !== storeId || !["a".repeat(64), "b".repeat(64)].includes(hash))
@@ -71,6 +86,15 @@ export async function annPreviewFixture(req, res, previewOrigin) {
   const url = new URL(req.url || "/", previewOrigin || origin);
   if (url.pathname !== prefix && !url.pathname.startsWith(prefix + "/")) return false;
   try {
+    if(url.pathname.startsWith(`${prefix}/media/`)){
+      const file=url.pathname.slice(`${prefix}/media/`.length);
+      if(!["GET","HEAD"].includes(req.method)||!/^[a-f0-9-]{36}\.(?:png|jpg|webp)$/.test(file)){res.statusCode=404;res.end();return true;}
+      const item=memoryMedia.get(`stores/${storeId}/${file}`);
+      if(item){res.setHeader("content-type",item.type);res.end(req.method==="HEAD"?undefined:item.bytes);}
+      else if(file===`${samplePhotoId}.webp`){res.statusCode=302;res.setHeader("location","/assets/img/aura-starters/c001-s001/v01/c001-s001-product-p01-front-v01.webp");res.end();}
+      else{res.statusCode=404;res.end();}
+      return true;
+    }
     const pg = await getDatabase(), db = annFixtureAdapter(pg);
     const readonly = url.searchParams.get("readonly") === "1" || url.pathname.includes("/read-only-api/");
     const user = { id: readonly ? editorId : ownerId, name: "Example member", email: "member@example.invalid" };
@@ -87,7 +111,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
         { ...options.draft, role: readonly ? "editor" : "owner" }, user, options),
       { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     } else {
-      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness)$/);
+      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness|media)$/);
       if (!match) response = new Response("Not found", { status: 404 });
       else {
         url.pathname = `/api/stores/${storeId}/ann/${match[1]}`;
@@ -97,8 +121,14 @@ export async function annPreviewFixture(req, res, previewOrigin) {
         if (headers.get("origin") === url.origin) headers.set("origin", APP_ORIGIN);
         const init = { method: req.method, headers };
         if (!["GET", "HEAD"].includes(req.method)) Object.assign(init, { body: Readable.toWeb(req), duplex: "half" });
-        response = await handleAnnRoutes(new Request(url, init), {}, db, user, hash);
+        response = await handleAnnRoutes(new Request(url, init), {MEDIA:fixtureMedia}, db, user, hash);
       }
+    }
+    // Fixture photos never request production media. All bytes and records
+    // above belong to this isolated process, not a merchant's R2 bucket.
+    if(response.body&&/application\/json|text\/html/.test(response.headers.get("content-type")||"")){
+      const text=(await response.text()).replaceAll(`https://media.lebrands.store/stores/${storeId}/`,`${prefix}/media/`);
+      response=new Response(text,{status:response.status,headers:response.headers});
     }
     res.statusCode = response.status;
     for (const [key, value] of response.headers) res.setHeader(key, value);

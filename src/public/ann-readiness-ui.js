@@ -1,4 +1,7 @@
 import { INDIAN_STATES } from "./commerce-rules.js";
+import { attachAnnProducts } from "./ann-products-ui.js";
+import { inrToPaise, paiseToInr } from "./ann-money.js";
+export { inrToPaise } from "./ann-money.js";
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const BIZ = ["brand_name", "tagline", "description", "legal_name", "trade_name", "address", "business_line1", "business_line2", "business_city", "business_pincode", "business_state", "gstin", "support_email", "support_phone", "notification_email", "logo_media_id"];
@@ -7,27 +10,16 @@ const BIZ_LABELS = { brand_name: "Brand name", tagline: "Tagline", description: 
 const POLICY_NAMES = { shipping: "Shipping", "cancellation-refund": "Cancellation and refund", pricing: "Pricing", privacy: "Privacy", terms: "Terms", contact: "Contact" };
 const KINDS_ORDER = 6;
 
-export function inrToPaise(value, { allowZero = false } = {}) {
-  const raw = String(value ?? "").trim();
-  if (!/^\d{1,9}(?:\.\d{1,2})?$/.test(raw)) throw new Error("Enter an amount in INR with at most two decimal places.");
-  const [whole, fraction = ""] = raw.split(".");
-  const paise = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
-  if (paise < (allowZero ? 0 : 1)) throw new Error("Enter an amount above zero.");
-  if (paise > 10000000000) throw new Error("Enter an amount no more than INR 100,000,000.");
-  return paise;
-}
-function paiseToInr(p) {
-  if (p === null || p === undefined || !Number.isSafeInteger(Number(p))) return "";
-  const n = Number(p), w = Math.floor(n / 100), f = String(n % 100).padStart(2, "0");
-  return `${w}.${f}`;
-}
-
 export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
   let data = null, loading = false, loadError = "", busy = "", conflict = false, saved = "";
   const msgs = {}; // section -> {type,text}
   let biz = {}, co = {}, pol = {};
   let ackBiz = false, ackCo = false, ackGen = false;
-  let lastSection = "", refreshPending = false;
+  let lastSection = "", refreshPending = false, deepLinked = false;
+  const productUI=attachAnnProducts({api,readOnly,submit,onDraw:()=>{
+    if(refreshPending&&!busy&&!loading&&!productUI.isUploading()){refreshPending=false;storeChanged();}
+    else draw();
+  }});
   const slot = () => document.querySelector("#ann-readiness-slot");
   const lockedOn = () => !!data?.supplier_locked;
   const bizFrom = s => Object.fromEntries(BIZ.map(k => [k, s?.[k] ?? ""]));
@@ -37,11 +29,12 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     biz = bizFrom(data.settings); co = coFrom(data.checkout?.settings);
     pol = Object.fromEntries((data.policies || []).map(p => [p.kind, polFrom(p)]));
     ackBiz = ackCo = ackGen = false;
+    productUI.receive(data,{reset:true});
   }
   const bizDirty = () => !!data && BIZ.some(k => !(lockedOn() && LOCKED.includes(k)) && String(biz[k] ?? "") !== String(data.settings[k] ?? ""));
   const coDirty = () => { if (!data?.checkout?.can_edit) return false; const b = coFrom(data.checkout.settings); return Object.keys(b).some(k => b[k] !== co[k]); };
   const polDirty = kind => { const p = data?.policies?.find(x => x.kind === kind); if (!p || !pol[kind]) return false; return pol[kind].body !== (p.body ?? "") || pol[kind].reviewed !== !!p.reviewed; };
-  const anyDirty = () => bizDirty() || coDirty() || (data?.policies || []).some(p => polDirty(p.kind));
+  const anyDirty = () => bizDirty() || coDirty() || productUI.hasUnsavedChanges() || (data?.policies || []).some(p => polDirty(p.kind));
 
   async function request(method, body) {
     const res = await fetch(`${api}/readiness`, { method, credentials: "same-origin", headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
@@ -49,7 +42,7 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     return { res, result };
   }
   async function load(force) {
-    if (loading) return;
+    if (loading || productUI.isUploading()) return;
     loading = true; loadError = ""; draw();
     try {
       const { res, result } = await request("GET");
@@ -59,7 +52,7 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     finally { loading = false; draw(); if(refreshPending){refreshPending=false;storeChanged();} }
   }
   async function submit(section, extra, onOk) {
-    if (readOnly || busy || !data) return;
+    if (readOnly || busy || productUI.isUploading() || conflict || !data) return;
     busy = section; msgs[section] = null; draw();
     try {
       const { res, result } = await request("PATCH", { expected_draft: data.expected_draft, confirm: true, ...extra });
@@ -68,13 +61,14 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
        const bizWasDirty=bizDirty(), coWasDirty=coDirty();
        const dirtyPolicies=new Set((data.policies||[]).filter(p=>polDirty(p.kind)).map(p=>p.kind));
        data = result;
+       productUI.receive(data);
        if(section!=="business"&&!bizWasDirty)biz=bizFrom(data.settings);
        if(section!=="checkout"&&!coWasDirty)co=coFrom(data.checkout.settings);
        for(const p of data.policies||[]){
          if(!dirtyPolicies.has(p.kind))pol[p.kind]=polFrom(p);
          // Saved business or selling changes invalidate even an unsaved tick.
          // Keep edited policy text, but ask the merchant to review it again.
-         if(["business","checkout"].includes(section)&&pol[p.kind])pol[p.kind].reviewed=false;
+         if((["business","checkout"].includes(section)||section.startsWith("product:"))&&pol[p.kind])pol[p.kind].reviewed=false;
        }
        onOk?.();
       saved = "Saved. These checks reflect the stored store.";
@@ -117,18 +111,18 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     void submit("generate", { action: "generate-policies" }, () => { pol = Object.fromEntries(data.policies.map(p => [p.kind, polFrom(p)])); ackGen = false; });
   }
   function reload() {
-    if (busy) return;
+    if (busy || productUI.isUploading()) return;
     if (anyDirty() && !window.confirm("Reloading discards your unsaved readiness edits. Continue?")) return;
     void load(true);
   }
   function storeChanged(){
-    if(busy||loading){refreshPending=true;return;}
+    if(busy||loading||productUI.isUploading()){refreshPending=true;return;}
     if(anyDirty()){conflict=true;draw();return;}
     void load(true);
   }
 
   /* ---------- drawing ---------- */
-  const dis = (extra = false) => (readOnly || busy || loading || extra) ? " disabled" : "";
+  const dis = (extra = false) => (readOnly || busy || loading || productUI.isUploading() || extra) ? " disabled" : "";
   const msg = s => msgs[s] ? `<p class="${msgs[s].type === "err" ? "ann-error" : "ann-callout"}" role="${msgs[s].type === "err" ? "alert" : "status"}">${esc(msgs[s].text)}</p>` : "";
   function field(key, name, value, opts = {}) {
     const err = opts.error, id = `rd-${key}`;
@@ -146,12 +140,19 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     const sel = key && "selectionStart" in active ? [active.selectionStart, active.selectionEnd] : null;
     const top = node.scrollTop;
     node.innerHTML = html();
+    // Review is a long sidebar. Keep product deep links usable even when
+    // readiness arrives after the browser's initial fragment navigation.
+    const fragment=location.hash.slice(1);
+    if(!deepLinked && (fragment==="ann-products" || /^pd-[0-9a-f-]{36}-(?:hsn|gst|price|file)$/.test(fragment))){
+      const target=node.querySelector(`#${fragment}`);
+      if(target){deepLinked=true;queueMicrotask(()=>target.isConnected&&target.scrollIntoView({block:"center",inline:"nearest"}));}
+    }
     if (key) { const el = node.querySelector(`[data-rd-key="${key}"]`); if (el && !el.disabled) { el.focus({ preventScroll: true }); try { if (sel) el.setSelectionRange(...sel); } catch { /* not text */ } } }
     node.scrollTop = top;
   }
   function html() {
     const head = `<h2>Launch readiness</h2>
-      <p>This panel reads your actual store, not your Ann answers. Setup fields below are saved to the store separately from the Ann plan. The Save button under the conversation only saves the Ann plan.</p>`;
+      <p>This panel reads your actual store, not your Ann answers. Setup fields below are saved to the store separately from the Ann plan. The Save button under the conversation only saves the Ann plan.</p><p><a href="#ann-products">Jump to products</a></p>`;
     if (loading && !data) return `${head}<div class="ann-skel" aria-busy="true"><i></i><i></i><i></i></div>`;
     if (!data) return `${head}${loadError ? `<p class="ann-error" role="alert">${esc(loadError)}</p>` : ""}<button type="button" class="ann-btn" data-rd="load"${loading ? " disabled" : ""}>${loadError ? "Try again" : "Load readiness"}</button>`;
     const errs = data.business_errors || {}, st = data.store || {};
@@ -172,8 +173,7 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
       <label class="ann-check"><input type="checkbox" data-rd-key="ack-biz" data-rd-ack="biz"${ackBiz ? " checked" : ""}${dis(!bd)}><span>I confirm saving these business details to my store. Incomplete drafts can be saved.</span></label>
       ${msg("business")}
       <div class="ann-actions"><button type="button" class="ann-btn" data-rd="save-business"${dis(!bd || !ackBiz)}>${busy === "business" ? "Saving business details" : "Save business details"}</button></div></fieldset>`;
-    const products = (data.products || []).filter(p => Object.keys(p.errors || {}).length);
-     const prodBlock = `<h3>Products</h3>${products.length ? `<ul>${products.map(p => `<li><strong>${esc(p.title)}</strong>: ${Object.entries(p.errors).map(([k, m]) => esc(`${k.replace(/_/g, " ")}: ${m}`)).join("; ")}</li>`).join("")}</ul><a href="${root}/products">Fix products</a>` : `<p class="ann-note">${data.products?.length ? "No product problems reported." : `No real products yet. <a href="${root}/products">Create a product</a> or apply your confirmed Ann plan.`}</p>`}`;
+    const prodBlock=productUI.render(data,{disabled:readOnly||!!busy||loading||conflict,messages:msgs});
     const c = data.checkout || {}, canEdit = !!c.can_edit && !!c.available;
      const cd = coDirty() || !c.saved, mode = co.delivery_mode;
     const checkout = `<fieldset class="ann-item"${!c.available ? "" : ""}><legend>Shipping and cash on delivery</legend>
@@ -206,7 +206,7 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     return `${head}
       ${conflict ? `<div class="ann-conflict" role="alert"><p>The store changed elsewhere. Your edits are kept and nothing was overwritten.</p><button type="button" class="ann-btn alt" data-rd="reload"${busy ? " disabled" : ""}>Reload current store data</button></div>` : ""}
       ${statusLine}${business}${prodBlock}${checkout}${policies}${list}
-      <div class="ann-actions"><button type="button" class="ann-btn alt" data-rd="reload"${busy || loading ? " disabled" : ""}>Reload current data</button><a class="ann-btn alt" href="${root}/setup">Open setup</a><a class="ann-btn alt" href="${root}/products">Products</a><a class="ann-btn" href="${root}/editor">Final review in editor</a></div>`;
+      <div class="ann-actions"><button type="button" class="ann-btn alt" data-rd="reload"${busy || loading || productUI.isUploading() ? " disabled" : ""}>Reload current data</button><a class="ann-btn alt" href="${root}/setup">Open setup</a><a class="ann-btn alt" href="${root}/products">Products</a><a class="ann-btn" href="${root}/editor">Final review in editor</a></div>`;
   }
 
   /* ---------- events ---------- */

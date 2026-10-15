@@ -1,5 +1,41 @@
 # Ann Stage 6: guided setup and launch readiness
 
+## Product completion in Ann
+
+Ann's Review panel now shows saved product details and the same validation
+errors used by the existing catalogue editor. A merchant can explicitly save
+changes to the title, description, price, compare-at price, SKU, tags, HSN,
+GST rate and ordered product photos without leaving Ann. Stock and variants
+remain in the catalogue tools; editing other details never writes stock.
+The backend accepts only a patch of the changed fields, locks the product,
+checks the store draft fingerprint, validates the patch with the normal product
+rules, and calls the same store-owned product writer. There is no implicit
+publish or catalogue activation. Confirmation is required for each product.
+Historical GST rates remain unchanged unless the merchant explicitly selects
+a current rate; 0% on apparel shows the exemption warning.
+
+Uploaded photos go through the existing Worker multipart/R2 route using an
+Ann-specific write-role gate before bytes are read. The media library lists
+up to 200 recent approved images owned by this store, plus images already
+assigned to its products. An uploaded image is a library asset only until the
+merchant explicitly attaches it and saves that product. The repository
+checks image ownership and approval, limits products to eight unique photos,
+and maintains their order. Editing a shared photo description can change
+the same image's description on other products that use it. Source files are
+validated by content, not by extension alone.
+
+The isolated `__ann-builder-preview?stage=6` fixture includes one explicitly
+fictional incomplete product, one approved sample photo and six fictional
+policy drafts. Its R2 replacement holds uploads in process memory. No
+merchant store, production bucket, publication, order or payment is touched.
+Product API isolation is covered in `tests/ann-products.test.js`; confirmed
+field changes, price conversion and unsaved photo state are covered in
+`tests/ann-products-ui.test.js`.
+
+**No database migration** is required for this stage. Apply the usual offline
+tests before the owner runs their deployment command. Browser editing tests
+must use only the isolated fixture, not the live-preview database.
+
 Ann's Review screen now reads and saves actual business, support, policy and
 shipping/payment settings. These are separate from saved Ann planning answers.
 Saving the conversation plan does not save the setup forms.

@@ -107,3 +107,16 @@ payment or delivery change is safely deferred until publication.
 preserve owner-only checkout permissions, and require policy review again when
 business or selling terms change. An Ann interview/checklist never substitutes
 for GSTIN verification, address confirmation or platform approval.
+
+Ann's media upload entry point should enforce Ann's write-role boundary before
+reading multipart bytes, while continuing to use the established store-owned
+media handler for validation and storage.
+
+**Why:** The older Standard Builder media route has a different role contract;
+reusing it as a direct Ann endpoint would let a read-only Ann participant
+upload. Tightening Standard Builder's role contract as a side effect could
+break its existing workflow.
+
+**How to apply:** Gate new Ann media entry points under Ann's owner/admin
+authorization before delegation. Do not weaken tenant, media approval,
+upload validation or orphan cleanup in the shared handler.

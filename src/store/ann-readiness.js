@@ -1,6 +1,7 @@
-import { loadDraft, saveSetup, regeneratePolicies, savePolicy } from "./repository.js";
-import { settingsPatch, badInput } from "./input.js";
-import { publishChecklist, validateBasics, validateProduct } from "../public/validation.js";
+import { loadDraft, saveSetup, regeneratePolicies, savePolicy, saveProduct } from "./repository.js";
+import { settingsPatch, productPatch, badInput } from "./input.js";
+import { publishChecklist, validateBasics, validateProduct, UUID } from "../public/validation.js";
+import { mediaUrl } from "./media.js";
 import { DEFAULT_CHECKOUT_SETTINGS, checkoutSettings, inferStoreState } from "../public/commerce-rules.js";
 import { protectSupplier } from "../gstin/service.js";
 import { audit } from "../dashboard/repository.js";
@@ -30,12 +31,19 @@ export async function prepareAnnReadiness(tx,id,userId) {
   const [member] = await tx`SELECT role FROM public.store_members WHERE store_id = ${id} AND user_id = ${userId}`;
   const logos = await tx`SELECT id,alt_text,object_key FROM public.media WHERE store_id = ${id}
     AND upload_type = 'logo' ORDER BY created_at DESC LIMIT 100`;
+  const photos = await tx`SELECT id,alt_text,object_key FROM public.media m WHERE store_id=${id}
+    AND upload_type='image' AND kind='image'
+    AND COALESCE(to_jsonb(m)->>'approval_status','approved')='approved'
+    ORDER BY created_at DESC,id DESC LIMIT 200`;
   const {data} = s;
   return {
     expected_draft:s.fingerprint,
     settings:Object.fromEntries(ANN_BUSINESS_FIELDS.map(k=>[k,data.settings[k] ?? (k==="logo_media_id"?null:"")])),
     business_errors:validateBasics(data.settings),
-    products:data.products.map(p=>({id:p.id,title:p.title,errors:validateProduct(p)})),
+    products:data.products.map(p=>({...Object.fromEntries(
+      ["id","title","description","price_paise","compare_at_paise","sku","tags","stock","hsn_code","gst_rate","images"].map(k=>[k,p[k]])
+    ),errors:validateProduct(p)})),
+    image_media:photos.map(m=>({id:m.id,url:mediaUrl(m.object_key),alt:m.alt_text||""})),
     policies:data.policies.map(p=>({kind:p.kind,title:p.title,body:p.body,reviewed:p.reviewed})),
     logo_media:logos.map(m=>({id:m.id,label:m.alt_text || m.object_key.split("/").pop()})),
     checkout:{available:s.checkoutAvailable,saved:s.checkoutSaved,can_edit:member?.role==="owner",settings:s.checkout},
@@ -54,11 +62,23 @@ export async function prepareAnnReadiness(tx,id,userId) {
   };
 }
 export async function saveAnnReadiness(tx,id,userId,body) {
-  const actions = {"business":"settings","checkout":"checkout","policy":"policy","generate-policies":null};
+  const actions = {"business":"settings","checkout":"checkout","policy":"policy","generate-policies":null,"product":"product"};
   if (!object(body) || typeof body.action!=="string" || !Object.hasOwn(actions,body.action) || body.confirm!==true ||
       typeof body.expected_draft!=="string" || !/^[a-f0-9]{64}$/.test(body.expected_draft) ||
       Object.keys(body).some(k=>!["expected_draft","confirm","action",actions[body.action]].includes(k)))
     fail("Use Ann's setup confirmation form.");
+  if(body.action==="product"){
+    const p=body.product;
+    const allowed=["title","description","price_paise","compare_at_paise","sku","tags","hsn_code","gst_rate","images"];
+    if(!object(p)||Object.keys(p).some(k=>!["id","patch"].includes(k))||
+      typeof p.id!=="string"||!UUID.test(p.id)||!object(p.patch)||!Object.keys(p.patch).length||
+      Object.keys(p.patch).some(k=>!allowed.includes(k)))fail("Confirm the product details and photos. Stock and variants are managed in the catalogue.");
+    // Lock before reading the fingerprint or merging values. Checkout stock
+    // updates cannot be lost while saveProduct preserves unedited fields.
+    const [found]=await tx`SELECT id FROM public.products WHERE store_id=${id} AND id=${p.id}
+      AND status<>'archived' FOR UPDATE`;
+    if(!found)throw Object.assign(new Error("This product is not in the active store catalogue."),{status:404});
+  }
   const current = await snapshot(tx,id);
   if (current.fingerprint!==body.expected_draft) throw Object.assign(new Error("The store changed in another window. Your edits are kept. Reload the current setup before saving."),{status:409});
   if (body.action==="business") {
@@ -86,6 +106,12 @@ export async function saveAnnReadiness(tx,id,userId,body) {
     const p=body.policy;
     if (!object(p) || Object.keys(p).some(k=>!["kind","body","reviewed"].includes(k))) fail("Review one policy draft at a time.");
     await savePolicy(tx,id,p.kind,{body:p.body,reviewed:p.reviewed});
+  } else if(body.action==="product"){
+    const p=body.product, patch=productPatch(p.patch);
+    // Shared repository validates owned approved media and historical GST
+    // retention. Draft-only: never sync a live publication from this action.
+    await saveProduct(tx,id,p.id,patch,{returnDraft:false});
+    await audit(tx,id,userId,"product.edited","product",p.id,{fields:Object.keys(patch),source:"ann"});
   } else await regeneratePolicies(tx,id);
   await audit(tx,id,userId,"ann.setup_saved","store",id,{action:body.action});
   return prepareAnnReadiness(tx,id,userId);

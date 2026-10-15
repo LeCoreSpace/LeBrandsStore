@@ -6,7 +6,8 @@ import { validateAnnSave, mergeAnnAnswers, validateAnnAnswers } from "./ann-inpu
 import { annReady, annReference, loadAnnSession, annSessionResponse } from "./ann-repository.js";
 import { prepareAnnApplication, applyAnnApplication } from "./ann-application.js";
 import { prepareAnnReadiness, saveAnnReadiness } from "./ann-readiness.js";
-const pattern = /^\/api\/stores\/([a-f0-9-]{36})\/ann\/(reference|session|application|readiness)$/i;
+import { handleStoreRoutes } from "./routes.js";
+const pattern = /^\/api\/stores\/([a-f0-9-]{36})\/ann\/(reference|session|application|readiness|media)$/i;
 export const isAnnRoute = path => pattern.test(path);
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { ...SECURITY_HEADERS, "content-type": "application/json", "cache-control": "no-store" },
@@ -16,10 +17,21 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
   if (!match || !UUID.test(match[1])) return json({ error: "Page not found." }, 404);
   if (!user || user.must_change_password) return json({ error: "Sign in and complete any required password change first." }, 401);
   const [, storeId, action] = match, writing = request.method === "PATCH" || request.method === "POST";
-  if (!(["GET","HEAD"].includes(request.method) || (request.method === "PATCH" && ["session","readiness"].includes(action)) || (request.method === "POST" && action === "application"))) return json({ error: "Method not allowed." }, 405);
-  if (["application","readiness"].includes(action) && env.ANN_BUILDER_ENABLED === "false") return json({ error: "Ann is temporarily paused. Your existing store is unchanged." }, 503);
+  if (!(action==="media" ? request.method==="POST" : ["GET","HEAD"].includes(request.method) || (request.method === "PATCH" && ["session","readiness"].includes(action)) || (request.method === "POST" && action === "application"))) return json({ error: "Method not allowed." }, 405);
+  if (["application","readiness","media"].includes(action) && env.ANN_BUILDER_ENABLED === "false") return json({ error: "Ann is temporarily paused. Your existing store is unchanged." }, 503);
   if (writing && !isValidOrigin(request)) return json({ error: "This request did not come from the account website." }, 403);
   try {
+    if(action==="media"){
+      // Ann's readonly members cannot upload through this facade. Authorize
+      // before reading file bytes; the existing store route owns validation,
+      // the R2 write, tenant checks and orphan cleanup.
+      await db.withMemberStore(storeId,tokenHash,async tx=>{
+        await dashboardAccess(tx,storeId,user.id,true);
+        await annReady(tx);
+      });
+      url.pathname=`/api/stores/${storeId}/media`;
+      return await handleStoreRoutes(new Request(url,request),env,db,user,tokenHash);
+    }
     const data = await db.withMemberStore(storeId, tokenHash, async tx => {
       await dashboardAccess(tx, storeId, user.id, writing);
       await annReady(tx);
