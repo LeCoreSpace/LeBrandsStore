@@ -68,6 +68,22 @@ export async function saveCollection(tx, storeId, id, value) {
   }
   return entityId;
 }
+/** Append confirmed products without rewriting collection text or old members. */
+export async function appendCollectionProducts(tx, storeId, id, productIds) {
+  await requireCatalogue(tx);
+  const { product_ids: ids } = validateCollectionPatch({ product_ids: productIds }, { storeId });
+  await tx`SELECT store_id FROM public.stores WHERE store_id=${storeId} FOR UPDATE`;
+  const [owned] = await tx`SELECT id FROM public.collections WHERE store_id=${storeId} AND id=${id}`;
+  if (!owned) throw badInput("Choose a collection belonging to this store.");
+  const products = await tx`SELECT id FROM public.products WHERE store_id=${storeId} AND status<>'archived'
+    AND id IN(SELECT value::uuid FROM jsonb_array_elements_text(${tx.json(ids)}::jsonb) x(value))`;
+  if (products.length !== ids.length) throw badInput("Choose products belonging to this store.");
+  await tx`INSERT INTO public.collection_products(store_id,collection_id,product_id,sort_order)
+    SELECT ${storeId}::uuid,${id}::uuid,x.value::uuid,
+      COALESCE((SELECT max(sort_order)+1 FROM public.collection_products WHERE store_id=${storeId} AND collection_id=${id}),0)+x.ordinality::integer-1
+    FROM jsonb_array_elements_text(${tx.json(ids)}::jsonb) WITH ORDINALITY x(value,ordinality)
+    ON CONFLICT DO NOTHING`;
+}
 export async function deleteCollection(tx, storeId, id) {
   await requireCatalogue(tx);
   await tx`SELECT store_id FROM public.stores WHERE store_id=${storeId} FOR UPDATE`;

@@ -1,5 +1,8 @@
 # Stage 4: Ann conversation and whole-store preview
 
+This documents the planning stage. See `ANN_STAGE_5.md` for the subsequent
+explicit catalogue confirmation and draft-application flow.
+
 The chooser now offers the working guided planning interface when migration
 0016 is present. No additional database migration is required.
 `ANN_BUILDER_ENABLED=false` can explicitly disable access; otherwise Ann is

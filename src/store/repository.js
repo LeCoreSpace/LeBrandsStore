@@ -172,7 +172,7 @@ export async function saveSetup(tx, id, settings, progress) {
   }
   return loadDraft(tx, id);
 }
-export async function saveProduct(tx, id, productId, patch) {
+export async function saveProduct(tx, id, productId, patch, { returnDraft = true, preserveMediaAlt = false } = {}) {
   if (!productId && patch.gst_rate == null) {
     throw badInput("Choose a GST rate explicitly.", {gst_rate:"Choose a GST rate explicitly."});
   }
@@ -209,7 +209,7 @@ export async function saveProduct(tx, id, productId, patch) {
         AND id = ${image.id} AND upload_type = 'image' AND kind = 'image'
         AND COALESCE(to_jsonb(m)->>'approval_status','approved')='approved'`;
       if (!media) throw badInput("Choose product images uploaded to this store.");
-      await tx`UPDATE public.media SET alt_text = ${image.alt || p.title || "Product image"}
+      if (!preserveMediaAlt) await tx`UPDATE public.media SET alt_text = ${image.alt || p.title || "Product image"}
         WHERE store_id = ${id} AND id = ${image.id}`;
     }
     await tx`DELETE FROM public.product_media WHERE store_id = ${id} AND product_id = ${uuid}`;
@@ -219,7 +219,7 @@ export async function saveProduct(tx, id, productId, patch) {
   }
   if (patch.content) await saveProductContent(tx, id, uuid, patch.content);
   await invalidatePolicies(tx, id);
-  return { ...await loadDraft(tx, id), saved_product_id: uuid };
+  return { ...(returnDraft ? await loadDraft(tx, id) : {}), saved_product_id: uuid };
 }
 export async function deleteProduct(tx, id, productId) {
   const [product] = await tx`SELECT id FROM public.products WHERE store_id = ${id} AND id = ${productId}`;

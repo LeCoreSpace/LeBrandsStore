@@ -4,6 +4,7 @@ import { stylePreviewData, renderStylePreview } from "./style-preview.js";
 import { attachStyleInteractions } from "./style-preview-interactions.js";
 import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
 import { attachAuraMotion } from "./aura-motion.js";
+import { attachAnnApplication } from "./ann-application-ui.js";
 import { prefilledSection } from "./aura-starters.js";
 import { initialAnswers, diffAnswers, changeCategory, changeSubcategory, nextKey, planProblems, projectAnnPreview, currentExtras } from "./ann-projection.js";
 
@@ -39,7 +40,12 @@ const notes = [];
 const attrState = new Map(); let attrToken = 0;
 const clearedNote = boot.sessionResponse?.cleared_fields || [];
 
-const base = stylePreviewData({ store: boot.store, settings: boot.settings, products: boot.products, collections: boot.collections, layouts: boot.layouts, policies: boot.policies, reviews: boot.reviews, aura_skeleton_enabled: boot.aura_skeleton_enabled, aura_starter_enabled: boot.aura_starter_enabled });
+let base = stylePreviewData({ store: boot.store, settings: boot.settings, products: boot.products, collections: boot.collections, layouts: boot.layouts, policies: boot.policies, reviews: boot.reviews, aura_skeleton_enabled: boot.aura_skeleton_enabled, aura_starter_enabled: boot.aura_starter_enabled });
+const applicationUI = attachAnnApplication({ api, root, readOnly,
+  context: () => ({ answers, revision, dirty: isDirty() }),
+  beforePrepare: () => save("review"),
+  onApplied: result => { base = stylePreviewData(result.draft); productId = undefined; collectionId = undefined; renderPreview(false); },
+});
 const extrasNow = currentExtras(base.layouts);
 const bag = new Map((base.products || []).slice(0, 2).map(p => [p.id, 1]));
 const frame = $("#ann-preview"), canvas = $("#ann-canvas"), log = $("#ann-log"), foot = $("#ann-foot"), statusEl = $("#ann-status");
@@ -224,7 +230,8 @@ function reviewStep() {
     bubble(`<dl class="ann-summary">${rows.map(([k, n, v]) => `<div><dt>${n}</dt><dd>${esc(v)}</dd><button type="button" class="ann-link" data-go="${k}">Change</button></div>`).join("")}</dl>
       <p class="ann-note">${dirty ? "You have unsaved changes." : session ? `Saved, revision ${revision}.` : "Not saved yet."}</p>`, "ann-card") +
     bubble(`<h2>What is next</h2><p>Selling details, business details, policies, domain, payments and shipping are not finished by this plan. Ann has not completed them. Do them in your existing setup.</p>
-      <div class="ann-actions"><a class="ann-btn" href="${root}/setup">Continue setup</a><a class="ann-btn alt" href="${root}/editor">Open editor</a></div>`, "ann-card");
+      <div class="ann-actions"><a class="ann-btn" href="${root}/setup">Continue setup</a><a class="ann-btn alt" href="${root}/editor">Open editor</a></div>`, "ann-card") +
+    `<section class="ann-card" id="ann-application-slot"></section>`;
 }
 
 /* ---------- panel drawing ---------- */
@@ -244,7 +251,7 @@ function drawFoot() {
 function draw() {
   const [, , prompt] = UI_STEPS.find(s => s[0] === step) || [];
   log.innerHTML = `<h2 class="ann-title">${esc(prompt || "")}</h2>${notice ? `<p class="ann-callout" role="status">${esc(notice)}</p>` : ""}${notes.map(n => `<p class="ann-callout">${esc(n)}</p>`).join("")}${stepBody()}`;
-  drawSteps(); drawFoot();
+  drawSteps(); drawFoot(); applicationUI.mount();
 }
 function drawKeep() { // re-draw without losing the cursor in a focused field
   const y = log.scrollTop; draw(); log.scrollTop = y;
@@ -396,7 +403,7 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (isDirty() || saving)) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if (!readOnly && (isDirty() || saving || applicationUI.hasUnappliedChanges())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
 if ((window.innerWidth || 1280) < 700) { canvas.dataset.device = "mobile"; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.device === "mobile"))); }

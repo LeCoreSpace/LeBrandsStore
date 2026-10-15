@@ -107,20 +107,23 @@ export function projectAnnPreview(base, config = {}, { prefilled, attributes = [
   }
   const demo = data.style_demo === true;
   const cols = data.collections = data.collections || [], prods = data.products = data.products || [];
+  const applied = data.settings.ann_application || {};
   const byKey = new Map();
   (config.collections || []).forEach((c, i) => {
-    let target = demo ? cols[i] : null;
+    let target = cols.find(item => item.id === applied.collections?.[c.key]) || (demo ? cols[i] : null);
+    const linked = !demo && Boolean(target && applied.collections?.[c.key] === target.id);
     if (!target) {
       const seed = cols.length ? cols[i % cols.length] : null;
       target = { ...clone(seed), id: `ann-collection-${c.key}`, slug: c.key, product_ids: [] };
       cols.push(target);
     }
-    target.title = c.name; target.description = c.description || "";
+    if (!linked) { target.title = c.name; target.description = c.description || ""; }
     byKey.set(c.key, target);
   });
   const pool = prods.slice();
   (config.product_ideas || []).forEach((p, i) => {
-    let target = demo ? pool[i] : null;
+    let target = pool.find(item => item.id === applied.products?.[p.key]) || (demo ? pool[i] : null);
+    if (!demo && target && target.id === applied.products?.[p.key]) return;
     if (!target) {
       const seed = pool.length ? pool[i % pool.length] : null;
       if (!seed) return;

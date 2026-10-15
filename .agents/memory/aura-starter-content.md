@@ -82,3 +82,14 @@ silently importing another system's catalogue or altering real stock.
 **How to apply:** Keep planning answers separate from real products,
 verified business data, policies and publication. A saved Ann session or
 a completed interview step never proves that a store is ready to publish.
+
+Linking an existing catalogue item in Ann is not permission to synchronize
+its name, copy, photos, price or stock from an idea. Later theme changes must
+reuse confirmed bindings rather than silently creating replacement inventory.
+
+**Why:** The catalogue is authoritative. Reapplying a style or editing an Ann
+idea must not reset merchant work or checkout-adjusted inventory.
+
+**How to apply:** Keep product creation explicit, with confirmed selling
+details. Preserve existing records and collection members when binding a plan;
+use the ordinary catalogue editor for intentional changes to those records.
