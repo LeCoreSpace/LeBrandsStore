@@ -378,3 +378,87 @@ mtime_ms = 1792071951273
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/ad7cd368-1cdd-469d-a58b-a0ddb69cf960/c725df09-f8b6-430a-974a-b7e0dabaf743"
 storage_version_token = "1792071970059237"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "wPUuHPFZYHJI80PIyHLP_"
+uri = "file://generated-artifacts/aura-style-products/v01/aura-editorial-product-sheet-v01.jpg"
+type = "image"
+title = "Editorial · Five products"
+description = "Preview sheet: the existing hero at top left, followed by five newly generated product images. Original illustrative showcase photography; not installed in the store."
+logical_id = "1d521b1c-34c0-4c0c-bfec-7c612dcbdaa3"
+content_hash = "sha256:1c708450b842d8dea98b8fccf18e7400af0a32d4ffd42812f763617a66c30005"
+size = 230181
+mtime_ms = 1792073178037
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/1d521b1c-34c0-4c0c-bfec-7c612dcbdaa3/9685dcc7-f79d-41ed-b9f2-e0550fb9bfd9"
+storage_version_token = "1792073227130764"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "vkOvXnhjUt9wxOnlQ2OhH"
+uri = "file://generated-artifacts/aura-style-products/v01/aura-boutique-product-sheet-v01.jpg"
+type = "image"
+title = "Modern Boutique · Five products"
+description = "Preview sheet: the existing hero at top left, followed by five newly generated product images. Original illustrative showcase photography; not installed in the store."
+logical_id = "e2b40e08-6b40-4a8a-bf33-9004ceeb3d6f"
+content_hash = "sha256:ffdacaea09ce0ea0d5ce3950a5dd8bc8050e81594ad2bfcc3847c96f3093eb20"
+size = 154207
+mtime_ms = 1792073178497
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/e2b40e08-6b40-4a8a-bf33-9004ceeb3d6f/e85f556d-5b37-4a9b-bc8e-f68d2bbf1dfb"
+storage_version_token = "1792073228386078"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "0IVPu2sfR6rt9F8OMAKGh"
+uri = "file://generated-artifacts/aura-style-products/v01/aura-architectural-product-sheet-v01.jpg"
+type = "image"
+title = "Bold Architectural · Five products"
+description = "Preview sheet: the existing hero at top left, followed by five newly generated product images. Original illustrative showcase photography; not installed in the store."
+logical_id = "7b659edc-e3cd-4c19-898c-a0de555bb17d"
+content_hash = "sha256:943b692eabc697a3d4f356241682ddbb46762fde07abeffc74e6324e61728e25"
+size = 271361
+mtime_ms = 1792073179125
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/7b659edc-e3cd-4c19-898c-a0de555bb17d/47067375-ad59-48b6-a391-812a5d914696"
+storage_version_token = "1792073229577646"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "_yRfB74ZtrmPVKuLxr-77"
+uri = "file://generated-artifacts/aura-style-products/v01/aura-minimal-product-sheet-v01.jpg"
+type = "image"
+title = "Minimal · Five products"
+description = "Preview sheet: the existing hero at top left, followed by five newly generated product images. Original illustrative showcase photography; not installed in the store."
+logical_id = "77db30b4-ba61-423f-a65f-4fd49ea1a417"
+content_hash = "sha256:ff0a97af821836143d7f9bc128abed358c0bf628e2483496f4efaf446e4aac37"
+size = 166134
+mtime_ms = 1792073179593
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/77db30b4-ba61-423f-a65f-4fd49ea1a417/e443a445-ad19-440b-9649-15e0a97a89ef"
+storage_version_token = "1792073230882649"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "rWFV3J-ZHcKVhWeaNoHqh"
+uri = "file://generated-artifacts/aura-style-products/v01/aura-vintage-product-sheet-v01.jpg"
+type = "image"
+title = "Vintage · Five products"
+description = "Preview sheet: the existing hero at top left, followed by five newly generated product images. Original illustrative showcase photography; not installed in the store."
+logical_id = "d700d02e-0732-46b2-aa91-44bb873b2e77"
+content_hash = "sha256:efc53d444e7632deca735b470ebfed5a3abe5c610ae9b7576092872b8cc82e8f"
+size = 312278
+mtime_ms = 1792073180217
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/d700d02e-0732-46b2-aa91-44bb873b2e77/45e2e2b3-5702-4cfd-9493-65206a00191f"
+storage_version_token = "1792073232116294"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "_Hw2H3c6FjhhTczwi1s29"
+uri = "file://generated-artifacts/aura-style-products/aura-five-style-product-images-v01.zip"
+type = "unspecified"
+title = "Download all 25 product images"
+description = "25 original JPEG images, 25 optimized WebP files, five preview sheets, a catalogue manifest and notes. All product originals are 1024 × 1024. Verified ZIP, approximately 4.7 MB."
+logical_id = "b574b05d-9bc5-4b4d-af59-bd2cca0553bd"
+content_hash = "sha256:6edc218c31b90616b0e4735b1142da0556b994ba38328da934d15c00e47e938f"
+size = 4670189
+mtime_ms = 1792073216853
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/b574b05d-9bc5-4b4d-af59-bd2cca0553bd/67877ef8-ce6c-4ecb-876f-2081579c5637"
+storage_version_token = "1792073233481336"
+content_type = "application/octet-stream"
