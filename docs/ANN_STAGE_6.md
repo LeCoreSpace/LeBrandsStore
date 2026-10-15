@@ -10,6 +10,9 @@ collection/product notes are optional, and the detailed editors remain available
 for advanced fields. Typed, unsent messages are retained while switching prompts
 and protected by the unload warning. Stage boundaries use the existing
 revision-checked plan save, including its conflict recovery.
+Question transitions do not wait for that network request. Failed saves pause
+background retries and display an explicit unsaved warning with Retry save;
+they never imply that changes are persisted or ready to apply.
 
 The progress meter counts populated design areas from actual answer data, not
 simply visiting later stages. It is not a launch-readiness or publication score.
@@ -23,6 +26,10 @@ catalogue, and confirmed application/readiness saves switch to that view. The
 choice is remembered for the browser session; choosing another style returns
 to the showcase. Neither preview mode imports sample inventory, replaces saved
 images or publishes a store.
+The shared photographs can remain menswear placeholders, but selected category
+and subcategory change section, sample product and collection text immediately.
+Inherited registration copy does not replace this niche-specific starter copy.
+Explicitly written Ann copy and the actual merchant catalogue remain protected.
 
 ## Product completion in Ann
 

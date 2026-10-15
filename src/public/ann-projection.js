@@ -1,5 +1,6 @@
 // Pure helpers for Ann. Nothing here touches the network, the DOM or stored data.
 import { ANN_EXTRA_SECTIONS } from "./ann-config.js";
+import { applyAnnCategoryCopy } from "./ann-category-copy.js";
 import { styleDemonstration } from "./style-demo-copy.js";
 import { starterLayouts } from "./aura-skeleton.js";
 import { categoryRecord } from "./aura-taxonomy.js";
@@ -114,16 +115,20 @@ export function planProblems(answers = {}) {
 export function projectAnnPreview(base, config = {}, { prefilled, attributes = [] } = {}) {
   const data = styleDemonstration(structuredClone(base), config.theme?.style_preset);
   if (data.style_demo) data.ann_style_copy_applied = config.theme?.style_preset;
+  applyAnnCategoryCopy(data, config);
   const brand = config.brand || {};
   data.settings = { ...(data.settings || {}), ...(config.theme || {}) };
   if (brand.store_name) { data.settings.brand_name = brand.store_name; data.store = { ...(data.store || {}), name: brand.store_name }; }
-  if (brand.tagline !== undefined) data.settings.tagline = brand.tagline;
-  if (brand.description !== undefined) data.settings.description = brand.description;
+  const inherited = initialAnswers(base.settings || {});
+  const useTagline = brand.tagline !== undefined && (!data.style_demo || brand.tagline !== inherited.tagline);
+  const useDescription = brand.description !== undefined && (!data.style_demo || brand.description !== inherited.description);
+  if (useTagline) data.settings.tagline = brand.tagline;
+  if (useDescription) data.settings.description = brand.description;
   for (const section of data.layouts?.home || []) {
     if (section.type !== "hero") continue;
     section.settings ||= {};
-    if (brand.tagline) section.settings.title = brand.tagline;
-    if (brand.description !== undefined) section.settings.description = brand.description;
+    if (useTagline && brand.tagline) section.settings.title = brand.tagline;
+    if (useDescription) section.settings.description = brand.description;
   }
   const demo = data.style_demo === true;
   const cols = data.collections = data.collections || [], prods = data.products = data.products || [];
@@ -182,6 +187,14 @@ export function projectAnnPreview(base, config = {}, { prefilled, attributes = [
       } else unavailable.push(`${page}:${type}`);
     }
     data.layouts[page] = next;
+  }
+  // Added sections receive the selected niche's starter copy too.
+  if (data.ann_category_copy_applied) {
+    const brandHome = (data.layouts.home || []).filter(s => s.type === "hero").map(s => structuredClone(s.settings));
+    applyAnnCategoryCopy(data, config, { sectionsOnly: true });
+    (data.layouts.home || []).filter(s => s.type === "hero").forEach((s, i) => { s.settings = brandHome[i]; });
+    if (useTagline) data.settings.tagline = brand.tagline;
+    if (useDescription) data.settings.description = brand.description;
   }
   return { data, unavailable };
 }

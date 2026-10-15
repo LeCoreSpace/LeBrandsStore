@@ -72,6 +72,16 @@ place an order, take payment or add demonstration inventory to a store.
 Keep the fashion showcase distinct from the actual merchant catalogue rather
 than silently substituting existing inventory during style comparison.
 
+Shared demonstration images do not mean shared text: category and subcategory
+choices must immediately change the preview copy, including Skincare.
+
+**Why:** The user accepted reused sample images but explicitly rejected the
+unchanged clothing text after selecting Skincare.
+
+**How to apply:** Keep media visibly labelled as placeholders; tailor section and
+sample catalogue copy to the selection without overwriting merchant-authored text
+or inventing product efficacy, ingredient, certification or policy claims.
+
 Ann must have an actual chat window, interactive conversation and progressing
 visual, not merely a multi-step form with input buttons.
 

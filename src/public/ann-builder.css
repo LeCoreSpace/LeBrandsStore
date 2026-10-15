@@ -109,6 +109,14 @@
 .ann-sec-row{display:grid;gap:4px;font-size:12px;font-weight:700}
 .ann-input{display:flex;gap:8px;align-items:flex-end}
 .ann-input textarea{flex:1;min-width:0;resize:none;border:1px solid var(--ink);background:#fff;color:var(--ink);padding:10px 12px;font:400 14px/1.4 var(--sans);max-height:140px}
+.ann-chips{max-height:24dvh;overflow-y:auto}
+.ann-msg{animation:none}.ann-msg.is-active{animation:annIn .2s ease both}
+.ann-log{min-height:160px}
+.ann-foot{display:flex;flex-direction:column;flex:0 1 auto;min-height:0;max-height:56%}
+#ann-composer{min-height:0;overflow-y:auto}
+#ann-savebar{flex:none}
+.ann-comp>.ann-form{padding:8px 0 0;border:0;max-height:none;overflow:visible}
+.ann-comp .ann-chips{max-height:96px}
 .ann-send{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--a);background:var(--a);color:#fff;font:700 13px var(--sans);padding:0 16px;min-height:42px;cursor:pointer;transition:transform .15s}
 .ann-send:active:not(:disabled){transform:scale(.96)}.ann-send:disabled{opacity:.45;cursor:not-allowed}
 .ann-comp-row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}

@@ -73,6 +73,10 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
     if ([400,409,503].includes(error.status)) return json({ error: error.message,
       ...(action==="readiness" && error.errors ? {errors:error.errors}:{}),
     }, error.status);
+    // Identifiers/codes only: never log SQL, answer text, tokens or connection details.
+    const identifier = value => typeof value === "string" && /^[a-zA-Z0-9_]{1,64}$/.test(value) ? value : undefined;
+    console.error("Ann request failed", { action, code: identifier(error.code), type: identifier(error.name),
+      table: identifier(error.table_name), column: identifier(error.column_name) });
     return json({ error: "Ann progress is temporarily unavailable. Your existing store is unchanged." }, 503);
   }
 }

@@ -38,6 +38,7 @@ let step = UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_
 let touched = false, saving = false, conflict = false, notice = "", page = "home", productId, collectionId, policyKind;
 let queue = Promise.resolve(), lastSavedAt = session ? "Saved plan restored." : "";
 const notes = [];
+let autosavePaused = false, saveProblem = "", logMarkup = "";
 const attrState = new Map(); let attrToken = 0;
 const clearedNote = boot.sessionResponse?.cleared_fields || [];
 
@@ -71,7 +72,7 @@ const sections = () => answers.section_options || {};
 const shown = p => sections()[p] ?? extrasNow[p] ?? [];
 
 /* ---------- preview ---------- */
-let current = null, displayedKey = "", timer = 0;
+let current = null, displayedKey = "", timer = 0, frameMarkup = "", frameLoading = false;
 const scrolls = new Map();
 const posKey = () => JSON.stringify([previewMode, config().theme.style_preset, page, productId || "", collectionId || "", canvas.dataset.device]);
 function setPreviewMode(mode, source) {
@@ -92,6 +93,7 @@ function rememberScroll() {
   if (displayedKey && d) scrolls.set(displayedKey, d.scrollingElement?.scrollTop ?? 0);
 }
 function renderPreview(remember = true) {
+  clearTimeout(timer);
   if (remember) rememberScroll();
   const cfg = config();
   const projected = projectAnnPreview(base, cfg, { prefilled: prefilledSection, attributes: attrState.get(answers.subcategory_id)?.attrs || [] });
@@ -99,8 +101,11 @@ function renderPreview(remember = true) {
   if (!productId || !current.products.some(p => p.id === productId)) productId = current.products[0]?.id;
   displayedKey = posKey();
   frame.title = `${previewMode === "showcase" ? "Fashion showcase" : "Your store"}, ${styleName(cfg.theme.style_preset)}, ${canvas.dataset.device} preview`;
-  frame.srcdoc = renderStylePreview(current, cfg.theme, { page, productId, collectionId, policyKind });
-  $("#ann-preview-note").textContent = (previewMode === "showcase" ? "Fashion showcase uses the same sample menswear images across all five styles, with illustrative prices. Select Your store to see your existing catalogue. " : base.style_demo ? "No real products yet. Sample menswear images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
+  const html = renderStylePreview(current, cfg.theme, { page, productId, collectionId, policyKind });
+  if (html !== frameMarkup) { frameMarkup = html; frameLoading = true; frame.srcdoc = html; }
+  else if (!frameLoading) previewLoaded();
+  const niche = subName(answers.subcategory_id) || catName(answers.category_id);
+  $("#ann-preview-note").textContent = (previewMode === "showcase" ? `Sample menswear photos are placeholders${niche ? ` for this ${niche} preview` : ""}; section and sample catalogue text follows your selected category and style. Prices are illustrative. Select Your store to see your existing catalogue. ` : base.style_demo ? "No real products yet. Sample menswear images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
     "Preview controls never create products, orders or publications. Use the confirmed actions in Review to save real draft changes." +
     (projected.unavailable.length ? ` Some optional sections cannot be previewed here: ${projected.unavailable.map(u => label(u.split(":")[1])).join(", ")}.` : "");
   paintStage();
@@ -120,6 +125,7 @@ function fit() {
 }
 frame.addEventListener("load", () => {
   const doc = frame.contentDocument; if (!doc) return;
+  frameLoading = false;
   previewLoaded();
   doc.addEventListener("submit", e => e.preventDefault(), true);
   doc.addEventListener("click", e => {
@@ -300,7 +306,9 @@ function drawComposer(force) {
     html = `<div class="ann-comp" role="group" aria-labelledby="ann-cq"><p class="ann-cq" id="ann-cq">${esc(d.label)}: choose one to answer</p>
       <div class="ann-chips${d.stack ? " stack" : ""}">${d.opts.map(o => `<button type="button" class="ann-chip" data-pick="${esc(o.v)}" aria-pressed="${String(o.v).toLowerCase() === d.cur}"${o.c || d.kind === "accent" ? ` style="--c:${esc(o.c || o.v)}"` : ""}${dis}>${o.c || d.kind === "accent" ? `<i class="ann-sw" aria-hidden="true"></i>` : ""}<strong>${esc(o.t)}</strong>${o.sub ? `<span>${esc(o.sub)}</span>` : ""}</button>`).join("")}
       ${d.kind === "accent" ? `<label class="ann-chip ann-color"><strong>Custom</strong><input type="color" data-accent-input value="${esc(d.color)}" aria-label="Custom accent colour"${dis}></label>` : ""}</div>
+      <form data-composer class="ann-form"><label class="ann-cq" for="ann-input">Or type your choice</label><div class="ann-input"><textarea id="ann-input" data-composer-input rows="1" maxlength="120" placeholder="Type a choice above, then press Enter"${dis}>${esc(composerDrafts.get(key) || "")}</textarea><button type="submit" class="ann-send"${dis}>Send</button></div></form>
       <div class="ann-comp-row">${d.reply || readOnly ? `<button type="button" class="ann-btn alt" data-continue>${readOnly ? "Continue" : `Keep ${esc(d.reply)} and continue`}</button>` : ""}${d.kind === "choice" && !d.opts.length ? `<p class="ann-note">Nothing to choose here yet.</p>` : ""}</div></div>`;
+    composerOriginals.set(key, "");
   } else if (d.kind === "sections") {
     html = `<div class="ann-comp" role="group" aria-labelledby="ann-cq"><p class="ann-cq" id="ann-cq">Optional sections</p>
       ${Object.entries(ANN_EXTRA_SECTIONS).map(([pg, l]) => `<div class="ann-sec-row"><span>${label(pg)} page</span><div class="ann-chips">${l.map(s => `<button type="button" class="ann-chip sm" data-toggle-section="${pg}:${s}" aria-pressed="${shown(pg).includes(s)}"${dis}><strong>${esc(label(s))}</strong></button>`).join("")}</div></div>`).join("")}
@@ -349,9 +357,10 @@ function drawFoot() {
   const sb = $("#ann-savebar"); if (!sb) return;
   const i = curIdx(), dirty = isDirty();
   sb.innerHTML = `${readOnly ? `<p class="ann-callout">You can look around, but only an owner or admin can save this plan.</p>` : ""}
+    ${saveProblem ? `<p class="ann-callout" role="alert">${esc(saveProblem)} You can keep previewing. Your changes are not saved yet; use Retry save.</p>` : ""}
     ${conflict ? `<div class="ann-conflict" role="alert"><p>Another tab or person saved a newer plan. Your edits are still here and nothing was overwritten.</p><div class="ann-actions"><button type="button" class="ann-btn alt" data-reload>Load the saved plan</button><button type="button" class="ann-btn" data-overwrite>Keep my edits and save over it</button></div></div>` : ""}
     <div class="ann-savebar-row"><button type="button" class="ann-btn alt sm" data-back ${i === 0 ? "disabled" : ""}>Back</button>
-    <button type="button" class="ann-btn alt sm" data-save ${readOnly || saving || !dirty || conflict ? "disabled" : ""}>${saving ? "Saving" : "Save plan"}</button>
+    <button type="button" class="ann-btn alt sm" data-save ${readOnly || saving || (!dirty && !saveProblem) || conflict ? "disabled" : ""}>${saving ? "Saving" : saveProblem ? "Retry save" : "Save plan"}</button>
     <span class="ann-note">${dirty ? "Unsaved changes. The preview already shows them." : esc(lastSavedAt)}</span></div>`;
 }
 function scrollActive() {
@@ -364,7 +373,8 @@ function scrollActive() {
 function draw(mode = "keep") {
   curIdx();
   const y = log.scrollTop;
-  log.innerHTML = timeline() + (detail && DETAIL_STEPS.includes(step) ? detailHtml() : "");
+  const markup = timeline() + (detail && DETAIL_STEPS.includes(step) ? detailHtml() : "");
+  if (markup !== logMarkup) { log.innerHTML = markup; logMarkup = markup; }
   drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount();
   if (mode === "active") scrollActive(); else log.scrollTop = y;
 }
@@ -375,7 +385,7 @@ async function toPrompt(id) {
   let ti = ps.findIndex(p => p.id === id); if (ti < 0) return;
   navigating = true;
   try {
-    if (ti > ci && ps[ti].step !== step && !readOnly && !(await save(ps[ti].step))) return;
+    const saveAfterTransition = ti > ci && ps[ti].step !== step && !readOnly && !conflict && !autosavePaused;
     ps = prompts(); ti = ps.findIndex(p => p.id === id); if (ti < 0) return;
     if (ps[ti].step !== step) notice = "";
     promptId = id; step = ps[ti].step; editing = null; detail = false; page = STEP_PAGE[step] || page; collectionId = undefined;
@@ -384,6 +394,9 @@ async function toPrompt(id) {
     if (step === "products" && answers.subcategory_id) loadAttrs(answers.subcategory_id);
     draw("active"); renderPreview(); app.dataset.view = "chat"; syncSwitch();
     const d = def(ps[ti]); say(d.q ? `Ann asks: ${d.q}` : "Review your plan.");
+    // Conversation and preview never wait for the network. Saving remains
+    // revision-checked; failures stay visibly unsaved and publication is blocked.
+    if (saveAfterTransition) void save(step, undefined, { automatic: true });
   } finally { navigating = false; }
 }
 function go(next) { const p = prompts().find(x => x.step === next); if (p) return toPrompt(p.id); }
@@ -419,6 +432,14 @@ function submitComposer(raw) {
     editing = null; focusComposer = true; draw("active"); drawComposer(true); return;
   }
   if (!v) return say("Type an answer first, or use the skip button.");
+  if (["choice", "accent"].includes(d.kind)) {
+    const normalize = s => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const q = normalize(v), exact = d.opts.filter(o => normalize(o.t) === q || normalize(o.v) === q);
+    const matches = exact.length ? exact : q.length >= 3 ? d.opts.filter(o => normalize(o.t).startsWith(q)) : [];
+    if (matches.length !== 1) return say("Choose one of the options above, or type its name. No changes were made.");
+    composerDrafts.delete(composerKey);
+    notice = ""; edit(() => d.pick(matches[0].v)); feed(p.id, `${d.label}: ${matches[0].t}`); return void advance();
+  }
   if (d.kind === "text") { composerDrafts.delete(composerKey); edit(() => { answers[d.key] = v.slice(0, d.max); }); feed(p.id, `${d.label} sent to your plan`); return void advance(); }
   if (d.full) return say(d.list === "col" ? "Ten collections is the limit." : "Five ideas is the limit for one collection.");
   composerDrafts.delete(composerKey);
@@ -505,7 +526,7 @@ document.addEventListener("click", e => {
   if ("cancelEdit" in d) { composerDrafts.delete(composerKey); editing = null; focusComposer = true; draw("active"); return drawComposer(true); }
   if (d.editPrompt) { editing = null; return void toPrompt(d.editPrompt); }
   if ("toggleDetail" in d) { detail = !detail; draw("keep"); drawComposer(true); if (detail) log.scrollTo({ top: log.scrollHeight, behavior: reduce() ? "auto" : "smooth" }); return; }
-  if ("save" in d) return void save(step);
+  if ("save" in d) { autosavePaused = false; return void save(step); }
   if ("reload" in d) return void reloadLatest(false);
   if ("overwrite" in d) return void reloadLatest(true);
   if ("retryAttrs" in d) { attrState.delete(answers.subcategory_id); return void drawKeep(); }
@@ -603,8 +624,9 @@ async function send(patch, nextStep, expected) {
   const body = await res.json().catch(() => ({}));
   return { res, body };
 }
-function save(nextStep = step, forceRevision) {
-  const run = queue.then(() => doSave(nextStep, forceRevision), () => doSave(nextStep, forceRevision));
+function save(nextStep = step, forceRevision, { automatic = false } = {}) {
+  const attempt = () => automatic && (autosavePaused || conflict) ? false : doSave(nextStep, forceRevision);
+  const run = queue.then(attempt, attempt);
   queue = run.catch(() => false);
   return run;
 }
@@ -629,10 +651,10 @@ async function doSave(nextStep, forceRevision) {
     }
     const cleared = body.cleared_fields || [];
     notice = cleared.length ? "Some choices no longer matched and were cleared: " + cleared.map(c => c === "subcategory_id" ? "subcategory" : "product details").join(", ") + "." : "";
-    conflict = false; touched = Object.keys(dirtyPatch()).length > 0;
+    conflict = false; autosavePaused = false; saveProblem = ""; touched = Object.keys(dirtyPatch()).length > 0;
     lastSavedAt = `Saved, revision ${revision}.`; say("Plan saved. Your live store is unchanged.");
     return true;
-  } catch (e) { say(e.message || "Your plan could not be saved. Check your connection and try again."); notice = e.message || ""; return false; }
+  } catch (e) { saveProblem = e.message || "Your plan could not be saved. Check your connection and try again."; autosavePaused = true; say(saveProblem); return false; }
   finally { saving = false; draw(); renderPreview(false); }
 }
 async function reloadLatest(keepEdits) {

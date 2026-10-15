@@ -14,7 +14,7 @@
     "db:seed": "node db/seed.js",
     "db:test-isolation": "node db/test-isolation.js",
     "db:admin-reset-password": "node db/admin-reset-password.js",
-    "test:offline": "node --experimental-test-module-mocks --test tests/*.test.js"
+    "test:offline": "node --experimental-test-module-mocks --test --test-concurrency=2 tests/*.test.js"
   },
   "private": true,
   "dependencies": {
