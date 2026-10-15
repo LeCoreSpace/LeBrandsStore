@@ -204,3 +204,17 @@ break its existing workflow.
 **How to apply:** Gate new Ann media entry points under Ann's owner/admin
 authorization before delegation. Do not weaken tenant, media approval,
 upload validation or orphan cleanup in the shared handler.
+
+Additional Ann styles should prioritize the ad-to-product-page-to-checkout
+journey, with optional bundle cross-selling, rather than treating a strong
+homepage as sufficient. The user wants research-informed contemporary designs
+that Gen Z, millennials and Gen Alpha find appealing and trustworthy.
+
+**Why:** The user described direct product-page traffic from advertisements
+as the shopping pattern they want the new designs to support.
+
+**How to apply:** Design and evaluate mobile product pages first. Separate
+usability evidence from visual inspiration or unverified conversion claims.
+Do not assume an entire generation shares one aesthetic. Keep subcategory
+imagery independent of style, and use only genuine product facts and trust
+evidence in publishable stores.
