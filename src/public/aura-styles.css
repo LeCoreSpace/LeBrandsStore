@@ -102,3 +102,25 @@ body[data-style] .commerce-preview-thumb{width:72px;aspect-ratio:3/4;object-fit:
 body[data-style] .commerce-line label{display:flex;gap:8px;align-items:center}
 body[data-style] .commerce-line input{width:64px;min-height:38px;background:var(--paper);color:var(--ink);border:1px solid var(--line)}
 @media(max-width:640px){body[data-style] .commerce-line{grid-template-columns:56px minmax(0,1fr);gap:12px}body[data-style] .commerce-line>strong{grid-column:2}body[data-style] .commerce-preview-thumb{width:56px}}
+
+/* Social Pop, Creator Feed, Proof & Detail: shared Aura pages, cart and checkout */
+body[data-style=social-pop],body[data-style=creator-feed],body[data-style=proof-detail]{--st-accent:var(--accent)}
+body[data-style=social-pop] .au-btn,body[data-style=social-pop] .commerce-button,body[data-style=social-pop] .au-bag,body[data-style=social-pop] .au-chip{border-radius:999px;font-weight:800}
+body[data-style=social-pop] .au-btn,body[data-style=social-pop] .commerce-button{background:var(--st-accent);color:#fff;border:2px solid var(--ink);box-shadow:3px 3px 0 var(--ink)}
+body[data-style=social-pop] .au-btn:hover,body[data-style=social-pop] .commerce-button:hover{transform:translate(-1px,-2px)}
+body[data-style=social-pop] .au-card,body[data-style=social-pop] .commerce-panel,body[data-style=social-pop] .commerce-summary,body[data-style=social-pop] .receipt-card{border:2px solid var(--ink);border-radius:1.4rem;background:var(--paper);box-shadow:4px 4px 0 var(--ink)}
+body[data-style=social-pop] .au-header{border-bottom:2px solid var(--ink)}
+body[data-style=social-pop] h1,body[data-style=social-pop] h2,body[data-style=social-pop] .commerce-heading h1{font-weight:800;letter-spacing:-.035em;line-height:1}
+body[data-style=social-pop] .au-chip[aria-pressed=true]{background:var(--ink);color:#fff}
+body[data-style=creator-feed] .au-btn,body[data-style=creator-feed] .commerce-button,body[data-style=creator-feed] .au-chip{border-radius:999px;font-weight:700}
+body[data-style=creator-feed] .au-btn,body[data-style=creator-feed] .commerce-button{background:var(--st-accent);color:#fff}
+body[data-style=creator-feed] .au-card-media{aspect-ratio:4/5;border-radius:1.2rem}
+body[data-style=creator-feed] .commerce-panel,body[data-style=creator-feed] .commerce-summary,body[data-style=creator-feed] .receipt-card{border-radius:1.4rem;background:var(--paper);border:1px solid var(--line,#ddd)}
+body[data-style=creator-feed] h1,body[data-style=creator-feed] h2{font-weight:700;letter-spacing:-.02em}
+body[data-style=proof-detail] .au-btn,body[data-style=proof-detail] .commerce-button,body[data-style=proof-detail] .au-chip{border-radius:.5rem;font-weight:600}
+body[data-style=proof-detail] .au-btn,body[data-style=proof-detail] .commerce-button{background:var(--st-accent);color:#fff}
+body[data-style=proof-detail] .au-card,body[data-style=proof-detail] .commerce-panel,body[data-style=proof-detail] .commerce-summary,body[data-style=proof-detail] .receipt-card{border:1px solid var(--line,#cdd7e0);border-radius:.8rem;background:#fff}
+body[data-style=proof-detail] .commerce-total-row{border-top:1px solid var(--line,#cdd7e0)}
+body[data-style=proof-detail] h1,body[data-style=proof-detail] h2{font-weight:600;letter-spacing:-.015em}
+body[data-style=social-pop] .commerce-field input,body[data-style=creator-feed] .commerce-field input,body[data-style=proof-detail] .commerce-field input{min-height:44px}
+body[data-style=social-pop] .commerce-button:focus-visible,body[data-style=creator-feed] .commerce-button:focus-visible,body[data-style=proof-detail] .commerce-button:focus-visible{outline:3px solid var(--st-accent);outline-offset:3px}

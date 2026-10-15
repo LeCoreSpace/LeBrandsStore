@@ -1,3 +1,4 @@
+import { STYLE_IDS } from "./aura-styles.js";
 // Shared, bounded document model. No HTML, scripts or arbitrary media URLs.
 export const DESIGN_COPY_LIMITS = Object.freeze({
   kicker: 160, title: 240, description: 2000, button: 80,
@@ -6,7 +7,7 @@ export const DESIGN_COPY_LIMITS = Object.freeze({
 });
 export const DESIGN_MEDIA_KEYS = Object.freeze(["hero", "lifestyle", "collection0", "collection1"]);
 export function isAnnDesign(value) {
-  return value?.version === 1 && ["editorial", "boutique", "architectural", "minimal", "vintage"].includes(value.style) &&
+  return value?.version === 1 && STYLE_IDS.includes(value.style) &&
     value.copy !== null && typeof value.copy === "object" && !Array.isArray(value.copy) &&
     value.media !== null && typeof value.media === "object" && !Array.isArray(value.media);
 }

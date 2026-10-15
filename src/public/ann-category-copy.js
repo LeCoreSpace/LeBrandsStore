@@ -34,21 +34,50 @@ export function annCategoryContext(config = {}) {
 export function applyAnnCategoryCopy(data, config = {}, { sectionsOnly = false } = {}) {
   const ctx = annCategoryContext(config);
   if (!ctx || !data.style_demo) return null;
-  // Preserve the complete original menswear pack for its matching selection.
-  if (ctx.category.id === 1 && (!ctx.subcategory || ctx.subcategory.slug === "mens-clothing")) return ctx;
-  const topic = ctx.topic, lower = topic.toLowerCase(), skin = ctx.subcategory?.slug === "skincare";
   const style = config.theme?.style_preset || "editorial";
+  const contemporary = ["social-pop", "creator-feed", "proof-detail"].includes(style);
+  // Preserve established menswear copy in the original five designs.
+  if (!contemporary && ctx.category.id === 1 && (!ctx.subcategory || ctx.subcategory.slug === "mens-clothing")) return ctx;
+  const topic = ctx.topic, lower = topic.toLowerCase(), skin = ctx.subcategory?.slug === "skincare";
   const titles = skin ? {
     editorial: "Everyday rituals. Thoughtfully chosen.", boutique: "Make room for a little care.",
     architectural: "Build your daily ritual.", minimal: "Skincare. Simply considered.", vintage: "A little care. Every day.",
+    "social-pop": "Your routine. A little more you.",
+    "creator-feed": "Skincare, in your everyday.",
+    "proof-detail": "Skincare. Know what you choose.",
   } : {
     editorial: `${topic}, thoughtfully chosen.`, boutique: `Find your kind of ${lower}.`,
     architectural: `${topic}. Your point of view.`, minimal: `${topic}. Simply considered.`,
     vintage: `A fresh perspective on ${lower}.`,
+    "social-pop": `${topic}. Good finds, your way.`,
+    "creator-feed": `See ${lower} in your day.`,
+    "proof-detail": `${topic}. Know the details.`,
   };
-  const description = skin
+  const introduction = skin
     ? "Explore cleansers, moisturisers and serums, and find the starting point for your own daily skincare ritual."
     : `Explore a considered selection of ${lower}. Discover everyday favourites, compare the details and find what works for you.`;
+  const voice = {
+    "social-pop": {
+      kicker: `Fresh perspective. Same you.`,
+      description: skin ? "Your skincare shelf, your call. Explore cleansers, moisturisers and serums, then find the steps that fit your day." : `Meet your next ${lower} favourites. Take a closer look, find your kind of thing and make it yours.`,
+      button: "Find your favourites", products: "Your next good find", collections: "Find your kind of thing", about: `Your kind of ${lower}.`,
+      statement: `Your day. Your taste. Your kind of ${lower}.`,
+    },
+    "creator-feed": {
+      kicker: "Less scrolling. More finding.",
+      description: skin ? "A closer look at everyday skincare. Browse the products, explore the details and picture your own routine." : `A closer look at ${lower}, from the little details to the bigger picture. See what fits your everyday.`,
+      button: "Take a closer look", products: "Seen something you like?", collections: "Explore the stories", about: `A closer look at ${lower}.`,
+      statement: `A little inspiration for the way you use, wear or enjoy ${lower}.`,
+    },
+    "proof-detail": {
+      kicker: "The details make the difference.",
+      description: skin ? "Explore the skincare range. Review each product's ingredients, directions and verified details before choosing." : `Explore ${lower} with the information that matters. Compare product details, check the specifications and choose what suits your needs.`,
+      button: "Explore the details", products: "Compare the details", collections: "A clear view of the range", about: `${topic}, clearly explained.`,
+      statement: `A clearer way to explore ${lower}.`,
+    },
+  }[style];
+  const description = voice?.description || introduction;
+  if (voice) data.showcase_voice = { products: voice.products, collections: voice.collections, about: voice.about };
   const groups = skin ? ["Cleanse & prepare", "Daily skincare", "Evening rituals"] : RANGES[ctx.category.id] || ["Everyday favourites", "Explore the range", "New discoveries"];
   data.ann_category_copy_applied = true;
   data.showcase_topic = topic;
@@ -76,12 +105,12 @@ export function applyAnnCategoryCopy(data, config = {}, { sectionsOnly = false }
   for (const layout of Object.values(data.layouts || {})) for (const section of layout) {
     const s = section.settings ||= {};
     switch (section.type) {
-      case "hero": Object.assign(s, { kicker: `The ${topic} edit`, title: titles[style] || titles.editorial, description, button_label: `Explore ${lower}` }); break;
-      case "statement": s.text = `Make room for ${lower} that fits your everyday.`; break;
+      case "hero": Object.assign(s, { kicker: voice?.kicker || `The ${topic} edit`, title: titles[style] || titles.editorial, description, button_label: voice?.button || `Explore ${lower}` }); break;
+      case "statement": s.text = voice?.statement || `Make room for ${lower} that fits your everyday.`; break;
       case "announcement": s.text = `Explore the ${lower} collection`; break;
       case "featured-collection":
-      case "featured-collections": s.title = `Explore ${lower}`; break;
-      case "featured-products": s.title = skin ? "Your skincare starting points" : `The ${lower} edit`; break;
+      case "featured-collections": s.title = voice?.collections || `Explore ${lower}`; break;
+      case "featured-products": s.title = voice?.products || (skin ? "Your skincare starting points" : `The ${lower} edit`); break;
       case "spotlight": s.kicker = `Discover ${lower}`; break;
       case "lookbook":
         Object.assign(s, { kicker: "Find your inspiration", title: skin ? "Build your own ritual" : `Everyday ${lower}` });

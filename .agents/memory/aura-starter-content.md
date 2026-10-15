@@ -218,3 +218,15 @@ usability evidence from visual inspiration or unverified conversion claims.
 Do not assume an entire generation shares one aesthetic. Keep subcategory
 imagery independent of style, and use only genuine product facts and trust
 evidence in publishable stores.
+
+The user requested complete additional store designs, not only product-page
+skins, with a natural writing voice appropriate to each design's audience.
+
+**Why:** When approving all three product-first directions, the user explicitly
+asked for an "entire design" and audience-targeted language.
+
+**How to apply:** Carry each style's structural and language choices through
+home, collection, product, about, contact and purchase flow framing. Adapt
+category copy as well as the hero, preserve product facts and merchant-written
+content, and avoid substituting forced slang or generational stereotypes for
+clear useful information.

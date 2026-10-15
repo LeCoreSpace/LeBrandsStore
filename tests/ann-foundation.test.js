@@ -10,6 +10,7 @@ import { validateAnnSave, mergeAnnAnswers, validateAnnAnswers } from "../src/sto
 import { annPreviewConfiguration } from "../src/public/ann-config.js";
 import { handleAnnRoutes } from "../src/store/ann-routes.js";
 import { ANN_WORKFLOW_READY } from "../src/store/builder-routes.js";
+import { STYLE_IDS } from "../src/public/aura-styles.js";
 const store = "11111111-1111-4111-8111-111111111111", other = "22222222-2222-4222-8222-222222222222";
 const owner = "33333333-3333-4333-8333-333333333333", staff = "44444444-4444-4444-8444-444444444444";
 const token = "a".repeat(64), staffToken = "b".repeat(64);
@@ -111,7 +112,7 @@ test("authenticated session API creates, resumes and edits planning progress wit
   assert.equal(response.status,409);assert.equal(db.state.writes,2);
   assert.ok(db.state.queries.every(sql=>!/\b(?:INSERT|UPDATE|DELETE)\b/.test(sql)));
   const ref=await handleAnnRoutes(request("GET",null,undefined,"reference"),{},db,user,token);
-  assert.equal((await ref.json()).styles.length,5);
+  assert.deepEqual((await ref.json()).styles.map(style => style.id), STYLE_IDS);
 });
 test("API rejects anonymous/staff/foreign-origin writes and fails explicitly before migration", async () => {
   const body={expected_revision:0,current_step:"style",answers:{style_preset:"minimal"}};

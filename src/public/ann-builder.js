@@ -37,7 +37,7 @@ let saved = structuredClone(session?.answers || {});
 let answers = structuredClone(saved);
 if (!session) answers = { ...initialAnswers(boot.settings, boot.store, ref || {}), ...answers };
 let step = UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "category";
-let touched = false, saving = false, conflict = false, notice = "", page = "home", productId, collectionId, policyKind;
+let touched = false, saving = false, conflict = false, notice = "", page = "product", productId, collectionId, policyKind;
 let queue = Promise.resolve(), lastSavedAt = session ? "Saved plan restored." : "";
 const notes = [];
 let autosavePaused = false, saveProblem = "", logMarkup = "";
@@ -69,7 +69,7 @@ designUI = attachAnnDesign({ api, root, readOnly, mount: canvas, say,
   getStyle: () => config().theme.style_preset,
   applyPlan: plan => { answers = structuredClone(plan); },
   onDraft: draft => { previewSource = draft; },
-  onActivated: () => { saved = structuredClone(answers); touched = false; autosavePaused = false; saveProblem = ""; conflict = false; setPreviewMode("store", previewSource); page = "home"; draw("keep"); renderPreview(false); say(readOnly ? "Viewing the saved design. Only an owner or admin can edit it." : "Your design is saved to draft. You can edit its text and photos. Your live site is unchanged."); },
+  onActivated: () => { saved = structuredClone(answers); touched = false; autosavePaused = false; saveProblem = ""; conflict = false; setPreviewMode("store", previewSource); page = previewSource.products?.some(p => p.status !== "archived") ? "product" : "home"; draw("keep"); renderPreview(false); say(readOnly ? "Viewing the saved design. Only an owner or admin can edit it." : "Your design is saved to draft. You can edit its text and photos. Your live site is unchanged."); },
   onChange: () => { schedule(); drawFoot(); },
   openCanvas: () => { setPreviewMode("store"); page = "home"; app.dataset.view = "canvas"; syncSwitch(); renderPreview(false); setTimeout(fit, 0); },
   backToDesign: plan => { answers = { ...answers, ...structuredClone(plan) }; setPreviewMode("store"); draw("keep"); renderPreview(false); },
@@ -133,7 +133,7 @@ function renderPreview(remember = true) {
   if (html !== frameMarkup) { frameMarkup = html; frameLoading = true; frame.srcdoc = html; }
   else if (!frameLoading) previewLoaded();
   const niche = subName(answers.subcategory_id) || catName(answers.category_id);
-  $("#ann-preview-note").textContent = (previewMode === "showcase" ? `The same ${pack.topic} sample images and products are used across all five styles.${!pack.exact ? ` These are placeholder images${niche ? ` for your selected niche, ${niche}` : ""}; a matching image set is not available yet.` : ""} Sample products and prices are illustrative. Select Your store to see your existing catalogue. ` : base.style_demo ? "No real products yet. Sample images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
+  $("#ann-preview-note").textContent = (previewMode === "showcase" ? `The same ${pack.topic} sample images and products are used across all ${AURA_STYLES.length} styles.${!pack.exact ? ` These are placeholder images${niche ? ` for your selected niche, ${niche}` : ""}; a matching image set is not available yet.` : ""} Sample products and prices are illustrative. Select Your store to see your existing catalogue. ` : base.style_demo ? "No real products yet. Sample images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
     "Preview controls never create products, orders or publications. Use the confirmed actions in Review to save real draft changes." +
     (projected.unavailable.length ? ` Some optional sections cannot be previewed here: ${projected.unavailable.map(u => label(u.split(":")[1])).join(", ")}.` : "");
   if (dsg) $("#ann-preview-note").textContent = "This is your draft design with your real products. Select text or a photo to change it. Nothing is published until you review and publish. Your live site is unchanged.";

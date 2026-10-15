@@ -10,6 +10,12 @@ export const AURA_STYLES = Object.freeze([
     settings: { style_preset: "minimal", font_preset: "modern", color_preset: "white", accent_color: "#202020", button_style: "square" } },
   { id: "vintage", name: "Vintage", description: "Heritage typography, muted accents and considered details.",
     settings: { style_preset: "vintage", font_preset: "classic", color_preset: "white", accent_color: "#65402d", button_style: "square" } },
+  { id: "social-pop", name: "Social Pop", description: "Playful colour, upbeat copy and a bold product-first experience.",
+    settings: { style_preset: "social-pop", font_preset: "modern", color_preset: "white", accent_color: "#6335b8", button_style: "pill" } },
+  { id: "creator-feed", name: "Creator Feed", description: "Real-life visual stories, conversational captions and contextual shopping.",
+    settings: { style_preset: "creator-feed", font_preset: "modern", color_preset: "white", accent_color: "#214b3c", button_style: "rounded" } },
+  { id: "proof-detail", name: "Proof & Detail", description: "Precise information, considered comparisons and confident purchasing.",
+    settings: { style_preset: "proof-detail", font_preset: "modern", color_preset: "white", accent_color: "#164b86", button_style: "rounded" } },
 ]);
 export const STYLE_IDS = Object.freeze(AURA_STYLES.map(style => style.id));
 export const STYLE_THEME_KEYS = Object.freeze(["style_preset", "font_preset", "color_preset", "accent_color", "button_style"]);

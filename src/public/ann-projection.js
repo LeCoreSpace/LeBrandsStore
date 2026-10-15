@@ -4,6 +4,7 @@ import { applyAnnCategoryCopy, annCategoryContext } from "./ann-category-copy.js
 import { styleDemonstration } from "./style-demo-copy.js";
 import { starterLayouts } from "./aura-skeleton.js";
 import { categoryRecord } from "./aura-taxonomy.js";
+import { STYLE_IDS } from "./aura-styles.js";
 
 export const ANN_ANSWER_KEYS = Object.freeze(["store_name","tagline","description","category_id","subcategory_id","style_preset","color_preset","font_preset","accent_color","button_style","collections","product_ideas","section_options"]);
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
@@ -82,7 +83,7 @@ export function annAnsweredStages(a = {}, reference = {}) {
   const cat = categories.find(c => Number(c.category_id) === Number(a.category_id));
   const subs = (reference.subcategories || []).filter(s => Number(s.category_id) === Number(a.category_id));
   if (cat && (!subs.length || subs.some(s => Number(s.subcategory_id) === Number(a.subcategory_id)))) answered.add("category");
-  if (["editorial", "boutique", "architectural", "minimal", "vintage"].includes(a.style_preset)) answered.add("style");
+  if (STYLE_IDS.includes(a.style_preset)) answered.add("style");
   if (["white", "ivory", "stone", "midnight"].includes(a.color_preset) &&
       /^#[0-9a-f]{6}$/i.test(a.accent_color || "") &&
       ["square", "rounded", "pill"].includes(a.button_style)) answered.add("palette");

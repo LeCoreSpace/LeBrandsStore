@@ -6,6 +6,7 @@ import { projectAnnPreview } from "../src/public/ann-projection.js";
 import { annPreviewConfiguration } from "../src/public/ann-config.js";
 import { annCategoryContext } from "../src/public/ann-category-copy.js";
 import { styleDemonstration } from "../src/public/style-demo-copy.js";
+import { STYLE_IDS } from "../src/public/aura-styles.js";
 
 const source = () => ({
   store: { name: "Example", store_id: "11111111-1111-4111-8111-111111111111" },
@@ -16,7 +17,7 @@ const source = () => ({
 test("Skincare uses the same matching photos and catalogue across all styles, preserving merchant content", () => {
   const original = source(), before = structuredClone(original);
   const demo = stylePreviewData(original, { showcase: true });
-  for (const style of ["editorial", "boutique", "architectural", "minimal", "vintage"]) {
+  for (const style of STYLE_IDS) {
     const styled = styleDemonstration(demo, style);
     const config = annPreviewConfiguration({ category_id: 2, subcategory_id: 21, style_preset: style,
       tagline: original.settings.tagline, description: original.settings.description });

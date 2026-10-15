@@ -11,7 +11,7 @@ import { seedDesignMedia } from "../src/store/ann-design.js";
 const source = () => ({ store: { name: "Example" }, settings: {},
   products: [], collections: [], layouts: {}, policies: [], reviews: [] });
 
-test("all 25 subcategory/style combinations share complete coordinated content and stable navigation", () => {
+test("all 40 subcategory/style combinations share complete coordinated content and stable navigation", () => {
   const original = source(), before = structuredClone(original);
   const base = stylePreviewData(original, { showcase: true });
   for (const [key, pack] of Object.entries(SHOWCASE_PACKS)) {

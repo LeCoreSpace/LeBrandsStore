@@ -16,8 +16,8 @@ const source={store:{store_id:"11111111-1111-4111-8111-111111111111",name:"Examp
   settings:{category:"fashion",subcategory:"mens-clothing",theme:"aura",accent_color:"#3d4a43",font_preset:"modern",button_style:"rounded",color_preset:"white"},
   role:"owner",products:[],collections:[],layouts:{},policies:[],aura_skeleton_enabled:true};
 
-test("five explicit style definitions validate and old themes remain unstyled",()=>{
-  assert.equal(AURA_STYLES.length,5);assert.ok(AURA_STYLES.some(style=>style.id==="vintage"));
+test("eight explicit style definitions validate and old themes remain unstyled",()=>{
+  assert.equal(AURA_STYLES.length,8);assert.ok(AURA_STYLES.some(style=>style.id==="vintage"));
   for(const style of AURA_STYLES){
     assert.equal(style.settings.color_preset,"white");
     assert.deepEqual(settingsPatch(styleSettings(style.id)),style.settings);
@@ -192,7 +192,7 @@ test("all five previews share subcategory imagery while retaining distinct copy 
     const html=renderStylePreview(demo,styleSettings(style.id));
     assert.match(html,/overflow-y:scroll/);assert.match(html,/scrollbar-gutter:stable/);
   }
-  assert.equal(new Set(titles).size,5);assert.equal(photos.size,1);assert.deepEqual(demo,original);
+  assert.equal(new Set(titles).size,AURA_STYLES.length);assert.equal(photos.size,1);assert.deepEqual(demo,original);
   const merchant={...demo,style_demo:false};
   assert.equal(styleDemonstration(merchant,"vintage"),merchant);
   const shell=renderStyleStudio(source);

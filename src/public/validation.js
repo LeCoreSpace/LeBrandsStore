@@ -1,6 +1,7 @@
 // Shared by the Worker and wizard. No browser-only or server-only dependencies.
 import { CURRENT_GST_RATES, LEGACY_GST_RATES, businessGSTINErrors } from "./commerce-rules.js";
 import { PRODUCT_CATEGORIES, validCategoryPair } from "./aura-taxonomy.js";
+import { STYLE_IDS } from "./aura-styles.js";
 export const RESERVED_SUBDOMAINS = [
   "www", "app", "admin", "api", "brands", "customers", "mail", "notify", "news",
   "help", "support", "status", "shop", "store", "checkout", "cart", "pay",
@@ -43,7 +44,7 @@ export function validateBasics(s = {}) {
 }
 export function validateTheme(s = {}) {
   const errors = {};
-  if (s.style_preset != null && s.style_preset !== "" && !["editorial", "boutique", "architectural", "minimal", "vintage"].includes(s.style_preset)) errors.style_preset = "Choose a valid Aura style.";
+  if (s.style_preset != null && s.style_preset !== "" && !STYLE_IDS.includes(s.style_preset)) errors.style_preset = "Choose a valid Aura style.";
   if (s.theme !== "aura") errors.theme = "Choose Aura.";
   if (!contrastColor(s.accent_color)) errors.accent_color = "Choose a six-digit hex colour. Button text is adjusted for contrast.";
   if (!["serif", "modern", "classic"].includes(s.font_preset)) errors.font_preset = "Choose one of the three font presets.";

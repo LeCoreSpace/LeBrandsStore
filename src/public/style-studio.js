@@ -21,7 +21,7 @@ const bagFor = () => {
 };
 const frame = $("#as-preview"), canvas = $("#as-canvas"), status = $("#as-status");
 const readOnly = boot.readOnly === true || !["owner", "admin"].includes(boot.role);
-let settings = { ...original }, page = ["home","collection","product","cart","checkout","about","contact"].includes(boot.initialPage) ? boot.initialPage : "home", productId = catalogueFor(original.style_preset).products?.[0]?.id;
+let settings = { ...original }, page = ["home","collection","product","cart","checkout","about","contact"].includes(boot.initialPage) ? boot.initialPage : "product", productId = catalogueFor(original.style_preset).products?.[0]?.id;
 let collectionId, policyKind, dirty = false, saving = false;
 const scrollPositions = new Map(), stylePages = new Map();
 let displayedKey = "";

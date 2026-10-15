@@ -8,10 +8,11 @@ import { safeImage } from "./aura-sections.js";
 import { homeRich, productRich, collectionRich } from "./aura-showcase-sections.js";
 import { RICH_CSS } from "./aura-showcase-rich-css.js";
 import { showcaseProfile, renderNicheSections, NICHE_SECTION_CSS, profileGuidance } from "./aura-showcase-profiles.js";
-import { styleSettings } from "./aura-styles.js";
+import { styleSettings, STYLE_IDS } from "./aura-styles.js";
+import { CONVERSION_COPY, CONVERSION_NEUTRAL, CONVERSION_KIND, CONVERSION_CSS, CONVERSION_TABBAR, isConversionStyle, conversionTopper, buildConversion } from "./aura-conversion-styles.js";
 import { contrastColor } from "./validation.js";
 
-export const SHOWCASE_STYLES = Object.freeze(["editorial", "boutique", "architectural", "minimal", "vintage"]);
+export const SHOWCASE_STYLES = STYLE_IDS;
 export const SHOWCASE_PAGES = Object.freeze(["home", "collection", "product", "cart", "checkout", "about", "contact"]);
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -62,6 +63,8 @@ const DEF = {
   },
 };
 
+for (const id of Object.keys(CONVERSION_COPY)) DEF[id] = { copy: CONVERSION_COPY[id] };
+
 /** Exact curated demo images, or merchant images that pass the storefront validator. */
 const okUrl = u => typeof u === "string" && (isShowcaseImage(u) || Boolean(safeImage(u))) && !/[\s"'<>]/.test(u);
 const img = (o, alt, key) => o && okUrl(o.url)
@@ -72,7 +75,7 @@ export const showcaseCopy = style => DEF[style]?.copy || null;
 /** Demo catalogue clone for a style: never merchant data. */
 export function showcaseCatalogue(style) {
   const def = DEF[style], media = SHOWCASE_MEDIA?.[style];
-  if (!def || !media) return null;
+  if (!def?.products || !media) return null;
   const ids = {};
   const products = def.products.map(([key, title, description, rupee]) => {
     const id = `sc-${style}-${key}`; ids[key] = id;
@@ -92,7 +95,7 @@ export function showcaseCatalogue(style) {
 }
 
 export function isShowcase(data, style) {
-  return data?.style_demo === true && SHOWCASE_STYLES.includes(style) && Boolean(SHOWCASE_MEDIA?.[style]);
+  return data?.style_demo === true && SHOWCASE_STYLES.includes(style) && Boolean(resolveShowcasePack(data).media);
 }
 
 /* ---- saved design: neutral, editable brand copy (no demo or instruction text) ---- */
@@ -103,15 +106,17 @@ const NEUTRAL = {
   minimal: { kicker: "The range", description: b => `A quiet look at the ${b} range.`, button: "View the range", products: "Index", collections: "Collections" },
   vintage: { kicker: "Catalogue No. 1", description: b => `A catalogue of favourites from ${b}, chosen with care.`, button: "Browse the catalogue", products: "From the catalogue", collections: "The plates" },
 };
+Object.assign(NEUTRAL, CONVERSION_NEUTRAL);
 const COPY_CAP = { kicker: 80, title: 120, description: 300, button: 40, statement: 200, products: 60, collections: 60, about: 80, story0: 400, story1: 400, story2: 400, footer: 160 };
 export function designNeutralCopy(style, brand = "Your brand") {
   const d = DEF[style], n = NEUTRAL[style];
   if (!d || !n) return null;
+  const story = n.story?.(brand);
   return { kicker: n.kicker, title: d.copy.title, description: n.description(brand), button: n.button, statement: d.copy.statement,
     products: n.products, collections: n.collections, about: d.copy.about,
-    story0: `Every product at ${brand} is chosen with care. Tell visitors what makes your range yours.`,
-    story1: "Share how you make, source or choose what you sell, and who is behind the brand.",
-    story2: "Add the values and the details your customers should know before they buy.",
+    story0: story?.[0] || `Every product at ${brand} is chosen with care. Tell visitors what makes your range yours.`,
+    story1: story?.[1] || "Share how you make, source or choose what you sell, and who is behind the brand.",
+    story2: story?.[2] || "Add the values and the details your customers should know before they buy.",
     footer: brand };
 }
 export function designSeedCopy(data, settings = {}) {
@@ -157,6 +162,9 @@ function context(data, settings, options) {
     copy.about = `A considered view of ${world.toLowerCase()}.`;
     copy.story = [copy.description, "Explore this illustrative collection and make it your own with your products, imagery and verified details."];
   }
+  if (data.style_demo && data.showcase_voice) {
+    for (const key of ["products", "collections", "about"]) if (data.showcase_voice[key]) copy[key] = data.showcase_voice[key];
+  }
   return { style, media, def, products, collections, brand, copy, world: pack.topic,
     profile: showcaseProfile({ ...data, showcase_niche: data.showcase_niche || pack }, style), options, page: options.page || "home" };
 }
@@ -175,7 +183,7 @@ const NAV = [["Home", "/"], ["Shop", "/collections/all"], ["About", "/pages/abou
 
 function header(x) {
   const links = NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("");
-  const topper = LIVE ? (x.copy.kicker ? ({
+  const topper = conversionTopper(x, Boolean(LIVE), esc) ?? (LIVE ? (x.copy.kicker ? ({
     architectural: `<div class="sc-ticker" aria-hidden="true"><div>${Array(8).fill(`<span>${esc(x.copy.kicker)}</span>`).join("")}</div></div>`,
     boutique: `<div class="sc-announce">${esc(x.copy.kicker)}</div>`, vintage: `<div class="sc-announce">${esc(x.copy.kicker)}</div>`,
     editorial: `<div class="sc-announce"><span>${esc(x.copy.kicker)}</span></div>`, minimal: "" })[x.style] : "") : {
@@ -184,18 +192,20 @@ function header(x) {
     vintage: `<div class="sc-announce">Sample edition. Prices are illustrative.</div>`,
     editorial: `<div class="sc-announce"><span>Style demo</span><span>Issue 01</span><span>Sample prices</span></div>`,
     minimal: "",
-  }[x.style];
+  }[x.style]) ?? "";
   return `${topper}<header class="sc-hd${LIVE ? " aura-header" : ""}"><button type="button" class="sc-burger" data-menu-open aria-expanded="false" aria-controls="au-menu">Menu</button><a class="sc-brand" href="/">${esc(x.brand)}</a><nav class="sc-nav" aria-label="Primary">${links}</nav><span class="sc-tools"><button type="button" class="sc-search" data-search-open aria-label="Search products" aria-haspopup="dialog" aria-controls="au-search-sc">Search</button><button type="button" class="sc-bag" data-cart-open>Bag <span data-cart-count>0</span></button></span></header>
   <dialog class="au-search-dialog sc-searchbox" id="au-search-sc" aria-label="Search products"><div class="sc-sh"><h2>${LIVE ? "Search products" : "Search the sample range"}</h2><button type="button" data-search-close aria-label="Close search">Close</button></div><form class="au-search" role="search" action="/collections/all" method="get"><label class="sc-sr" for="au-q-sc">Search products</label><input id="au-q-sc" name="q" type="search" placeholder="Search products" autocomplete="off"><button type="submit">Search</button></form></dialog>
   <nav id="au-menu" class="sc-menu" hidden aria-label="Menu"><button type="button" data-menu-close>Close</button>${links}</nav>`;
 }
 function footer(x) {
-  return `<footer class="sc-ft"><div class="sc-ft-in"><a class="sc-brand" href="/">${esc(x.brand)}</a><nav aria-label="Footer">${NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("")}${LIVE ? (x.policies || []).filter(p => /^[a-z0-9-]+$/.test(String(p.kind || ""))).map(p => `<a href="/policies/${p.kind}">${esc(p.title || p.kind)}</a>`).join("") : ""}</nav>${LIVE ? `<p${dc("footer")}>${esc(x.copy.footer || x.brand)}</p>` : `<p>Style demonstration. The ${esc(x.world)} products, photographs and prices are illustrative samples, not a real range. Nothing here is saved, ordered or published.</p>`}</div></footer>${x.style === "boutique" ? `<nav class="sc-tabbar" aria-label="Quick"><a href="/">Home</a><a href="/collections/all">Shop</a><button type="button" data-cart-open>Bag <span data-cart-count>0</span></button></nav>` : ""}`;
+  return `<footer class="sc-ft"><div class="sc-ft-in"><a class="sc-brand" href="/">${esc(x.brand)}</a><nav aria-label="Footer">${NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("")}${LIVE ? (x.policies || []).filter(p => /^[a-z0-9-]+$/.test(String(p.kind || ""))).map(p => `<a href="/policies/${p.kind}">${esc(p.title || p.kind)}</a>`).join("") : ""}</nav>${LIVE ? `<p${dc("footer")}>${esc(x.copy.footer || x.brand)}</p>` : `<p>Style demonstration. The ${esc(x.world)} products, photographs and prices are illustrative samples, not a real range. Nothing here is saved, ordered or published.</p>`}</div></footer>${x.style === "boutique" || CONVERSION_TABBAR.includes(x.style) ? `<nav class="sc-tabbar" aria-label="Quick"><a href="/">Home</a><a href="/collections/all">Shop</a><button type="button" data-cart-open>Bag <span data-cart-count>0</span></button></nav>` : ""}`;
 }
 const cta = (label, href = "/collections/all", cls = "", attr = "") => `<a class="sc-btn ${cls}"${attr} href="${href}">${esc(label)}</a>`;
+const CONV = buildConversion({ esc, rupees, img, pImg, pHref, cHref, cImg, rv, dc, num, cta, card, live: () => LIVE });
 
 /* ---- home compositions: five different section mixes ---- */
 const HOME = {
+  ...CONV.HOME,
   editorial: x => { const [a, b, c, d, e] = x.products, cs = x.collections;
     return `<section class="ed-hero"><div class="ed-hero-copy"><p ${rv()}${dc("kicker")}>${esc(x.copy.kicker)}</p><h1 ${rv(1)}${dc("title")}>${esc(x.copy.title)}</h1><p class="ed-lede rv" style="--i:2"${dc("description")}>${esc(x.copy.description)}</p>${cta(x.copy.button, "/collections/all", "", dc("button"))}</div><figure class="ed-hero-img">${img(x.media.hero, undefined, "hero")}${LIVE ? "" : "<figcaption>Plate 01. Illustrative sample photograph</figcaption>"}</figure></section>
     <section class="ed-quote"><blockquote ${rv()}${dc("statement")}>${esc(x.copy.statement)}</blockquote></section>
@@ -232,12 +242,12 @@ const HOME = {
 /* ---- shared page bodies, restyled and re-arranged by each style ---- */
 function collectionPage(x) {
   const id = x.options.collectionId;
-  const rich = LIVE ? { top: "", bottom: "" } : collectionRich(x.style, x);
+  const rich = LIVE || isConversionStyle(x.style) ? { top: "", bottom: "" } : collectionRich(x.style, x);
   const col = id ? x.collections.find(c => String(c.id) === String(id) || c.slug === id) : null;
   const list = col ? x.products.filter(p => (col.product_ids || []).includes(p.id)) : x.products;
   const chips = [`<a class="${col ? "" : "on"}" href="/collections/all">All</a>`, ...x.collections.map(c => `<a class="${col?.id === c.id ? "on" : ""}" href="${cHref(c)}">${esc(c.title)}</a>`)].join("");
   return `<section class="sc-chead"><p ${rv()}>${LIVE ? "Collection" : `${esc(x.world)} sample range`}</p><h1 ${rv(1)}>${esc(col?.title || "Shop all")}</h1><p ${rv(2)}>${esc(col?.description || (LIVE ? "" : x.copy.statement))}</p></section><nav class="sc-chips" aria-label="Collections">${chips}</nav>
-  ${rich.top}<section class="sc-list ${list.length ? "" : "empty"}"${LIVE && list.length ? " data-catalog" : ""}>${list.length ? list.map((p, i) => card(p, i)).join("") : `<p class="sc-empty">${LIVE ? "Products are being added to this collection." : "No sample products in this collection yet."}</p>`}</section>${LIVE ? `<p class="sc-empty" data-catalog-empty hidden>No products match your search.</p>` : ""}${rich.bottom}`;
+  ${rich.top}<section class="sc-list ${list.length ? "" : "empty"}"${LIVE && list.length ? " data-catalog" : ""}>${list.length ? list.map((p, i) => CONV.cardX(x, p, i)).join("") : `<p class="sc-empty">${LIVE ? "Products are being added to this collection." : "No sample products in this collection yet."}</p>`}</section>${LIVE ? `<p class="sc-empty" data-catalog-empty hidden>No products match your search.</p>` : ""}${rich.bottom}`;
 }
 function productPageLive(x) {
   const p = x.products.find(i => String(i.id) === String(x.options.productId)) || x.products[0];
@@ -259,6 +269,7 @@ function contactPageLive(x) {
   return `<section class="sc-contact"><div><p>Contact</p><h1>Get in touch.</h1>${rows.length ? `<div class="sc-crow">${rows.join("")}</div>` : "<p>Contact details will appear here soon.</p>"}</div><div class="sc-about-img">${img(x.media.lifestyle, undefined, "lifestyle")}</div></section>`;
 }
 function productPage(x) {
+  if (CONV.PRODUCT[x.style]) return CONV.PRODUCT[x.style](x);
   if (LIVE) return productPageLive(x);
   const p = x.products.find(i => String(i.id) === String(x.options.productId)) || x.products[0];
   if (!p) return `<section class="sc-chead"><h1>No sample product</h1></section>`;
@@ -274,9 +285,9 @@ function productPage(x) {
   <section class="sc-rel"><h2 ${rv()}>You may also browse</h2><div class="sc-list">${rest.map((r, i) => card(r, i)).join("")}</div></section>${rich.below}
   <div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button">Add to bag (preview)</button></div>`;
 }
-const cartPage = () => `<section class="sc-chead"><h1>Your bag</h1><p>A sample bag. Nothing here is a real order.</p></section><section class="sc-cart"><div data-cart-page-lines class="commerce-lines"></div><aside class="sc-sum" data-cart-summary></aside></section>`;
-const checkoutPage = () => `<section class="sc-chead"><h1>Checkout</h1><p class="commerce-readonly-note">Interactive preview only. This sample bag never creates an order or takes a payment.</p></section><section class="sc-cart"><form class="sc-form"><fieldset disabled><legend>Contact</legend><label>Email<input type="email" placeholder="you@example.com"></label><legend>Delivery</legend><label>Full name<input type="text"></label><label>Address<input type="text"></label><label>City<input type="text"></label><label>PIN code<input type="text"></label></fieldset></form><aside class="sc-sum" data-checkout-summary></aside></section>`;
-const aboutPage = x => `<section class="sc-about"><div class="sc-about-copy"><p ${rv()}>About</p><h1 ${rv(1)}${dc("about")}>${esc(x.copy.about)}</h1>${x.copy.story.map((t, i) => `<p ${rv(i + 2)}${dc("story" + i)}>${esc(t)}</p>`).join("")}${cta(LIVE ? "Browse the range" : "Browse the sample range")}</div><div class="sc-about-img rv">${img(x.media.lifestyle, undefined, "lifestyle")}</div></section>`;
+const cartPage = x => `<section class="sc-chead">${CONV.steps(x, "cart")}<h1>Your bag</h1><p>${CONV.lead(x, "cart", "A sample bag. Nothing here is a real order.")}</p></section><section class="sc-cart"><div data-cart-page-lines class="commerce-lines"></div><aside class="sc-sum" data-cart-summary></aside></section>`;
+const checkoutPage = x => `<section class="sc-chead">${CONV.steps(x, "checkout")}<h1>Checkout</h1><p class="commerce-readonly-note">${CONV.lead(x, "checkout", "Interactive preview only. This sample bag never creates an order or takes a payment.")}</p></section><section class="sc-cart"><form class="sc-form"><fieldset disabled><legend>Contact</legend><label>Email<input type="email" placeholder="you@example.com"></label><legend>Delivery</legend><label>Full name<input type="text"></label><label>Address<input type="text"></label><label>City<input type="text"></label><label>PIN code<input type="text"></label></fieldset></form><aside class="sc-sum" data-checkout-summary></aside></section>`;
+const aboutPage = x => CONV.ABOUT[x.style]?.(x) || `<section class="sc-about"><div class="sc-about-copy"><p ${rv()}>About</p><h1 ${rv(1)}${dc("about")}>${esc(x.copy.about)}</h1>${x.copy.story.map((t, i) => `<p ${rv(i + 2)}${dc("story" + i)}>${esc(t)}</p>`).join("")}${cta(LIVE ? "Browse the range" : "Browse the sample range")}</div><div class="sc-about-img rv">${img(x.media.lifestyle, undefined, "lifestyle")}</div></section>`;
 const contactPage = x => LIVE ? contactPageLive(x) : `<section class="sc-contact"><div><p ${rv()}>Contact</p><h1 ${rv(1)}>Say hello.</h1><p ${rv(2)}>This page shows where your contact details and enquiry form will sit. Add real details when you build the store.</p><div class="sc-cimg rv">${img(x.media.hero, undefined, "hero")}</div></div><form class="sc-form"><fieldset disabled><label>Name<input type="text"></label><label>Email<input type="email"></label><label>Message<textarea rows="5"></textarea></label><button type="button">Send (preview only)</button></fieldset></form></section>`;
 
 const EXTRA_PAGES = { home: ["statement", "lookbook", "craft", "founder", "trust", "reviews", "faq"], about: ["statement", "craft", "founder", "faq"], collection: ["collection-description", "related-collections"], product: ["material-care", "size-guide", "how-to-use", "faq", "reviews"] };
@@ -301,7 +312,8 @@ function extras(x, data) {
 }
 const BODY = { collection: collectionPage, product: productPage, cart: cartPage, checkout: checkoutPage, about: aboutPage, contact: contactPage };
 
-const KIND = { editorial: "clip", boutique: "pop", architectural: "slide", minimal: "fade", vintage: "drop" };
+const KIND = { editorial: "clip", boutique: "pop", architectural: "slide", minimal: "fade", vintage: "drop", ...CONVERSION_KIND };
+const kindOf = style => KIND[style] || "fade";
 /** top after the hero, mid after the third section, bottom before the last one. */
 function withHomeRich(html, rich) {
   const parts = html.split("</section>"), last = parts.pop();
@@ -330,17 +342,17 @@ export function renderShowcase(data, settings, options = {}) {
   const page = options.page || "home";
   if (!isShowcase(data, settings.style_preset) || !SHOWCASE_PAGES.includes(page)) return null;
   const x = context(data, settings, options);
-  let main = page === "home" ? withHomeRich(HOME[x.style](x), homeRich(x.style, x)) : BODY[page](x);
+  let main = page === "home" ? (isConversionStyle(x.style) ? HOME[x.style](x) : withHomeRich(HOME[x.style](x), homeRich(x.style, x))) : BODY[page](x);
   main += renderNicheSections(x, data) + extras(x, data);
-  main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${KIND[x.style]}"`)
-    .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${KIND[x.style]}"`);
+  main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${kindOf(x.style)}"`)
+    .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${kindOf(x.style)}"`);
   const { overrides, font, preset } = themeOverrides(x.style, settings);
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>${esc(x.brand)} style demo</title><style>${CSS}${RICH_CSS}${NICHE_SECTION_CSS}${overrides}</style></head>
 <body data-aura data-showcase="${x.style}" data-style="${x.style}" data-font="${font}" data-preset="${preset}" data-page="${page}" class="sc sc-${x.style}"><div class="sc-demo">Style demo. Sample ${esc(x.world)} products and illustrative prices. Nothing is saved, ordered or published.</div>${header(x)}<main class="sc-main sc-p-${page}">${main}</main>${footer(x)}</body></html>`;
 }
 
 /* ------------------------------------------------------------------ */
-const CSS = `
+const BASE_CSS = `
 @font-face{font-family:"Instrument Sans";src:url(/assets/instrument-sans-latin.woff2) format("woff2");font-weight:400 700;font-display:swap}@font-face{font-family:"Aura Editorial";src:url(/assets/aura-editorial.ttf) format("truetype");font-weight:100 900;font-display:swap}@font-face{font-family:"Aura Classic";src:url(/assets/aura-classic.ttf) format("truetype");font-weight:400;font-display:swap}
 .sc *{box-sizing:border-box}.sc{margin:0;background:#fff;color:var(--ink);font:16px/1.55 var(--body);-webkit-font-smoothing:antialiased;overflow-x:hidden}
 .sc img{display:block;width:100%;height:100%;object-fit:cover}.sc a{color:inherit;text-decoration:none}.sc button{font:inherit;cursor:pointer}.sc h1,.sc h2{font-family:var(--disp);margin:0;font-weight:var(--hw,400)}
@@ -434,6 +446,7 @@ const CSS = `
 .mn-rooms>div,.vt-plates>div{grid-template-columns:1fr}.mn-hero{padding-top:3rem}.mn-pop{display:none}.sc-minimal .sc-prod{gap:2rem}.vt-seal{right:0}
 .au-sticky-buy{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:25;background:#fff;border-top:1px solid var(--line);padding:.7rem 1rem;gap:1rem;align-items:center;justify-content:space-between}.au-sticky-buy button{padding:.8rem 1.2rem;background:var(--acc);color:#fff;border:0;font-weight:600}.sc-boutique .au-sticky-buy{bottom:4.2rem}.commerce-line{grid-template-columns:70px 1fr auto}.commerce-line img{width:70px;height:70px}}
 `;
+const CSS = BASE_CSS + CONVERSION_CSS;
 
 /* ---- saved design (real catalogue, no demo content) ---- */
 const liveMedia = o => o && typeof o === "object" && okUrl(o.url) ? { url: o.url, alt: String(o.alt || "").replace(/^illustrative\s+/i, "").replace(/^./, c => c.toUpperCase()), width: Number(o.width) || 1024, height: Number(o.height) || 1024 } : null;
@@ -456,8 +469,8 @@ export function renderDesignLive(data, settings, options, design) {
   try {
     let main = page === "home" ? HOME[style](x) : BODY[page](x);
     if (page === "home" && !products.length) main += '<section class="sc-sec"><p class="sc-empty">Products are being added. Check back soon.</p></section>';
-    main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${KIND[style]}"`)
-      .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${KIND[style]}"`);
+    main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${kindOf(style)}"`)
+      .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${kindOf(style)}"`);
     return { body: `${header(x)}<main class="sc-main sc-p-${page}">${main}</main>${footer(x)}`,
       css: `${CSS}${RICH_CSS}${overrides}${LIVE_CSS}`, bodyClass: `sc sc-${style}`, style, font, preset };
   } finally { LIVE = null; }

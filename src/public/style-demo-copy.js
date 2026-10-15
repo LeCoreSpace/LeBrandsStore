@@ -35,7 +35,7 @@ const COPY = {
 };
 export function styleDemonstration(data, style) {
   if (data.ann_style_copy_applied === style) return data;
-  if (data.style_demo !== true || !COPY[style]) return data;
+  if (data.style_demo !== true || !(COPY[style] || showcaseCopy(style))) return data;
   const preview = structuredClone(data), copy = { ...COPY[style], ...(showcaseCopy(style) || {}) };
   const pack = resolveShowcasePack(data);
   const catalogue = showcaseCatalogue(pack.key);
