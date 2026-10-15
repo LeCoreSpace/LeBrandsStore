@@ -134,3 +134,17 @@
 .ann-updated.pop{animation:annIn .3s ease both}
 @media(prefers-reduced-motion:reduce){.ann-msg,.ann-feed,.ann-updated.pop{animation:none}.ann-dot,.ann-sweep,.ann-canvas.flash::after{animation:none!important}.ann-meter i,.ann-chip,.ann-send{transition:none}.ann-canvas[data-updating=true] .ann-sweep{transform:none;opacity:.6}}
 @media(max-width:900px){.ann-see{display:inline}.ann-msg.me .ann-bubble{max-width:90%}.ann-comp,.ann-form{max-height:40dvh}.ann-input textarea{font-size:16px}}
+
+/* Rounded controls: chat choices, style/mode/page tabs. Selected, hover and focus are distinct. */
+.ann-chip,.ann-choice{border-radius:999px;border-left-width:1px;padding-inline:14px}
+.ann-chip.sm{border-radius:999px}
+.ann-chip:hover:not(:disabled),.ann-choice:hover:not(:disabled){border-color:var(--a,var(--ink));background:#f7f4f5}
+.ann-chip[aria-pressed=true],.ann-choice[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff;box-shadow:none}
+.ann-chip[aria-pressed=true] span,.ann-choice[aria-pressed=true] span{color:rgba(255,255,255,.8)}
+.ann-chip:focus-visible,.ann-choice:focus-visible,.ann-tab:focus-visible,.ann-device button:focus-visible{outline:3px solid var(--a,#1c1c1b);outline-offset:2px}
+.ann-styles,.ann-pages{gap:6px}
+.ann-tab{border:1px solid var(--line);border-radius:999px;background:#fff;padding:7px 14px;min-height:34px;transition:background .15s,border-color .15s,color .15s,transform .15s}
+.ann-tab:hover{border-color:var(--ink);color:var(--ink);background:#f7f4f5}
+.ann-tab:active{transform:scale(.97)}
+.ann-tab[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+@media(prefers-reduced-motion:reduce){.ann-tab{transition:none}}

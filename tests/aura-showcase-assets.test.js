@@ -50,4 +50,8 @@ test("Worker serves exact curated showcase paths without allowing other generate
   }
   assert.equal(seen.length, count);
   assert.equal((await worker.fetch(new Request(`https://app.lebrands.store${SHOWCASE_MEDIA.boutique.hero.url}`, { method: "POST" }), env, {})).status, 405);
+  for (const name of ["aura-showcase-interactions.js", "aura-showcase-profiles.js", "aura-showcase-sections.js", "aura-showcase-rich-css.js"]) {
+    assert.equal((await worker.fetch(new Request(`https://app.lebrands.store/assets/${name}`), env, {})).status, 200);
+    assert.ok((await stat(new URL(`../src/public/${name}`, import.meta.url))).size > 0);
+  }
 });

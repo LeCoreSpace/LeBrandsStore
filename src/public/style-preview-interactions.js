@@ -1,8 +1,10 @@
 import { attachAuraMotion } from "./aura-motion.js";
 import { demoCommerce } from "./style-preview.js";
+import { attachShowcaseInteractions } from "./aura-showcase-interactions.js";
 
 export function attachStyleInteractions(doc, catalogue, bag, page, productId, navigate) {
   attachAuraMotion(doc);
+  attachShowcaseInteractions(doc, catalogue, bag, navigate);
   doc.querySelectorAll("img[data-gallery-image]").forEach(photo => photo.addEventListener("click", () => {
     const dialog = doc.createElement("dialog"), image = doc.createElement("img"), close = doc.createElement("button");
     dialog.className = "au-zoom"; dialog.setAttribute("aria-label", "Product photo");

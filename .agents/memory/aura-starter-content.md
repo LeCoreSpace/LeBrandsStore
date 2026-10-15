@@ -96,6 +96,21 @@ requested richer motion, more sections and rounded builder controls.
 them. Scope the rounded-control request to Ann's conversation and preview
 toolbar; it does not require rounding every storefront's visual language.
 
+Sections must suit each subcategory, not merely the style. The user specifically
+requested before/after for skincare and other relevant products, plus social
+proof, UGC, reviews, bundles, offers, payment, delivery and trust badges.
+Additional carousel or section images may be generated if needed.
+
+**Why:** The user said "each subcategory has its own needed sections" while
+approving the richer showcase refinements.
+
+**How to apply:** Select relevant guidance and comparison sections from the
+product taxonomy. Preserve each visual style while adapting product-specific
+content. Demonstration reviews, offers, customer photos and operational badges
+must be visibly illustrative, not fictional real claims. Before/after must not
+manufacture product efficacy evidence; require genuine, permissioned comparison
+media before a merchant publishes results.
+
 Shared demonstration images do not mean shared text: category and subcategory
 choices must immediately change the preview copy, including Skincare.
 

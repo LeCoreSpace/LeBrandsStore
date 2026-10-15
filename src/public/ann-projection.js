@@ -1,6 +1,6 @@
 // Pure helpers for Ann. Nothing here touches the network, the DOM or stored data.
 import { ANN_EXTRA_SECTIONS } from "./ann-config.js";
-import { applyAnnCategoryCopy } from "./ann-category-copy.js";
+import { applyAnnCategoryCopy, annCategoryContext } from "./ann-category-copy.js";
 import { styleDemonstration } from "./style-demo-copy.js";
 import { starterLayouts } from "./aura-skeleton.js";
 import { categoryRecord } from "./aura-taxonomy.js";
@@ -197,7 +197,11 @@ export function projectAnnPreview(base, config = {}, { prefilled, attributes = [
     if (useDescription) data.settings.description = brand.description;
   }
   // Transient, demo-clone only: lets the showcase renderer honour explicit toggles.
-  if (data.style_demo === true) data.showcase_options = structuredClone(config.section_options || {});
+  if (data.style_demo === true) {
+    data.showcase_options = structuredClone(config.section_options || {});
+    const niche = annCategoryContext(config);
+    if (niche) data.showcase_niche = { category_id: niche.category.id, slug: niche.subcategory?.slug || "", topic: niche.topic };
+  }
   return { data, unavailable };
 }
 

@@ -10,6 +10,7 @@ import { preparePageMigration } from "../db/page-schema-migration.js";
 import { DEFAULT_SETTINGS, loadDraft } from "./store/repository.js";
 import { APP_ORIGIN } from "./auth/security.js";
 import { STYLE_IDS, styleSettings } from "./public/aura-styles.js";
+import { TAXONOMY } from "./public/aura-taxonomy-data.js";
 
 const storeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ownerId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -117,6 +118,18 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       // Screenshot controls affect only this response clone, never a stored
       // fixture session or any merchant. This module is development-only.
       const requestedStyle = url.searchParams.get("style");
+      const requestedCategory = TAXONOMY.categories.find(c => c.slug === url.searchParams.get("category"));
+      const requestedSubcategory = requestedCategory && TAXONOMY.subcategories.find(s =>
+        s.category_id === requestedCategory.id && s.slug === url.searchParams.get("subcategory"));
+      if (requestedCategory && requestedSubcategory) {
+        options.draft.settings = { ...options.draft.settings, category: requestedCategory.slug, subcategory: requestedSubcategory.slug };
+        if (options.sessionResponse.session) options.sessionResponse.session = {
+          ...options.sessionResponse.session, answers: {
+            ...options.sessionResponse.session.answers,
+            category_id: requestedCategory.id, subcategory_id: requestedSubcategory.id,
+          },
+        };
+      }
       if (STYLE_IDS.includes(requestedStyle)) {
         const theme = styleSettings(requestedStyle);
         options.draft.settings = { ...options.draft.settings, ...theme };
@@ -135,6 +148,19 @@ export async function annPreviewFixture(req, res, previewOrigin) {
           .replace('data-device="desktop" aria-pressed="true"', 'data-device="desktop" aria-pressed="false"')
           .replace('data-device="mobile" aria-pressed="false"', 'data-device="mobile" aria-pressed="true"');
       }
+      // Fixed, development-only capture targets. No arbitrary selectors or
+      // executable query text enter the page; the production Worker excludes
+      // this entire isolated fixture.
+      const target = {
+        "before-after": '[data-niche-section="before-after"]',
+        bundle: ".sc-bundle", reviews: ".sc-reviews", ugc: ".sc-ugcs",
+        guide: "[data-niche-profile]",
+      }[url.searchParams.get("section")];
+      if (typeof target === "string") html = html.replace("</body>", `<script>
+        document.getElementById("ann-preview").addEventListener("load",()=>setTimeout(()=>{
+          document.getElementById("ann-preview").contentDocument?.querySelector(${JSON.stringify(target)})?.scrollIntoView({block:"start",behavior:"instant"});
+        },180));
+      </script></body>`);
       response = new Response(req.method === "HEAD" ? null : html,
       { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     } else {

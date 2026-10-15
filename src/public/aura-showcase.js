@@ -5,6 +5,9 @@
  */
 import { SHOWCASE_MEDIA, isShowcaseImage } from "./aura-showcase-assets.js";
 import { safeImage } from "./aura-sections.js";
+import { homeRich, productRich, collectionRich } from "./aura-showcase-sections.js";
+import { RICH_CSS } from "./aura-showcase-rich-css.js";
+import { showcaseProfile, renderNicheSections, NICHE_SECTION_CSS, profileGuidance } from "./aura-showcase-profiles.js";
 import { styleSettings } from "./aura-styles.js";
 import { contrastColor } from "./validation.js";
 
@@ -112,7 +115,7 @@ function context(data, settings, options) {
     copy.about = `A considered view of ${world.toLowerCase()}.`;
     copy.story = [copy.description, "Explore this illustrative collection and make it your own with your products, imagery and verified details."];
   }
-  return { style, media, def, products, collections, brand, copy, world, options, page: options.page || "home" };
+  return { style, media, def, products, collections, brand, copy, world, profile: showcaseProfile(data, style), options, page: options.page || "home" };
 }
 const pImg = (p, i = 0) => p?.images?.[i]?.url ? img(p.images[i]) : "";
 const pHref = p => `/products/${encodeURIComponent(p.id)}`;
@@ -181,23 +184,26 @@ const HOME = {
 /* ---- shared page bodies, restyled and re-arranged by each style ---- */
 function collectionPage(x) {
   const id = x.options.collectionId;
+  const rich = collectionRich(x.style, x);
   const col = id ? x.collections.find(c => String(c.id) === String(id) || c.slug === id) : null;
   const list = col ? x.products.filter(p => (col.product_ids || []).includes(p.id)) : x.products;
   const chips = [`<a class="${col ? "" : "on"}" href="/collections/all">All</a>`, ...x.collections.map(c => `<a class="${col?.id === c.id ? "on" : ""}" href="${cHref(c)}">${esc(c.title)}</a>`)].join("");
   return `<section class="sc-chead"><p ${rv()}>${esc(x.world)} sample range</p><h1 ${rv(1)}>${esc(col?.title || "Shop all")}</h1><p ${rv(2)}>${esc(col?.description || x.copy.statement)}</p></section><nav class="sc-chips" aria-label="Collections">${chips}</nav>
-  <section class="sc-list ${list.length ? "" : "empty"}">${list.length ? list.map((p, i) => card(p, i)).join("") : `<p class="sc-empty">No sample products in this collection yet.</p>`}</section>`;
+  ${rich.top}<section class="sc-list ${list.length ? "" : "empty"}">${list.length ? list.map((p, i) => card(p, i)).join("") : `<p class="sc-empty">No sample products in this collection yet.</p>`}</section>${rich.bottom}`;
 }
 function productPage(x) {
   const p = x.products.find(i => String(i.id) === String(x.options.productId)) || x.products[0];
   if (!p) return `<section class="sc-chead"><h1>No sample product</h1></section>`;
   const features = (p.content?.features || []).map(f => `<li><span>${esc(f.label)}</span>${esc(f.value)}</li>`).join("");
   const rest = x.products.filter(i => i.id !== p.id).slice(0, 4);
+  const rich = productRich(x.style, x, p);
   return `<section class="sc-prod"><div class="sc-gal"><div class="sc-gal-main rv">${img(p.images?.[0], p.title).replace("<img ", "<img data-gallery-image ")}</div><div class="sc-gal-sub"><div>${img(x.media.hero, "Styling reference")}</div><div>${img(x.media.lifestyle, "Lifestyle reference")}</div></div></div>
   <div class="sc-info"><p class="sc-crumb"><a href="/">Home</a> / <a href="/collections/all">Shop</a></p><h1 ${rv()}>${esc(p.title)}</h1><p class="sc-pp">${rupees(p.price_paise)} <small>illustrative demo price</small></p><p class="sc-desc">${esc(p.description || "")}</p>${features ? `<ul class="sc-feat">${features}</ul>` : ""}
-  <div class="au-buy"><button type="button">Add to bag (preview)</button></div>
+  <div class="au-buy"><button type="button">Add to bag (preview)</button></div>${rich.offer}${rich.aside}
   <details open><summary>About this demo</summary><p>This is a sample product from a style demonstration. Photography is an illustrative placeholder and no order or payment is ever made.</p></details>
+  <details><summary>${esc(x.profile.guides[2])}</summary><p>${esc(profileGuidance(x.profile)[2])}</p></details>
   <details><summary>Shipping and returns</summary><p>Add your own delivery and returns terms when you build the store. None are shown in this demo.</p></details></div></section>
-  <section class="sc-rel"><h2 ${rv()}>You may also browse</h2><div class="sc-list">${rest.map((r, i) => card(r, i)).join("")}</div></section>
+  <section class="sc-rel"><h2 ${rv()}>You may also browse</h2><div class="sc-list">${rest.map((r, i) => card(r, i)).join("")}</div></section>${rich.below}
   <div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button">Add to bag (preview)</button></div>`;
 }
 const cartPage = () => `<section class="sc-chead"><h1>Your bag</h1><p>A sample bag. Nothing here is a real order.</p></section><section class="sc-cart"><div data-cart-page-lines class="commerce-lines"></div><aside class="sc-sum" data-cart-summary></aside></section>`;
@@ -227,11 +233,23 @@ function extras(x, data) {
 }
 const BODY = { collection: collectionPage, product: productPage, cart: cartPage, checkout: checkoutPage, about: aboutPage, contact: contactPage };
 
+const KIND = { editorial: "clip", boutique: "pop", architectural: "slide", minimal: "fade", vintage: "drop" };
+/** top after the hero, mid after the third section, bottom before the last one. */
+function withHomeRich(html, rich) {
+  const parts = html.split("</section>"), last = parts.pop();
+  const ins = new Map();
+  ins.set(0, rich.top); ins.set(Math.min(2, parts.length - 1), (ins.get(Math.min(2, parts.length - 1)) || "") + rich.mid);
+  ins.set(parts.length - 2 < 0 ? 0 : parts.length - 2, (ins.get(parts.length - 2 < 0 ? 0 : parts.length - 2) || "") + rich.bottom);
+  return parts.map((part, i) => part + "</section>" + (ins.get(i) || "")).join("") + last;
+}
 export function renderShowcase(data, settings, options = {}) {
   const page = options.page || "home";
   if (!isShowcase(data, settings.style_preset) || !SHOWCASE_PAGES.includes(page)) return null;
   const x = context(data, settings, options);
-  const main = (page === "home" ? HOME[x.style](x) : BODY[page](x)) + extras(x, data);
+  let main = page === "home" ? withHomeRich(HOME[x.style](x), homeRich(x.style, x)) : BODY[page](x);
+  main += renderNicheSections(x, data) + extras(x, data);
+  main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${KIND[x.style]}"`)
+    .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${KIND[x.style]}"`);
   const accent = /^#[0-9a-f]{6}$/i.test(settings.accent_color || "") ? settings.accent_color : null;
   const font = ["modern","serif","classic"].includes(settings.font_preset) ? settings.font_preset : styleSettings(x.style).font_preset;
   const display = { modern: '"Instrument Sans",system-ui,sans-serif', serif: '"Aura Editorial",Georgia,serif', classic: '"Aura Classic",Georgia,serif' }[font];
@@ -245,7 +263,7 @@ export function renderShowcase(data, settings, options = {}) {
     radius ? `.sc .sc-btn{border-radius:${radius}}` : "",
     ".sc .sc-btn.ghost{background:transparent;color:var(--ink)}.sc .sc-btn.text{background:none;color:var(--ink)}",
   ].join("");
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>${esc(x.brand)} style demo</title><style>${CSS}${overrides}</style></head>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>${esc(x.brand)} style demo</title><style>${CSS}${RICH_CSS}${NICHE_SECTION_CSS}${overrides}</style></head>
 <body data-aura data-showcase="${x.style}" data-style="${x.style}" data-font="${font}" data-preset="${preset}" data-page="${page}" class="sc sc-${x.style}"><div class="sc-demo">Style demo. Sample ${esc(x.world)} products and illustrative prices. Nothing is saved, ordered or published.</div>${header(x)}<main class="sc-main sc-p-${page}">${main}</main>${footer(x)}</body></html>`;
 }
 
@@ -273,9 +291,7 @@ const CSS = `
 .sc-about,.sc-contact{display:grid;grid-template-columns:1fr 1fr;gap:3rem;padding:3rem 1.5rem;align-items:start}.sc-about h1,.sc-contact h1{font-size:clamp(2.4rem,6vw,4.6rem);margin:.5rem 0 1.2rem}.sc-about-copy,.sc-contact>div{display:grid;gap:1rem;justify-items:start}.sc-about-img,.sc-cimg{aspect-ratio:1;overflow:hidden;width:100%}
 .sc-ft{background:var(--ftbg,var(--tint));padding:3rem 1.5rem 4rem;margin-top:2rem}.sc-ft-in{display:grid;gap:1.2rem;max-width:60rem}.sc-ft nav{display:flex;gap:1.4rem;flex-wrap:wrap}.sc-ft p{font-size:.8rem;opacity:.75;max-width:40rem}
 @keyframes sc-rise{from{opacity:0;transform:translateY(26px)}}@keyframes sc-clip{from{opacity:0;clip-path:inset(0 0 100% 0);transform:translateY(20px)}}@keyframes sc-pop{from{opacity:0;transform:scale(.92) translateY(12px)}}@keyframes sc-slide{from{opacity:0;transform:translateX(-48px)}}@keyframes sc-fade{from{opacity:0}}@keyframes sc-drop{from{opacity:0;transform:translateY(-14px)}}@keyframes sc-in{from{opacity:0}}@keyframes sc-tick{to{transform:translateX(-50%)}}
-@media (prefers-reduced-motion:no-preference){.sc .rv{animation:var(--rv,sc-rise) var(--dur,.9s) var(--ease,cubic-bezier(.2,.7,.2,1)) both;animation-delay:calc(var(--i,0)*80ms)}
-@supports (animation-timeline:view()){.sc .rv{animation-timeline:view();animation-range:entry 0% cover 30%;animation-delay:0s;animation-duration:1ms}}
-.sc-main{animation:var(--pg,sc-in) .6s both}}
+@media (prefers-reduced-motion:no-preference){.sc-main{animation:var(--pg,sc-in) .6s both}}
 /* ============ EDITORIAL: magazine, burgundy ============ */
 .sc-editorial{--ink:#1d1418;--acc:#6b1735;--tint:#f7edf0;--line:#e5d3d8;--disp:"Aura Editorial",Georgia,serif;--body:"Instrument Sans",system-ui,sans-serif;--rv:sc-clip;--dur:1.2s;--pg:sc-fade;--ftbg:#6b1735}
 .sc-editorial .sc-demo{background:#fff;border-bottom:1px solid var(--line)}.sc-editorial .sc-announce{display:flex;justify-content:space-between;padding:.5rem 1.5rem;font:italic .8rem var(--disp);border-bottom:1px solid var(--ink)}
