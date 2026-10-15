@@ -462,3 +462,87 @@ mtime_ms = 1792073216853
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/b574b05d-9bc5-4b4d-af59-bd2cca0553bd/67877ef8-ce6c-4ecb-876f-2081579c5637"
 storage_version_token = "1792073233481336"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "AuOpx5wxRe7pEvKLNVs7H"
+uri = "file://generated-artifacts/aura-style-complete/v01/aura-editorial-new-sections-v01.jpg"
+type = "image"
+title = "Editorial · Collections and lifestyle"
+description = "Two newly generated collection images followed by one lifestyle image, matched to this style’s existing hero and product set. Illustrative showcase photography."
+logical_id = "44e2859e-8142-41a5-b577-712843e6143f"
+content_hash = "sha256:db529b3fb2f123dced5b6a02d3f8d8c155e45492b73cc84db64622b9e0a222e7"
+size = 139649
+mtime_ms = 1792073429417
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/44e2859e-8142-41a5-b577-712843e6143f/f50a74ae-f560-4d28-b1ba-02bef53cbd6f"
+storage_version_token = "1792073548461018"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "AUXQqf29fF-w6wDhl52V9"
+uri = "file://generated-artifacts/aura-style-complete/v01/aura-boutique-new-sections-v01.jpg"
+type = "image"
+title = "Modern Boutique · Collections and lifestyle"
+description = "Two newly generated collection images followed by one lifestyle image, matched to this style’s existing hero and product set. Illustrative showcase photography."
+logical_id = "2f9f0378-9d16-4a51-a019-9ad35242aef9"
+content_hash = "sha256:9dd2e3282a882e34c56899375b2045b734827a1f67d7a4175517856d1486be4f"
+size = 124771
+mtime_ms = 1792073429933
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/2f9f0378-9d16-4a51-a019-9ad35242aef9/580d89ad-7399-4745-8e47-2057a798242c"
+storage_version_token = "1792073549724737"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "AUvNGdbBtrBujUVavLA50"
+uri = "file://generated-artifacts/aura-style-complete/v01/aura-architectural-new-sections-v01.jpg"
+type = "image"
+title = "Bold Architectural · Collections and lifestyle"
+description = "Two newly generated collection images followed by one lifestyle image, matched to this style’s existing hero and product set. Illustrative showcase photography."
+logical_id = "15cb4c15-f1c8-4051-a6fe-97503dfd7c27"
+content_hash = "sha256:1a527ea66cbd6398440d244e37111f3048a13bf5fdc61975c36d9100aadc38e3"
+size = 123885
+mtime_ms = 1792073430445
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/15cb4c15-f1c8-4051-a6fe-97503dfd7c27/1e1dae50-8a9d-44a2-917c-9cd3515b9b34"
+storage_version_token = "1792073550934816"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "REl-8o-WmE3r5b9ncjJxd"
+uri = "file://generated-artifacts/aura-style-complete/v01/aura-minimal-new-sections-v01.jpg"
+type = "image"
+title = "Minimal · Collections and lifestyle"
+description = "Two newly generated collection images followed by one lifestyle image, matched to this style’s existing hero and product set. Illustrative showcase photography."
+logical_id = "488117b1-b4cb-4499-a238-536275fd1e28"
+content_hash = "sha256:f223d1c81be4c54ff90ef0b4178d07a62de6b13c02e4999fa207d93d2edb23e5"
+size = 104116
+mtime_ms = 1792073430941
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/488117b1-b4cb-4499-a238-536275fd1e28/9bcae0d1-11dc-47b2-8eb5-196e19bc4a31"
+storage_version_token = "1792073552194450"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "y9i9Bx7k21zAWTmt_KX93"
+uri = "file://generated-artifacts/aura-style-complete/v01/aura-vintage-new-sections-v01.jpg"
+type = "image"
+title = "Vintage · Collections and lifestyle"
+description = "Two newly generated collection images followed by one lifestyle image, matched to this style’s existing hero and product set. Illustrative showcase photography."
+logical_id = "ee6eecec-60ee-4f45-9f34-617ac66a9f41"
+content_hash = "sha256:e4e44474d2f249f6300ea25d15915bd0e1efad15451339c9ffcaf53bd9f20bc6"
+size = 141932
+mtime_ms = 1792073431489
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/ee6eecec-60ee-4f45-9f34-617ac66a9f41/3e0a80ba-f467-4b91-9e93-b35aa2970597"
+storage_version_token = "1792073553447105"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "QbKfOL3dQlF-Rfh4BfoI3"
+uri = "file://generated-artifacts/aura-style-complete/aura-complete-five-style-image-library-v01.zip"
+type = "unspecified"
+title = "Download the complete 45-image style library"
+description = "All five styles: 5 heroes, 25 products, 10 collection images and 5 lifestyle images. Includes JPEG originals, WebP versions, 10 preview sheets, a manifest and notes. Verified ZIP, approximately 10 MB."
+logical_id = "cee43322-4b0c-4041-8a15-378717bb9402"
+content_hash = "sha256:fd569375819605a97b15928d1ad4963d54c84a5428f8165f57c62b78f78a4afe"
+size = 9960105
+mtime_ms = 1792073497245
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/cee43322-4b0c-4041-8a15-378717bb9402/0964a239-4062-4d2b-8010-21c5489df0dc"
+storage_version_token = "1792073554829670"
+content_type = "application/octet-stream"
