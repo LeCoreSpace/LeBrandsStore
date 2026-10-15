@@ -1,0 +1,88 @@
+Create an EDITORIAL design-reference bundle for the Aura storefront theme used by LeBrands.Store.
+
+This is a visual design task, not a production website or a Shopify theme. The bundle will help merchants understand and choose a style. It will later be implemented in our actual Aura theme. Do not claim the mockups are already functional.
+
+INPUTS
+I will attach our existing c001-s001 Mens Clothing content-and-image ZIP. Read its content.json and images-manifest.json first. Use its supplied photographs, sample product names, demonstration prices and collection information. If the ZIP is missing or cannot be read, ask for it instead of inventing replacement inputs.
+
+Use the fictional store name Example Studio. Never use a real brand's identity, product images, logos or screenshots. Reuse the same supplied products across every page. Products can belong to several collections. Show five sample product cards per collection using those shared products, rather than inventing fifteen unique products.
+
+All products and prices are illustrative. Preserve the sample disclosures in the content specification. Do not invent customer reviews, ratings, certifications, founding dates, discounts, shipping guarantees or product-material claims.
+
+DESIGN DIRECTION
+Create a professional fashion-store design inspired by editorial publishing: expressive serif headlines, restrained sans-serif body text, generous but purposeful whitespace, asymmetrical image-and-copy compositions, refined product grids and clear shopping controls.
+
+Use Instrument Serif for headings and Instrument Sans for body text, or specify a closely matching openly licensed, self-hostable alternative if these are unavailable. Use only two font families.
+
+Use white as the main page background, near-black text and a restrained deep burgundy accent. Do not use beige as the main background. Product photographs can retain their original backgrounds. Define accessible text and button colour combinations.
+
+The result must look like a coherent complete store, not a collection of unrelated landing pages. Keep the header, navigation, buttons, product cards, spacing and footer consistent. Editorial does not mean oversized empty gaps, illegible tiny text or decorative elements that interfere with shopping.
+
+Do not use sparkle symbols, sparkle icons, emojis, em dashes or en dashes in any copy. Use ordinary commas, full stops or "to". Do not add decorative floating boxes.
+
+WORK IN TWO BATCHES
+Batch 1: desktop Home, desktop Collection and desktop Product, plus their design specification. Show these three designs for approval before producing the remaining images. These establish the visual direction.
+Batch 2, after approval: mobile versions of those pages, desktop/mobile Cart and Checkout, and the style-selection cover. Preserve the approved direction.
+
+PAGE CONTENT
+1. HOME
+Arrange the core content in this order:
+Hero, featured collections, featured products, brand statement, product spotlight, lookbook, materials/craft, founder story, reassurance and FAQ.
+Use supplied content and media where available. If a founder fact or materials claim has not been supplied, use clearly illustrative draft wording or mark that section disabled in content.json. Do not fill a reviews section with fictional testimonials. The design specification may include a reviews component, disabled by default.
+The hero should have a memorable but readable headline and a clear collection CTA. Collection covers should be the actual supplied collection images. Show INR demonstration prices with product cards.
+
+2. COLLECTION
+Collection heading and description, collection navigation, filters/sort, a five-product grid, pagination where needed, supporting collection description and related collections.
+Filters must refer to attributes actually represented by the supplied catalogue. Do not show fabricated counts or functional promises. Keep the product grid efficient to browse.
+
+3. PRODUCT
+Gallery with supplied photographs, name, INR demonstration price, supported size/colour choices, quantity and add-to-cart presentation; delivery/returns information; description/features; materials/care; size guide where applicable; usage where applicable; FAQ and related products.
+Never infer fibre composition, fit, care requirements or sizing measurements solely from an image. Use confirmed source content. Missing operational facts should appear as labelled draft information in content.json.
+
+4. CART
+Item image, title, selected options, quantity, removal control, item/subtotal presentation, recommendations, summary and checkout CTA.
+Only show gift wrapping or other optional extras if explicitly identified as non-functional concept components in the specification. Do not imply our platform already supports them.
+
+5. CHECKOUT
+Contact, delivery address, shipping selection, available payment presentation, optional notes, order summary and place-order CTA.
+Use fictional example customer details, never real personal information. COD can be shown as a demonstration method. Do not display a connected online payment provider, invented shipping rates or fabricated trust badges. Mark order placement as a mockup, not a working checkout.
+
+RESPONSIVE REQUIREMENTS
+Desktop: 1440 CSS pixels wide, full page, not a cropped first viewport.
+Mobile: 390 CSS pixels wide, full page, with no horizontal overflow.
+Specify image ratios, maximum content width, section spacing, card spacing and typography sizes for both widths. Product photos must not be stretched. Keep faces and garments intentionally framed. Mobile must rearrange content sensibly, not shrink the desktop screenshot.
+Controls should have visible focus styles and comfortable touch targets. Specify reduced-motion behaviour.
+
+DELIVERABLES
+Directory: aura-editorial-v01/
+
+Images:
+editorial-home-desktop-v01.webp
+editorial-home-mobile-v01.webp
+editorial-collection-desktop-v01.webp
+editorial-collection-mobile-v01.webp
+editorial-product-desktop-v01.webp
+editorial-product-mobile-v01.webp
+editorial-cart-desktop-v01.webp
+editorial-cart-mobile-v01.webp
+editorial-checkout-desktop-v01.webp
+editorial-checkout-mobile-v01.webp
+editorial-cover-v01.webp
+
+The cover is 1200 by 900 pixels. It should show a concise desktop/mobile storefront composition and the label "Editorial". Aim for 120 KB or less for the cover without visibly degrading it. Do not sacrifice readable full-page images to meet that cover budget.
+
+Also include:
+design-spec.json: design tokens, font sources/licences, responsive rules, image ratios, component variants and section order for each page.
+content.json: actual copy as selectable text, organised by page_key, section_id, section_type, settings and blocks. Include media filenames and catalogue references. Keep demonstration content clearly labelled.
+manifest.json: filename, page, device, width_px, height_px and whether the image is a rendered HTML screenshot or an AI-generated design reference.
+README.md: assumptions, missing information, disabled components, image provenance and instructions for interpreting the bundle.
+
+Use responsive HTML/CSS and browser-rendered screenshots if your tools support it, because accurate, readable page text matters. Include the self-contained reference HTML/CSS as well if you create it. If you generate images directly, label them as AI mockups and keep all text separately in content.json.
+
+QUALITY CHECK
+Verify the same product name, photograph and price match across collection, product, cart and checkout.
+Verify all eleven image files exist and really are WebP, with accurate dimensions in the manifest.
+No collages masquerading as full-page designs, broken images, distorted product photos, duplicated text or fake buttons claimed to work.
+If your tools cannot export WebP or create a ZIP, say so clearly and provide the actual available files. Never provide a download link for a file you did not create.
+
+After Batch 2, package the completed directory as aura-editorial-v01.zip.

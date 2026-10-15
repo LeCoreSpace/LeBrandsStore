@@ -44,3 +44,13 @@ approach, rather than requiring every merchant to use the earlier AI flow.
 **How to apply:** Ann follows the interactive whole-store approach discussed
 with the user, with fast previews as choices change, not sequential
 page-building or per-section AI approvals. Preserve Standard Builder.
+
+Selecting or switching a builder is a preference change, not a content
+reset or a business-details edit. It must preserve policy review, wizard
+progress, catalogue, page drafts and the live publication.
+
+**Why:** Both builders are alternative interfaces to the same store, and
+the user requires the existing Standard Builder to remain usable.
+
+**How to apply:** Keep the builder preference write separate from setup
+operations that invalidate reviewed policies or replace layouts.

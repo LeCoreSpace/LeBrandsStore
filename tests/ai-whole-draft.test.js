@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { preAuraDatabase,applyAura,asLegacyApp } from "./helpers/rollback-database.js";
 import { preparePageMigration } from "../db/page-schema-migration.js";
 import { buildPlan,productContent } from "../src/ai/plan.js";
-import { getJob,startBuild,prospectiveDraft,ownedMedia } from "../src/ai/repository.js";
+import { getJob,startBuild,updateJob,prospectiveDraft,ownedMedia } from "../src/ai/repository.js";
 import { advanceWholeDraft,resumeWholeDraft,isWholeDraft,imageSources } from "../src/ai/draft-flow.js";
 import { completeBuild } from "../src/ai/complete.js";
 import { loadDraft } from "../src/store/repository.js";
@@ -124,8 +124,15 @@ test("whole-store generation resumes legacy jobs, prepares every page and saves 
     const response=await handleAiRoutes(new Request(`https://app.lebrands.store/api/stores/${store}/ai/start`,{
       method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({brief}),
     }),env,db,{id:user},hash);
-    assert.equal(response.status,200);
-    const started=await response.json();
+    assert.equal(response.status,410);
+    assert.match((await response.json()).error,/retired/);
+    // Existing jobs remain recoverable; creation through the retired API is blocked.
+    const existingJob=await app(async tx=>{
+      const created=await startBuild(tx,store,{id:user},hash,brief);
+      return updateJob(tx,created,{status:"queued",error:null});
+    });
+    await env.AI_BUILD_QUEUE.send({store_id:store,job_id:existingJob.id});
+    const started={job:{...existingJob,workflow:"whole-store"}};
     assert.equal(started.job.status,"queued");assert.equal(started.job.workflow,"whole-store");
     assert.equal(messages.at(-1).job_id,started.job.id);
     const beforeCalls=textCalls,beforeMessages=messages.length;

@@ -265,7 +265,7 @@ test("offline account journey: generic signup, login, draft creation, forced res
   });
   const created = await call("/stores/new", { brand_name: "My Brand", subdomain: "my-brand" });
   assert.equal(created.status, 303);
-  assert.equal(created.headers.get("location"), "/stores/44444444-4444-4444-8444-444444444444/setup");
+  assert.equal(created.headers.get("location"), "/stores/44444444-4444-4444-8444-444444444444/build");
   assert.match(await (await call("/")).text(), /My Brand/);
   repo.users.get("owner@example.com").must_change_password = true;
   assert.equal((await call("/")).headers.get("location"), "/account");

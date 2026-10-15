@@ -1,5 +1,3 @@
-import { renderAiBuilder } from "./ui/ai-builder.js";
-import { aiBuilderFixture } from "./local-ai-fixture.js";
 // Development-only adapter. Production always uses src/index.js.
 // Optional explicitly enabled, restricted live-database bridge for real testing.
 import worker from "./index.js";
@@ -19,6 +17,7 @@ import {emailFixture} from "./local-email-fixture.js";
 import { EXAMPLE_STORE_ID,EXAMPLE_PRODUCTS,EXAMPLE_IMAGE_WIDTHS,exampleFixture,exampleInvoice,exampleMedia } from "./local-example-fixture.js";
 import { renderInvoice } from "./ui/invoice.js";
 import { renderAccount } from "./ui/accounts.js";
+import { renderBuilderChoice } from "./ui/builder-choice.js";
 import { quoteCart } from "./public/commerce-rules.js";
 import { renderPremiumStore } from "./ui/premium-example.js";
 import { previewShell, renderAppSample } from "./local-app-preview.js";
@@ -56,8 +55,12 @@ export default {
       return new Response(request.method==="HEAD"?null:body||"Unknown template",{status:body?200:404,headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
     }
     const previewUrl=new URL(request.url);
-    if(previewUrl.pathname==="/__ai-builder-preview"&&["GET","HEAD"].includes(request.method)){
-      return new Response(request.method==="HEAD"?null:renderAiBuilder(aiBuilderFixture(previewUrl.searchParams.get("mode")), {name:"Demo merchant",email:"demo@example.invalid"}),
+    if(previewUrl.pathname==="/__ai-builder-preview"&&["GET","HEAD"].includes(request.method))
+      return new Response(null,{status:303,headers:{location:"/__builder-choice-preview","cache-control":"no-store"}});
+    if(previewUrl.pathname==="/__builder-choice-preview"&&["GET","HEAD"].includes(request.method)){
+      const data=exampleFixture();data.role="owner";data.aura_skeleton_enabled=true;
+      if(previewUrl.searchParams.get("mode")==="standard")data.settings.builder_mode="standard";
+      return new Response(request.method==="HEAD"?null:renderBuilderChoice(data, {name:"Demo merchant",email:"demo@example.invalid"}),
         {headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
     }
     const original = new URL(request.url);

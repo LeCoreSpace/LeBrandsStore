@@ -71,6 +71,7 @@ export async function handleAiRoutes(request,env,db,user,hash){
     const body=await readJson(request);
     const result=await db.withMemberStore(storeId,hash,async tx=>{
       await dashboardAccess(tx,storeId,user.id,true);
+      if(action==="start")throw aiError("The previous AI builder has been retired. Continue in Build your store.",410);
       if(!await aiEnabled(tx))throw aiError("Apply the reviewed AI-builder migration before using this feature.",409);
       if(action==="verify"){
         if(!env.RESEND_API_KEY)throw aiError("Verification email is not configured yet.",503);

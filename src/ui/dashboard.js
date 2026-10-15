@@ -36,12 +36,12 @@ export function documentPage(view, data, user, body) {
   const title = ({
     overview: "Home", orders: "Orders", order: "Order details", products: "Products",
     "product-new": "Add product", product: "Edit product", collections: "Collections", "collection-new": "Add collection", collection: "Edit collection", customers: "Customers",
-    customer: "Customer details", invoices: "Invoices", settings: "Settings", "ai-builder":"AI store builder",
+    customer: "Customer details", invoices: "Invoices", settings: "Settings", "ai-builder":"Legacy build", builder:"Build your store",
   })[view] || "Overview";
   return layout({
     title: `${title} | ${store.name || "Your store"} | LeBrands.Store`,
     description: `${title} workspace for ${store.name || "your store"}.`,
-    canonical: `https://app.lebrands.store/stores/${encodeURIComponent(storeId)}/${view === "overview" ? "" : view}`,
+    canonical: `https://app.lebrands.store/stores/${encodeURIComponent(storeId)}/${view === "overview" ? "" : view === "builder" ? "build" : view}`,
     noindex: true,
     extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>',
     body: `<div class="lb-app" data-store-id="${esc(storeId)}" data-role="${esc(data.role || "editor")}">
@@ -79,7 +79,7 @@ function header(data, user, view) {
         <span class="lb-nav-caption lb-nav-caption-spaced">Manage</span>
         <span class="lb-nav-link is-disabled" aria-disabled="true" title="Analytics not enabled"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg><span>Analytics</span><small>Not enabled</small></span>
         <a href="${root}/setup" class="lb-nav-link" title="Online store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-1.5-6h-15L3 9Zm2 0v12h14V9M9 21v-7h6v7"/></svg><span>Online store</span></a>
-        <div class="lb-online-links"><a href="${root}/editor">Theme and store editor</a><a href="${root}/build">AI store builder</a><a href="${root}/team">Team and order emails</a><a href="${root}/setup">Guided setup</a><a href="${root}/settings#policies">Pages and policies</a>${store.subdomain ? `<a href="${esc(storeUrl)}" target="_blank" rel="noopener">Preview store</a>` : '<span>Preview unavailable</span>'}</div>
+        <div class="lb-online-links"><a href="${root}/editor">Theme and store editor</a><a href="${root}/build">Build your store</a><a href="${root}/team">Team and order emails</a><a href="${root}/setup">Standard Builder</a><a href="${root}/settings#policies">Pages and policies</a>${store.subdomain ? `<a href="${esc(storeUrl)}" target="_blank" rel="noopener">Preview store</a>` : '<span>Preview unavailable</span>'}</div>
       </nav>
       <div class="lb-sidebar-bottom"><a href="${root}/settings" class="lb-nav-link ${active === "settings" ? "is-current" : ""}" ${active === "settings" ? 'aria-current="page"' : ""} title="Settings">${dashboardIcon("settings")}<span>Settings</span></a></div>
     </aside>

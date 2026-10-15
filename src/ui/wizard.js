@@ -12,7 +12,7 @@ export function renderWizard(data = {}, user = {}) {
         <a class="wizard-brand" href="/" aria-label="LeBrands.Store dashboard"><span class="wizard-brandmark" aria-hidden="true">${LE_BRANDS_MARK}</span><span class="wizard-logo">${LE_BRANDS_LOGO}</span></a>
         <div class="wizard-account">
           ${accountName
-            ? `<span>${escapeHtml(accountName)}</span><a href="/">Dashboard</a><form method="post" action="/logout"><button type="submit">Sign out</button></form>`
+            ? `<span>${escapeHtml(accountName)}</span><a href="/stores/${encodeURIComponent(storeId)}/build">Choose builder</a><a href="/">Dashboard</a><form method="post" action="/logout"><button type="submit">Sign out</button></form>`
             : `<a class="wizard-sign-in" href="/login">Sign in</a>`}
         </div>
       </header>

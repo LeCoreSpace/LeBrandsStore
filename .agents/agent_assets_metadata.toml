@@ -280,3 +280,17 @@ mtime_ms = 1791978564443
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/135b86c8-f4bf-4b8a-8dc9-d7b96a223c6e/b4f20d4b-1fe4-4a63-960c-ad629c30251c"
 storage_version_token = "1791978573786872"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "35rQMVwK4bawrssw4wdZm"
+uri = "file://docs/editorial-bundle-chatgpt-prompt.txt"
+type = "text"
+title = "Editorial bundle: ChatGPT prompt"
+description = "Copy this prompt into ChatGPT and attach your existing Mens Clothing content-and-image ZIP. It requests approval of three desktop designs before completing the full Editorial bundle."
+logical_id = "cbc41eda-61d1-470c-8944-beceff41e031"
+content_hash = "sha256:89dc91efa182f626f91f3ee1f6361175dc498c9d11af31bebdfac40ef13ba01c"
+size = 7973
+mtime_ms = 1792041392700
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/cbc41eda-61d1-470c-8944-beceff41e031/93557cb6-5ec6-412a-b5d5-e06ad1fb8865"
+storage_version_token = "1792041452297336"
+content_type = "text/plain"
