@@ -1,4 +1,4 @@
-import { STYLE_IDS, STYLE_THEME_KEYS, styleSettings, stylePatch } from "./aura-styles.js";
+import { AURA_STYLES, STYLE_IDS, STYLE_THEME_KEYS, styleSettings, stylePatch } from "./aura-styles.js";
 import { stylePreviewData, renderStylePreview } from "./style-preview.js";
 import { attachStyleInteractions } from "./style-preview-interactions.js";
 import { themeSnapshot } from "./editor-state.js";
@@ -13,6 +13,13 @@ const frame = $("#as-preview"), canvas = $("#as-canvas"), status = $("#as-status
 const readOnly = boot.readOnly === true || !["owner", "admin"].includes(boot.role);
 let settings = { ...original }, page = ["home","collection","product","cart","checkout","about","contact"].includes(boot.initialPage) ? boot.initialPage : "home", productId = catalogue.products?.[0]?.id;
 let collectionId, policyKind, dirty = false, saving = false;
+const scrollPositions = new Map(), stylePages = new Map();
+let displayedKey = "";
+const positionKey = () => JSON.stringify([settings.style_preset || "saved", page, productId || "", collectionId || "", policyKind || "", canvas.dataset.device || "desktop"]);
+function rememberScroll() {
+  const doc = frame.contentDocument;
+  if (displayedKey && doc) scrollPositions.set(displayedKey, doc.scrollingElement?.scrollTop ?? doc.defaultView?.scrollY ?? 0);
+}
 const api = `/api/stores/${encodeURIComponent(boot.store.store_id)}/setup`;
 const message = text => { status.textContent = text; };
 
@@ -26,8 +33,12 @@ function controls() {
     button.setAttribute("aria-pressed", String(button.dataset.page === page)));
   $("#as-apply").disabled = readOnly || saving || !dirty || !STYLE_IDS.includes(settings.style_preset);
 }
-function preview() {
+function preview(remember = true) {
+  if (remember) rememberScroll();
   controls();
+  displayedKey = positionKey();
+  const styleName = AURA_STYLES.find(style => style.id === settings.style_preset)?.name || "Your saved style";
+  frame.title = `${styleName}, interactive ${canvas.dataset.device || "desktop"} store preview`;
   frame.srcdoc = renderStylePreview(catalogue, settings, { page, productId, collectionId, policyKind });
   $("#as-catalog-note").textContent = catalogue.style_demo
     ? "Menswear demonstration content and sample prices. These products are preview-only and will not be added to your catalogue."
@@ -40,7 +51,12 @@ function change(patch) {
   preview();
 }
 document.querySelectorAll("[data-style-choice]").forEach(button =>
-  button.addEventListener("click", () => change(styleSettings(button.dataset.styleChoice))));
+  button.addEventListener("click", () => {
+    stylePages.set(settings.style_preset || "saved", { page, productId, collectionId, policyKind });
+    const next = stylePages.get(button.dataset.styleChoice) || { page: "home", productId: catalogue.products?.[0]?.id };
+    ({ page, productId, collectionId, policyKind } = next);
+    change(styleSettings(button.dataset.styleChoice));
+  }));
 $("#as-palette").addEventListener("change", event => change({ color_preset: event.target.value }));
 $("#as-font").addEventListener("change", event => change({ font_preset: event.target.value }));
 $("#as-accent").addEventListener("input", event => change({ accent_color: event.target.value }));
@@ -48,7 +64,9 @@ document.querySelectorAll("[data-page]").forEach(button => button.addEventListen
   page = button.dataset.page; collectionId = undefined; policyKind = undefined; preview();
 }));
 document.querySelectorAll("[data-device]").forEach(button => button.addEventListener("click", () => {
+  rememberScroll();
   canvas.dataset.device = button.dataset.device;
+  preview(false);
   fitViewport();
   document.querySelectorAll("[data-device]").forEach(other =>
     other.setAttribute("aria-pressed", String(other === button)));
@@ -83,6 +101,11 @@ frame.addEventListener("load", () => {
   attachAuraSearch(doc, catalogue);
   attachAuraCatalog(doc, catalogue, { page, collectionId });
   attachStyleInteractions(doc, catalogue, bag, page, productId, next => { page = next; preview(); });
+  const key = displayedKey;
+  doc.defaultView?.scrollTo({ top: scrollPositions.get(key) || 0, behavior: "instant" });
+  doc.defaultView?.addEventListener("scroll", () => {
+    scrollPositions.set(key, doc.scrollingElement?.scrollTop ?? doc.defaultView?.scrollY ?? 0);
+  }, { passive: true });
 });
 $("#as-fullscreen").addEventListener("click", () => {
   const active = document.body.classList.toggle("ss-immersive");
@@ -96,7 +119,9 @@ function fitViewport() {
   const available = Math.max(240, (canvas.clientWidth || 1316) - 36);
   const scale = Math.min(1, available / width);
   const immersive = document.body.classList.contains?.("ss-immersive") || false;
-  const height = immersive ? Math.max(300, (window.innerHeight || 900) - 120) : 720;
+  const height = immersive
+    ? Math.max(200, canvas.clientHeight ? canvas.clientHeight - 36 : (window.innerHeight || 900) - 190)
+    : 720;
   Object.assign(frame.style, {
     width: `${width}px`, minWidth: `${width}px`, maxWidth: "none",
     height: `${height / scale}px`, transform: `scale(${scale})`, transformOrigin: "top left",
@@ -129,7 +154,7 @@ $("#as-apply").addEventListener("click", async () => {
   finally { saving = false; controls(); }
 });
 window.addEventListener("beforeunload", event => {
-  if (dirty || saving) { event.preventDefault(); event.returnValue = ""; }
+  if (!readOnly && (dirty || saving)) { event.preventDefault(); event.returnValue = ""; }
 });
 // Do not automatically change a merchant's saved styling on initial load.
 if ((window.innerWidth || 1280) < 640) {

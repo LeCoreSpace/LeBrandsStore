@@ -6,8 +6,12 @@ export const AURA_STYLES = Object.freeze([
     settings: { style_preset: "boutique", font_preset: "modern", color_preset: "white", accent_color: "#245c52", button_style: "rounded" } },
   { id: "architectural", name: "Bold Architectural", description: "Strong grids, confident typography and sharp edges.",
     settings: { style_preset: "architectural", font_preset: "modern", color_preset: "white", accent_color: "#b3320e", button_style: "square" } },
+  { id: "minimal", name: "Minimal", description: "Quiet monochrome, fine typography and product-first space.",
+    settings: { style_preset: "minimal", font_preset: "modern", color_preset: "white", accent_color: "#202020", button_style: "square" } },
+  { id: "vintage", name: "Vintage", description: "Heritage typography, muted accents and considered details.",
+    settings: { style_preset: "vintage", font_preset: "classic", color_preset: "white", accent_color: "#65402d", button_style: "square" } },
 ]);
-export const STYLE_IDS = Object.freeze(["editorial", "boutique", "architectural"]);
+export const STYLE_IDS = Object.freeze(AURA_STYLES.map(style => style.id));
 export const STYLE_THEME_KEYS = Object.freeze(["style_preset", "font_preset", "color_preset", "accent_color", "button_style"]);
 export function styleSettings(id) {
   const style = AURA_STYLES.find(item => item.id === id);

@@ -25,6 +25,15 @@
 .ss-canvas{padding:18px;background:#f4f4f2;display:flex;justify-content:center;min-height:620px}
 .ss-canvas iframe{width:100%;height:720px;border:1px solid var(--line);background:#fff;transition:width .25s ease}
 .ss-canvas[data-device=mobile] iframe{width:390px;max-width:100%}
+.ss-preview-controls{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:14px;border-bottom:1px solid var(--line)}
+.ss-preview-styles{display:flex;gap:4px;flex-wrap:wrap}
+.ss-device-switch{display:inline-flex;gap:3px;padding:3px;border:1px solid var(--line);border-radius:999px;background:#f5f5f5}
+.ss-device-switch button{min-height:38px;padding:7px 16px;border:0;border-radius:999px;background:transparent;color:var(--ink);font:600 12px var(--sans);cursor:pointer}
+.ss-device-switch button[aria-pressed=true]{background:#1c1c1b;color:#fff}
+.ss-device-switch button:focus-visible,.ss-preview-styles button:focus-visible{outline:3px solid #6b1735;outline-offset:3px}
+.ss-preview-hint{padding:10px 14px;border-top:1px solid var(--line)}
+.ss-canvas iframe{overflow:auto;scrollbar-width:thin}
+@media(max-width:640px){.ss-preview-controls{justify-content:center}.ss-preview-styles{justify-content:center}.ss-preview-controls .ss-tab{padding:8px 10px}}
 .ss-canvas{position:relative;height:756px;overflow:hidden}
 .ss-canvas iframe{position:absolute;top:18px}
 body.ss-immersive .ss-stage{position:fixed;inset:0;z-index:1000;border:0;display:flex;flex-direction:column;background:#fff}

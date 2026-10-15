@@ -1,9 +1,13 @@
 # Stage 2: interactive Aura styles
 
 Merchants can open `/stores/:storeId/styles` from the builder chooser or editor.
-Editorial, Modern Boutique and Bold Architectural use real Aura page rendering,
+Editorial, Modern Boutique, Bold Architectural, Minimal and Vintage use real Aura page rendering,
 not screenshot mockups. Palette and self-hosted font choices refresh locally.
 The current saved theme is shown on entry; no style is automatically adopted.
+All five share one catalogue and image pack, with curated style-specific
+demonstration copy. No style rewrites merchant-authored text.
+The preview toolbar keeps all five styles and Desktop/Mobile toggles available
+in full-screen view. Each style, page and viewport retains its scroll position.
 
 The full-screen interactive preview retains responsive page navigation, local
 catalogue search/sort, product zoom, mobile navigation, FAQ accordions, an

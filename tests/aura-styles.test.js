@@ -10,12 +10,14 @@ import { themeSnapshot, themePatch, themeChanges } from "../src/public/editor-st
 import { settingsPatch } from "../src/store/input.js";
 import { attachAuraMotion } from "../src/public/aura-motion.js";
 import { handleStoreRoutes } from "../src/store/routes.js";
+import { styleDemonstration } from "../src/public/style-demo-copy.js";
 
 const source={store:{store_id:"11111111-1111-4111-8111-111111111111",name:"Example Studio",subdomain:"example"},
   settings:{category:"fashion",subcategory:"mens-clothing",theme:"aura",accent_color:"#3d4a43",font_preset:"modern",button_style:"rounded",color_preset:"white"},
   role:"owner",products:[],collections:[],layouts:{},policies:[],aura_skeleton_enabled:true};
 
-test("three explicit style definitions validate and old themes remain unstyled",()=>{
+test("five explicit style definitions validate and old themes remain unstyled",()=>{
+  assert.equal(AURA_STYLES.length,5);assert.ok(AURA_STYLES.some(style=>style.id==="vintage"));
   for(const style of AURA_STYLES){
     assert.equal(style.settings.color_preset,"white");
     assert.deepEqual(settingsPatch(styleSettings(style.id)),style.settings);
@@ -117,7 +119,7 @@ test("live studio controller previews immediately and saves styling only with st
       if(options.method==="PATCH"){patches.push(JSON.parse(options.body));return fresh;}
       return fresh;
     }}),
-    STYLE_IDS:AURA_STYLES.map(s=>s.id),STYLE_THEME_KEYS,styleSettings,stylePatch,stylePreviewData,renderStylePreview,themeSnapshot,
+    AURA_STYLES,STYLE_IDS:AURA_STYLES.map(s=>s.id),STYLE_THEME_KEYS,styleSettings,stylePatch,stylePreviewData,renderStylePreview,themeSnapshot,
     attachAuraSearch(){},attachAuraCatalog(){},attachStyleInteractions(){},
   };
   vm.runInNewContext(script,context);
@@ -135,4 +137,41 @@ test("live studio controller previews immediately and saves styling only with st
   fresh={settings:{...boot.settings,accent_color:"#123456"}};
   choices[1].fire("click");await ids["as-apply"].fire("click");
   assert.equal(patches.length,1);assert.match(ids["as-status"].textContent,/changed in another tab/);
+  // Every style/device has a real scrolling document and independent progress.
+  function loadAt(top=0) {
+    const doc={scrollingElement:{scrollTop:top},addEventListener(){},
+      defaultView:{scrollTo({top}){doc.scrollingElement.scrollTop=top;},addEventListener(){}}};
+    ids["as-preview"].contentDocument=doc;
+    ids["as-preview"].fire("load");
+    return doc;
+  }
+  choices[0].fire("click");
+  const editorial=loadAt();editorial.scrollingElement.scrollTop=420;
+  choices[4].fire("click");
+  const vintage=loadAt();vintage.scrollingElement.scrollTop=180;
+  choices[0].fire("click");
+  assert.equal(loadAt().scrollingElement.scrollTop,420);
+  devices[0].fire("click");assert.equal(loadAt().scrollingElement.scrollTop,0);
+  devices[1].fire("click");assert.equal(loadAt().scrollingElement.scrollTop,420);
+  choices[4].fire("click");assert.equal(loadAt().scrollingElement.scrollTop,180);
+  assert.match(ids["as-preview"].title,/Vintage, interactive mobile/);
+});
+
+test("all five previews share imagery, products and prices, with distinct demo copy only",()=>{
+  const demo=stylePreviewData(source),original=structuredClone(demo),titles=[];
+  for(const style of AURA_STYLES){
+    const themed=styleDemonstration(demo,style.id);
+    assert.deepEqual(themed.products,demo.products);assert.deepEqual(themed.collections,demo.collections);
+    assert.deepEqual(themed.layouts.home.find(s=>s.type==="hero").settings.image,
+      demo.layouts.home.find(s=>s.type==="hero").settings.image);
+    titles.push(themed.layouts.home.find(s=>s.type==="hero").settings.title);
+    const html=renderStylePreview(demo,styleSettings(style.id));
+    assert.match(html,/overflow-y:scroll/);assert.match(html,/scrollbar-gutter:stable/);
+  }
+  assert.equal(new Set(titles).size,5);assert.deepEqual(demo,original);
+  const merchant={...demo,style_demo:false};
+  assert.equal(styleDemonstration(merchant,"vintage"),merchant);
+  const shell=renderStyleStudio(source);
+  for(const style of AURA_STYLES)assert.equal((shell.match(new RegExp(`data-style-choice="${style.id}"`,"g"))||[]).length,2);
+  assert.match(shell,/aria-label="Preview viewport"/);
 });

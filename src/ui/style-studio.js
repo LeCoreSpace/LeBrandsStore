@@ -1,11 +1,8 @@
 import { layout, escapeHtml as esc, accountHeader, footer } from "./layout.js";
+import { AURA_STYLES } from "../public/aura-styles.js";
 
 const json = (v) => JSON.stringify(v ?? null).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-const STYLES = [
-  ["editorial", "Editorial", "Expressive serif, magazine restraint. Claret accent.", "#7a1f3d"],
-  ["boutique", "Boutique", "Clean contemporary retail. Deep teal accent.", "#0f6b5e"],
-  ["architectural", "Architectural", "Heavy type, strong grid, sharp edges. Vermilion accent.", "#c2410c"],
-];
+const STYLES = AURA_STYLES.map(style => [style.id, style.name, style.description, style.settings.accent_color]);
 const PAGES = ["home", "collection", "product", "cart", "checkout", "about", "contact"];
 
 export function renderStyleStudio(data = {}, user = null, options = {}) {
@@ -22,7 +19,7 @@ export function renderStyleStudio(data = {}, user = null, options = {}) {
 ${accountHeader(user)}
 <main class="wrap ss">
   <header class="ss-head">
-    <div><h1>Style studio</h1><p>Compare three coordinated looks for ${esc(store.name || "your store")} on real pages. The preview is read-only and never places orders.</p></div>
+    <div><h1>Style studio</h1><p>Explore five styles for ${esc(store.name || "your store")}. Each is a scrollable, interactive store with desktop and mobile views. Preview shopping never places orders.</p></div>
     <nav class="ss-links" aria-label="Store builder"><a href="${root}/build">Builder</a><a href="${root}/editor">Editor</a></nav>
   </header>
   <div class="ss-grid">
@@ -43,12 +40,16 @@ ${accountHeader(user)}
       </div>
     </section>
     <section class="ss-stage" aria-label="Preview">
+      <div class="ss-preview-controls">
+        <div class="ss-preview-styles" role="group" aria-label="Preview style">${STYLES.map(([key, name]) => `<button type="button" class="ss-tab" data-style-choice="${key}" aria-pressed="false">${esc(name)}</button>`).join("")}</div>
+        <div class="ss-device-switch" role="group" aria-label="Preview viewport"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div>
+      </div>
       <div class="ss-bar">
         <div class="ss-tabs" role="group" aria-label="Page">${PAGES.map((p, i) => `<button type="button" class="ss-tab" data-page="${p}" aria-pressed="${i === 0}">${p}</button>`).join("")}</div>
-        <div class="ss-devices" role="group" aria-label="Device"><button type="button" class="ss-tab" data-device="desktop" aria-pressed="true">desktop</button><button type="button" class="ss-tab" data-device="mobile" aria-pressed="false">mobile</button><button type="button" class="ss-tab" id="as-fullscreen" aria-pressed="false">Open interactive preview</button></div>
+        <button type="button" class="ss-tab" id="as-fullscreen" aria-pressed="false">Open interactive preview</button>
       </div>
-      <div class="ss-canvas" id="as-canvas" data-device="desktop"><iframe id="as-preview" sandbox="allow-same-origin" title="Store style preview"></iframe></div>
-      <p class="ss-note" style="padding:10px 14px;border-top:1px solid var(--line)">Interactive preview. Sample shopping only, with no orders or payments.</p>
+      <div class="ss-canvas" id="as-canvas" data-device="desktop"><iframe id="as-preview" sandbox="allow-same-origin" title="Store style preview" tabindex="0"></iframe></div>
+      <p class="ss-note ss-preview-hint">Scroll inside the preview to explore the store. Links and the sample bag are interactive. No orders or payments.</p>
     </section>
   </div>
   <script id="style-studio-data" type="application/json">${json(payload)}</script>

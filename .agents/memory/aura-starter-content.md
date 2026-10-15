@@ -58,6 +58,9 @@ operations that invalidate reviewed policies or replace layouts.
 Use complete interactive browser previews, with animation, to sell the
 storefront styles. Page-design images are optional reference material, not
 the primary theme-selection experience.
+Each style must be scrollable and interactive, with Desktop and Mobile views.
+The user wants five style previews, including Vintage, sharing the same
+images with text based on the style.
 
 **Why:** The user pointed to Webflow's template browser preview and said,
 "this is what sells. not a image of a website".

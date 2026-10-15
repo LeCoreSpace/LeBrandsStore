@@ -1,0 +1,200 @@
+/* Aura extra styles: Minimal and Vintage. Scoped to data-style only.
+   Load after aura-styles.css. Never sets --display --paper --ink --accent --accent-ink --accent-label --radius. */
+
+/* ================= MINIMAL: photography first, monochrome, fine Instrument Sans ================= */
+body[data-style=minimal]{font-family:var(--body);font-weight:400;line-height:1.55;letter-spacing:-.005em}
+body[data-style=minimal] h1,body[data-style=minimal] h2,body[data-style=minimal] h3{font-family:var(--display);font-weight:500;letter-spacing:-.035em;line-height:1.04}
+body[data-style=minimal] .au-announce{font-size:11px;font-weight:500;letter-spacing:.04em;padding:8px 16px}
+body[data-style=minimal] .au-header{height:64px;border-bottom:1px solid var(--line);max-width:none;padding:0 clamp(16px,3vw,40px)}
+body[data-style=minimal] .au-wordmark{font-family:var(--display);font-weight:500;font-size:17px;letter-spacing:-.01em}
+body[data-style=minimal] .au-header nav{font-size:12px;font-weight:400;gap:28px;color:var(--muted)}
+body[data-style=minimal] .au-header nav a:hover{color:var(--ink)}
+body[data-style=minimal] .au-bag,body[data-style=minimal] .au-btn-quiet,body[data-style=minimal] .au-menu-btn{border-color:transparent;font-size:12px}
+body[data-style=minimal] .au-bag:hover,body[data-style=minimal] .au-btn-quiet:hover{border-color:var(--line)}
+body[data-style=minimal] .au-eyebrow{font-size:11px;font-weight:500;letter-spacing:.14em;margin-bottom:12px}
+body[data-style=minimal] .au-hero{max-width:none;gap:clamp(24px,4vw,56px);padding:0 clamp(16px,3vw,40px) 56px;grid-template-columns:.8fr 1.2fr}
+body[data-style=minimal] .au-hero-media{order:2;aspect-ratio:4/5;max-height:88vh}
+body[data-style=minimal] .au-hero-copy h1{font-size:clamp(34px,5vw,72px);font-weight:500;letter-spacing:-.045em;line-height:1}
+body[data-style=minimal] .au-hero-copy p{font-size:14px}
+body[data-style=minimal] .au-hero.no-media{padding-top:72px}
+body[data-style=minimal] .au-hero.is-fullbleed,body[data-style=minimal] .au-hero.is-video{padding:0}
+body[data-style=minimal] .au-statement{max-width:720px;padding:80px 5vw}
+body[data-style=minimal] .au-statement p{font-size:clamp(20px,2.4vw,30px);font-weight:400;line-height:1.3;letter-spacing:-.02em}
+body[data-style=minimal] .au-section{max-width:none;padding:40px clamp(16px,3vw,40px) 56px}
+body[data-style=minimal] .au-head{margin-bottom:20px;align-items:baseline}
+body[data-style=minimal] .au-head h2{font-size:clamp(20px,2vw,26px);font-weight:500;letter-spacing:-.025em}
+body[data-style=minimal] .au-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:36px 10px}
+body[data-style=minimal] .au-collection-cards{grid-template-columns:repeat(3,minmax(0,1fr))}
+body[data-style=minimal] .au-card{gap:3px}
+body[data-style=minimal] .au-card-media{aspect-ratio:4/5;margin-bottom:8px}
+body[data-style=minimal] .au-card-name{font-family:var(--body);font-weight:500;font-size:13px;letter-spacing:0}
+body[data-style=minimal] .au-card-price{font-size:12px;font-variant-numeric:tabular-nums}
+body[data-style=minimal] .au-card:hover .au-card-media img{transform:scale(1.025)}
+body[data-style=minimal] .au-spotlight{background:transparent;grid-template-columns:1.2fr .8fr}
+body[data-style=minimal] .au-spot-copy{padding:6vw clamp(20px,5vw,72px)}
+body[data-style=minimal] .au-spot-copy h2{font-size:clamp(24px,2.8vw,38px)}
+body[data-style=minimal] .au-look img,body[data-style=minimal] .au-craft img,body[data-style=minimal] .au-look-item img,body[data-style=minimal] .au-founder-media img{border-radius:0}
+body[data-style=minimal] .au-look-item{gap:3vw}
+body[data-style=minimal] .au-reviews blockquote{background:transparent;padding:20px 0 0;border-top:1px solid var(--ink)}
+body[data-style=minimal] .au-reviews p{font-size:15px;margin:0 0 12px}
+body[data-style=minimal] .au-press img{filter:grayscale(1)}
+body[data-style=minimal] .au-trust{max-width:none;padding:24px clamp(16px,3vw,40px);font-size:12px}
+body[data-style=minimal] .au-trust a{font-size:12px;color:var(--muted)}
+body[data-style=minimal] .au-trust a:hover{color:var(--ink)}
+body[data-style=minimal] .au-btn,body[data-style=minimal] .commerce-button{font-size:12px;font-weight:500;letter-spacing:.02em;min-height:44px}
+body[data-style=minimal] .au-chip{font-size:12px;min-height:34px;padding:0 14px}
+body[data-style=minimal] .au-collection-nav{margin-bottom:8px}
+body[data-style=minimal] .au-page{max-width:none;padding:48px clamp(16px,3vw,40px) 72px}
+body[data-style=minimal] .au-page h1,body[data-style=minimal] .au-collection-head h1{font-size:clamp(28px,3.6vw,48px);font-weight:500;letter-spacing:-.04em}
+body[data-style=minimal] .au-lede{font-family:var(--body);font-size:15px;line-height:1.55}
+body[data-style=minimal] .au-page .au-grid{margin-top:28px}
+body[data-style=minimal] .au-body,body[data-style=minimal] .au-contact{font-size:15px}
+body[data-style=minimal] .au-tools{margin-top:20px;padding-top:14px;border-top:1px solid var(--line)}
+body[data-style=minimal] .au-product{max-width:none;padding:16px clamp(16px,3vw,40px) 72px;grid-template-columns:1.4fr .6fr;gap:clamp(24px,4vw,56px)}
+body[data-style=minimal] .au-pgallery{gap:6px}
+body[data-style=minimal] .au-pdetail{top:32px}
+body[data-style=minimal] .au-pdetail h1{font-size:clamp(22px,2.2vw,30px);font-weight:500;letter-spacing:-.03em}
+body[data-style=minimal] .au-price{font-size:15px;font-variant-numeric:tabular-nums}
+body[data-style=minimal] .au-price strong{font-weight:500}
+body[data-style=minimal] .au-desc{font-size:14px}
+body[data-style=minimal] .au-buy input{min-height:44px}
+body[data-style=minimal] .au-info{max-width:none}
+body[data-style=minimal] .au-specs div,body[data-style=minimal] .au-faq details{font-size:14px}
+body[data-style=minimal] .au-footer{max-width:none;padding:48px clamp(16px,3vw,40px);border-top:1px solid var(--line)}
+body[data-style=minimal] .au-footer nav,body[data-style=minimal] .au-footer p{font-size:12px}
+body[data-style=minimal] .commerce-main,body[data-aura][data-style=minimal] .commerce-main{max-width:1120px;padding:48px 5vw 80px}
+body[data-style=minimal] .commerce-heading h1{font-family:var(--display);font-weight:500;font-size:clamp(28px,4vw,44px);letter-spacing:-.04em;line-height:1.05}
+body[data-style=minimal] .commerce-kicker{letter-spacing:.14em;font-weight:500}
+body[data-style=minimal] .commerce-panel,body[data-style=minimal] .commerce-summary,body[data-style=minimal] .receipt-card,body[data-style=minimal] .commerce-empty{background:transparent;border:0;border-top:1px solid var(--ink);border-radius:0;padding:24px 0}
+body[data-style=minimal] .commerce-summary h2,body[data-style=minimal] .checkout-section h2,body[data-style=minimal] .receipt-lines h2,body[data-style=minimal] .receipt-address h2,body[data-style=minimal] .commerce-line-title{font-family:var(--display);font-weight:500;letter-spacing:-.02em}
+body[data-style=minimal] .checkout-section{padding-inline:0}
+body[data-style=minimal] .commerce-field input,body[data-style=minimal] .commerce-field select{border-radius:0;border-color:var(--line);background:var(--paper);color:var(--ink)}
+body[data-style=minimal] .payment-choice{background:transparent;border-color:var(--line)}
+body[data-style=minimal] .commerce-layout{gap:clamp(24px,5vw,72px)}
+
+/* ================= VINTAGE: heritage product label, Aura Classic serif, oxblood and olive ================= */
+body[data-style=vintage]{--vt-oxblood:#6e2a2e;--vt-olive:#5d6040;--vt-rule:color-mix(in srgb,var(--ink) 55%,transparent);font-feature-settings:"liga","onum"}
+body[data-style=vintage] h1,body[data-style=vintage] h2,body[data-style=vintage] h3,body[data-style=vintage] .au-wordmark,body[data-style=vintage] .au-card-name,body[data-style=vintage] .au-lede,body[data-style=vintage] .au-statement p{font-family:"Aura Classic",var(--display),Georgia,serif;font-weight:400}
+body[data-style=vintage] h1,body[data-style=vintage] h2,body[data-style=vintage] h3{letter-spacing:.005em;line-height:1.12}
+body[data-style=vintage] .au-announce{font-family:"Aura Classic",Georgia,serif;font-size:13px;letter-spacing:.14em;text-transform:uppercase;border-bottom:3px double color-mix(in srgb,var(--accent-ink) 60%,transparent)}
+body[data-style=vintage] .au-header{height:92px;border-bottom:3px double var(--vt-rule);justify-content:space-between}
+body[data-style=vintage] .au-wordmark{font-size:28px;letter-spacing:.06em;text-transform:uppercase}
+body[data-style=vintage] .au-header nav{font-family:"Aura Classic",Georgia,serif;font-size:14px;letter-spacing:.16em;text-transform:uppercase;gap:30px}
+body[data-style=vintage] .au-header nav a{padding-bottom:3px;border-bottom:1px solid transparent}
+body[data-style=vintage] .au-header nav a:hover{border-bottom-color:var(--vt-oxblood)}
+body[data-style=vintage] .au-eyebrow{font-family:"Aura Classic",Georgia,serif;font-size:13px;letter-spacing:.24em;color:var(--accent-label)}
+body[data-style=vintage] .au-eyebrow::before,body[data-style=vintage] .au-eyebrow::after{content:"";display:inline-block;width:28px;height:1px;background:currentColor;vertical-align:middle;margin:0 10px 0 0;opacity:.6}
+body[data-style=vintage] .au-eyebrow::after{margin:0 0 0 10px}
+body[data-style=vintage] .au-hero{padding-top:36px;gap:5vw}
+body[data-style=vintage] .au-hero-media{aspect-ratio:4/5;padding:10px;border:1px solid var(--vt-rule);background:var(--paper);outline:1px solid var(--line);outline-offset:6px}
+body[data-style=vintage] .au-hero-media img,body[data-style=vintage] .au-hero-media video{height:100%}
+body[data-style=vintage] .au-hero.is-fullbleed .au-hero-media,body[data-style=vintage] .au-hero.is-video .au-hero-media{padding:0;border:0;outline:0}
+body[data-style=vintage] .au-hero-copy{border-top:1px solid var(--vt-rule);padding-top:28px}
+body[data-style=vintage] .is-fullbleed .au-hero-copy,body[data-style=vintage] .is-video .au-hero-copy{border-top:0}
+body[data-style=vintage] .au-hero-copy h1{font-size:clamp(38px,5.6vw,80px);letter-spacing:0;line-height:1.02}
+body[data-style=vintage] .au-hero-copy p,body[data-style=vintage] .au-rich{font-size:16px}
+body[data-style=vintage] .au-statement{max-width:780px;border-block:1px solid var(--vt-rule);margin-block:24px;padding:64px 5vw;position:relative;background:repeating-linear-gradient(135deg,transparent 0 7px,color-mix(in srgb,var(--vt-olive) 5%,transparent) 7px 8px)}
+body[data-style=vintage] .au-statement p{font-style:italic;font-size:clamp(24px,3.2vw,40px);letter-spacing:0}
+body[data-style=vintage] .au-head{justify-content:center;flex-direction:column;align-items:center;gap:10px;text-align:center;margin-bottom:36px;padding-bottom:16px;border-bottom:1px solid var(--vt-rule);position:relative}
+body[data-style=vintage] .au-head::after{content:"";position:absolute;left:0;right:0;bottom:-5px;border-bottom:1px solid var(--line)}
+body[data-style=vintage] .au-head h2{font-size:clamp(26px,3vw,38px);letter-spacing:.08em;text-transform:uppercase}
+body[data-style=vintage] .au-grid{gap:40px 26px}
+body[data-style=vintage] .au-card{text-align:center;gap:8px;padding:12px 12px 18px;border:1px solid var(--line);background:var(--paper)}
+body[data-style=vintage] .au-card:hover{border-color:var(--vt-oxblood)}
+body[data-style=vintage] .au-card-media{aspect-ratio:4/5;margin-bottom:6px;outline:1px solid var(--line);outline-offset:-5px}
+body[data-style=vintage] .au-card-name{font-size:19px;letter-spacing:.02em}
+body[data-style=vintage] .au-card-price{font-family:"Aura Classic",Georgia,serif;font-size:15px;letter-spacing:.06em;color:var(--vt-olive)}
+body[data-style=vintage] .au-spotlight{background:var(--surface);border:1px solid var(--vt-rule);outline:1px solid var(--line);outline-offset:6px;margin:12px 5vw}
+body[data-style=vintage] .au-spot-copy h2{letter-spacing:.02em}
+body[data-style=vintage] .au-look img,body[data-style=vintage] .au-craft img,body[data-style=vintage] .au-look-item img,body[data-style=vintage] .au-founder-media img{padding:8px;border:1px solid var(--vt-rule);background:var(--paper)}
+body[data-style=vintage] .au-look figcaption,body[data-style=vintage] .au-craft figcaption{font-family:"Aura Classic",Georgia,serif;font-style:italic;text-align:center;font-size:14px}
+body[data-style=vintage] .au-founder .au-sign{font-family:"Aura Classic",Georgia,serif;font-style:italic;font-size:24px;color:var(--accent-label)!important}
+body[data-style=vintage] .au-reviews blockquote{background:transparent;border:1px solid var(--vt-rule);outline:1px solid var(--line);outline-offset:-7px;padding:32px 28px;text-align:center}
+body[data-style=vintage] .au-reviews p{font-family:"Aura Classic",Georgia,serif;font-size:19px;line-height:1.4;margin:0 0 14px}
+body[data-style=vintage] .au-reviews cite{letter-spacing:.14em;text-transform:uppercase;font-size:12px}
+body[data-style=vintage] .au-press blockquote{font-family:"Aura Classic",Georgia,serif;font-style:italic}
+body[data-style=vintage] .au-trust{border-block:3px double var(--vt-rule);justify-content:space-around;text-align:center;font-family:"Aura Classic",Georgia,serif;letter-spacing:.08em;text-transform:uppercase}
+body[data-style=vintage] .au-trust a{font-size:13px}
+body[data-style=vintage] .au-trust a:hover{color:var(--vt-oxblood)}
+body[data-style=vintage] .au-btn,body[data-style=vintage] .commerce-button{font-family:"Aura Classic",Georgia,serif;font-weight:400;font-size:14px;letter-spacing:.16em;text-transform:uppercase;box-shadow:inset 0 0 0 3px var(--accent),inset 0 0 0 4px color-mix(in srgb,var(--accent-ink) 45%,transparent)}
+body[data-style=vintage] .au-chip,body[data-style=vintage] .au-bag,body[data-style=vintage] .au-btn-quiet,body[data-style=vintage] .au-menu-btn{font-family:"Aura Classic",Georgia,serif;letter-spacing:.08em;border-color:var(--vt-rule)}
+body[data-style=vintage] .au-collection-nav{justify-content:center;margin-bottom:12px}
+body[data-style=vintage] .au-page{text-align:left;padding-top:64px}
+body[data-style=vintage] .au-page h1,body[data-style=vintage] .au-collection-head h1{font-size:clamp(38px,5.4vw,68px);text-align:center;letter-spacing:.02em}
+body[data-style=vintage] .au-collection-head{text-align:center}
+body[data-style=vintage] .au-collection-head .au-lede,body[data-style=vintage] .au-page>.au-lede{margin-inline:auto;text-align:center;font-style:italic;font-size:21px}
+body[data-style=vintage] .au-page>h1+.au-lede{margin-bottom:8px}
+body[data-style=vintage] .au-tools{border-block:1px solid var(--vt-rule);padding:10px 0}
+body[data-style=vintage] .au-product{padding-top:48px}
+body[data-style=vintage] .au-pgallery img{padding:8px;border:1px solid var(--vt-rule);background:var(--paper)}
+body[data-style=vintage] .au-pdetail{border:1px solid var(--vt-rule);outline:1px solid var(--line);outline-offset:5px;padding:28px 26px;background:var(--paper)}
+body[data-style=vintage] .au-pdetail h1{font-size:clamp(28px,3vw,40px);text-align:center;letter-spacing:.02em;padding-bottom:14px;border-bottom:1px solid var(--line)}
+body[data-style=vintage] .au-price{text-align:center;font-family:"Aura Classic",Georgia,serif;font-size:22px;color:var(--vt-oxblood);letter-spacing:.04em;margin:12px 0}
+body[data-style=vintage] .au-price strong{font-weight:400}
+body[data-style=vintage] .au-buy{justify-content:center}
+body[data-style=vintage] .au-feedback{text-align:center}
+body[data-style=vintage] .au-specs dt{font-family:"Aura Classic",Georgia,serif;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+body[data-style=vintage] .au-specs div,body[data-style=vintage] .au-faq details{border-top-style:solid;border-color:var(--vt-rule)}
+body[data-style=vintage] .au-faq summary{font-family:"Aura Classic",Georgia,serif;font-weight:400;font-size:18px}
+body[data-style=vintage] .au-size th{font-family:"Aura Classic",Georgia,serif;font-weight:400;letter-spacing:.08em;text-transform:uppercase;font-size:13px}
+body[data-style=vintage] .au-footer{border-top:3px double var(--vt-rule);padding-top:56px}
+body[data-style=vintage] .au-footer nav{font-family:"Aura Classic",Georgia,serif;font-size:14px;letter-spacing:.06em}
+body[data-style=vintage] .au-footer nav a:hover{color:var(--vt-oxblood);text-decoration:underline;text-underline-offset:4px}
+body[data-style=vintage] .commerce-heading{text-align:center;padding-bottom:18px;border-bottom:3px double var(--vt-rule)}
+body[data-style=vintage] .commerce-heading h1,body[data-style=vintage] .commerce-empty h1,body[data-style=vintage] .receipt-card h1{font-family:"Aura Classic",Georgia,serif;font-weight:400;letter-spacing:.02em;font-size:clamp(36px,5.4vw,60px)}
+body[data-style=vintage] .commerce-kicker{font-family:"Aura Classic",Georgia,serif;font-size:12px;letter-spacing:.24em}
+body[data-style=vintage] .commerce-summary h2,body[data-style=vintage] .checkout-section h2,body[data-style=vintage] .receipt-lines h2,body[data-style=vintage] .receipt-address h2,body[data-style=vintage] .commerce-line-title,body[data-style=vintage] .commerce-drawer-head h2{font-family:"Aura Classic",Georgia,serif;font-weight:400;letter-spacing:.02em}
+body[data-style=vintage] .commerce-panel,body[data-style=vintage] .commerce-summary,body[data-style=vintage] .receipt-card,body[data-style=vintage] .commerce-empty{background:var(--paper);border:1px solid var(--vt-rule);outline:1px solid var(--line);outline-offset:-7px}
+body[data-style=vintage] .commerce-drawer .commerce-summary{outline:0;border:0;border-top:1px solid var(--vt-rule)}
+body[data-style=vintage] .commerce-total-row.grand{border-top:3px double var(--vt-rule);font-family:"Aura Classic",Georgia,serif;font-size:18px;font-weight:400}
+body[data-style=vintage] .commerce-field input,body[data-style=vintage] .commerce-field select{background:var(--paper);color:var(--ink);border-color:var(--vt-rule)}
+body[data-style=vintage] .payment-choice{background:var(--paper);border:1px solid var(--vt-oxblood)}
+body[data-style=vintage] .payment-radio{border-color:var(--vt-oxblood)}
+body[data-style=vintage] .commerce-preview-thumb,body[data-style=vintage] .commerce-line-image{border:1px solid var(--vt-rule);padding:2px;background:var(--paper)}
+body[data-style=vintage] .commerce-error{border-left-color:var(--vt-oxblood)}
+body[data-style=vintage] .commerce-notice{border-left-color:var(--vt-olive)}
+
+/* ================= Responsive ================= */
+@media(max-width:1024px){
+body[data-style=minimal] .au-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+body[data-style=minimal] .au-product{grid-template-columns:1.1fr .9fr}
+}
+@media(max-width:760px){
+body[data-style=minimal] .au-header{height:56px}
+body[data-style=minimal] .au-hero{grid-template-columns:1fr;padding-bottom:40px}
+body[data-style=minimal] .au-hero-media{order:0;max-height:none}
+body[data-style=minimal] .au-grid,body[data-style=minimal] .au-collection-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:26px 8px}
+body[data-style=minimal] .au-product{grid-template-columns:1fr;padding-top:0}
+body[data-style=minimal] .au-page{padding:36px 16px 56px}
+body[data-style=minimal] .au-spotlight{grid-template-columns:1fr}
+body[data-style=vintage] .au-header{height:72px}
+body[data-style=vintage] .au-wordmark{font-size:22px}
+body[data-style=vintage] .au-hero{grid-template-columns:1fr}
+body[data-style=vintage] .au-hero-media{order:0;margin:0 8px}
+body[data-style=vintage] .au-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 10px}
+body[data-style=vintage] .au-card{padding:8px 8px 14px}
+body[data-style=vintage] .au-card-name{font-size:16px}
+body[data-style=vintage] .au-spotlight{margin-inline:12px;grid-template-columns:1fr}
+body[data-style=vintage] .au-pdetail{padding:22px 18px;outline-offset:3px;margin:0 6px}
+body[data-style=vintage] .au-statement{padding:44px 24px}
+body[data-style=vintage] .au-trust{justify-content:center;gap:16px 24px}
+body[data-style=vintage] .au-page{padding:44px 20px}
+}
+@media(max-width:640px){
+body[data-style=minimal] .commerce-main{padding:32px 18px 64px}
+body[data-style=vintage] .au-eyebrow::before,body[data-style=vintage] .au-eyebrow::after{width:14px}
+}
+
+/* ================= Motion ================= */
+@media(hover:hover){
+body[data-style=vintage] .au-card:hover .au-card-media img{transform:scale(1.03)}
+}
+@media(prefers-reduced-motion:reduce){
+body[data-style=minimal] *,body[data-style=minimal] *::before,body[data-style=minimal] *::after,
+body[data-style=vintage] *,body[data-style=vintage] *::before,body[data-style=vintage] *::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}
+body[data-style=minimal] .au-card:hover .au-card-media img,body[data-style=vintage] .au-card:hover .au-card-media img,body[data-style=minimal] .au-pgallery img:hover,body[data-style=vintage] .au-pgallery img:hover{transform:none}
+}
+/* Explicit font and palette choices remain authoritative over the preset. */
+body[data-style=minimal],body[data-style=vintage]{--st-accent:var(--accent)}
+body[data-style=vintage][data-font] :is(h1,h2,h3,.au-wordmark,.au-card-name,.au-lede,.au-statement p,.au-announce,.au-btn,.au-link,.commerce-heading,.commerce-summary h2,.checkout-section h2,.commerce-total-row.grand){font-family:var(--display)}
+body[data-style=vintage][data-preset=midnight]{--vt-oxblood:#e8a7ac;--vt-olive:#c8d2a2}
