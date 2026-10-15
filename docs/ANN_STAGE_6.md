@@ -1,5 +1,29 @@
 # Ann Stage 6: guided setup and launch readiness
 
+## Conversational planning and preview
+
+Ann's planning area is a question-and-reply timeline with a focused composer.
+Category, subcategory, style, background, accent, buttons, type, collection names,
+product ideas and brand-story answers appear as individual conversational turns.
+Enter sends a message and Shift+Enter adds a line. Earlier answers can be edited;
+collection/product notes are optional, and the detailed editors remain available
+for advanced fields. Typed, unsent messages are retained while switching prompts
+and protected by the unload warning. Stage boundaries use the existing
+revision-checked plan save, including its conflict recovery.
+
+The progress meter counts populated design areas from actual answer data, not
+simply visiting later stages. It is not a launch-readiness or publication score.
+Preview feedback completes when the iframe loads the changed preview. This is
+guided planning using curated content, not a claim that an AI provider is
+generating new pages or media.
+
+Fashion showcase uses the shared menswear pack even when a merchant already has
+products or old page images. Your store is a separate preview of the real
+catalogue, and confirmed application/readiness saves switch to that view. The
+choice is remembered for the browser session; choosing another style returns
+to the showcase. Neither preview mode imports sample inventory, replaces saved
+images or publishes a store.
+
 ## Product completion in Ann
 
 Ann's Review panel now shows saved product details and the same validation

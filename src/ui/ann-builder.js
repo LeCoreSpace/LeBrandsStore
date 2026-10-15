@@ -42,8 +42,12 @@ ${accountHeader(user)}
         <div class="ann-styles" id="ann-style-tabs" role="group" aria-label="Preview style"></div>
         <div class="ann-device" role="group" aria-label="Preview viewport"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div>
       </div>
+      <div class="ann-pages" role="group" aria-label="Preview content">
+        <button type="button" class="ann-tab" data-preview-mode="showcase" aria-pressed="true">Fashion showcase</button>
+        <button type="button" class="ann-tab" data-preview-mode="store" aria-pressed="false">Your store</button>
+      </div>
       <div class="ann-pages" id="ann-pages" role="group" aria-label="Page"></div>
-      <div class="ann-canvas" id="ann-canvas" data-device="desktop"><iframe id="ann-preview" sandbox="allow-same-origin" title="Live store preview" tabindex="0"></iframe></div>
+      <div class="ann-canvas" id="ann-canvas" data-device="desktop" data-updating="false"><i class="ann-sweep" aria-hidden="true"></i><p class="ann-updated" id="ann-updated" data-state="done" hidden></p><iframe id="ann-preview" sandbox="allow-same-origin" title="Live store preview" tabindex="0"></iframe></div>
       <p class="ann-note" id="ann-preview-note">Preview only. Sample imagery and prices are illustrative. Nothing here is published, and no products or orders are created.</p>
     </section>
   </div>

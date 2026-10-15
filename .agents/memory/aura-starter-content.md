@@ -59,8 +59,9 @@ Use complete interactive browser previews, with animation, to sell the
 storefront styles. Page-design images are optional reference material, not
 the primary theme-selection experience.
 Each style must be scrollable and interactive, with Desktop and Mobile views.
-The user wants five style previews, including Vintage, sharing the same
-images with text based on the style.
+The user wants five style previews, including Vintage, sharing the same fashion
+images with text based on the style, even when the merchant has existing
+products and older non-fashion images.
 
 **Why:** The user pointed to Webflow's template browser preview and said,
 "this is what sells. not a image of a website".
@@ -68,6 +69,19 @@ images with text based on the style.
 **How to apply:** Render real Aura pages with working preview navigation
 and a clearly isolated demonstration shopping flow; never let a preview
 place an order, take payment or add demonstration inventory to a store.
+Keep the fashion showcase distinct from the actual merchant catalogue rather
+than silently substituting existing inventory during style comparison.
+
+Ann must have an actual chat window, interactive conversation and progressing
+visual, not merely a multi-step form with input buttons.
+
+**Why:** The user explicitly rejected the form-like experience as missing
+interactivity, a chat window and a progressing visual.
+
+**How to apply:** Make questions and submitted replies visible as a conversation,
+with focused prompts and progress tied to actual choices and preview updates.
+Do not claim that deterministic preview changes are AI generation or that
+planning progress proves publishing readiness.
 
 ## Ann planning and catalogue boundary
 

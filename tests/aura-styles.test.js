@@ -54,6 +54,29 @@ test("demo store contains products, collections and rich sections but never muta
   assert.deepEqual(Object.keys(stylePatch(styleSettings("boutique"))).sort(),[...STYLE_THEME_KEYS].sort());
 });
 
+test("fashion showcase replaces old merchant imagery only in the preview clone across all five styles",()=>{
+  const oldImage="https://media.lebrands.store/stores/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.webp";
+  const merchant={...structuredClone(source),products:[{
+    id:"owned",title:"Old building product",status:"active",price_paise:150000,images:[{url:oldImage}],
+  }],collections:[{id:"old-collection",title:"Old collection",product_ids:["owned"]}],
+  layouts:{home:[{id:"old-hero",type:"hero",settings:{title:"Old building",image:{url:oldImage}},blocks:[]}]}};
+  const before=structuredClone(merchant),showcase=stylePreviewData(merchant,{showcase:true});
+  assert.equal(showcase.style_demo,true);
+  assert.ok(showcase.products.length>=5);
+  assert.ok(showcase.collections.length>=3);
+  assert.ok(showcase.products.every(p=>p.images.every(i=>i.url.startsWith("/assets/img/aura-starters/"))));
+  assert.ok(showcase.layouts.home.find(s=>s.type==="hero").settings.image.url.startsWith("/assets/img/aura-starters/"));
+  for(const style of AURA_STYLES)for(const page of ["home","collection","product","cart","checkout"]){
+    const html=renderStylePreview(showcase,styleSettings(style.id),{page,productId:showcase.products[0].id});
+    assert.ok(!html.includes(oldImage),`${style.id} ${page} must not use old merchant images`);
+  }
+  const actual=stylePreviewData(merchant);
+  assert.equal(actual.style_demo,false);
+  assert.equal(actual.products[0].images[0].url,oldImage);
+  assert.equal(actual.layouts.home[0].settings.image.url,oldImage);
+  assert.deepEqual(merchant,before);
+});
+
 test("interactive preview bag is isolated and never calculates tax or submits orders",()=>{
   const preview=stylePreviewData(source),id=preview.products[0].id;
   const bag=new Map([[id,2]]);

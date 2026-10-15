@@ -73,6 +73,26 @@ export function nextKey(prefix, existing) {
   return `${prefix}-${n}`;
 }
 
+/** Count available planning answers, never navigation or launch readiness. */
+export function annAnsweredStages(a = {}, reference = {}) {
+  const answered = new Set();
+  const named = x => typeof x?.name === "string" && x.name.trim().length > 0;
+  const categories = reference.categories || [];
+  const cat = categories.find(c => Number(c.category_id) === Number(a.category_id));
+  const subs = (reference.subcategories || []).filter(s => Number(s.category_id) === Number(a.category_id));
+  if (cat && (!subs.length || subs.some(s => Number(s.subcategory_id) === Number(a.subcategory_id)))) answered.add("category");
+  if (["editorial", "boutique", "architectural", "minimal", "vintage"].includes(a.style_preset)) answered.add("style");
+  if (["white", "ivory", "stone", "midnight"].includes(a.color_preset) &&
+      /^#[0-9a-f]{6}$/i.test(a.accent_color || "") &&
+      ["square", "rounded", "pill"].includes(a.button_style)) answered.add("palette");
+  if (["modern", "serif", "classic"].includes(a.font_preset)) answered.add("fonts");
+  const cols = a.collections || [], ideas = a.product_ideas || [];
+  if (cols.length && cols.every(named)) answered.add("collections");
+  if (cols.length && cols.every(c => ideas.some(p => p.collection_key === c.key && named(p)))) answered.add("products");
+  if (String(a.store_name || "").trim() && String(a.description || "").trim()) answered.add("story");
+  return answered;
+}
+
 /** Messages that block saving, in plain words. Empty array means safe to send. */
 export function planProblems(answers = {}) {
   const out = [];

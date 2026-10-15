@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { projectAnnPreview, diffAnswers, changeCategory, initialAnswers, planProblems } from "../src/public/ann-projection.js";
+import { projectAnnPreview, diffAnswers, changeCategory, initialAnswers, planProblems, annAnsweredStages } from "../src/public/ann-projection.js";
 import { styleDemonstration } from "../src/public/style-demo-copy.js";
 
 const base = () => ({
@@ -8,6 +8,27 @@ const base = () => ({
   products: [{ id: "p1", title: "Real", price_paise: 9900, images: [], collection_ids: [] }],
   collections: [{ id: "c1", title: "Real set", product_ids: ["p1"], cover_url: "/img/example.webp" }],
   layouts: { home: [{ id: "a", type: "hero", settings: {} }, { id: "b", type: "faq" }] },
+});
+test("Ann visual progress counts real answer data, not visiting Review", () => {
+  const ref = { categories: [{ category_id: 1 }], subcategories: [{ category_id: 1, subcategory_id: 2 }] };
+  assert.equal(annAnsweredStages({ current_step: "review" }, ref).size, 0);
+  assert.equal(annAnsweredStages({ category_id: 1 }, ref).size, 0);
+  assert.equal(annAnsweredStages({ category_id: 1, subcategory_id: 99 }, ref).size, 0);
+  const answers = {
+    category_id: 1, subcategory_id: 2, style_preset: "vintage",
+    color_preset: "white", accent_color: "#6b1735", button_style: "rounded", font_preset: "serif",
+    collections: [{ key: "one", name: "Shirts" }, { key: "two", name: "Layers" }],
+    product_ideas: [{ collection_key: "one", name: "Linen shirt" }],
+    store_name: "Example", description: "A fictional wardrobe for tests.",
+  };
+  const before = structuredClone(answers);
+  const areas = annAnsweredStages(answers, ref);
+  assert.equal(areas.size, 6);
+  assert.ok(!areas.has("products"));
+  assert.ok(!areas.has("review"), "planning progress is not publication readiness");
+  assert.deepEqual(answers, before);
+  answers.product_ideas.push({ collection_key: "two", name: "Overshirt" });
+  assert.equal(annAnsweredStages(answers, ref).size, 7);
 });
 test("Ann projection never mutates the source", () => {
   const b = base(), copy = structuredClone(b);

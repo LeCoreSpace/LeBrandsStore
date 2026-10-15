@@ -71,6 +71,8 @@ test("Ann boot escaping, non-scripted iframe and production asset delivery bound
   const html = renderAnnBuilder({ ...data, settings: { description: "</script><script>alert(1)</script>" } });
   assert.doesNotMatch(html, /<script>alert\(1\)<\/script>/);
   assert.match(html, /\\u003c\/script\\u003e/);
+  assert.match(html, /data-preview-mode="showcase" aria-pressed="true">Fashion showcase/);
+  assert.match(html, /data-preview-mode="store" aria-pressed="false">Your store/);
   assert.doesNotMatch(html, /sandbox="[^"]*allow-scripts/);
   const worker = await readFile(new URL("../src/index.js", import.meta.url), "utf8");
   for (const file of ["ann-builder.js", "ann-builder.css", "ann-projection.js"]) assert.ok(worker.includes(`"${file}"`));
@@ -78,7 +80,7 @@ test("Ann boot escaping, non-scripted iframe and production asset delivery bound
 });
 test("Ann empty-valued button attributes dispatch saves, navigation and conflict recovery", async () => {
   const client = await readFile(new URL("../src/public/ann-builder.js", import.meta.url), "utf8");
-  for (const action of ["back", "next", "save", "reload", "overwrite", "retryAttrs"]) {
+  for (const action of ["back", "continue", "save", "reload", "overwrite", "retryAttrs"]) {
     assert.ok(action in { [action]: "" });
     assert.ok(client.includes(`"${action}" in d`));
     assert.ok(!client.includes(`if (d.${action})`));

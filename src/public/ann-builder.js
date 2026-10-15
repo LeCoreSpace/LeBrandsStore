@@ -7,7 +7,7 @@ import { attachAuraMotion } from "./aura-motion.js";
 import { attachAnnApplication } from "./ann-application-ui.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { prefilledSection } from "./aura-starters.js";
-import { initialAnswers, diffAnswers, changeCategory, changeSubcategory, nextKey, planProblems, projectAnnPreview, currentExtras } from "./ann-projection.js";
+import { initialAnswers, diffAnswers, changeCategory, changeSubcategory, nextKey, planProblems, projectAnnPreview, currentExtras, annAnsweredStages } from "./ann-projection.js";
 
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -41,14 +41,18 @@ const notes = [];
 const attrState = new Map(); let attrToken = 0;
 const clearedNote = boot.sessionResponse?.cleared_fields || [];
 
-let base = stylePreviewData({ store: boot.store, settings: boot.settings, products: boot.products, collections: boot.collections, layouts: boot.layouts, policies: boot.policies, reviews: boot.reviews, aura_skeleton_enabled: boot.aura_skeleton_enabled, aura_starter_enabled: boot.aura_starter_enabled });
+const previewModeKey = `ann-preview-mode:${storeId}`;
+let previewMode = "showcase";
+try { if (sessionStorage.getItem(previewModeKey) === "store") previewMode = "store"; } catch {}
+let previewSource = { store: boot.store, settings: boot.settings, products: boot.products, collections: boot.collections, layouts: boot.layouts, policies: boot.policies, reviews: boot.reviews, aura_skeleton_enabled: boot.aura_skeleton_enabled, aura_starter_enabled: boot.aura_starter_enabled };
+let base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" });
 const applicationUI = attachAnnApplication({ api, root, readOnly,
   context: () => ({ answers, revision, dirty: isDirty() }),
   beforePrepare: () => save("review"),
-  onApplied: result => { base = stylePreviewData(result.draft); productId = undefined; collectionId = undefined; renderPreview(false); readinessUI.onStoreChanged(); },
+  onApplied: result => { setPreviewMode("store", result.draft); renderPreview(false); readinessUI.onStoreChanged(); },
 });
 const readinessUI = attachAnnReadiness({api,root,readOnly,
-  onSaved:result=>{if(result.draft){base=stylePreviewData(result.draft);renderPreview(false);}},
+  onSaved:result=>{if(result.draft){setPreviewMode("store", result.draft);renderPreview(false);}},
 });
 const extrasNow = currentExtras(base.layouts);
 const bag = new Map((base.products || []).slice(0, 2).map(p => [p.id, 1]));
@@ -69,7 +73,20 @@ const shown = p => sections()[p] ?? extrasNow[p] ?? [];
 /* ---------- preview ---------- */
 let current = null, displayedKey = "", timer = 0;
 const scrolls = new Map();
-const posKey = () => JSON.stringify([config().theme.style_preset, page, productId || "", collectionId || "", canvas.dataset.device]);
+const posKey = () => JSON.stringify([previewMode, config().theme.style_preset, page, productId || "", collectionId || "", canvas.dataset.device]);
+function setPreviewMode(mode, source) {
+  rememberScroll();
+  const changed = previewMode !== mode || Boolean(source);
+  previewMode = mode;
+  if (source) previewSource = source;
+  try { sessionStorage.setItem(previewModeKey, mode); } catch {}
+  base = stylePreviewData(previewSource, { showcase: mode === "showcase" });
+  if (changed) {
+    productId = undefined; collectionId = undefined;
+    bag.clear();
+    (base.products || []).slice(0, 2).forEach(p => bag.set(p.id, 1));
+  }
+}
 function rememberScroll() {
   const d = frame.contentDocument;
   if (displayedKey && d) scrolls.set(displayedKey, d.scrollingElement?.scrollTop ?? 0);
@@ -81,18 +98,19 @@ function renderPreview(remember = true) {
   current = projected.data;
   if (!productId || !current.products.some(p => p.id === productId)) productId = current.products[0]?.id;
   displayedKey = posKey();
-  frame.title = `${styleName(cfg.theme.style_preset)}, ${canvas.dataset.device} store preview`;
+  frame.title = `${previewMode === "showcase" ? "Fashion showcase" : "Your store"}, ${styleName(cfg.theme.style_preset)}, ${canvas.dataset.device} preview`;
   frame.srcdoc = renderStylePreview(current, cfg.theme, { page, productId, collectionId, policyKind });
-  $("#ann-preview-note").textContent = (base.style_demo ? "Sample menswear imagery and illustrative prices fill the preview until you add real products. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
+  $("#ann-preview-note").textContent = (previewMode === "showcase" ? "Fashion showcase uses the same sample menswear images across all five styles, with illustrative prices. Select Your store to see your existing catalogue. " : base.style_demo ? "No real products yet. Sample menswear images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
     "Preview controls never create products, orders or publications. Use the confirmed actions in Review to save real draft changes." +
     (projected.unavailable.length ? ` Some optional sections cannot be previewed here: ${projected.unavailable.map(u => label(u.split(":")[1])).join(", ")}.` : "");
   paintStage();
 }
-const schedule = (ms = 70) => { clearTimeout(timer); timer = setTimeout(() => renderPreview(), ms); };
+const schedule = (ms = 70) => { clearTimeout(timer); canvas.dataset.updating = "true"; const u = $("#ann-updated"); if (u) { u.hidden = false; u.dataset.state = "pending"; u.textContent = "Updating preview"; } timer = setTimeout(() => renderPreview(), ms); };
 function paintStage() {
   const cfg = config();
   $("#ann-style-tabs").innerHTML = AURA_STYLES.map(s => `<button type="button" class="ann-tab" data-pick-style="${s.id}" aria-pressed="${cfg.theme.style_preset === s.id}">${esc(s.name)}</button>`).join("");
   $("#ann-pages").innerHTML = PAGES.map(p => `<button type="button" class="ann-tab" data-page="${p}" aria-pressed="${p === page}">${p}</button>`).join("");
+  document.querySelectorAll("[data-preview-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.previewMode === previewMode)));
 }
 function fit() {
   const width = canvas.dataset.device === "mobile" ? 390 : 1280;
@@ -102,6 +120,7 @@ function fit() {
 }
 frame.addEventListener("load", () => {
   const doc = frame.contentDocument; if (!doc) return;
+  previewLoaded();
   doc.addEventListener("submit", e => e.preventDefault(), true);
   doc.addEventListener("click", e => {
     const link = e.target.closest("a"); if (!link) return;
@@ -149,52 +168,285 @@ const attrName = a => a.name || a.label || a.question || `Question ${a.id}`;
 const valName = v => v.label || v.name || v.value || `Option ${v.id}`;
 
 /* ---------- conversation ---------- */
-const bubble = (html, cls = "") => `<div class="ann-msg ${cls}"><span class="ann-av" aria-hidden="true">A</span><div class="ann-bubble">${html}</div></div>`;
+const reduce = () => !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const dis = readOnly ? " disabled" : "";
-const choice = (attrs, pressed, title, sub = "", style = "") => `<button type="button" class="ann-choice" ${attrs} aria-pressed="${pressed}"${dis}${style ? ` style="${style}"` : ""}><strong>${esc(title)}</strong>${sub ? `<span>${esc(sub)}</span>` : ""}</button>`;
+const bubble = (html, cls = "") => `<div class="ann-msg ${cls}"><span class="ann-av" aria-hidden="true">A</span><div class="ann-bubble">${html}</div></div>`;
+const annBubble = (text, cls = "", attrs = "") => `<div class="ann-msg ${cls}"${attrs}><span class="ann-av" aria-hidden="true">A</span><div class="ann-bubble"><p>${esc(text)}</p></div></div>`;
+const CHECK = `<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 6.5l2.6 2.5L10 3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`;
 
-function stepBody() {
-  const a = answers;
-  if (!ref && step !== "review") return bubble(`<p>I cannot load the category reference right now, so I cannot offer choices. Reload this page to try again.</p>`) ;
-  if (step === "category") {
-    const subs = a.category_id ? subsFor(a.category_id) : [];
-    return bubble(`<p>Hello${a.store_name ? `, ${esc(a.store_name)}` : ""}. I am Ann. Tell me what you sell and the store on the right will start to take shape. Nothing is published.</p>`) +
-      bubble(`<h2>Product category</h2><div class="ann-choices">${ref.categories.map(c => choice(`data-category="${esc(c.category_id)}"`, Number(a.category_id) === Number(c.category_id), c.name)).join("")}</div>
-      ${a.category_id ? `<h2>Subcategory</h2>${subs.length ? `<div class="ann-choices">${subs.map(s => choice(`data-subcategory="${esc(s.subcategory_id)}"`, Number(a.subcategory_id) === Number(s.subcategory_id), s.name)).join("")}</div>` : `<p class="ann-note">No subcategories are listed for this category.</p>`}` : ""}`, "ann-card");
+const feeds = {};
+const composerDrafts = new Map(), composerOriginals = new Map();
+let editing = null, detail = false, navigating = false, focusComposer = false, composerKey = "";
+let promptId = "category", reached = "category";
+const DETAIL_STEPS = ["collections", "products", "story"];
+
+function prompts() {
+  const list = [{ id: "category", step: "category" }];
+  if (!answers.category_id || subsFor(answers.category_id).length) list.push({ id: "subcategory", step: "category" });
+  list.push({ id: "style", step: "style" }, { id: "bg", step: "palette" }, { id: "accent", step: "palette" }, { id: "button", step: "palette" }, { id: "font", step: "fonts" }, { id: "collections", step: "collections" });
+  const cols = answers.collections || [];
+  if (cols.length) for (const c of cols) list.push({ id: `ideas:${c.key}`, step: "products", col: c.key }); else list.push({ id: "ideas:none", step: "products" });
+  list.push({ id: "store_name", step: "story" }, { id: "tagline", step: "story" }, { id: "description", step: "story" }, { id: "sections", step: "story" }, { id: "review", step: "review" });
+  return list.filter(p => UI_STEPS.some(s => s[0] === p.step));
+}
+function curIdx(ps = prompts()) {
+  let i = ps.findIndex(p => p.id === promptId);
+  if (i < 0) { i = Math.max(0, ps.findIndex(p => p.step === step)); promptId = ps[i].id; }
+  return i;
+}
+const reachedIdx = ps => Math.max(curIdx(ps), ps.findIndex(p => p.id === reached));
+promptId = prompts().find(p => p.step === step)?.id || "category"; reached = promptId;
+
+const cur = ps => (ps || prompts())[curIdx(ps)];
+const uniqueAccents = () => [...new Map(AURA_STYLES.map(s => [s.settings.accent_color.toLowerCase(), s.name])).entries()].map(([v, n]) => ({ v, t: `${n} accent` }));
+const sectionsReply = () => Object.keys(ANN_EXTRA_SECTIONS).map(pg => `${label(pg)}: ${shown(pg).map(label).join(", ") || "none"}`).join(". ");
+
+function def(p) {
+  const a = answers, t = config().theme, [k] = p.id.split(":");
+  const sel = (lab, q, opts, cv, pick, extra = {}) => ({ kind: "choice", label: lab, q, opts, cur: String(cv ?? "").toLowerCase(), pick, reply: opts.find(o => String(o.v).toLowerCase() === String(cv ?? "").toLowerCase())?.t || "", ...extra });
+  const txt = (key, lab, q, max, ph, area) => ({ kind: "text", key, label: lab, q, max, ph, area, reply: a[key] || "" });
+  const setKey = key => v => { answers[key] = v; };
+  switch (k) {
+    case "category": return sel("Category", `Hello${a.store_name ? `, ${a.store_name}` : ""}. I am Ann, and we will plan this store together. The preview beside our chat changes as you answer, and nothing is published. First, what do you sell?`,
+      (ref?.categories || []).map(c => ({ v: c.category_id, t: c.name })), a.category_id, v => {
+        const r = changeCategory(answers, Number(v)); answers = r.answers;
+        const bits = []; if (r.cleared.subcategory) bits.push("the subcategory");
+        if (r.cleared.attributes) bits.push(`${r.cleared.attributes} product detail choice${r.cleared.attributes === 1 ? "" : "s"}`);
+        notice = bits.length ? `Changing category cleared ${bits.join(" and ")} because they belonged to the old category. Your product names and descriptions are kept.` : "";
+      });
+    case "subcategory": return sel("Subcategory", `Which kind of ${catName(a.category_id) || "product"} do you make?`, subsFor(a.category_id).map(s => ({ v: s.subcategory_id, t: s.name })), a.subcategory_id, v => {
+      const r = changeSubcategory(answers, Number(v)); answers = r.answers;
+      notice = r.cleared.attributes ? `Changing subcategory cleared ${r.cleared.attributes} product detail choice${r.cleared.attributes === 1 ? "" : "s"}. Your product names and descriptions are kept.` : "";
+    });
+    case "style": return sel("Style", "Here are five looks. Each uses the same images, with copy written for that style. Pick one and the whole store on the right will switch.",
+      AURA_STYLES.map(s => ({ v: s.id, t: s.name, sub: s.description, c: s.settings.accent_color })), t.style_preset, v => {
+        const s = styleSettings(v); setPreviewMode("showcase");
+        for (const key of ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"]) if (s[key] !== undefined) answers[key] = s[key];
+      }, { stack: true });
+    case "bg": return sel("Background", "Which background suits your products best?", ANN_PALETTES.map(v => ({ v, t: PALETTE_NAMES[v] || label(v) })), t.color_preset, setKey("color_preset"));
+    case "accent": return { ...sel("Accent colour", "Choose an accent colour for buttons and highlights, or pick your own.", uniqueAccents(), t.accent_color, setKey("accent_color")), kind: "accent", reply: t.accent_color, color: t.accent_color };
+    case "button": return sel("Buttons", "How should buttons look?", ["square", "rounded", "pill"].map(v => ({ v, t: label(v) })), t.button_style, setKey("button_style"));
+    case "font": return sel("Type", "Which type feels like your brand?", ANN_FONTS.map(v => ({ v, t: FONT_NAMES[v] || label(v) })), t.font_preset, setKey("font_preset"));
+    case "collections": { const items = (a.collections || []).map((c, i) => [c, i]);
+      return { kind: "list", list: "col", label: "Collection", q: "Now let us group your range. Name a collection, for example by occasion or by product type. You can add up to ten.", ph: "For example, Everyday linen", max: 100, items, reply: items.map(([c]) => c.name).join(", "), full: items.length >= 10 }; }
+    case "ideas": {
+      if (p.id === "ideas:none") return { kind: "info", label: "Products", q: "Product ideas live inside collections. Add a collection first, then I will ask about products for each one.", reply: "" };
+      const col = (a.collections || []).find(c => c.key === p.col);
+      const items = (a.product_ideas || []).map((x, i) => [x, i]).filter(([x]) => x.collection_key === p.col);
+      return { kind: "list", list: "idea", label: "Product idea", q: `What would you sell in ${col?.name || "this collection"}? Name a product idea. These are planning notes with no price or stock, up to five here.`, ph: "For example, Relaxed linen shirt", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50 };
+    }
+    case "store_name": return txt("store_name", "Store name", "What is your store called?", 120, "Your store name");
+    case "tagline": return txt("tagline", "Tagline", "Add a short tagline, or skip this one.", 160, "A line that sums you up");
+    case "description": return txt("description", "About your brand", "Tell me about your brand in your own words. This feeds your About page and home story.", 1200, "Who you are and what you make", true);
+    case "sections": return { kind: "sections", label: "Optional sections", q: "Last choice. Which extra sections would you like on each page? Tap to switch them on or off and watch the page change.", reply: sectionsReply() };
+    default: return { kind: "review", label: "Review", q: "", reply: "" };
   }
-  if (step === "style") return bubble(`<p>Here are five looks. Every one uses the same images, with copy written for that style. Tap one and compare.</p>`) +
-    bubble(`<div class="ann-choices ann-stack">${AURA_STYLES.map(s => choice(`data-pick-style="${s.id}"`, config().theme.style_preset === s.id, s.name, s.description, `--c:${s.settings.accent_color}`)).join("")}</div>`, "ann-card");
-  if (step === "palette") {
-    const t = config().theme;
-    return bubble(`<p>Pick a background, an accent and a button shape. The preview changes as you choose.</p>`) +
-      bubble(`<h2>Background</h2><div class="ann-choices">${ANN_PALETTES.map(p => choice(`data-palette="${p}"`, t.color_preset === p, PALETTE_NAMES[p] || label(p))).join("")}</div>
-      <h2>Accent colour</h2><label class="ann-field"><input type="color" data-ans="accent_color" value="${esc(t.accent_color)}"${dis}></label>
-      <h2>Buttons</h2><div class="ann-choices">${["square", "rounded", "pill"].map(b => choice(`data-button="${b}"`, t.button_style === b, label(b))).join("")}</div>`, "ann-card");
-  }
-  if (step === "fonts") {
-    const t = config().theme;
-    return bubble(`<p>Which type feels like your brand?</p>`) +
-      bubble(`<div class="ann-choices ann-stack">${ANN_FONTS.map(f => choice(`data-font="${f}"`, t.font_preset === f, FONT_NAMES[f] || label(f))).join("")}</div>`, "ann-card");
-  }
-  if (step === "collections") {
-    const cols = a.collections || [];
-    return bubble(`<p>Group your range into up to ten collections. Names and descriptions appear in the preview straight away.</p>`) +
-      bubble(`${cols.length ? cols.map((c, i) => `<fieldset class="ann-item"><legend>Collection ${i + 1}</legend>
-        <label class="ann-field">Name<input data-col="${i}" data-f="name" maxlength="100" value="${esc(c.name)}"${dis}></label>
-        <label class="ann-field">Description<textarea data-col="${i}" data-f="description" maxlength="800" rows="2"${dis}>${esc(c.description || "")}</textarea></label>
-        <button type="button" class="ann-link" data-del-col="${i}"${dis}>Remove collection</button></fieldset>`).join("") : `<p class="ann-empty">No collections yet. Add the first one, for example by occasion or by product type.</p>`}
-        <button type="button" class="ann-btn alt" data-add-col${cols.length >= 10 || readOnly ? " disabled" : ""}>Add a collection</button>${cols.length >= 10 ? `<p class="ann-note">You have reached ten collections.</p>` : ""}`, "ann-card");
-  }
-  if (step === "products") return productsStep();
-  if (step === "story") return bubble(`<p>Say who you are in your own words. Then choose any extra sections you want on each page.</p>`) +
-    bubble(`<label class="ann-field">Store name<input data-ans="store_name" maxlength="120" value="${esc(a.store_name || "")}"${dis}></label>
-      <label class="ann-field">Tagline<input data-ans="tagline" maxlength="160" value="${esc(a.tagline || "")}"${dis}></label>
-      <label class="ann-field">About your brand<textarea data-ans="description" maxlength="1200" rows="4"${dis}>${esc(a.description || "")}</textarea></label>
-      <h2>Optional sections</h2><p class="ann-note">These show in the preview and are saved as a plan only. Core shopping sections stay as they are.</p>
-      ${Object.entries(ANN_EXTRA_SECTIONS).map(([p, list]) => `<fieldset class="ann-sections"><legend>${label(p)} page</legend>${list.map(t => `<label class="ann-check"><input type="checkbox" data-section="${p}:${t}" ${shown(p).includes(t) ? "checked" : ""}${dis}><span>${esc(label(t))}</span></label>`).join("")}<button type="button" class="ann-link" data-view-page="${p}">Show this page</button></fieldset>`).join("")}`, "ann-card");
-  return reviewStep();
 }
 
+const listHtml = d => `<ul class="ann-items">${d.items.map(([it, i]) => `<li><span class="ann-it">${esc(it.name || "Untitled")}${it.description ? `<small>${esc(it.description)}</small>` : ""}</span><span class="ann-item-actions"><button type="button" class="ann-link" data-edit-item="${d.list}:${i}:name"${dis}>Rename</button><button type="button" class="ann-link" data-edit-item="${d.list}:${i}:description"${dis}>${it.description ? "Edit note" : "Add note"}</button><button type="button" class="ann-link" data-del-${d.list}="${i}"${dis}>Remove</button></span></li>`).join("")}</ul>`;
+const meBubble = (html, btn = "") => `<div class="ann-msg me">${btn}<div class="ann-bubble">${html}</div></div>`;
+const feedHtml = f => `<p class="ann-feed" data-state="${f.done ? "done" : "pending"}"><span class="ann-dot" aria-hidden="true"></span><span class="ann-feed-t">${esc(f.text)}</span><span class="ann-feed-s">${f.done ? "Preview updated" : "Updating preview"}</span><button type="button" class="ann-link ann-see" data-view-switch="canvas">See preview</button></p>`;
+const feed = (id, text) => { feeds[id] = { text, done: false }; };
+const item = () => editing && (editing.kind === "col" ? answers.collections : answers.product_ideas)?.[editing.i];
+function editQ() {
+  const it = item(); if (!it) return "";
+  const n = it.name || "this one";
+  return editing.follow ? `Would you like a one-line note for "${n}"? You can skip it.` : editing.field === "name" ? `What should "${n}" be called?` : `What is the new note for "${n}"?`;
+}
+
+function timeline() {
+  if (!ref && step !== "review") return annBubble("I cannot load the category reference right now, so I cannot offer choices. Reload this page to try again.");
+  const ps = prompts(), ci = curIdx(ps), ri = reachedIdx(ps);
+  let out = "", last = "";
+  ps.slice(0, ri + 1).forEach((p, i) => {
+    const d = def(p), active = i === ci;
+    if (p.step !== last) { last = p.step; const n = UI_STEPS.findIndex(s => s[0] === p.step); out += `<p class="ann-mark"><span>${n + 1} of ${UI_STEPS.length}</span>${esc(UI_STEPS[n][1])}</p>`; }
+    if (p.id === "review") { out += `<span id="ann-review-start"></span>${reviewStep()}`; return; }
+    out += annBubble(d.q, active ? "is-active" : "", active ? ' id="ann-active"' : "");
+    if (active && notice) out += `<p class="ann-callout" role="status">${esc(notice)}</p>`;
+    if (d.kind === "list") { if (d.items.length) out += meBubble(listHtml(d)); }
+    else if (!active && d.kind !== "info" && (d.reply || i < ri)) out += meBubble(d.reply ? `<span class="ann-reply">${esc(d.reply)}</span>` : "<em>Skipped</em>", readOnly ? "" : `<button type="button" class="ann-edit" data-edit-prompt="${esc(p.id)}" aria-label="Edit your answer to ${esc(d.label)}">Edit</button>`);
+    if (feeds[p.id]) out += feedHtml(feeds[p.id]);
+    if (active && editing) out += annBubble(editQ());
+  });
+  return out;
+}
+
+const collectionsDetail = () => { const cols = answers.collections || [];
+  return bubble(`${cols.length ? cols.map((c, i) => `<fieldset class="ann-item"><legend>Collection ${i + 1}</legend>
+    <label class="ann-field">Name<input data-col="${i}" data-f="name" maxlength="100" value="${esc(c.name)}"${dis}></label>
+    <label class="ann-field">Description<textarea data-col="${i}" data-f="description" maxlength="800" rows="2"${dis}>${esc(c.description || "")}</textarea></label>
+    <button type="button" class="ann-link" data-del-col="${i}"${dis}>Remove collection</button></fieldset>`).join("") : `<p class="ann-empty">No collections yet.</p>`}
+    <button type="button" class="ann-btn alt" data-add-col${cols.length >= 10 || readOnly ? " disabled" : ""}>Add a collection</button>`, "ann-card"); };
+const storyDetail = () => { const a = answers;
+  return bubble(`<label class="ann-field">Store name<input data-ans="store_name" maxlength="120" value="${esc(a.store_name || "")}"${dis}></label>
+    <label class="ann-field">Tagline<input data-ans="tagline" maxlength="160" value="${esc(a.tagline || "")}"${dis}></label>
+    <label class="ann-field">About your brand<textarea data-ans="description" maxlength="1200" rows="4"${dis}>${esc(a.description || "")}</textarea></label>
+    <h2>Optional sections</h2><p class="ann-note">These show in the preview and are saved as a plan only. Core shopping sections stay as they are.</p>
+    ${Object.entries(ANN_EXTRA_SECTIONS).map(([p, list]) => `<fieldset class="ann-sections"><legend>${label(p)} page</legend>${list.map(t => `<label class="ann-check"><input type="checkbox" data-section="${p}:${t}" ${shown(p).includes(t) ? "checked" : ""}${dis}><span>${esc(label(t))}</span></label>`).join("")}<button type="button" class="ann-link" data-view-page="${p}">Show this page</button></fieldset>`).join("")}`, "ann-card"); };
+const detailHtml = () => `<section class="ann-detail" aria-label="Detailed editor"><div class="ann-detail-h"><h2>Detailed editor</h2><button type="button" class="ann-link" data-toggle-detail>Close</button></div>${step === "products" ? productsStep() : step === "collections" ? collectionsDetail() : storyDetail()}</section>`;
+
+/* ---------- composer ---------- */
+function drawComposer(force) {
+  const box = $("#ann-composer"); if (!box) return;
+  const ps = prompts(), p = cur(ps), d = def(p);
+  const key = JSON.stringify([p.id, editing ? { kind: editing.kind, key: item()?.key, field: editing.field, follow: editing.follow } : null, d.kind, readOnly]);
+  const ae = document.activeElement;
+  if (!force && key === composerKey && box.contains(ae) && ae.tagName === "TEXTAREA") return;
+  composerKey = key;
+  const tail = DETAIL_STEPS.includes(p.step) && d.kind !== "info" ? `<button type="button" class="ann-link" data-toggle-detail aria-expanded="${detail}">${detail ? "Close detailed editor" : "Open detailed editor"}</button>` : "";
+  let html = "";
+  if (d.kind === "choice" || d.kind === "accent") {
+    html = `<div class="ann-comp" role="group" aria-labelledby="ann-cq"><p class="ann-cq" id="ann-cq">${esc(d.label)}: choose one to answer</p>
+      <div class="ann-chips${d.stack ? " stack" : ""}">${d.opts.map(o => `<button type="button" class="ann-chip" data-pick="${esc(o.v)}" aria-pressed="${String(o.v).toLowerCase() === d.cur}"${o.c || d.kind === "accent" ? ` style="--c:${esc(o.c || o.v)}"` : ""}${dis}>${o.c || d.kind === "accent" ? `<i class="ann-sw" aria-hidden="true"></i>` : ""}<strong>${esc(o.t)}</strong>${o.sub ? `<span>${esc(o.sub)}</span>` : ""}</button>`).join("")}
+      ${d.kind === "accent" ? `<label class="ann-chip ann-color"><strong>Custom</strong><input type="color" data-accent-input value="${esc(d.color)}" aria-label="Custom accent colour"${dis}></label>` : ""}</div>
+      <div class="ann-comp-row">${d.reply || readOnly ? `<button type="button" class="ann-btn alt" data-continue>${readOnly ? "Continue" : `Keep ${esc(d.reply)} and continue`}</button>` : ""}${d.kind === "choice" && !d.opts.length ? `<p class="ann-note">Nothing to choose here yet.</p>` : ""}</div></div>`;
+  } else if (d.kind === "sections") {
+    html = `<div class="ann-comp" role="group" aria-labelledby="ann-cq"><p class="ann-cq" id="ann-cq">Optional sections</p>
+      ${Object.entries(ANN_EXTRA_SECTIONS).map(([pg, l]) => `<div class="ann-sec-row"><span>${label(pg)} page</span><div class="ann-chips">${l.map(s => `<button type="button" class="ann-chip sm" data-toggle-section="${pg}:${s}" aria-pressed="${shown(pg).includes(s)}"${dis}><strong>${esc(label(s))}</strong></button>`).join("")}</div></div>`).join("")}
+      <div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>${readOnly ? "Continue" : "Done, show my plan"}</button>${tail}</div></div>`;
+  } else if (d.kind === "text" || d.kind === "list") {
+    const it = editing ? item() : null;
+    const lab = editing ? (editing.follow ? "Optional note" : editing.field === "name" ? "New name" : "New note") : d.label;
+    const field = editing ? editing.field : "name";
+    const max = editing ? (editing.kind === "col" ? (field === "name" ? 100 : 800) : (field === "name" ? 120 : 1200)) : d.max;
+    const original = editing ? (it?.[field] || "") : d.kind === "text" ? d.reply : "";
+    composerOriginals.set(key, original);
+    const val = composerDrafts.get(key) ?? original;
+    const area = editing ? field === "description" : d.area;
+    const full = !editing && d.kind === "list" && d.full;
+    html = `<form class="ann-form" data-composer novalidate><label class="ann-cq" id="ann-cq" for="ann-input">${esc(lab)}</label>
+      <div class="ann-input"><textarea id="ann-input" data-composer-input rows="${area ? 3 : 1}" maxlength="${max}" aria-describedby="ann-count" placeholder="${esc(full ? "Limit reached" : editing ? "" : d.ph || "")}"${readOnly || full ? " disabled" : ""}>${esc(val)}</textarea>
+      <button type="submit" class="ann-send"${readOnly || full ? " disabled" : ""}>Send <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="M2 8h11M9 3.5L13.5 8 9 12.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
+      <div class="ann-comp-row"><span id="ann-count" class="ann-note"><span data-count>${val.length}</span> of ${max}. Enter sends, Shift+Enter adds a line.</span>
+      ${editing ? `<button type="button" class="ann-btn alt" data-cancel-edit>${editing.follow ? "Skip note" : "Cancel"}</button>` : d.kind === "list" ? `<button type="button" class="ann-btn alt" data-continue>${d.items.length ? "Continue" : "Skip for now"}</button>` : `<button type="button" class="ann-btn alt" data-continue>${d.reply ? "Keep and continue" : "Skip"}</button>`}${tail}
+      ${p.step === "products" && !answers.subcategory_id ? `<button type="button" class="ann-link" data-go="category">Choose a subcategory for product questions</button>` : ""}</div></form>`;
+  } else if (d.kind === "info") {
+    html = `<div class="ann-comp"><p class="ann-cq">Products</p><div class="ann-comp-row"><button type="button" class="ann-btn" data-go="collections">Add a collection</button></div></div>`;
+  } else {
+    html = `<div class="ann-comp"><p class="ann-cq">Review</p><p class="ann-note">That is every stage. Use Change beside any row to revisit it, or save the plan and continue with the confirmed actions in the conversation.</p></div>`;
+  }
+  box.innerHTML = html;
+  if (focusComposer) {
+    focusComposer = false;
+    const el = box.querySelector("textarea:not(:disabled)") || box.querySelector(".ann-chip[aria-pressed=true]") || box.querySelector(".ann-chip:not(:disabled)");
+    el?.focus({ preventScroll: true });
+    if (el?.tagName === "TEXTAREA") el.setSelectionRange(el.value.length, el.value.length);
+  }
+}
+
+/* ---------- panel drawing ---------- */
+function drawSteps() {
+  const answered = annAnsweredStages(answers, ref || {});
+  const doneN = answered.size, total = UI_STEPS.filter(([k]) => k !== "review").length;
+  const state = isDirty() ? "Unsaved changes" : session ? `Saved, revision ${revision}` : "Nothing saved yet";
+  $("#ann-steps").innerHTML = `<div class="ann-rail">${UI_STEPS.map(([k, n], i) => { const st = k === step ? "current" : answered.has(k) ? "done" : "todo";
+    return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === step ? "step" : "false"}"><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
+    <div class="ann-meter" role="progressbar" aria-label="Planning progress" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${doneN}"><i style="transform:scaleX(${doneN / total})"></i></div>
+    <p class="ann-meter-t">${doneN} of ${total} design areas filled. ${esc(state)}. Publishing checks are separate.</p>`;
+}
+function drawFoot() {
+  const sb = $("#ann-savebar"); if (!sb) return;
+  const i = curIdx(), dirty = isDirty();
+  sb.innerHTML = `${readOnly ? `<p class="ann-callout">You can look around, but only an owner or admin can save this plan.</p>` : ""}
+    ${conflict ? `<div class="ann-conflict" role="alert"><p>Another tab or person saved a newer plan. Your edits are still here and nothing was overwritten.</p><div class="ann-actions"><button type="button" class="ann-btn alt" data-reload>Load the saved plan</button><button type="button" class="ann-btn" data-overwrite>Keep my edits and save over it</button></div></div>` : ""}
+    <div class="ann-savebar-row"><button type="button" class="ann-btn alt sm" data-back ${i === 0 ? "disabled" : ""}>Back</button>
+    <button type="button" class="ann-btn alt sm" data-save ${readOnly || saving || !dirty || conflict ? "disabled" : ""}>${saving ? "Saving" : "Save plan"}</button>
+    <span class="ann-note">${dirty ? "Unsaved changes. The preview already shows them." : esc(lastSavedAt)}</span></div>`;
+}
+function scrollActive() {
+  const ps = prompts(), ci = curIdx(ps), ri = reachedIdx(ps), behavior = reduce() ? "auto" : "smooth";
+  const rev = $("#ann-review-start");
+  if (ps[ci].id === "review" && rev) return log.scrollTo({ top: Math.max(0, rev.offsetTop - 12), behavior });
+  if (ci < ri) return void $("#ann-active")?.scrollIntoView({ block: "center", behavior });
+  log.scrollTo({ top: log.scrollHeight, behavior });
+}
+function draw(mode = "keep") {
+  curIdx();
+  const y = log.scrollTop;
+  log.innerHTML = timeline() + (detail && DETAIL_STEPS.includes(step) ? detailHtml() : "");
+  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount();
+  if (mode === "active") scrollActive(); else log.scrollTop = y;
+}
+const drawKeep = () => draw("keep");
+async function toPrompt(id) {
+  if (navigating) return;
+  let ps = prompts(); const ci = curIdx(ps);
+  let ti = ps.findIndex(p => p.id === id); if (ti < 0) return;
+  navigating = true;
+  try {
+    if (ti > ci && ps[ti].step !== step && !readOnly && !(await save(ps[ti].step))) return;
+    ps = prompts(); ti = ps.findIndex(p => p.id === id); if (ti < 0) return;
+    if (ps[ti].step !== step) notice = "";
+    promptId = id; step = ps[ti].step; editing = null; detail = false; page = STEP_PAGE[step] || page; collectionId = undefined;
+    if (ti > ps.findIndex(p => p.id === reached)) reached = id;
+    focusComposer = true;
+    if (step === "products" && answers.subcategory_id) loadAttrs(answers.subcategory_id);
+    draw("active"); renderPreview(); app.dataset.view = "chat"; syncSwitch();
+    const d = def(ps[ti]); say(d.q ? `Ann asks: ${d.q}` : "Review your plan.");
+  } finally { navigating = false; }
+}
+function go(next) { const p = prompts().find(x => x.step === next); if (p) return toPrompt(p.id); }
+function advance() {
+  const ps = prompts(), i = curIdx(ps), ri = reachedIdx(ps);
+  let n = i + 1;
+  if (i < ri) while (n < ri && def(ps[n]).reply) n++;
+  return toPrompt(ps[Math.min(n, ps.length - 1)].id);
+}
+function edit(mutator, redraw = false) {
+  if (readOnly) return;
+  mutator(); touched = true; schedule();
+  drawFoot(); drawSteps();
+  if (redraw) drawKeep();
+}
+function focusIdea(index) {
+  const idea = answers.product_ideas?.[index];
+  if (!idea) return;
+  productId = (base.style_demo ? base.products?.[index]?.id : null) || `ann-product-${idea.key}`;
+  page = "product";
+}
+function submitComposer(raw) {
+  if (readOnly) return;
+  const v = raw.replace(/\r/g, "").trim(), p = cur(), d = def(p);
+  if (editing) {
+    const it = item(); if (!it) { editing = null; draw("active"); return; }
+    const f = editing.field, kind = editing.kind;
+    if (f === "name" && !v) return say("Enter a name, or cancel.");
+    composerDrafts.delete(composerKey);
+    const max = kind === "col" ? (f === "name" ? 100 : 800) : (f === "name" ? 120 : 1200);
+    edit(() => { it[f] = v.slice(0, max); });
+    feed(p.id, f === "name" ? `Renamed to ${it.name}` : `Note saved for ${it.name}`);
+    editing = null; focusComposer = true; draw("active"); drawComposer(true); return;
+  }
+  if (!v) return say("Type an answer first, or use the skip button.");
+  if (d.kind === "text") { composerDrafts.delete(composerKey); edit(() => { answers[d.key] = v.slice(0, d.max); }); feed(p.id, `${d.label} sent to your plan`); return void advance(); }
+  if (d.full) return say(d.list === "col" ? "Ten collections is the limit." : "Five ideas is the limit for one collection.");
+  composerDrafts.delete(composerKey);
+  if (d.list === "col") {
+    edit(() => { const cols = answers.collections ||= []; cols.push({ key: nextKey("collection", cols.map(c => c.key)), name: v.slice(0, 100), description: "" }); });
+    page = "collection"; feed(p.id, `Added collection ${v.slice(0, 100)}`);
+    editing = { kind: "col", i: answers.collections.length - 1, field: "description", follow: true };
+  } else {
+    edit(() => { const ideas = answers.product_ideas ||= []; ideas.push({ key: nextKey("idea", ideas.map(x => x.key)), collection_key: d.col, name: v.slice(0, 120), description: "", attributes: [] }); });
+    const i = answers.product_ideas.length - 1; focusIdea(i); feed(p.id, `Added product idea ${v.slice(0, 120)}`);
+    editing = { kind: "idea", i, field: "description", follow: true };
+  }
+  focusComposer = true; draw("active"); drawComposer(true);
+}
+
+/* ---------- preview feedback ---------- */
+function previewLoaded() {
+  const pend = Object.values(feeds).filter(f => !f.done);
+  pend.forEach(f => { f.done = true; });
+  canvas.dataset.updating = "false";
+  const el = $("#ann-updated");
+  if (el) { el.hidden = false; el.dataset.state = "done"; el.textContent = pend.length ? `Preview updated: ${pend[pend.length - 1].text}` : "Preview updated"; el.classList.remove("pop"); void el.offsetWidth; el.classList.add("pop"); }
+  canvas.classList.remove("flash"); void canvas.offsetWidth; canvas.classList.add("flash");
+  if (pend.length) {
+    document.querySelectorAll('.ann-feed[data-state="pending"]').forEach(n => { n.dataset.state = "done"; const s = n.querySelector(".ann-feed-s"); if (s) s.textContent = "Preview updated"; });
+    say(`Preview updated: ${pend[pend.length - 1].text}`);
+  }
+}
 function productsStep() {
   const cols = answers.collections || [], ideas = answers.product_ideas || [];
   if (!cols.length) return bubble(`<p>Product ideas live inside collections, so add a collection first.</p><button type="button" class="ann-btn alt" data-go="collections">Go to collections</button>`);
@@ -237,46 +489,6 @@ function reviewStep() {
     `<section class="ann-card" id="ann-application-slot"></section><section class="ann-card" id="ann-readiness-slot"></section>`;
 }
 
-/* ---------- panel drawing ---------- */
-function drawSteps() {
-  $("#ann-steps").innerHTML = UI_STEPS.map(([k, n], i) => `<button type="button" data-go="${k}" aria-current="${k === step ? "step" : "false"}"><i>${i + 1}</i>${esc(n)}</button>`).join("");
-}
-function drawFoot() {
-  const i = UI_STEPS.findIndex(s => s[0] === step), dirty = isDirty();
-  const last = i === UI_STEPS.length - 1;
-  foot.innerHTML = `${readOnly ? `<p class="ann-callout">You can look around, but only an owner or admin can save this plan.</p>` : ""}
-    ${conflict ? `<div class="ann-conflict" role="alert"><p>Another tab or person saved a newer plan. Your edits are still here and nothing was overwritten.</p><div class="ann-actions"><button type="button" class="ann-btn alt" data-reload>Load the saved plan</button><button type="button" class="ann-btn" data-overwrite>Keep my edits and save over it</button></div></div>` : ""}
-    <div class="ann-actions"><button type="button" class="ann-btn alt" data-back ${i === 0 ? "disabled" : ""}>Back</button>
-    <button type="button" class="ann-btn alt" data-save ${readOnly || saving || !dirty || conflict ? "disabled" : ""}>${saving ? "Saving" : "Save"}</button>
-    ${last ? "" : `<button type="button" class="ann-btn" data-next ${saving || conflict ? "disabled" : ""}>${readOnly ? "Next" : "Save and continue"}</button>`}</div>
-    <p class="ann-note">${dirty ? "Unsaved changes. The preview already shows them." : lastSavedAt}</p>`;
-}
-function draw() {
-  const [, , prompt] = UI_STEPS.find(s => s[0] === step) || [];
-  log.innerHTML = `<h2 class="ann-title">${esc(prompt || "")}</h2>${notice ? `<p class="ann-callout" role="status">${esc(notice)}</p>` : ""}${notes.map(n => `<p class="ann-callout">${esc(n)}</p>`).join("")}${stepBody()}`;
-  drawSteps(); drawFoot(); applicationUI.mount(); readinessUI.mount();
-}
-function drawKeep() { // re-draw without losing the cursor in a focused field
-  const y = log.scrollTop; draw(); log.scrollTop = y;
-}
-function go(next) {
-  if (!UI_STEPS.some(s => s[0] === next)) return;
-  step = next; notice = ""; page = STEP_PAGE[next] || page; collectionId = undefined;
-  draw(); log.scrollTop = 0; renderPreview(); app.dataset.view = "chat";
-  syncSwitch();
-}
-function edit(mutator, redraw = false) {
-  if (readOnly) return;
-  mutator(); touched = true; conflict = conflict; schedule();
-  drawFoot();
-  if (redraw) drawKeep();
-}
-function focusIdea(index) {
-  const idea = answers.product_ideas?.[index];
-  if (!idea) return;
-  productId = (base.style_demo ? base.products?.[index]?.id : null) || `ann-product-${idea.key}`;
-  page = "product";
-}
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {
@@ -284,18 +496,39 @@ document.addEventListener("click", e => {
   const d = t.dataset;
   if (d.go) return go(d.go);
   if (d.viewSwitch) { app.dataset.view = d.viewSwitch; syncSwitch(); if (d.viewSwitch === "canvas") setTimeout(fit, 0); return; }
+  if (["showcase", "store"].includes(d.previewMode)) { setPreviewMode(d.previewMode); return renderPreview(false); }
   if (d.device) { rememberScroll(); canvas.dataset.device = d.device; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b === t))); renderPreview(false); fit(); return; }
   if (d.page) { page = d.page; collectionId = undefined; policyKind = undefined; return renderPreview(); }
   if (d.viewPage) { page = d.viewPage; return renderPreview(); }
-  if ("back" in d) return go(UI_STEPS[Math.max(0, UI_STEPS.findIndex(s => s[0] === step) - 1)][0]);
-  if ("next" in d) { const nx = UI_STEPS[Math.min(UI_STEPS.length - 1, UI_STEPS.findIndex(s => s[0] === step) + 1)][0]; return (readOnly ? Promise.resolve(true) : save(nx)).then(ok => { if (ok) go(nx); }); }
+  if ("back" in d) { const ps = prompts(), i = curIdx(ps); if (i > 0) { editing = null; return void toPrompt(ps[i - 1].id); } return; }
+  if ("continue" in d) { const p = cur(), df = def(p); if (!readOnly && ["choice", "accent"].includes(df.kind) && df.reply) { edit(() => df.pick(df.cur)); feed(p.id, `${df.label}: ${df.reply}`); } editing = null; return void advance(); }
+  if ("cancelEdit" in d) { composerDrafts.delete(composerKey); editing = null; focusComposer = true; draw("active"); return drawComposer(true); }
+  if (d.editPrompt) { editing = null; return void toPrompt(d.editPrompt); }
+  if ("toggleDetail" in d) { detail = !detail; draw("keep"); drawComposer(true); if (detail) log.scrollTo({ top: log.scrollHeight, behavior: reduce() ? "auto" : "smooth" }); return; }
   if ("save" in d) return void save(step);
   if ("reload" in d) return void reloadLatest(false);
   if ("overwrite" in d) return void reloadLatest(true);
   if ("retryAttrs" in d) { attrState.delete(answers.subcategory_id); return void drawKeep(); }
   if (readOnly) return;
+  if (d.pick !== undefined) {
+    const p = cur(), df = def(p), o = df.opts.find(x => String(x.v) === d.pick); if (!o) return;
+    notice = ""; edit(() => df.pick(d.pick)); feed(p.id, `${df.label}: ${o.t}`);
+    return void advance();
+  }
+  if (d.toggleSection) {
+    const [pg, sec] = d.toggleSection.split(":");
+    edit(() => { const set = new Set(shown(pg)); set.has(sec) ? set.delete(sec) : set.add(sec); (answers.section_options ||= {})[pg] = ANN_EXTRA_SECTIONS[pg].filter(x => set.has(x)); page = pg; });
+    feed("sections", `${label(pg)} page: ${label(sec)} ${shown(pg).includes(sec) ? "on" : "off"}`);
+    draw("keep"); return drawComposer(true);
+  }
+  if (d.editItem) {
+    const [kind, i, field] = d.editItem.split(":"), it = (kind === "col" ? answers.collections : answers.product_ideas)?.[Number(i)]; if (!it) return;
+    promptId = kind === "col" ? "collections" : `ideas:${it.collection_key}`; step = kind === "col" ? "collections" : "products";
+    editing = { kind, i: Number(i), field }; focusComposer = true; draw("active"); return drawComposer(true);
+  }
   if (d.pickStyle) {
     const s = styleSettings(d.pickStyle);
+    setPreviewMode("showcase");
     return edit(() => { for (const k of ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"]) if (s[k] !== undefined) answers[k] = s[k]; }, step !== "category");
   }
   if (d.palette) return edit(() => { answers.color_preset = d.palette; }, true);
@@ -325,14 +558,23 @@ document.addEventListener("click", e => {
   if (d.delIdea !== undefined) return edit(() => { answers.product_ideas.splice(Number(d.delIdea), 1); if (!answers.product_ideas.length) delete answers.product_ideas; }, true);
 });
 document.addEventListener("input", e => {
-  const t = e.target; if (readOnly || !t.dataset) return;
+  const t = e.target;
+  if (t.matches?.("[data-composer-input]")) { if (t.value === composerOriginals.get(composerKey)) composerDrafts.delete(composerKey); else composerDrafts.set(composerKey, t.value); const c = document.querySelector("[data-count]"); if (c) c.textContent = t.value.length; t.style.height = "auto"; t.style.height = `${Math.min(140, t.scrollHeight)}px`; return; }
+  if (readOnly || !t.dataset) return;
   const d = t.dataset;
+  if (d.accentInput !== undefined) return edit(() => { answers.accent_color = t.value; });
   if (d.ans) return edit(() => { if (d.ans === "accent_color") answers.accent_color = t.value; else answers[d.ans] = t.value; });
   if (d.col !== undefined) return edit(() => { answers.collections[Number(d.col)][d.f] = t.value; });
    if (d.idea !== undefined) return edit(() => { answers.product_ideas[Number(d.idea)][d.f] = t.value; focusIdea(Number(d.idea)); });
 });
+document.addEventListener("keydown", e => {
+  const t = e.target;
+  if (t.matches?.("[data-composer-input]") && e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); t.form?.requestSubmit(); }
+});
+document.addEventListener("submit", e => { if (e.target.matches?.("[data-composer]")) { e.preventDefault(); submitComposer(e.target.querySelector("textarea")?.value || ""); } });
 document.addEventListener("change", e => {
   const t = e.target; if (readOnly || !t.dataset) return;
+  if (t.dataset.accentInput !== undefined) { feed("accent", `Accent colour: ${t.value}`); draw("keep"); return; }
   if (t.dataset.section) {
     const [p, s] = t.dataset.section.split(":");
     return edit(() => { const set = new Set(shown(p)); t.checked ? set.add(s) : set.delete(s); (answers.section_options ||= {})[p] = ANN_EXTRA_SECTIONS[p].filter(x => set.has(x)); page = p; });
@@ -406,11 +648,12 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges())) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
 if ((window.innerWidth || 1280) < 700) { canvas.dataset.device = "mobile"; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.device === "mobile"))); }
 if (clearedNote.length) notice = "Some earlier choices were cleared because they no longer matched.";
 if (answers.subcategory_id && step === "products") loadAttrs(answers.subcategory_id);
-draw(); syncSwitch(); renderPreview(false); fit();
-say(session ? "Your saved plan is restored." : "Start anywhere. Nothing is saved until you press Save.");
+foot.innerHTML = `<div id="ann-composer"></div><div id="ann-savebar"></div>`;
+draw("active"); syncSwitch(); renderPreview(false); fit();
+say(session ? "Your saved plan is restored." : "Ann is ready. Nothing is saved until you save the plan or finish a stage.");

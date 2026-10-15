@@ -5,10 +5,10 @@ import { safeImage } from "./aura-sections.js";
 import { styleDemonstration } from "./style-demo-copy.js";
 
 /** The preview may use demo inventory, but a style save never includes this clone. */
-export function stylePreviewData(source) {
+export function stylePreviewData(source, { showcase = false } = {}) {
   const data = structuredClone(source);
   const hasProducts = (data.products || []).some(p => p.status !== "archived");
-  if (hasProducts) {
+  if (hasProducts && !showcase) {
     data.products = data.products.filter(p => p.status !== "archived");
     const defaults = starterLayouts(data);
     data.layouts = Object.fromEntries(Object.entries(defaults).map(([key, value]) =>
