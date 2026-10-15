@@ -1,6 +1,7 @@
 import { AURA_STYLES, STYLE_IDS, STYLE_THEME_KEYS, styleSettings, stylePatch } from "./aura-styles.js";
 import { stylePreviewData, renderStylePreview } from "./style-preview.js";
 import { attachStyleInteractions } from "./style-preview-interactions.js";
+import { styleDemonstration } from "./style-demo-copy.js";
 import { attachAuraMotion } from "./aura-motion.js";
 import { themeSnapshot } from "./editor-state.js";
 import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
@@ -9,10 +10,18 @@ const $ = selector => document.querySelector(selector);
 const boot = JSON.parse($("#style-studio-data").textContent);
 const original = themeSnapshot(boot.settings);
 const catalogue = stylePreviewData(boot);
-const bag = new Map((catalogue.products || []).slice(0, 2).map(p => [p.id, 1]));
+// The projection the frame actually renders: showcase styles swap ids, real catalogues never do.
+const catalogueFor = style => catalogue.style_demo ? styleDemonstration(catalogue, style) : catalogue;
+let current = catalogue;
+const bags = new Map();
+const bagFor = () => {
+  const key = catalogue.style_demo ? (settings.style_preset || "saved") : "real";
+  if (!bags.has(key)) bags.set(key, new Map((current.products || []).slice(0, 2).map(p => [p.id, 1])));
+  return bags.get(key);
+};
 const frame = $("#as-preview"), canvas = $("#as-canvas"), status = $("#as-status");
 const readOnly = boot.readOnly === true || !["owner", "admin"].includes(boot.role);
-let settings = { ...original }, page = ["home","collection","product","cart","checkout","about","contact"].includes(boot.initialPage) ? boot.initialPage : "home", productId = catalogue.products?.[0]?.id;
+let settings = { ...original }, page = ["home","collection","product","cart","checkout","about","contact"].includes(boot.initialPage) ? boot.initialPage : "home", productId = catalogueFor(original.style_preset).products?.[0]?.id;
 let collectionId, policyKind, dirty = false, saving = false;
 const scrollPositions = new Map(), stylePages = new Map();
 let displayedKey = "";
@@ -36,13 +45,16 @@ function controls() {
 }
 function preview(remember = true) {
   if (remember) rememberScroll();
+  current = catalogueFor(settings.style_preset);
+  if (!(current.products || []).some(p => p.id === productId)) productId = current.products?.[0]?.id;
+  if (collectionId && !(current.collections || []).some(c => c.id === collectionId)) collectionId = undefined;
   controls();
   displayedKey = positionKey();
   const styleName = AURA_STYLES.find(style => style.id === settings.style_preset)?.name || "Your saved style";
   frame.title = `${styleName}, interactive ${canvas.dataset.device || "desktop"} store preview`;
   frame.srcdoc = renderStylePreview(catalogue, settings, { page, productId, collectionId, policyKind });
   $("#as-catalog-note").textContent = catalogue.style_demo
-    ? "Menswear demonstration content and sample prices. These products are preview-only and will not be added to your catalogue."
+    ? "Illustrative sample products and prices for each style. These products are preview-only and will not be added to your catalogue."
     : "Your existing catalogue and page content. Cart and checkout use illustrative items only, not a real order.";
 }
 function change(patch) {
@@ -54,7 +66,7 @@ function change(patch) {
 document.querySelectorAll("[data-style-choice]").forEach(button =>
   button.addEventListener("click", () => {
     stylePages.set(settings.style_preset || "saved", { page, productId, collectionId, policyKind });
-    const next = stylePages.get(button.dataset.styleChoice) || { page: "home", productId: catalogue.products?.[0]?.id };
+    const next = stylePages.get(button.dataset.styleChoice) || { page: "home", productId: catalogueFor(button.dataset.styleChoice).products?.[0]?.id };
     ({ page, productId, collectionId, policyKind } = next);
     change(styleSettings(button.dataset.styleChoice));
   }));
@@ -89,7 +101,7 @@ frame.addEventListener("load", () => {
     else if (path.startsWith("/collections/")) {
       page = "collection";
       const slug = decodeURIComponent(path.split("/")[2]);
-      collectionId = catalogue.collections?.find(c => c.slug === slug || c.id === slug)?.id;
+      collectionId = current.collections?.find(c => c.slug === slug || c.id === slug)?.id;
     } else if (path.startsWith("/policies/")) { page = "policy"; policyKind = path.split("/")[2]; }
     else if (path === "/pages/about") page = "about";
     else if (path === "/pages/contact") page = "contact";
@@ -99,10 +111,10 @@ frame.addEventListener("load", () => {
     else return;
     preview();
   });
-  attachAuraSearch(doc, catalogue);
-  attachAuraCatalog(doc, catalogue, { page, collectionId });
+  attachAuraSearch(doc, current);
+  attachAuraCatalog(doc, current, { page, collectionId });
   attachAuraMotion(doc);
-  attachStyleInteractions(doc, catalogue, bag, page, productId, next => { page = next; preview(); });
+  attachStyleInteractions(doc, current, bagFor(), page, productId, next => { page = next; preview(); });
   const key = displayedKey;
   doc.defaultView?.scrollTo({ top: scrollPositions.get(key) || 0, behavior: "instant" });
   doc.defaultView?.addEventListener("scroll", () => {

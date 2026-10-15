@@ -9,6 +9,7 @@ import { annReference, annSessionResponse, loadAnnSession } from "./store/ann-re
 import { preparePageMigration } from "../db/page-schema-migration.js";
 import { DEFAULT_SETTINGS, loadDraft } from "./store/repository.js";
 import { APP_ORIGIN } from "./auth/security.js";
+import { STYLE_IDS, styleSettings } from "./public/aura-styles.js";
 
 const storeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ownerId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -113,8 +114,28 @@ export async function annPreviewFixture(req, res, previewOrigin) {
         draft: await loadDraft(tx, storeId),
         apiRoot: prefix + (readonly ? "/read-only-api" : "/api"), readOnly: readonly,
       }));
-      response = new Response(req.method === "HEAD" ? null : renderAnnBuilder(
-        { ...options.draft, role: readonly ? "editor" : "owner" }, user, options),
+      // Screenshot controls affect only this response clone, never a stored
+      // fixture session or any merchant. This module is development-only.
+      const requestedStyle = url.searchParams.get("style");
+      if (STYLE_IDS.includes(requestedStyle)) {
+        const theme = styleSettings(requestedStyle);
+        options.draft.settings = { ...options.draft.settings, ...theme };
+        options.sessionResponse.preview = {
+          ...options.sessionResponse.preview,
+          theme: { ...options.sessionResponse.preview?.theme, ...theme },
+        };
+        if (options.sessionResponse.session) options.sessionResponse.session = {
+          ...options.sessionResponse.session,
+          answers: { ...options.sessionResponse.session.answers, ...theme },
+        };
+      }
+      let html = renderAnnBuilder({ ...options.draft, role: readonly ? "editor" : "owner" }, user, options);
+      if (url.searchParams.get("device") === "mobile") {
+        html = html.replace('id="ann-canvas" data-device="desktop"', 'id="ann-canvas" data-device="mobile"')
+          .replace('data-device="desktop" aria-pressed="true"', 'data-device="desktop" aria-pressed="false"')
+          .replace('data-device="mobile" aria-pressed="false"', 'data-device="mobile" aria-pressed="true"');
+      }
+      response = new Response(req.method === "HEAD" ? null : html,
       { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     } else {
       const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness|media)$/);

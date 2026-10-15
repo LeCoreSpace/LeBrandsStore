@@ -1,3 +1,4 @@
+import { SHOWCASE_WORLD } from "./aura-showcase.js";
 import { ANN_STEPS, ANN_PALETTES, ANN_FONTS, ANN_EXTRA_SECTIONS, annPreviewConfiguration } from "./ann-config.js";
 import { AURA_STYLES, styleSettings } from "./aura-styles.js";
 import { stylePreviewData, renderStylePreview } from "./style-preview.js";
@@ -74,6 +75,8 @@ const shown = p => sections()[p] ?? extrasNow[p] ?? [];
 /* ---------- preview ---------- */
 let current = null, displayedKey = "", timer = 0, frameMarkup = "", frameLoading = false;
 const scrolls = new Map();
+const previewBags = new Map();
+let activeBagKey = "";
 const posKey = () => JSON.stringify([previewMode, config().theme.style_preset, page, productId || "", collectionId || "", canvas.dataset.device]);
 function setPreviewMode(mode, source) {
   rememberScroll();
@@ -84,8 +87,6 @@ function setPreviewMode(mode, source) {
   base = stylePreviewData(previewSource, { showcase: mode === "showcase" });
   if (changed) {
     productId = undefined; collectionId = undefined;
-    bag.clear();
-    (base.products || []).slice(0, 2).forEach(p => bag.set(p.id, 1));
   }
 }
 function rememberScroll() {
@@ -98,14 +99,25 @@ function renderPreview(remember = true) {
   const cfg = config();
   const projected = projectAnnPreview(base, cfg, { prefilled: prefilledSection, attributes: attrState.get(answers.subcategory_id)?.attrs || [] });
   current = projected.data;
+  const bagKey = `${previewMode}:${current.style_demo ? cfg.theme.style_preset : "real"}`;
+  if (bagKey !== activeBagKey) {
+    if (activeBagKey) previewBags.set(activeBagKey, new Map(bag));
+    bag.clear();
+    const remembered = previewBags.get(bagKey);
+    for (const [id, quantity] of remembered || current.products.slice(0, 2).map(p => [p.id, 1]))
+      if (current.products.some(p => p.id === id)) bag.set(id, quantity);
+    activeBagKey = bagKey;
+  } else {
+    for (const id of bag.keys()) if (!current.products.some(p => p.id === id)) bag.delete(id);
+  }
   if (!productId || !current.products.some(p => p.id === productId)) productId = current.products[0]?.id;
   displayedKey = posKey();
-  frame.title = `${previewMode === "showcase" ? "Fashion showcase" : "Your store"}, ${styleName(cfg.theme.style_preset)}, ${canvas.dataset.device} preview`;
+  frame.title = `${previewMode === "showcase" ? "Style showcase" : "Your store"}, ${styleName(cfg.theme.style_preset)}, ${canvas.dataset.device} preview`;
   const html = renderStylePreview(current, cfg.theme, { page, productId, collectionId, policyKind });
   if (html !== frameMarkup) { frameMarkup = html; frameLoading = true; frame.srcdoc = html; }
   else if (!frameLoading) previewLoaded();
   const niche = subName(answers.subcategory_id) || catName(answers.category_id);
-  $("#ann-preview-note").textContent = (previewMode === "showcase" ? `Sample menswear photos are placeholders${niche ? ` for this ${niche} preview` : ""}; section and sample catalogue text follows your selected category and style. Prices are illustrative. Select Your store to see your existing catalogue. ` : base.style_demo ? "No real products yet. Sample menswear images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
+  $("#ann-preview-note").textContent = (previewMode === "showcase" ? `Each style shows its own illustrative sample world (${SHOWCASE_WORLD[cfg.theme.style_preset] || "sample"} photos here), which is a placeholder and not a limit on what you can sell${niche ? `. Your selected niche is ${niche}` : ""}. Sample products and prices are illustrative. Select Your store to see your existing catalogue. ` : base.style_demo ? "No real products yet. Sample images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
     "Preview controls never create products, orders or publications. Use the confirmed actions in Review to save real draft changes." +
     (projected.unavailable.length ? ` Some optional sections cannot be previewed here: ${projected.unavailable.map(u => label(u.split(":")[1])).join(", ")}.` : "");
   paintStage();

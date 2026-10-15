@@ -71,7 +71,7 @@ test("Ann boot escaping, non-scripted iframe and production asset delivery bound
   const html = renderAnnBuilder({ ...data, settings: { description: "</script><script>alert(1)</script>" } });
   assert.doesNotMatch(html, /<script>alert\(1\)<\/script>/);
   assert.match(html, /\\u003c\/script\\u003e/);
-  assert.match(html, /data-preview-mode="showcase" aria-pressed="true">Fashion showcase/);
+  assert.match(html, /data-preview-mode="showcase" aria-pressed="true">Style showcase/);
   assert.match(html, /data-preview-mode="store" aria-pressed="false">Your store/);
   assert.doesNotMatch(html, /sandbox="[^"]*allow-scripts/);
   const worker = await readFile(new URL("../src/index.js", import.meta.url), "utf8");

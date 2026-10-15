@@ -51,14 +51,17 @@ export function applyAnnCategoryCopy(data, config = {}, { sectionsOnly = false }
     : `Explore a considered selection of ${lower}. Discover everyday favourites, compare the details and find what works for you.`;
   const groups = skin ? ["Cleanse & prepare", "Daily skincare", "Evening rituals"] : RANGES[ctx.category.id] || ["Everyday favourites", "Explore the range", "New discoveries"];
   data.ann_category_copy_applied = true;
+  data.showcase_topic = topic;
   if (!sectionsOnly) {
   data.settings.tagline = titles[style] || titles.editorial;
   data.settings.description = description;
   for (const [i, collection] of (data.collections || []).entries()) {
+    if (skin && style === "boutique") continue;
     collection.title = groups[i % groups.length];
     collection.description = `Discover ${lower} in ${collection.title.toLowerCase()}. Explore the selection and check each product's details before choosing.`;
   }
   for (const [i, product] of (data.products || []).entries()) {
+    if (skin && style === "boutique") continue;
     product.title = skin ? SKINCARE[i % SKINCARE.length] : `${topic} ${["everyday edit", "signature selection", "discovery pick", "daily favourite", "new perspective", "essentials selection"][i % 6]}`;
     product.description = `Explore ${product.title.toLowerCase()} as part of your ${lower} collection. Replace this sample with the product's verified description, specifications and usage information.`;
     product.tags = [lower];

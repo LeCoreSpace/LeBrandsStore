@@ -5,6 +5,7 @@ import { stylePreviewData, renderStylePreview } from "../src/public/style-previe
 import { projectAnnPreview } from "../src/public/ann-projection.js";
 import { annPreviewConfiguration } from "../src/public/ann-config.js";
 import { annCategoryContext } from "../src/public/ann-category-copy.js";
+import { styleDemonstration } from "../src/public/style-demo-copy.js";
 
 const source = () => ({
   store: { name: "Example", store_id: "11111111-1111-4111-8111-111111111111" },
@@ -12,10 +13,11 @@ const source = () => ({
     tagline: "Made for you", description: "A fun way to style your daily living." },
   products: [], collections: [], layouts: {}, policies: [], reviews: [],
 });
-test("Skincare changes all five showcase styles without changing shared photos or merchant content", () => {
+test("Skincare changes all five showcase styles while preserving each style's photos and merchant content", () => {
   const original = source(), before = structuredClone(original);
   const demo = stylePreviewData(original, { showcase: true });
   for (const style of ["editorial", "boutique", "architectural", "minimal", "vintage"]) {
+    const styled = styleDemonstration(demo, style);
     const config = annPreviewConfiguration({ category_id: 2, subcategory_id: 21, style_preset: style,
       tagline: original.settings.tagline, description: original.settings.description });
     const { data } = projectAnnPreview(demo, config);
@@ -23,10 +25,10 @@ test("Skincare changes all five showcase styles without changing shared photos o
     assert.notEqual(hero.title, original.settings.tagline);
     assert.match(hero.description, /skincare/i);
     assert.doesNotMatch(hero.description, /wardrobe|shirt|daily living/i);
-    assert.equal(data.products[0].title, "Daily cleanser");
-    assert.equal(data.collections[0].title, "Cleanse & prepare");
-    assert.deepEqual(data.products.map(p => p.images), demo.products.map(p => p.images));
-    assert.deepEqual(data.products.map(p => p.price_paise), demo.products.map(p => p.price_paise));
+    assert.equal(data.products[0].title, style === "boutique" ? styled.products[0].title : "Daily cleanser");
+    assert.equal(data.collections[0].title, style === "boutique" ? styled.collections[0].title : "Cleanse & prepare");
+    assert.deepEqual(data.products.map(p => p.images), styled.products.map(p => p.images));
+    assert.deepEqual(data.products.map(p => p.price_paise), styled.products.map(p => p.price_paise));
     const html = renderStylePreview(data, config.theme, { page: "home" });
     assert.ok(html.includes(hero.title));
     assert.ok(html.includes("skincare"));

@@ -59,9 +59,9 @@ Use complete interactive browser previews, with animation, to sell the
 storefront styles. Page-design images are optional reference material, not
 the primary theme-selection experience.
 Each style must be scrollable and interactive, with Desktop and Mobile views.
-The user wants five style previews, including Vintage, sharing the same fashion
-images with text based on the style, even when the merchant has existing
-products and older non-fashion images.
+The user wants five previews, including Vintage, even when the merchant has
+existing products and older images. The earlier shared-fashion-image approach
+has been superseded by approved separate image sets for each showcase.
 
 **Why:** The user pointed to Webflow's template browser preview and said,
 "this is what sells. not a image of a website".
@@ -69,8 +69,21 @@ products and older non-fashion images.
 **How to apply:** Render real Aura pages with working preview navigation
 and a clearly isolated demonstration shopping flow; never let a preview
 place an order, take payment or add demonstration inventory to a store.
-Keep the fashion showcase distinct from the actual merchant catalogue rather
+Keep the style showcase distinct from the actual merchant catalogue rather
 than silently substituting existing inventory during style comparison.
+
+The five styles must differ in complete composition, including section colours,
+highlights, animation, section arrangement and section count, not merely fonts.
+The user approved distinct image sets for five sample niches: women's clothing,
+skincare, streetwear, home decor and leather bags.
+
+**Why:** The user rejected the font-led differences and requested separate
+photography across styles and subcategories.
+
+**How to apply:** Treat these pairings as illustrative showcases, not a rule
+restricting which style a merchant can select. Keep white as the default base
+without forcing every section to be white. Preserve merchant-authored content,
+inventory and live publications when building or comparing previews.
 
 Shared demonstration images do not mean shared text: category and subcategory
 choices must immediately change the preview copy, including Skincare.

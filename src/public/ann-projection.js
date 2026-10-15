@@ -196,6 +196,8 @@ export function projectAnnPreview(base, config = {}, { prefilled, attributes = [
     if (useTagline) data.settings.tagline = brand.tagline;
     if (useDescription) data.settings.description = brand.description;
   }
+  // Transient, demo-clone only: lets the showcase renderer honour explicit toggles.
+  if (data.style_demo === true) data.showcase_options = structuredClone(config.section_options || {});
   return { data, unavailable };
 }
 

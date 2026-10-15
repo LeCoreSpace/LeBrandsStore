@@ -3,6 +3,7 @@ import { starterPreview, prefilledSection } from "./aura-starters.js";
 import { starterLayouts } from "./aura-skeleton.js";
 import { safeImage } from "./aura-sections.js";
 import { styleDemonstration } from "./style-demo-copy.js";
+import { renderShowcase } from "./aura-showcase.js";
 
 /** The preview may use demo inventory, but a style save never includes this clone. */
 export function stylePreviewData(source, { showcase = false } = {}) {
@@ -41,6 +42,9 @@ export function demoCommerce(data, bag = new Map((data.products || []).slice(0, 
 }
 export function renderStylePreview(data, settings, options = {}) {
   const styled = styleDemonstration(data, settings.style_preset);
+  const merged = { ...styled.settings, ...settings };
+  const showcase = renderShowcase(styled, merged, options);
+  if (showcase) return showcase.replace("</head>", "<style>html{overflow-y:scroll;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#777 #f1f1f1}html,body{min-height:100%}</style></head>");
   const html = renderAura({ ...styled, settings: { ...styled.settings, ...settings } }, {
     ...options, preview: true, commerce: true, readOnly: true, embeddedPreview: true,
   }).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");

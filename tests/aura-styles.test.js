@@ -142,7 +142,7 @@ test("live studio controller previews immediately and saves styling only with st
       if(options.method==="PATCH"){patches.push(JSON.parse(options.body));return fresh;}
       return fresh;
     }}),
-    AURA_STYLES,STYLE_IDS:AURA_STYLES.map(s=>s.id),STYLE_THEME_KEYS,styleSettings,stylePatch,stylePreviewData,renderStylePreview,themeSnapshot,
+    AURA_STYLES,STYLE_IDS:AURA_STYLES.map(s=>s.id),STYLE_THEME_KEYS,styleSettings,stylePatch,stylePreviewData,renderStylePreview,themeSnapshot,styleDemonstration,
     attachAuraSearch(){},attachAuraCatalog(){},attachStyleInteractions(){},attachAuraMotion(){},
   };
   vm.runInNewContext(script,context);
@@ -180,18 +180,19 @@ test("live studio controller previews immediately and saves styling only with st
   assert.match(ids["as-preview"].title,/Vintage, interactive mobile/);
 });
 
-test("all five previews share imagery, products and prices, with distinct demo copy only",()=>{
-  const demo=stylePreviewData(source),original=structuredClone(demo),titles=[];
+test("all five previews use distinct coordinated demonstration catalogues without mutating source data",()=>{
+  const demo=stylePreviewData(source),original=structuredClone(demo),titles=[],photos=new Set();
   for(const style of AURA_STYLES){
     const themed=styleDemonstration(demo,style.id);
-    assert.deepEqual(themed.products,demo.products);assert.deepEqual(themed.collections,demo.collections);
-    assert.deepEqual(themed.layouts.home.find(s=>s.type==="hero").settings.image,
-      demo.layouts.home.find(s=>s.type==="hero").settings.image);
+    assert.equal(themed.products.length,5);assert.equal(themed.collections.length,2);
+    assert.ok(themed.products.every(p=>p.price_paise>0));
+    assert.ok(themed.products.every(p=>p.images[0].url.startsWith(`/assets/img/aura-showcases/v01/${style.id}/`)));
+    photos.add(themed.products[0].images[0].url);
     titles.push(themed.layouts.home.find(s=>s.type==="hero").settings.title);
     const html=renderStylePreview(demo,styleSettings(style.id));
     assert.match(html,/overflow-y:scroll/);assert.match(html,/scrollbar-gutter:stable/);
   }
-  assert.equal(new Set(titles).size,5);assert.deepEqual(demo,original);
+  assert.equal(new Set(titles).size,5);assert.equal(photos.size,5);assert.deepEqual(demo,original);
   const merchant={...demo,style_demo:false};
   assert.equal(styleDemonstration(merchant,"vintage"),merchant);
   const shell=renderStyleStudio(source);
