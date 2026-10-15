@@ -5,6 +5,7 @@ import { attachStyleInteractions } from "./style-preview-interactions.js";
 import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
 import { attachAuraMotion } from "./aura-motion.js";
 import { attachAnnApplication } from "./ann-application-ui.js";
+import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { prefilledSection } from "./aura-starters.js";
 import { initialAnswers, diffAnswers, changeCategory, changeSubcategory, nextKey, planProblems, projectAnnPreview, currentExtras } from "./ann-projection.js";
 
@@ -44,7 +45,10 @@ let base = stylePreviewData({ store: boot.store, settings: boot.settings, produc
 const applicationUI = attachAnnApplication({ api, root, readOnly,
   context: () => ({ answers, revision, dirty: isDirty() }),
   beforePrepare: () => save("review"),
-  onApplied: result => { base = stylePreviewData(result.draft); productId = undefined; collectionId = undefined; renderPreview(false); },
+  onApplied: result => { base = stylePreviewData(result.draft); productId = undefined; collectionId = undefined; renderPreview(false); readinessUI.onStoreChanged(); },
+});
+const readinessUI = attachAnnReadiness({api,root,readOnly,
+  onSaved:result=>{if(result.draft){base=stylePreviewData(result.draft);renderPreview(false);}},
 });
 const extrasNow = currentExtras(base.layouts);
 const bag = new Map((base.products || []).slice(0, 2).map(p => [p.id, 1]));
@@ -79,8 +83,8 @@ function renderPreview(remember = true) {
   displayedKey = posKey();
   frame.title = `${styleName(cfg.theme.style_preset)}, ${canvas.dataset.device} store preview`;
   frame.srcdoc = renderStylePreview(current, cfg.theme, { page, productId, collectionId, policyKind });
-  $("#ann-preview-note").textContent = (base.style_demo ? "Sample menswear imagery and illustrative prices fill the preview until you add real products. " : "Your catalogue is untouched; planned collections and products are added to this preview only. ") +
-    "Nothing is published and no products or orders are created." +
+  $("#ann-preview-note").textContent = (base.style_demo ? "Sample menswear imagery and illustrative prices fill the preview until you add real products. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
+    "Preview controls never create products, orders or publications. Use the confirmed actions in Review to save real draft changes." +
     (projected.unavailable.length ? ` Some optional sections cannot be previewed here: ${projected.unavailable.map(u => label(u.split(":")[1])).join(", ")}.` : "");
   paintStage();
 }
@@ -226,12 +230,11 @@ function reviewStep() {
     ["style", "Style", styleName(t.style_preset)], ["palette", "Colour", `${PALETTE_NAMES[t.color_preset] || t.color_preset}, accent ${t.accent_color}, ${t.button_style} buttons`],
     ["fonts", "Type", FONT_NAMES[t.font_preset] || t.font_preset], ["collections", "Collections", (a.collections || []).map(c => c.name).join(", ") || "None planned"],
     ["products", "Product ideas", `${(a.product_ideas || []).length} planned`], ["story", "Story", a.store_name || "Not set"]];
-  return bubble(`<p>${session || !dirty ? "Here is your plan." : "Here is your plan. Save it so you can come back to it."} It is a plan for the preview only. Nothing is published, no theme is applied and no products are created.</p>`) +
+  return bubble(`<p>${session || !dirty ? "Here is your plan." : "Here is your plan. Save it so you can come back to it."} Preview choices alone do not change the store. Use the confirmed draft and setup actions below to save changes. Publishing is always separate.</p>`) +
     bubble(`<dl class="ann-summary">${rows.map(([k, n, v]) => `<div><dt>${n}</dt><dd>${esc(v)}</dd><button type="button" class="ann-link" data-go="${k}">Change</button></div>`).join("")}</dl>
       <p class="ann-note">${dirty ? "You have unsaved changes." : session ? `Saved, revision ${revision}.` : "Not saved yet."}</p>`, "ann-card") +
-    bubble(`<h2>What is next</h2><p>Selling details, business details, policies, domain, payments and shipping are not finished by this plan. Ann has not completed them. Do them in your existing setup.</p>
-      <div class="ann-actions"><a class="ann-btn" href="${root}/setup">Continue setup</a><a class="ann-btn alt" href="${root}/editor">Open editor</a></div>`, "ann-card") +
-    `<section class="ann-card" id="ann-application-slot"></section>`;
+    bubble(`<h2>Make the store yours</h2><p>Apply your confirmed page and catalogue choices, then complete the business, shipping and policy checks below. Store address confirmation, verified supplier selection and final publishing stay in the existing setup and editor.</p>`, "ann-card") +
+    `<section class="ann-card" id="ann-application-slot"></section><section class="ann-card" id="ann-readiness-slot"></section>`;
 }
 
 /* ---------- panel drawing ---------- */
@@ -251,7 +254,7 @@ function drawFoot() {
 function draw() {
   const [, , prompt] = UI_STEPS.find(s => s[0] === step) || [];
   log.innerHTML = `<h2 class="ann-title">${esc(prompt || "")}</h2>${notice ? `<p class="ann-callout" role="status">${esc(notice)}</p>` : ""}${notes.map(n => `<p class="ann-callout">${esc(n)}</p>`).join("")}${stepBody()}`;
-  drawSteps(); drawFoot(); applicationUI.mount();
+  drawSteps(); drawFoot(); applicationUI.mount(); readinessUI.mount();
 }
 function drawKeep() { // re-draw without losing the cursor in a focused field
   const y = log.scrollTop; draw(); log.scrollTop = y;
@@ -403,7 +406,7 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (isDirty() || saving || applicationUI.hasUnappliedChanges())) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if (!readOnly && (isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
 if ((window.innerWidth || 1280) < 700) { canvas.dataset.device = "mobile"; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.device === "mobile"))); }

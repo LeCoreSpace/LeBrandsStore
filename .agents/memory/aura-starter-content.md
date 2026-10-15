@@ -93,3 +93,17 @@ idea must not reset merchant work or checkout-adjusted inventory.
 **How to apply:** Keep product creation explicit, with confirmed selling
 details. Preserve existing records and collection members when binding a plan;
 use the ordinary catalogue editor for intentional changes to those records.
+
+## Ann setup and live checkout
+
+Keep Ann's interview, draft application and live selling settings distinct.
+Business and policy work is draft work; shipping and COD changes use the
+existing checkout configuration and can affect customers immediately.
+
+**Why:** A single "build a draft" interaction must not imply that a live
+payment or delivery change is safely deferred until publication.
+
+**How to apply:** Require separate explicit consent for live checkout changes,
+preserve owner-only checkout permissions, and require policy review again when
+business or selling terms change. An Ann interview/checklist never substitutes
+for GSTIN verification, address confirmation or platform approval.

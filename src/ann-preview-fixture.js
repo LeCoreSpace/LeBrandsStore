@@ -21,7 +21,7 @@ const fixtureData = {
   aura_skeleton_enabled: true, aura_starter_enabled: true, role: "owner",
 };
 let database;
-export async function setupAnnFixtureDatabase() {
+export async function setupAnnFixtureDatabase({samplePolicies=false}={}) {
   const pg = new PGlite();
   try {
     await pg.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
@@ -41,10 +41,13 @@ export async function setupAnnFixtureDatabase() {
       INSERT INTO store_members(store_id,user_id,role) VALUES('${storeId}','${ownerId}','owner'),('${storeId}','${editorId}','editor');
       INSERT INTO sessions(token_hash,user_id,expires_at) VALUES('${"a".repeat(64)}','${ownerId}',now()+interval '1 day'),('${"b".repeat(64)}','${editorId}',now()+interval '1 day');`);
     await pg.query("INSERT INTO store_setup(store_id,settings) VALUES($1,$2) ON CONFLICT(store_id) DO UPDATE SET settings=EXCLUDED.settings", [storeId, JSON.stringify(fixtureData.settings)]);
+    if(samplePolicies)for(const kind of ["privacy","terms","shipping","cancellation-refund","contact","pricing"])
+      await pg.query("INSERT INTO policy_pages(store_id,slug,title,content) VALUES($1,$2,$3,$4)",
+        [storeId,kind,`Sample ${kind} policy`,"Fictional local preview policy only. Replace this example with the merchant's actual operating terms and review before publication."]);
     return pg;
   } catch (error) { await pg.close(); throw error; }
 }
-const getDatabase = () => database ||= setupAnnFixtureDatabase().catch(error => { database = null; throw error; });
+const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true}).catch(error => { database = null; throw error; });
 export function annFixtureAdapter(pg) {
   return { withMemberStore: async (id, hash, fn) => {
     if (id !== storeId || !["a".repeat(64), "b".repeat(64)].includes(hash))
@@ -84,7 +87,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
         { ...options.draft, role: readonly ? "editor" : "owner" }, user, options),
       { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     } else {
-      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application)$/);
+      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness)$/);
       if (!match) response = new Response("Not found", { status: 404 });
       else {
         url.pathname = `/api/stores/${storeId}/ann/${match[1]}`;
