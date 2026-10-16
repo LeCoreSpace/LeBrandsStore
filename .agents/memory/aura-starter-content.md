@@ -47,6 +47,10 @@ inventory, adopt a design, publish the store or remove previously uploaded logos
 The entire Ann conversation should feel engaging, friendly, inspirational and
 motivational without overwhelming non-technical merchants.
 
+Use self-explanatory questions, such as "What category of products do you sell?",
+and keep Store address, Payments and Delivery visible as conversation steps, not
+only as panels inside Review.
+
 **Why:** The user explicitly said non-technical persons will use the builder.
 
 **How to apply:** Ask one small question at a time, explain unfamiliar terms in

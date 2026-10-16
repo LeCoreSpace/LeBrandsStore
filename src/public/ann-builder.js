@@ -24,9 +24,11 @@ const api = boot.apiRoot || `/api/stores/${storeId}/ann`;
 const root = `/stores/${storeId}`;
 
 const UI_STEPS = [
-  ["category", "Category", "What do you sell?"], ["style", "Style", "Pick a look"], ["palette", "Colour", "Set the colours"],
-  ["fonts", "Type", "Choose your type"], ["collections", "Collections", "Group your range"], ["products", "Products", "Sketch product ideas"],
-  ["story", "Story", "Tell your story"], ["review", "Review", "Review the plan"],
+  ["category", "Category", "Choose your product category"], ["style", "Style", "Choose your store's look"], ["palette", "Colours", "Choose backgrounds and button colours"],
+  ["fonts", "Fonts", "Choose how your store's text looks"], ["collections", "Collections", "Group related products"], ["products", "Products", "Add product ideas"],
+  ["story", "Your brand", "Add your name, logo and brand story"],
+  ["domain", "Store address", "Choose your website address"], ["payments", "Payments", "Choose how customers pay"],
+  ["shipping", "Delivery", "Choose how orders reach customers"], ["review", "Review", "Review your store and opening checks"],
 ].filter(([k]) => ANN_STEPS.includes(k));
 const PAGES = ["home", "collection", "product", "cart", "checkout", "about", "contact"];
 const STEP_PAGE = { collections: "collection", products: "product", story: "home", style: "home", palette: "home", fonts: "home", category: "home" };
@@ -39,7 +41,7 @@ let revision = session?.revision ?? 0;
 let saved = structuredClone(session?.answers || {});
 let answers = structuredClone(saved);
 if (!session) answers = { ...initialAnswers(boot.settings, boot.store, ref || {}), ...answers };
-let step = new URL(location.href).searchParams.get("logo") === "1" ? "story" : new URL(location.href).searchParams.get("launch") === "1" ? "review" :
+let step = new URL(location.href).searchParams.get("logo") === "1" ? "story" : new URL(location.href).searchParams.get("launch") === "1" ? "domain" :
   UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "category";
 let touched = false, saving = false, conflict = false, notice = "", page = "product", productId, collectionId, policyKind;
 let queue = Promise.resolve(), lastSavedAt = session ? "Saved plan restored." : "";
@@ -72,7 +74,7 @@ const brandingUI=attachAnnBranding({api,readOnly,initial:boot.settings,
   onSaved:()=>{readinessUI.onStoreChanged();drawKeep();},
   onContinue:()=>advance(),
 });
-const launchUI = attachAnnLaunch({api,readOnly,onSaved:()=>say("Your connection setup is saved. Only services you explicitly turn on are activated. You can review their status below."),onDone:()=>{
+const launchUI = attachAnnLaunch({api,readOnly,onStep:n=>go(({2:"payments",3:"shipping",4:"review"})[n]),onSaved:()=>say("Your choices are saved. Payments and automatic shipping only start when you explicitly activate them."),onDone:()=>{
   const review=$("#ann-readiness-slot");const panel=review?.closest("details");
   if(panel)panel.open=true;
   review?.scrollIntoView({block:"start"});
@@ -261,7 +263,8 @@ function prompts() {
   list.push({ id: "style", step: "style" }, { id: "bg", step: "palette" }, { id: "accent", step: "palette" }, { id: "button", step: "palette" }, { id: "font", step: "fonts" }, { id: "collections", step: "collections" });
   const cols = answers.collections || [];
   if (cols.length) for (const c of cols) list.push({ id: `ideas:${c.key}`, step: "products", col: c.key }); else list.push({ id: "ideas:none", step: "products" });
-  list.push({ id: "store_name", step: "story" }, { id: "logo", step: "story" }, { id: "tagline", step: "story" }, { id: "description", step: "story" }, { id: "sections", step: "story" }, { id: "review", step: "review" });
+  list.push({ id: "store_name", step: "story" }, { id: "logo", step: "story" }, { id: "tagline", step: "story" }, { id: "description", step: "story" }, { id: "sections", step: "story" },
+    {id:"domain",step:"domain"},{id:"payments",step:"payments"},{id:"shipping",step:"shipping"},{ id: "review", step: "review" });
   return list.filter(p => UI_STEPS.some(s => s[0] === p.step));
 }
 function curIdx(ps = prompts()) {
@@ -282,39 +285,42 @@ function def(p) {
   const txt = (key, lab, q, max, ph, area) => ({ kind: "text", key, label: lab, q, max, ph, area, reply: a[key] || "" });
   const setKey = key => v => { answers[key] = v; };
   switch (k) {
-    case "category": return sel("Category", `Hello${a.store_name ? `, ${a.store_name}` : ""}. I am Ann. Let's bring your store to life, one small choice at a time. We will start with sample products, so you do not need everything ready. Nothing goes live here. What do you sell?`,
+    case "category": return sel("Category", `Hi${a.store_name ? `, ${a.store_name}` : ""}, I'm Ann. Let's make this store feel like you! What category of products do you sell? Pick the closest match below. We'll use sample products while you explore; nothing is published yet.`,
       (ref?.categories || []).map(c => ({ v: c.category_id, t: c.name })), a.category_id, v => {
         const r = changeCategory(answers, Number(v)); answers = r.answers;
         const bits = []; if (r.cleared.subcategory) bits.push("the subcategory");
         if (r.cleared.attributes) bits.push(`${r.cleared.attributes} product detail choice${r.cleared.attributes === 1 ? "" : "s"}`);
         notice = bits.length ? `Changing category cleared ${bits.join(" and ")} because they belonged to the old category. Your product names and descriptions are kept.` : "";
       });
-    case "subcategory": return sel("Subcategory", `Nice start. Which kind of ${catName(a.category_id) || "product"} fits best?`, subsFor(a.category_id).map(s => ({ v: s.subcategory_id, t: s.name })), a.subcategory_id, v => {
+    case "subcategory": return sel("Product type", `Great, ${catName(a.category_id) || "your category"} it is! What type of products within this category do you sell? Choose the closest match so your preview feels more relevant.`, subsFor(a.category_id).map(s => ({ v: s.subcategory_id, t: s.name })), a.subcategory_id, v => {
       const r = changeSubcategory(answers, Number(v)); answers = r.answers;
       notice = r.cleared.attributes ? `Changing subcategory cleared ${r.cleared.attributes} product detail choice${r.cleared.attributes === 1 ? "" : "s"}. Your product names and descriptions are kept.` : "";
     });
-    case "style": return sel("Style", `Now the fun part, choosing a look. Here are ${AURA_STYLES.length} styles shown with the same sample products, so you can compare them fairly. Pick the one that feels closest to you. You can switch any time.`,
+    case "style": return sel("Style", `What look would you love for your store? Try any of these ${AURA_STYLES.length} styles and watch the preview change. They use the same sample products, so you can focus on the design. No wrong choice here; you can switch later.`,
       AURA_STYLES.map(s => ({ v: s.id, t: s.name, sub: s.description, c: s.settings.accent_color })), t.style_preset, v => {
         const s = styleSettings(v); setPreviewMode("showcase");
         for (const key of ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"]) if (s[key] !== undefined) answers[key] = s[key];
       }, { stack: true });
-    case "bg": return sel("Background", "Which background would you like behind your products? Pick whichever feels right, you can change it later.", ANN_PALETTES.map(v => ({ v, t: PALETTE_NAMES[v] || label(v) })), t.color_preset, setKey("color_preset"));
-    case "accent": return { ...sel("Accent colour", "Next, an accent colour for buttons and highlights. Choose one you like, or pick your own.", uniqueAccents(), t.accent_color, setKey("accent_color")), kind: "accent", reply: t.accent_color, color: t.accent_color };
-    case "button": return sel("Buttons", "How would you like your buttons to look?", ["square", "rounded", "pill"].map(v => ({ v, t: label(v) })), t.button_style, setKey("button_style"));
-    case "font": return sel("Type", "Which lettering feels most like your brand?", ANN_FONTS.map(v => ({ v, t: FONT_NAMES[v] || label(v) })), t.font_preset, setKey("font_preset"));
+    case "bg": return sel("Background colour", "What background colour would you like behind your products? Tap a colour and see it in the preview. You can change your mind any time.", ANN_PALETTES.map(v => ({ v, t: PALETTE_NAMES[v] || label(v) })), t.color_preset, setKey("color_preset"));
+    case "accent": return { ...sel("Button colour", "What colour would you like for buttons and highlights? Pick one below, or use the colour picker to match your brand.", uniqueAccents(), t.accent_color, setKey("accent_color")), kind: "accent", reply: t.accent_color, color: t.accent_color };
+    case "button": return sel("Button shape", "What shape would you like for your store's buttons? Choose square corners, rounded corners or a fully rounded pill shape. The preview will show you the difference.", ["square", "rounded", "pill"].map(v => ({ v, t: label(v) })), t.button_style, setKey("button_style"));
+    case "font": return sel("Fonts", "How would you like the words on your store to look? Choose a font style for your headings and text. Try one and see whether it feels like your brand.", ANN_FONTS.map(v => ({ v, t: FONT_NAMES[v] || label(v) })), t.font_preset, setKey("font_preset"));
     case "collections": { const items = (a.collections || []).map((c, i) => [c, i]);
-      return { kind: "list", list: "col", label: "Collection", q: "Let's group your favourites. What would you call your first collection? Think of it as a shelf of related products. You can skip this for now.", ph: "For example, Summer favourites", max: 100, items, reply: items.map(([c]) => c.name).join(", "), full: items.length >= 10 }; }
+      return { kind: "list", list: "col", label: "Collection", q: "Let's organise your products! A collection is a group of related products, like New arrivals or Everyday essentials. What would you like to call one of yours? You can add more or skip for now.", ph: "For example, Everyday essentials", max: 100, items, reply: items.map(([c]) => c.name).join(", "), full: items.length >= 10 }; }
     case "ideas": {
-      if (p.id === "ideas:none") return { kind: "info", label: "Products", q: "Product ideas sit inside collections, so a collection comes first. Add one whenever you are ready and I will pick this up from there.", reply: "" };
+      if (p.id === "ideas:none") return { kind: "info", label: "Products", q: "Want to plan your own products now? First add a collection, which is a group of related products. Or continue with the sample products and come back to this later.", reply: "" };
       const col = (a.collections || []).find(c => c.key === p.col);
       const items = (a.product_ideas || []).map((x, i) => [x, i]).filter(([x]) => x.collection_key === p.col);
-      return { kind: "list", list: "idea", label: "Product idea", q: `What might you sell in ${col?.name || "this collection"}? A name is enough for now. These are ideas, not products for sale. You can skip this and keep exploring with samples.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50 };
+      return { kind: "list", list: "idea", label: "Product idea", q: `What product would you like to include in ${col?.name || "this collection"}? Start with its name. You can add up to five ideas here. These are planning notes, not products for sale yet, so you can also keep exploring with samples.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50 };
     }
-    case "store_name": return txt("store_name", "Store name", "Now a little about you. What is your store called?", 120, "Type your store name");
+    case "store_name": return txt("store_name", "Store name", "What brand name should customers see on your store? Use the name you already have, or try one out. You can change it later.", 120, "Type your brand name");
     case "logo": return {kind:"logo",label:"Brand logo",q:`Have a logo for ${a.store_name || boot.store.name || "your brand"}? Add it here and see it across your store, including the bag, checkout and browser tab. No logo yet? Your brand name works beautifully too.`,reply:brandingUI.reply()};
-    case "tagline": return txt("tagline", "Tagline", "Would you like a short tagline? It is optional, so skip it if nothing comes to mind yet.", 160, "A few words about what you offer");
-    case "description": return txt("description", "About your brand", "Tell me about your brand in your own words, as if chatting to a customer. It shapes your About page and home story. Optional, and you can polish it later.", 1200, "Why you started and what you love making", true);
-    case "sections": return { kind: "sections", label: "Optional sections", q: "Last choice, and it is optional. Would you like any extra sections on your pages? Tap to switch them on or off and watch the preview change.", reply: sectionsReply() };
+    case "tagline": return txt("tagline", "Tagline", "Would you like a short line that tells customers what your brand is about? That's a tagline, like Everyday comfort, made yours. A few words are enough, or you can skip it.", 160, "A few words about your brand");
+    case "description": return txt("description", "About your brand", "What would you like customers to know about your brand? You could share why you started, what you make or what makes your products special. This helps shape your About page. A few sentences are plenty, and you can skip for now.", 1200, "Why you started and what makes your products special", true);
+    case "sections": return { kind: "sections", label: "Optional sections", q: "Would you like any extra sections on your store pages, such as a brand story or FAQs? Tap the options to add or remove them and watch the preview change. After this, we'll look at your store address, payments and delivery.", reply: sectionsReply() };
+    case "domain": return {kind:"launch",launchStep:1,label:"Store address",q:"What website address should customers use to visit your store? You can keep the address that comes with your store, or connect your own domain, like www.yourbrand.com. Not ready to decide? You can set this up later.",reply:launchUI.summary(1)};
+    case "payments": return {kind:"launch",launchStep:2,label:"Payments",q:"How would you like customers to pay for their orders? Cash on Delivery means they pay when their parcel arrives. Online payments use Razorpay and need a connected, activated account. Choose what suits you, or set this up later.",reply:launchUI.summary(2)};
+    case "shipping": return {kind:"launch",launchStep:3,label:"Delivery",q:"How would you like to get orders to your customers? You can book deliveries with a courier yourself, or connect Shiprocket to help automate shipping. Automatic shipping only starts after you activate it. You can set this up later too.",reply:launchUI.summary(3)};
     default: return { kind: "review", label: "Review", q: "", reply: "" };
   }
 }
@@ -337,7 +343,10 @@ function timeline() {
   ps.slice(0, ri + 1).forEach((p, i) => {
     const d = def(p), active = i === ci;
     if (p.step !== last) { last = p.step; const n = UI_STEPS.findIndex(s => s[0] === p.step); out += `<p class="ann-mark"><span>${n + 1} of ${UI_STEPS.length}</span>${esc(UI_STEPS[n][1])}</p>`; }
-    if (p.id === "review") { out += `<span id="ann-review-start"></span>${reviewStep()}`; return; }
+    if (p.id === "review") {
+      if (active) out += `<span id="ann-review-start"></span>${reviewStep()}`;
+      return;
+    }
     out += annBubble(d.q, active ? "is-active" : "", active ? ' id="ann-active"' : "");
     if (active && notice) out += `<p class="ann-callout" role="status">${esc(notice)}</p>`;
     if (d.kind === "list") { if (d.items.length) out += meBubble(listHtml(d)); }
@@ -371,7 +380,9 @@ function composerKeyFor(p, d) {
 function inlineControls(p, d) {
   const tail = DETAIL_STEPS.includes(p.step) && d.kind !== "info" ? `<button type="button" class="ann-link" data-toggle-detail aria-expanded="${detail}">${detail ? "Close detailed editor" : "Open detailed editor"}</button>` : "";
   let body = "", name = d.label;
-  if (d.kind === "logo") {
+  if (d.kind === "launch") {
+    body='<div id="ann-launch-slot"></div>';
+  } else if (d.kind === "logo") {
     body=`<div id="ann-branding-slot">${brandingUI.html()}</div>`;
   } else if (d.kind === "choice" || d.kind === "accent") {
     body = `<div class="ann-chips${d.stack ? " stack" : ""}">${d.opts.map(o => `<button type="button" class="ann-chip" data-pick="${esc(o.v)}" aria-pressed="${String(o.v).toLowerCase() === d.cur}"${o.c || d.kind === "accent" ? ` style="--c:${esc(o.c || o.v)}"` : ""}${dis}>${o.c || d.kind === "accent" ? `<i class="ann-sw" aria-hidden="true"></i>` : ""}<strong>${esc(o.t)}</strong>${o.sub ? `<span>${esc(o.sub)}</span>` : ""}</button>`).join("")}
@@ -380,7 +391,7 @@ function inlineControls(p, d) {
   } else if (d.kind === "sections") {
     name = "Optional sections";
     body = `${Object.entries(ANN_EXTRA_SECTIONS).map(([pg, l]) => `<div class="ann-sec-row"><span>${label(pg)} page</span><div class="ann-chips">${l.map(s => `<button type="button" class="ann-chip sm" data-toggle-section="${pg}:${s}" aria-pressed="${shown(pg).includes(s)}"${dis}><strong>${esc(label(s))}</strong></button>`).join("")}</div></div>`).join("")}
-      <div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>${readOnly ? "Continue" : "Done, show my plan"}</button>${tail}</div>`;
+      <div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>${readOnly ? "Continue" : "Continue to store address"}</button>${tail}</div>`;
   } else if (d.kind === "text" || d.kind === "list") {
     const btn = editing ? `<button type="button" class="ann-btn alt" data-cancel-edit>${editing.follow ? "Skip note" : "Cancel"}</button>` : d.kind === "list" ? `<button type="button" class="ann-btn alt" data-continue>${d.items.length ? "Continue" : "Skip for now"}</button>` : `<button type="button" class="ann-btn alt" data-continue>${d.reply ? "Keep and continue" : "Skip"}</button>`;
     body = `<div class="ann-comp-row">${btn}${editing ? "" : tail}${p.step === "products" && !answers.subcategory_id ? `<button type="button" class="ann-link" data-go="category">Choose a subcategory for product questions</button>` : ""}</div>`;
@@ -433,7 +444,7 @@ function drawComposer(force) {
 /* ---------- panel drawing ---------- */
 function drawSteps() {
   const answered = annAnsweredStages(answers, ref || {});
-  const doneN = answered.size, total = UI_STEPS.filter(([k]) => k !== "review").length;
+  const doneN = answered.size, total = UI_STEPS.filter(([k]) => !["domain","payments","shipping","review"].includes(k)).length;
   const state = isDirty() ? "Unsaved changes" : designUI?.active() ? "Design saved to draft" : session ? "Plan saved" : "Nothing saved yet";
   $("#ann-steps").innerHTML = `<div class="ann-rail">${UI_STEPS.map(([k, n], i) => { const st = k === step ? "current" : answered.has(k) ? "done" : "todo";
     return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === step ? "step" : "false"}"><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
@@ -463,7 +474,7 @@ function draw(mode = "keep") {
   const y = log.scrollTop;
   const markup = timeline() + (detail && DETAIL_STEPS.includes(step) ? detailHtml() : "");
   if (markup !== logMarkup) { log.innerHTML = markup; logMarkup = markup; }
-  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); launchUI.mount(); brandingUI.mount();
+  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); launchUI.mount(({domain:1,payments:2,shipping:3})[step]); brandingUI.mount();
   if (mode === "active") scrollActive(); else log.scrollTop = y;
 }
 const drawKeep = () => draw("keep");
@@ -594,7 +605,7 @@ function reviewStep() {
   return bubble(`<p>Your store is taking shape. ${session || !dirty ? "Here is your plan so far." : "Save your plan so you can pick up where you left off."} Keep exploring with samples, or make it yours when you are ready. Nothing is live yet.</p>`) +
     bubble(`<dl class="ann-summary">${rows.map(([k, n, v]) => `<div><dt>${n}</dt><dd>${esc(v)}</dd><button type="button" class="ann-link" data-go="${k}">Change</button></div>`).join("")}</dl>
       <p class="ann-note">${dirty ? "You have unsaved changes." : designUI?.active() ? "Design saved to draft." : session ? "Your plan is saved." : "Not saved yet."}</p>`, "ann-card") +
-    bubble(`<h2>Your next step, at your pace</h2><p>There is no need to finish everything now. Open either step below when you are ready. Your products, business details and the checks for opening your store stay separate, so you can review each before saving.</p>`, "ann-card") +
+    bubble(`<h2>Your next step, at your pace</h2><p>You can revisit Store address, Payments and Delivery using the steps above. Ready to go further? Review your products, business details and opening checks below. Nothing goes live until you review and publish.</p><div class="ann-actions"><button type="button" class="ann-btn alt sm" data-go="domain">Store address</button><button type="button" class="ann-btn alt sm" data-go="payments">Payments</button><button type="button" class="ann-btn alt sm" data-go="shipping">Delivery</button></div>`, "ann-card") +
     `<details class="ann-review-step"><summary>Make it yours: business details and products</summary><section class="ann-card" id="ann-application-slot"></section></details>
     <details class="ann-review-step"><summary>When you are ready: getting your store ready to open</summary><section class="ann-card" id="ann-readiness-slot"></section></details>
     <details class="ann-review-step" id="ann-launch-panel" open><summary>Your address, payments and delivery</summary><section class="ann-card" id="ann-launch-slot"></section></details>`;

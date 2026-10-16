@@ -7,7 +7,7 @@
 .ann-switch{display:none}
 .ann-grid{display:grid;grid-template-columns:minmax(360px,440px) minmax(0,1fr);gap:20px;align-items:start}
 .ann-chat,.ann-stage{border:1px solid var(--line);background:#fff;min-width:0;display:flex;flex-direction:column;height:calc(100dvh - 190px);min-height:560px}
-.ann-steps{padding:8px 8px 6px;border-bottom:1px solid var(--line)}.ann-rail{display:flex;gap:2px;overflow-x:auto;scrollbar-width:thin}
+.ann-steps{padding:8px 8px 6px;border-bottom:1px solid var(--line)}.ann-rail{display:flex;flex-wrap:wrap;gap:2px;overflow-x:visible}
 .ann-steps button{display:flex;align-items:center;gap:6px;border:0;background:none;padding:7px 9px;font:600 12px var(--sans);color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent}
 .ann-steps i{font-style:normal;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;border:1px solid var(--line);font-size:10px}
 .ann-steps button[aria-current=step]{color:var(--ink);border-bottom-color:var(--a)}.ann-steps button[aria-current=step] i{background:var(--a);color:#fff;border-color:var(--a)}

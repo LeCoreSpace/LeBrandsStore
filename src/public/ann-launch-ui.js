@@ -2,10 +2,12 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const HOST = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.){2,}[a-z]{2,63}$/;
 const when = v => { if (!v) return ""; const d = new Date(v); return isNaN(d) ? "" : d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }); };
 
-export function attachAnnLaunch({ api, readOnly, onSaved, onDone }) {
+export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
   let state = null, loading = false, loadError = "", busy = "", stale = false;
   const msgs = {}, open = { 1: true, 2: false, 3: false };
   let prefs = null, prefsDirty = false;
+  let focusedStep=null;
+  const skipped=new Set();
   // Drafts live only in memory. Values are applied to inputs as DOM properties, never written into HTML.
   const draftVals = { host: "", "rz.key_id": "", "rz.key_secret": "", "rz.webhook_secret": "", "sr.email": "", "sr.password": "", "ship.pickup": "", "ship.weight": "", "ship.length": "", "ship.breadth": "", "ship.height": "", "ship.units": "", "ship.freight": "" };
   let shipAuto = false, refreshing = false; const absence = {};
@@ -86,12 +88,14 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone }) {
     }).join("")}</div>`;
   }
   function step(n, title, status, body) {
+    if(focusedStep) return focusedStep===n?`<section class="ann-launch-step" data-step="${n}">${body}</section>`:"";
     if(n===1 && !state?.domain) status="Included address ready";
     return `<details class="ann-review-step ann-launch-step" data-step="${n}"${open[n] ? " open" : ""}><summary>${n}. ${esc(title)} <span class="ann-launch-st">${esc(status)}</span></summary>${body}</details>`;
   }
   const saveRow = next => `${msg("choose")}<div class="ann-actions ann-launch-actions"><button type="button" class="ann-btn alt sm" data-ln-a="choose"${dis(!prefsDirty)}>${busy === "choose" ? "Saving" : "Save my choices"}</button><button type="button" class="ann-btn sm" data-ln-a="next" data-next="${next}"${dis()}>${prefsDirty?"Save and continue":next===2?"Continue to payments":next===3?"Continue to delivery":"Return to store review"}</button></div><p class="ann-note">Saving choices does not activate a service. Use Continue to move on; you can keep these defaults.</p>`;
   function advance(next) {
     const move=()=>{
+      if(focusedStep&&onStep){skipped.delete(focusedStep);onStep(next);return;}
       if(next<=3) {
         open[next-1]=false;open[next]=true;
         setTimeout(()=>{
@@ -110,7 +114,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone }) {
   }
 
   function html() {
-    const head = `<h2>Launch setup</h2><p class="ann-note">Every step is optional. You can skip all of this and come back later.</p>`;
+    const head = focusedStep?`<p class="ann-note">You can come back to this any time.</p><button type="button" class="ann-link" data-ln-a="skip"${busy?" disabled":""}>Set this up later</button>`:`<h2>Launch setup</h2><p class="ann-note">Every step is optional. You can skip all of this and come back later.</p>`;
     if (loading && !state) return `${head}<div class="ann-skel" aria-busy="true"><i></i><i></i><i></i></div>`;
     if (!state) return `${head}${loadError ? `<p class="ann-error" role="alert">${esc(loadError)}</p>` : ""}<button type="button" class="ann-btn" data-ln-a="load">${loadError ? "Try again" : "Load launch setup"}</button>`;
     const s = state, p = s.providers || {}, d = s.domain, plat = s.platform || {};
@@ -148,7 +152,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone }) {
     const rzBlock = `<h3>Razorpay</h3>` + (rzp.verified
       ? rzVerified
       : `<p class="ann-note">Paste keys from your Razorpay dashboard. They are sent once and are never kept in this page after saving.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify account"}</button></div>`);
-    const s2 = `${own}${pay}${rzBlock}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${checkoutHref ? `<p class="ann-note">Turn cash on delivery on in <a href="${esc(checkoutHref)}">checkout settings</a>.</p>` : ""}${saveRow(3)}`;
+    const s2 = `${own}${pay}${prefs.payments==="razorpay"||rzp.verified?rzBlock:""}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${checkoutHref ? `<p class="ann-note">Turn cash on delivery on in <a href="${esc(checkoutHref)}">checkout settings</a>.</p>` : ""}${saveRow(3)}`;
 
     // Step 3: delivery
     const del = opts("delivery", [["manual", "I ship orders myself", "Your real readiness may still need delivery charges set in checkout settings."], ["shiprocket", "Shiprocket", "Optional. Verify your account below."]]);
@@ -162,7 +166,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone }) {
     const srBlock = `<h3>Shiprocket</h3>` + (shp.verified
       ? `<p class="ann-callout">Account verified${shp.pickup_count != null ? `, ${esc(shp.pickup_count)} pickup location(s)` : ""}${srTime ? `, checked ${esc(srTime)}` : ""}.</p>${srForm}${srAuto}${jobsHtml}`
       : `<p class="ann-note">Use an API user email and password, not your main Shiprocket login.</p>${inp("sr.email", "API user email", "email")}${inp("sr.password", "API user password", "password")}${msg("sr")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="sr"${dis(!v("sr.email") || !draftVals["sr.password"])}>${busy === "sr" ? "Checking" : "Verify account"}</button></div>`);
-    const s3 = `${own}${del}${srBlock}${msg("disc-shiprocket")}${confirmDisc === "shiprocket" ? discBox() : ""}${saveRow(4)}`;
+    const s3 = `${own}${del}${prefs.delivery==="shiprocket"||shp.verified?srBlock:""}${msg("disc-shiprocket")}${confirmDisc === "shiprocket" ? discBox() : ""}${saveRow(4)}`;
 
     function discBox() { return `<div class="ann-conflict" role="alertdialog"><p>Disconnect ${esc(confirmDisc)}? Its saved credentials are removed.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="disc-yes"${dis()}>Yes, disconnect</button><button type="button" class="ann-btn alt sm" data-ln-a="disc-no">Keep connected</button></div></div>`; }
 
@@ -207,6 +211,11 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone }) {
     const a = b.dataset.lnA, id = state?.domain?.id;
     if (a === "load") void load();
     else if (a === "reload") reload();
+    else if(a==="skip"&&focusedStep&&!busy&&onStep) {
+      const group=({1:"address",2:"payments",3:"delivery"})[focusedStep];
+      if(prefs&&state){prefs[group]=state.preferences[group];prefsDirty=JSON.stringify(prefs)!==JSON.stringify(state.preferences);}
+      skipped.add(focusedStep);onStep(focusedStep+1);
+    }
     else if (!canEdit()) return;
     else if (a === "next" && [2,3,4].includes(Number(b.dataset.next))) advance(Number(b.dataset.next));
     else if (a === "choose") void act("choose", { action: "choose", preferences: { ...prefs } }, () => { prefsDirty = false; prefs = { ...state.preferences }; });
@@ -245,7 +254,14 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone }) {
   document.addEventListener("submit", e => { if (slot()?.contains(e.target)) e.preventDefault(); });
 
   return {
-    mount() { if (!slot()) return; if (!state && !loading && !loadError) void load(); else draw(); },
+    mount(n) { if (!slot()) return; focusedStep=[1,2,3].includes(n)?n:null; if (!state && !loading && !loadError) void load(); else draw(); },
+    summary(n) {
+      if(skipped.has(n))return "Left unchanged. I'll set this up later.";
+      if(!state)return "";
+      if(n===1)return state.domain?`${state.domain.hostname}: ${state.domain.status}`:"Included store address; no custom domain connected.";
+      if(n===2)return state.providers?.razorpay?.runtime_ready?"Online payments active":state.preferences.payments==="razorpay"?"Online payments chosen, not active":"Cash on Delivery preference; check checkout settings before opening.";
+      return state.providers?.shiprocket?.runtime_ready?"Automatic shipping active":"I'll arrange delivery myself, or finish connecting Shiprocket later.";
+    },
     hasUnsavedChanges: () => !!busy || prefsDirty || shipDirty || hasCreds(),
   };
 }
