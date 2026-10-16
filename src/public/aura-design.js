@@ -4,6 +4,7 @@
  */
 import { SHOWCASE_STYLES, renderDesignLive } from "./aura-showcase.js";
 import { isAnnDesign } from "./ann-design-model.js";
+import { applyDesignSections } from "./ann-section-layout.js";
 
 export const DESIGN_PAGES = Object.freeze(["home", "collection", "product", "about", "contact"]);
 
@@ -18,5 +19,7 @@ export function renderSavedDesign(data = {}, options = {}) {
   const design = annDesign(data.settings);
   const page = options.page || "home";
   if (!design || !DESIGN_PAGES.includes(page)) return null;
-  return renderDesignLive(data, { ...data.settings, style_preset: design.style }, { ...options, page }, design);
+  const rendered=renderDesignLive(data, { ...data.settings, style_preset: design.style }, { ...options, page }, design);
+  if(rendered?.body)rendered.body=applyDesignSections(rendered.body,design.sections,page);
+  return rendered;
 }

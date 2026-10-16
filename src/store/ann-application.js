@@ -138,7 +138,7 @@ export async function applyAnnApplication(tx, storeId, tokenHash, userId, sessio
       await appendCollectionProducts(tx, storeId, row.target, [...new Set(ids)]);
     }
   }
-  await saveSetup(tx, storeId, settingsPatch({ ...config.theme, category: category.slug, subcategory: subcategory.slug,
+  if(body.pages.length)await saveSetup(tx, storeId, settingsPatch({ ...config.theme, category: category.slug, subcategory: subcategory.slug,
     ...(answers.store_name !== undefined ? { brand_name: answers.store_name } : {}),
     ...(answers.tagline !== undefined ? { tagline: answers.tagline } : {}),
     ...(answers.description !== undefined ? { description: answers.description } : {}),

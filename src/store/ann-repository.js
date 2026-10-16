@@ -1,5 +1,6 @@
 import { ANN_REFERENCE_VERSION, ANN_STEPS, ANN_PALETTES, ANN_FONTS, ANN_EXTRA_SECTIONS, annPreviewConfiguration } from "../public/ann-config.js";
 import { AURA_STYLES } from "../public/aura-styles.js";
+import {productSuggestions} from "../public/ann-product-suggestions.js";
 const parse = value => typeof value === "string" ? JSON.parse(value) : value;
 export async function annReady(tx) {
   const [row] = await tx`SELECT to_regclass('public.ann_builder_sessions') IS NOT NULL
@@ -20,6 +21,7 @@ export async function annReference(tx, subcategoryId) {
     categories: categories.map(c => ({ ...c, category_id: Number(c.category_id) })),
     subcategories: subcategories.map(s => ({ ...s, category_id: Number(s.category_id), subcategory_id: Number(s.subcategory_id) })),
     attributes: attributes.map(({ values_json, ...a }) => ({ ...a, id: Number(a.id), subcategory_id: Number(a.subcategory_id), values: parse(values_json) })),
+    product_suggestions:productSuggestions(subcategories.find(s=>Number(s.subcategory_id)===subcategoryId),attributes.map(({values_json,...a})=>({...a,values:parse(values_json)}))),
     styles: AURA_STYLES, palettes: ANN_PALETTES, fonts: ANN_FONTS,
     steps: ANN_STEPS, optional_sections: ANN_EXTRA_SECTIONS,
   };

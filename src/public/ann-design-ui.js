@@ -33,12 +33,12 @@ export function attachAnnDesign(o) {
 
   const active = () => Boolean(model);
   const mediaIds = m => Object.fromEntries(DESIGN_MEDIA_KEYS.map(k => [k, m?.[k]?.media_id || null]));
-  const snapshot = () => model ? JSON.stringify({ c: model.copy, m: mediaIds(model.media) }) : "";
+  const snapshot = () => model ? JSON.stringify({ c: model.copy, m: mediaIds(model.media),s:model.sections,catalogue:model.catalogue_mode }) : "";
   const dirty = () => active() && (snapshot() !== baseline || planDirty);
   const mode = () => o.getPreviewMode();
   const browsingStyle = () => o.getStyle?.() || o.getAnswers().style_preset || "editorial";
   const sameStyle = () => active() && browsingStyle() === model.style;
-  const editing = () => active() && !readOnly && editMode && mode() === "store" && sameStyle();
+  const editing = () => active() && !readOnly && editMode && (mode() === "store"||model.catalogue_mode==="sample") && sameStyle();
 
   async function call(method, payload) {
     const res = await fetch(`${api}/design`, { method, credentials: "same-origin", headers: payload ? { "content-type": "application/json" } : undefined, body: payload ? JSON.stringify(payload) : undefined });
@@ -53,7 +53,7 @@ export function attachAnnDesign(o) {
     const d = body.design;
     if (d && d.version === 1) {
       design = d;
-      model = { style: d.style, media_pack: d.media_pack, plan: d.plan || {}, copy: { ...d.copy }, media: structuredClone(d.media || {}) };
+      model = { style: d.style, media_pack: d.media_pack,catalogue_mode:d.catalogue_mode||"own",sections:structuredClone(d.sections||{}), plan: d.plan || {}, copy: { ...d.copy }, media: structuredClone(d.media || {}) };
       baseline = snapshot(); planDirty = false;
       if (hydrate) o.applyPlan?.(d.plan || {});
     }
@@ -65,22 +65,23 @@ export function attachAnnDesign(o) {
       if (!res.ok) throw new Error(body.error || "Your design could not be loaded.");
       ingest(body, { hydrate: true });
       loaded = true;
-      if (active()) o.onActivated?.({ restored: true });
+      if (active()) o.onActivated?.({ restored: true,useOwnProducts:design?.catalogue_mode==="own" });
     } catch (e) { loadError = e.message || "Your design could not be loaded."; }
     paint(); o.onChange?.();
   }
 
   /** Create the selected showcase as the draft design. Explicit acknowledgement required. */
   async function use() {
-    if (readOnly || busy || !ack || !catalogueAck || !loaded) return;
+    if (readOnly || busy || !ack || !loaded) return;
     busy = "use"; error = ""; conflict = false; paint(); say("Creating your design in the draft");
     try {
-      const { res, body } = await call("POST", { expected_draft: expected, confirm: true, answers: structuredClone(o.getAnswers()) });
+      const own=catalogueAck;
+      const { res, body } = await call("POST", { expected_draft: expected, confirm: true,catalogue_mode:own?"own":"sample", answers: structuredClone(o.getAnswers()) });
       if (res.status === 409) { conflict = true; throw new Error("Your draft changed in another window. Reload the latest draft, then choose the design again."); }
       if (!res.ok) throw new Error(body.error || "The design could not be created. Nothing was changed.");
       ingest(body, { hydrate: true }); ack = false; selected = null;
       say("Design created in your draft. Your live site is unchanged.");
-      o.onActivated?.({ restored: false, useOwnProducts: true });
+      o.onActivated?.({ restored: false, useOwnProducts: own });
     } catch (e) { error = e.message; say(error); }
     finally { busy = ""; paint(); o.onChange?.(); }
   }
@@ -102,14 +103,14 @@ export function attachAnnDesign(o) {
     busy = "save"; error = ""; paint(); say("Saving your draft design");
     const sent = snapshot(), sentPlan = planPayload(), live = { copy: { ...model.copy }, media: structuredClone(model.media) };
     try {
-      const { res, body } = await call("PATCH", { expected_draft: expected, confirm: true, copy: live.copy, media: mediaIds(live.media), answers: sentPlan });
+      const { res, body } = await call("PATCH", { expected_draft: expected, confirm: true, copy: live.copy, media: mediaIds(live.media),sections:model.sections,catalogue_mode:model.catalogue_mode, answers: sentPlan });
       if (res.status === 409) { conflict = true; throw new Error("Another window changed this draft. Your edits are kept here and nothing was overwritten."); }
       if (!res.ok) throw new Error(body.error || "Your design could not be saved. Your edits are kept.");
       const changed = snapshot() !== sent;
-      const latestCopy = { ...model.copy }, latestMedia = structuredClone(model.media);
+      const latestCopy = { ...model.copy }, latestMedia = structuredClone(model.media), latestSections=structuredClone(model.sections),latestCatalogue=model.catalogue_mode;
       const newerPlan = JSON.stringify(planPayload()) !== JSON.stringify(sentPlan);
       ingest(body, { hydrate: false });
-      if (changed) { model.copy = latestCopy; model.media = latestMedia; }
+      if (changed) { model.copy = latestCopy; model.media = latestMedia;model.sections=latestSections;model.catalogue_mode=latestCatalogue; }
       planDirty = newerPlan;
       say(changed || newerPlan ? "Draft saved. Your newer edits still need saving." : "Draft saved. Your live site is unchanged.");
       return true;
@@ -208,7 +209,7 @@ export function attachAnnDesign(o) {
   function body() {
     if (!loaded && !loadError) return `<div class="ann-design-card" aria-busy="true"><div class="ann-skel" aria-hidden="true"><i></i><i></i></div></div>`;
     if (loadError) return `<div class="ann-design-card"><p class="ann-callout" role="alert">${esc(loadError)}</p><button type="button" class="ann-btn alt sm" data-design-act="retry">Try again</button></div>`;
-    const browsing = mode() === "showcase" || !sameStyle();
+    const browsing = (mode() === "showcase"&&model?.catalogue_mode!=="sample") || !sameStyle();
     const a = o.getAnswers();
     const catalogueChoice = cataloguePrompt ? `<div class="ann-design-card" role="group" aria-label="Choose products for your preview">
       <p class="ann-design-title">Ready to see your own products?</p>
@@ -223,7 +224,7 @@ export function attachAnnDesign(o) {
       <p class="ann-note">${active() ? "This builds the selected style as your draft design and keeps the words and photos only if you choose them again." : "Start your store with this exact look. You can then change its words and photos right on the page."}</p>
       <label class="ann-check"><input type="checkbox" data-design-ack ${ack ? "checked" : ""} ${readOnly ? "disabled" : ""}> I understand this replaces my existing draft design. My live site is not changed.</label>
       <label class="ann-check"><input type="checkbox" data-design-catalogue-ack ${catalogueAck ? "checked" : ""} ${readOnly ? "disabled" : ""}> Use my own catalogue products in the saved design. Sample products are for preview only.</label>
-      <div class="ann-actions"><button type="button" class="ann-btn" data-design-act="use" ${readOnly || !ack || !catalogueAck || busy ? "disabled" : ""}>${busy === "use" ? "Creating" : "Use this design"}</button>
+      <div class="ann-actions"><button type="button" class="ann-btn" data-design-act="use" ${readOnly || !ack || busy ? "disabled" : ""}>${busy === "use" ? "Creating" : "Use this design"}</button>
       ${active() && !sameStyle() ? `<button type="button" class="ann-btn alt" data-design-act="back">Back to my design</button>` : ""}
       ${active() && sameStyle() ? `<button type="button" class="ann-btn alt" data-design-act="mine">View my design</button>` : ""}</div>
       ${readOnly ? `<p class="ann-note">Only an owner or admin can create a design.</p>` : ""}</div>` : "";
@@ -234,11 +235,11 @@ export function attachAnnDesign(o) {
       <div class="ann-design-head"><div><p class="ann-design-title">Your design: ${esc(styleName(model.style))}</p><p class="ann-note" data-design-state></p></div>
       <div class="ann-actions">
         <button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>Edit on page</button>
-        <button type="button" class="ann-btn alt sm" data-design-act="theme">Open theme editor</button>
+        ${o.themeEditor?"":'<button type="button" class="ann-btn alt sm" data-design-act="theme">Open theme editor</button>'}
         <button type="button" class="ann-btn alt sm" data-design-act="save" data-design-save>Save draft</button>
         <button type="button" class="ann-btn sm" data-design-act="publish" data-design-publish>Review and publish</button></div></div>
       ${readOnly ? `<p class="ann-note">You can look around. Only an owner or admin can edit this design.</p>` : editMode ? (selected ? panel() : `<p class="ann-note">Select any text or photo on the page to change it. Changes show instantly and are saved when you choose Save draft.</p>`) : ""}
-      <p class="ann-note">Product names, prices and photos come from your catalogue. <a href="${root}/products">Edit products</a></p></div>${err}`;
+      <p class="ann-note">${model.catalogue_mode==="sample"?"This draft preview uses sample products and illustrative prices. Add your real products and explicitly choose them before publishing.":"Product names, prices and photos come from your catalogue."} <a href="${root}/products">Edit products</a></p></div>${err}`;
   }
   function panel() {
     if (selected.kind === "copy") {
@@ -281,7 +282,7 @@ export function attachAnnDesign(o) {
     const t = e.target.closest("[data-design-act],[data-design-pick]"); if (!t) return;
     if (t.dataset.designPick) { const m = images.find(i => i.id === t.dataset.designPick); if (m && selected) setMedia(selected.key, m); return; }
     const act = t.dataset.designAct;
-    if (act === "catalogue") { if (!catalogueAck) return; cataloguePrompt = false; o.onCatalogueConfirmed?.(); paint(true); return; }
+    if (act === "catalogue") { if (!catalogueAck) return; cataloguePrompt = false;if(active())model.catalogue_mode="own";o.onCatalogueConfirmed?.();paint(true);o.onChange?.();return; }
     if (act === "samples") { cataloguePrompt = false; catalogueAck = false; paint(true); return; }
     if (act === "retry") return void load();
     if (act === "use") return void use();
@@ -320,8 +321,10 @@ export function attachAnnDesign(o) {
     /** The design to preview, or null when the page should show the showcase instead. */
     previewDesign() {
       if (!active() || !sameStyle()) return null;
-      return { version: 1, style: model.style, media_pack: model.media_pack, plan: planPayload(), copy: { ...model.copy }, media: { ...model.media } };
+      return { version: 1, style: model.style, media_pack: model.media_pack,catalogue_mode:model.catalogue_mode,sections:structuredClone(model.sections), plan: planPayload(), copy: { ...model.copy }, media: { ...model.media } };
     },
+    setSections(value){if(readOnly||!model)return;model.sections=structuredClone(value);planDirty=true;paintDynamic();o.onChange?.();},
+    selectContent(kind,key){if(readOnly||!model)return;if(kind==="copy"&&key in DESIGN_COPY_LIMITS||kind==="image"&&DESIGN_MEDIA_KEYS.includes(key))select(kind,key);},
     isActive: active,
   };
 }

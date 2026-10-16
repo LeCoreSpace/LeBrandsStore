@@ -13,6 +13,7 @@ import { styleDemonstration } from "../public/style-demo-copy.js";
 import { stylePreviewData } from "../public/style-preview.js";
 import { projectAnnPreview } from "../public/ann-projection.js";
 import { prefilledSection } from "../public/aura-starters.js";
+import { validDesignSections } from "../public/ann-section-layout.js";
 
 const plain = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const conflict = () => { throw Object.assign(new Error("Your store draft changed in another window. Reload the saved design before trying again. Your unsaved edits are kept."), { status: 409 }); };
@@ -20,7 +21,9 @@ const keys = (value, allowed) => {
   if (!plain(value) || Object.keys(value).some(key => !allowed.includes(key))) throw badInput("Use the design editor's supported fields.");
 };
 export function validateDesignRequest(body, creating = false) {
-  keys(body, ["expected_draft", "confirm", "answers", ...(creating ? [] : ["copy", "media"])]);
+  keys(body, ["expected_draft", "confirm", "answers","catalogue_mode", ...(creating ? [] : ["copy", "media","sections"])]);
+  if(body.catalogue_mode!==undefined&&!["sample","own"].includes(body.catalogue_mode))throw badInput("Choose sample or own catalogue for the draft preview.");
+  if(body.sections!==undefined&&!validDesignSections(body.sections))throw badInput("Choose valid page sections. Product purchase and contact forms must remain available.");
   if (body.confirm !== true || !/^[a-f0-9]{64}$/.test(body.expected_draft || "")) throw badInput("Load the current draft and confirm your design changes.");
   if (creating && !plain(body.answers)) throw badInput("Choose a design before saving it.");
   if (body.copy !== undefined) {
@@ -77,12 +80,14 @@ export async function saveAnnDesign(tx, storeId, userId, raw, creating = false) 
     const demo = styleDemonstration(projectAnnPreview(
       stylePreviewData(data, { showcase: true }), config, { prefilled: prefilledSection }).data,
     config.theme.style_preset);
-    design = { version: 1, style: config.theme.style_preset, plan,
+    design = { version: 1, style: config.theme.style_preset, plan, catalogue_mode:body.catalogue_mode||"sample",sections:{},
       copy: designSeedCopy(demo, { ...demo.settings, ...config.theme }),
       media_pack: resolveShowcasePack(demo).key,
       media: seedDesignMedia(config.theme.style_preset, demo) };
   } else design = { ...structuredClone(previous), plan,
     copy: { ...previous.copy, ...body.copy }, media: { ...previous.media } };
+  if(body.sections)design.sections=structuredClone(body.sections);
+  if(body.catalogue_mode)design.catalogue_mode=body.catalogue_mode;
   if (body.media) {
     for (const [key, id] of Object.entries(body.media)) {
       if (id === null) { design.media[key] = seedDesignMedia(design.media_pack || design.style)[key]; continue; }

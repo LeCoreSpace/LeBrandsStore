@@ -29,6 +29,10 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
   try {
     if (!api) {
       if (action !== "setup" || child || !["GET", "HEAD"].includes(request.method)) return json({ error: "Page not found." }, 404);
+      if(url.searchParams.get("step")!=="4"){
+        await db.withMemberStore(id,tokenHash,tx=>loadDraft(tx,id));
+        return new Response(null,{status:303,headers:{...SECURITY_HEADERS,"cache-control":"no-store",location:`/stores/${id}/build/ann`}});
+      }
       const data = await db.withMemberStore(id, tokenHash, (tx) => loadDraft(tx, id));
       return new Response(request.method === "HEAD" ? null : renderWizard(data, user), {
         headers: { ...SECURITY_HEADERS, "content-type": "text/html; charset=utf-8" },

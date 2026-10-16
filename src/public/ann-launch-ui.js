@@ -6,7 +6,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
   let state = null, loading = false, loadError = "", busy = "", stale = false;
   const msgs = {}, open = { 1: true, 2: false, 3: false };
   let prefs = null, prefsDirty = false;
-  let focusedStep=null;
+  let focusedStep=null, customOnly=false;
   const skipped=new Set();
   // Drafts live only in memory. Values are applied to inputs as DOM properties, never written into HTML.
   const draftVals = { host: "", "rz.key_id": "", "rz.key_secret": "", "rz.webhook_secret": "", "sr.email": "", "sr.password": "", "ship.pickup": "", "ship.weight": "", "ship.length": "", "ship.breadth": "", "ship.height": "", "ship.units": "", "ship.freight": "" };
@@ -92,7 +92,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
     if(n===1 && !state?.domain) status="Included address ready";
     return `<details class="ann-review-step ann-launch-step" data-step="${n}"${open[n] ? " open" : ""}><summary>${n}. ${esc(title)} <span class="ann-launch-st">${esc(status)}</span></summary>${body}</details>`;
   }
-  const saveRow = next => `${msg("choose")}<div class="ann-actions ann-launch-actions"><button type="button" class="ann-btn alt sm" data-ln-a="choose"${dis(!prefsDirty)}>${busy === "choose" ? "Saving" : "Save my choices"}</button><button type="button" class="ann-btn sm" data-ln-a="next" data-next="${next}"${dis()}>${prefsDirty?"Save and continue":next===2?"Continue to payments":next===3?"Continue to delivery":"Return to store review"}</button></div><p class="ann-note">Saving choices does not activate a service. Use Continue to move on; you can keep these defaults.</p>`;
+  const saveRow = next => `${msg("choose")}<div class="ann-actions ann-launch-actions"><button type="button" class="ann-btn alt sm" data-ln-a="choose"${dis(!prefsDirty)}>${busy === "choose" ? "Saving" : "Save my choices"}</button><button type="button" class="ann-btn sm" data-ln-a="next" data-next="${next}"${dis()}>${prefsDirty?"Save and continue":next===2?(customOnly?"Continue to review":"Continue to payments"):next===3?"Continue to delivery":"Return to store review"}</button></div><p class="ann-note">Saving choices does not activate a service. Use Continue to move on; you can keep these defaults.</p>`;
   function advance(next) {
     const move=()=>{
       if(focusedStep&&onStep){skipped.delete(focusedStep);onStep(next);return;}
@@ -137,7 +137,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
       if (!live && !domVerified()) notes.push(plat.domain_activation_available ? "Activation unlocks once the hostname and SSL are both active." : "Activation is not available on this platform right now.");
       dom = `<p><strong>${esc(d.hostname)}</strong> <span class="ann-launch-st">${esc(d.status)}${d.primary ? ", primary" : ""}</span></p><p class="ann-note">Hostname: ${esc(d.hostname_status)}. SSL: ${esc(d.ssl_status)}.</p>${(d.dns_records || []).length ? `<ul class="ann-launch-dns">${d.dns_records.map(r => `<li><b>${esc(r.type)}</b> ${esc(r.name)} <code>${esc(r.value)}</code></li>`).join("")}</ul>` : ""}${notes.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${diag}${live ? `<p class="ann-callout">This domain is active.</p>` : `<label class="ann-check"><input type="checkbox" data-ln-ack="dom"${ack ? " checked" : ""}${dis()}><span>If I use an online payment provider, I have approved this domain there.</span></label>`}${msg("dom")}${confirmRemove ? `<div class="ann-conflict" role="alertdialog"><p>Remove ${esc(d.hostname)}? This turns off the route for your store only. Nothing is deleted at your domain host or payment provider.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="drem-yes"${dis()}>Yes, remove</button><button type="button" class="ann-btn alt sm" data-ln-a="drem-no">Keep domain</button></div></div>` : ""}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="dchk"${dis()}>Check status</button>${live ? "" : `<button type="button" class="ann-btn sm" data-ln-a="dact"${dis(!domVerified() || !ack)}>Activate</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="drem"${dis(confirmRemove)}>Remove</button></div>`;
     }
-    const s1 = `${own}${addr}${dom}${saveRow(2)}`;
+    const s1 = `${own}${customOnly ? `<p class="ann-note">Your included store address keeps working. Connecting your own domain is optional.</p>` : addr}${dom}${saveRow(2)}`;
 
     // Step 2: payments
     const pay = opts("payments", [["cod", "Cash on delivery", "Available once you enable it in checkout settings."], ["razorpay", "Online payments with Razorpay", "Optional. Verify your account below."]]);
@@ -254,7 +254,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
   document.addEventListener("submit", e => { if (slot()?.contains(e.target)) e.preventDefault(); });
 
   return {
-    mount(n) { if (!slot()) return; focusedStep=[1,2,3].includes(n)?n:null; if (!state && !loading && !loadError) void load(); else draw(); },
+    mount(n, opts = {}) { if (!slot()) return; focusedStep=[1,2,3].includes(n)?n:null; customOnly=focusedStep===1&&opts.customDomainOnly===true; if (!state && !loading && !loadError) void load(); else draw(); },
     summary(n) {
       if(skipped.has(n))return "Left unchanged. I'll set this up later.";
       if(!state)return "";

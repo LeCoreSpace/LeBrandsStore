@@ -35,3 +35,15 @@ individually editable, addable and removable. Preserve browser preview in both.
 
 **How to apply:** Do not rebuild an approximation from a style name on editor
 handoff, flatten the design into an image, or discard its sample content.
+
+Catalogue confirmation must not also choose a theme, replace page content, or
+silently switch a sample preview to the merchant's products. Selecting real
+catalogue content is a separate, explicit choice. Sample prices and stock are
+not merchant inventory and cannot be used to publish a sellable catalogue.
+
+**Why:** The user wants to explore a finished design first and replace its
+products later, with explicit consent before using their existing products.
+
+**How to apply:** Preserve the current visual design when committing catalogue
+records, keep sample previews isolated, and retain the real-catalogue
+publication checks.

@@ -4,6 +4,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { renderAnnBuilder } from "./ui/ann-builder.js";
+import {renderAnnThemeEditor} from "./ui/ann-theme-editor.js";
 import { handleAnnRoutes } from "./store/ann-routes.js";
 import { annReference, annSessionResponse, loadAnnSession } from "./store/ann-repository.js";
 import { preparePageMigration } from "../db/page-schema-migration.js";
@@ -110,7 +111,11 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     const user = { id: readonly ? editorId : ownerId, name: "Example member", email: "member@example.invalid" };
     const hash = (readonly ? "b" : "a").repeat(64);
     let response;
-    if (url.pathname===prefix && url.searchParams.get("checkout")==="1" && ["GET","HEAD"].includes(req.method)) {
+    if(url.pathname===`${prefix}/editor`&&["GET","HEAD"].includes(req.method)){
+      const draft=await db.withMemberStore(storeId,hash,tx=>loadDraft(tx,storeId));
+      if(!draft.settings.ann_design)response=new Response("Save an Ann design in the isolated preview first.",{status:409});
+      else response=new Response(renderAnnThemeEditor({...draft,role:readonly?"editor":"owner",ann_api_root:`${prefix}/${readonly?"read-only-api":"api"}`,ann_root:prefix},user),{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
+    } else if (url.pathname===prefix && url.searchParams.get("checkout")==="1" && ["GET","HEAD"].includes(req.method)) {
       const sample={...fixtureData,products:[{id:sampleProductId,title:"Sample cotton shirt",slug:"sample-cotton-shirt",price_paise:129909,stock:7,
         status:"active",description:"Fictional preview product only.",images:[],gst_rate:12}]};
       sample.layouts=defaultPageLayouts(sample);
@@ -172,7 +177,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       response = new Response(req.method === "HEAD" ? null : html,
       { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     } else {
-      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness|media|design|launch)$/);
+      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness|media|design|launch|onboarding)$/);
       if (!match) response = new Response("Not found", { status: 404 });
       else {
         url.pathname = `/api/stores/${storeId}/ann/${match[1]}`;

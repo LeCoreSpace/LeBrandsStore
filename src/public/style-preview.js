@@ -1,4 +1,5 @@
 import { renderAura } from "./aura.js";
+import { applyDesignSections } from "./ann-section-layout.js";
 import { starterPreview, prefilledSection } from "./aura-starters.js";
 import { starterLayouts } from "./aura-skeleton.js";
 import { safeImage } from "./aura-sections.js";
@@ -42,13 +43,13 @@ export function demoCommerce(data, bag = new Map((data.products || []).slice(0, 
 }
 /** Real draft store with a saved design: never swaps in demo inventory. */
 export function designPreviewData(source, design) {
-  const data = structuredClone(source);
+  const data = design.catalogue_mode==="sample"?stylePreviewData(source,{showcase:true}):structuredClone(source);
   data.products = (data.products || []).filter(p => p.status !== "archived");
   data.collections = data.collections || [];
   const defaults = starterLayouts(data);
   data.layouts = Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, data.layouts?.[key]?.length ? data.layouts[key] : value]));
   data.settings = { ...(data.settings || {}), ann_design: structuredClone(design) };
-  data.style_demo = false;
+  data.style_demo = design.catalogue_mode==="sample";
   return data;
 }
 export function renderStylePreview(data, settings, options = {}) {
@@ -56,6 +57,7 @@ export function renderStylePreview(data, settings, options = {}) {
   const merged = { ...styled.settings, ...settings };
   const logo=safeImage(merged.logo_url);
   const finish=html=>{
+    html=applyDesignSections(html,data.settings?.ann_design?.sections,options.page||"home");
     if(logo) {
       const mark=`<img class="sc-brand-logo" src="${esc(logo)}" alt="${esc(merged.brand_name || data.store?.name || "Brand logo")}" height="40">`;
       html=html.replace(/(<a class="sc-brand" href="\/">)[\s\S]*?(<\/a>)/g,(_,open,close)=>open+mark+close);

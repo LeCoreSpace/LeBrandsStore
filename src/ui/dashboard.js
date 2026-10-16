@@ -66,7 +66,7 @@ function header(data, user, view) {
     ["products", "Products", `${root}/products`, "products"],
     ["customers", "Customers", `${root}/customers`, "customers"],
     ["invoices", "Invoices", `${root}/invoices`, "invoices"],
-    ...(data.aura_skeleton_enabled === true ? [["collections", "Collections", `${root}/collections`, "products"]] : []),
+    ["collections", "Collections", `${root}/collections`, "products"],
   ];
   const active = view.startsWith("collection") ? "collections" : view === "order" ? "orders" : view.startsWith("product") || view === "product" ? "products" : view === "customer" ? "customers" : view;
   const storeUrl = store.subdomain ? `https://${encodeURIComponent(store.subdomain)}.lebrands.store/` : "#";
@@ -80,7 +80,7 @@ function header(data, user, view) {
         <span class="lb-nav-caption lb-nav-caption-spaced">Manage</span>
         <span class="lb-nav-link is-disabled" aria-disabled="true" title="Analytics not enabled"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg><span>Analytics</span><small>Not enabled</small></span>
         <a href="${root}/setup" class="lb-nav-link" title="Online store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-1.5-6h-15L3 9Zm2 0v12h14V9M9 21v-7h6v7"/></svg><span>Online store</span></a>
-        <div class="lb-online-links"><a href="${root}/editor">Theme and store editor</a><a href="${root}/build">Build your store</a><a href="${root}/team">Team and order emails</a><a href="${root}/setup">Standard Builder</a><a href="${root}/settings#policies">Pages and policies</a>${store.subdomain ? `<a href="${esc(storeUrl)}" target="_blank" rel="noopener">Preview store</a>` : '<span>Preview unavailable</span>'}</div>
+        <div class="lb-online-links"><a href="${root}/editor">Theme editor</a><a href="${root}/build/ann">Build with Ann</a><a href="${root}/team">Team and order emails</a><a href="${root}/settings#policies">Pages and policies</a>${store.subdomain ? `<a href="${esc(storeUrl)}" target="_blank" rel="noopener">Preview store</a>` : '<span>Preview unavailable</span>'}</div>
       </nav>
       <div class="lb-sidebar-bottom"><a href="${root}/settings" class="lb-nav-link ${active === "settings" ? "is-current" : ""}" ${active === "settings" ? 'aria-current="page"' : ""} title="Settings">${dashboardIcon("settings")}<span>Settings</span></a></div>
     </aside>

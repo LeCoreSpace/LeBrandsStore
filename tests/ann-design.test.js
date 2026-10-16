@@ -40,12 +40,12 @@ test("real restricted-role design save/reload/edit protects tenants, drafts, med
     assert.equal(state.design, null);
     const originalProducts = structuredClone(state.draft.products);
     const initial = answers("editorial"); delete initial.style_preset;
-    const first = await call("POST", { expected_draft: state.expected_draft, confirm: true, answers: initial });
+    const first = await call("POST", { expected_draft: state.expected_draft, confirm: true,catalogue_mode:"own", answers: initial });
     assert.equal(first.status, 200, JSON.stringify(first.body));
     assert.equal(first.body.design.plan.style_preset, "editorial", "the default style must remain active without clicking its tab");
     state = first.body;
     for (const style of SHOWCASE_STYLES) {
-      const saved = await call("POST", { expected_draft: state.expected_draft, confirm: true, answers: { ...answers(style), category_id: 2, subcategory_id: 21 } });
+      const saved = await call("POST", { expected_draft: state.expected_draft, confirm: true,catalogue_mode:"own", answers: { ...answers(style), category_id: 2, subcategory_id: 21 } });
       assert.equal(saved.status, 200, JSON.stringify(saved.body));
       state = saved.body;
       assert.ok(isAnnDesign(state.design));

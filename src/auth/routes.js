@@ -5,6 +5,7 @@ import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
 import { handlePageRoutes, isPageRoute } from "../store/page-routes.js";
 import {handleGSTINRoutes,isGSTINRoute} from "../gstin/routes.js";
 import {renderEditor} from "../ui/editor.js";
+import {renderAnnThemeEditor} from "../ui/ann-theme-editor.js";
 import {isAiRoute,handleAiRoutes} from "../ai/routes.js";
 import {aiEnabled} from "../ai/repository.js";
 import {loadDraft} from "../store/repository.js";
@@ -113,7 +114,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
         return{...draft,role:member?.role};
       });
       if (data.settings?.ann_design?.version === 1)
-        return redirect(`/stores/${editorMatch[1]}/build/ann?edit=design`);
+        return new Response(renderAnnThemeEditor(data,user),{headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
       return new Response(renderEditor(data,user),{headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
     }
     if (isDashboardPath(path,request.method)) return await handleDashboard(request,db,user,tokenHash,env);
@@ -184,15 +185,16 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       return redirect("/login", sessionCookie("", true));
     }
     if (path === "/stores/new") {
-      const brandName = nameValue(form.get("brand_name"));
-      const subdomain = form.get("subdomain") ?? "";
+      const annStart=form.get("start_with_ann")==="1";
+      const brandName = annStart?"My store":nameValue(form.get("brand_name"));
+      const subdomain = annStart?`brand-${crypto.randomUUID().replace(/-/g,"").slice(0,12)}`:form.get("subdomain") ?? "";
       const values = { brand_name: form.get("brand_name"), subdomain };
       if (!brandName || [...brandName].length < 2 || [...brandName].length > 40 || !validateSubdomain(subdomain)) {
         return html("new-store", { user, values, error: "Use a brand name of 2 to 40 characters and a valid, non-reserved store address." }, 400);
       }
       try {
         const storeId = await repo.createStore(user.id, brandName, subdomain, tokenHash);
-        if (storeId) return redirect(`/stores/${storeId}/build`);
+        if (storeId) return redirect(`/stores/${storeId}/build/ann${annStart?"?new=1":""}`);
       } catch (error) {
         if (["23505", "22023"].includes(error.code)) {
           return html("new-store", { user, values, error: "That store address is not available. Choose another." }, 409);

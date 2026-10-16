@@ -124,14 +124,15 @@ test("read-only members can skip optional conversation setup without changing pr
 });
 test("Ann exposes address, payments and delivery as conversation stages and uses plain-language questions",async()=>{
   const js=await readFile("src/public/ann-builder.js","utf8");
-  for(const [id,label,n] of [["domain","Store address",1],["payments","Payments",2],["shipping","Delivery",3]]) {
+  for(const [id,label,n] of [["domain","Own domain",1],["payments","Payments",2],["shipping","Delivery",3]]) {
     assert.ok(js.includes(`["${id}", "${label}"`),`${label} must appear in the progress steps`);
     assert.ok(js.includes(`case "${id}": return {kind:"launch",launchStep:${n}`),`${label} must use the working launch controls`);
   }
   assert.ok(js.includes("What category of products do you sell?"));
   assert.ok(!js.includes("Nothing goes live here. What do you sell?"));
   assert.ok(js.includes("A collection is a group of related products"));
-  assert.ok(js.includes("That's a tagline"));
+  assert.ok(js.includes('["business", "Business"'));
+  assert.ok(js.includes('["selling", "Store address"'));
   assert.ok(js.includes('!["domain","payments","shipping","review"].includes(k)'),"payment and delivery setup must not inflate design progress");
   assert.match(js,/if \(p\.id === "review"\) \{\s*if \(active\)/,"editing earlier questions must not mount a second launch widget in an inactive review");
   const css=await readFile("src/public/ann-builder.css","utf8");

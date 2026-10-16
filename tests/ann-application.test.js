@@ -107,7 +107,7 @@ test("Ann application uses real foundational DDL, atomic catalogue/page writes, 
     assert.equal(second.body.draft.products[0].stock,7);
     assert.ok(second.body.draft.collections[0].product_ids.includes(other),"existing archived collection members are not removed");
     const draft = await db.withMemberStore(id,hash,tx=>loadDraft(tx,id));
-    assert.equal(draft.settings.tagline,"A changed look");
+    assert.equal(draft.settings.tagline,result.body.draft.settings.tagline,"catalogue-only confirmation cannot replace saved design text");
     const photo = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
     await pg.query("INSERT INTO media(id,store_id,object_key,kind,content_type,size_bytes,upload_type,alt_text) VALUES($1,$2,$3,'image','image/webp',32,'image','Existing descriptive alt')",
       [photo,id,`stores/${id}/images/sample.webp`]);

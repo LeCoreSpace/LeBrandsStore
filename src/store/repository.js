@@ -112,7 +112,7 @@ function completion(data, progress) {
   ];
   return (progress.completed ?? []).filter((n) => complete[n - 1]);
 }
-export async function saveSetup(tx, id, settings, progress) {
+export async function saveSetup(tx, id, settings, progress, options = {}) {
   await ensureSetup(tx, id);
   const data = await loadDraft(tx, id);
   if (settings && !validCategoryPair(settings.category ?? data.settings.category, settings.subcategory ?? data.settings.subcategory)) {
@@ -126,7 +126,7 @@ export async function saveSetup(tx, id, settings, progress) {
   // An already-autosaved address still needs confirmation on Continue, even
   // when that request contains progress only and no dirty settings.
   const requestedAddress = settings?.subdomain ?? data.settings.subdomain;
-  if (progress?.step > 1 && data.progress.step === 1 && requestedAddress !== data.store.subdomain) {
+  if (((progress?.step > 1 && data.progress.step === 1) || options.confirmAddress === true) && requestedAddress !== data.store.subdomain) {
     if (!validateSubdomain(requestedAddress)) throw badInput("Choose a valid, non-reserved store address.");
     const [available] = await tx`SELECT public.store_address_available(${requestedAddress}, ${id}) AS available`;
     if (!available?.available) throw conflict("That store address is unavailable.");

@@ -120,65 +120,16 @@ function dashboard(data) {
 }
 
 function newStore(data) {
-  const values = data.values || {};
   return authFrame({
-    eyebrow: "A home for your brand",
-    user: data.user,
-    heading: "Claim your place on the internet.",
-    intro: "Choose a brand name and a short store address. You can begin with this address and connect your own domain later.",
-    title: "Create a store",
-    description: "Choose the name customers will see and the address they'll remember.",
-    form: `${alertBlock(data.error, data.notice)}<form method="post" action="/stores/new" id="new-store-form" autocomplete="on">
-      <div class="form-control"><label for="brand_name">Brand name</label><input id="brand_name" name="brand_name" type="text" minlength="2" maxlength="40" required value="${escapeHtml(values.brand_name || "")}" placeholder="Moru Studio"></div>
-      <div class="form-control"><label for="subdomain">Store address</label><div class="subdomain-wrap"><input id="subdomain" name="subdomain" type="text" autocapitalize="none" autocomplete="off" spellcheck="false" minlength="3" maxlength="30" pattern="[a-z0-9][a-z0-9-]{1,28}[a-z0-9]" required value="${escapeHtml(values.subdomain || "")}" placeholder="moru"><span class="subdomain-suffix">.lebrands.store</span></div><span class="form-help">Lowercase letters, numbers and hyphens. 3 to 30 characters.</span><span class="availability" id="subdomain-availability" aria-live="polite" role="status">Enter an address to check availability.</span></div>
-      <button class="button" id="create-store-submit" type="submit" disabled>Create store <span aria-hidden="true">↗</span></button>
-    </form>
-    <script>
-      (() => {
-        const input = document.getElementById("subdomain");
-        const status = document.getElementById("subdomain-availability");
-        const submit = document.getElementById("create-store-submit");
-        if (!input || !status || !submit) return;
-        let timer = 0;
-        let sequence = 0;
-        const setStatus = (message, state) => {
-          status.textContent = message;
-          status.dataset.state = state || "";
-          submit.disabled = state !== "available";
-        };
-        input.addEventListener("input", () => {
-          const name = input.value.trim().toLowerCase();
-          input.value = name;
-          const check = ++sequence;
-          clearTimeout(timer);
-          if (!name) { setStatus("Enter an address to check availability.", ""); return; }
-          if (!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(name)) {
-            setStatus("Use 3 to 30 lowercase letters, numbers or hyphens; start and end with a letter or number.", "error");
-            return;
-          }
-          setStatus("Checking address…", "");
-          timer = window.setTimeout(async () => {
-            try {
-              const response = await fetch("/api/subdomain-check?name=" + encodeURIComponent(name), {
-                method: "GET", headers: { "Accept": "application/json" }, credentials: "same-origin"
-              });
-              if (!response.ok) throw new Error("Availability check returned " + response.status);
-              const result = await response.json();
-              if (check !== sequence) return;
-              if (result.available === true) setStatus(name + ".lebrands.store is available.", "available");
-              else if (result.available === false) setStatus("That address is not available. Try another.", "unavailable");
-              else setStatus("We couldn't confirm availability. Please try again.", "error");
-            } catch {
-              if (check === sequence) setStatus("Availability check failed. Check your connection and try again.", "error");
-            }
-          }, 350);
-        });
-      })();
-    </script>`,
-    after: `<div class="form-foot"><a href="/">Back to your stores</a></div>`,
+    eyebrow:"Build your store with Ann",user:data.user,
+    heading:"Your brand. Your store. Let's begin.",
+    intro:"Ann will help you create your store one small choice at a time, with a live preview beside your conversation.",
+    title:"Start building with Ann",
+    description:"Add your business details, choose a look and bring your products together. You can fine-tune everything in the theme editor later.",
+    form:`${alertBlock(data.error,data.notice)}<form method="post" action="/stores/new"><input type="hidden" name="start_with_ann" value="1"><button class="button" type="submit">Build my store with Ann</button></form><p class="form-help">This creates an unpublished draft. Your store only goes live after you review and publish.</p>`,
+    after:'<div class="form-foot"><a href="/">Back to your stores</a></div>',
   });
 }
-
 function account(data) {
   const mustChange = Boolean(data.user?.must_change_password);
   return authFrame({

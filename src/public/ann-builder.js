@@ -7,6 +7,7 @@ import { attachStyleInteractions } from "./style-preview-interactions.js";
 import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
 import { attachAuraMotion } from "./aura-motion.js";
 import { attachAnnApplication } from "./ann-application-ui.js";
+import { attachAnnOnboarding } from "./ann-onboarding-ui.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { attachAnnLaunch } from "./ann-launch-ui.js";
 import { openAnnBrowserPreview } from "./ann-browser-preview.js";
@@ -24,14 +25,16 @@ const api = boot.apiRoot || `/api/stores/${storeId}/ann`;
 const root = `/stores/${storeId}`;
 
 const UI_STEPS = [
-  ["category", "Category", "Choose your product category"], ["style", "Style", "Choose your store's look"], ["palette", "Colours", "Choose backgrounds and button colours"],
-  ["fonts", "Fonts", "Choose how your store's text looks"], ["collections", "Collections", "Group related products"], ["products", "Products", "Add product ideas"],
-  ["story", "Your brand", "Add your name, logo and brand story"],
-  ["domain", "Store address", "Choose your website address"], ["payments", "Payments", "Choose how customers pay"],
-  ["shipping", "Delivery", "Choose how orders reach customers"], ["review", "Review", "Review your store and opening checks"],
+  ["business", "Business", "Your name, GST details and logo"], ["selling", "Store address", "Your included store address"],
+  ["style", "Style", "Choose your store's look"], ["palette", "Colours", "Choose backgrounds and button colours"],
+  ["fonts", "Fonts", "Choose how your store's text looks"], ["category", "Category", "Choose your product category"],
+  ["collections", "Collections", "Group related products"], ["products", "Products", "Add products and confirm your catalogue"],
+  ["story", "Brand story", "Choose optional story sections"],
+  ["payments", "Payments", "Choose how customers pay"], ["shipping", "Delivery", "Choose how orders reach customers"],
+  ["domain", "Own domain", "Connect your own domain"], ["review", "Review", "Review your store and opening checks"],
 ].filter(([k]) => ANN_STEPS.includes(k));
 const PAGES = ["home", "collection", "product", "cart", "checkout", "about", "contact"];
-const STEP_PAGE = { collections: "collection", products: "product", story: "home", style: "home", palette: "home", fonts: "home", category: "home" };
+const STEP_PAGE = { business: "home", selling: "home", collections: "collection", products: "product", story: "home", style: "home", palette: "home", fonts: "home", category: "home" };
 const PALETTE_NAMES = { white: "White", ivory: "Ivory", stone: "Stone", midnight: "Midnight" };
 const FONT_NAMES = { modern: "Modern sans", serif: "Serif", classic: "Classic" };
 const label = s => s.replace(/-/g, " ").replace(/^./, c => c.toUpperCase());
@@ -42,7 +45,7 @@ let saved = structuredClone(session?.answers || {});
 let answers = structuredClone(saved);
 if (!session) answers = { ...initialAnswers(boot.settings, boot.store, ref || {}), ...answers };
 let step = new URL(location.href).searchParams.get("logo") === "1" ? "story" : new URL(location.href).searchParams.get("launch") === "1" ? "domain" :
-  UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "category";
+  UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "business";
 let touched = false, saving = false, conflict = false, notice = "", page = "product", productId, collectionId, policyKind;
 let queue = Promise.resolve(), lastSavedAt = session ? "Saved plan restored." : "";
 const notes = [];
@@ -59,11 +62,13 @@ let previewSource = { store: boot.store, settings: boot.settings, products: boot
 let base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" });
 const applicationUI = attachAnnApplication({ api, root, readOnly,
   context: () => ({ answers, revision, dirty: isDirty() }),
-  beforePrepare: () => save("review"),
-  onApplied: result => { setPreviewMode("store", result.draft); renderPreview(false); readinessUI.onStoreChanged(); },
+  mode: "catalogueOnly",
+  suggestions: () => productHints(),
+  beforePrepare: () => save(step === "review" ? "review" : "products"),
+  onApplied: result => { refreshAnnDraft(result.draft);readinessUI.onStoreChanged();say("Your collection and products are saved as drafts. You can keep exploring with sample products, or choose your own above the preview."); },
 });
 const readinessUI = attachAnnReadiness({api,root,readOnly,
-  onSaved:result=>{if(result.draft){setPreviewMode("store", result.draft);renderPreview(false);}},
+  onSaved:result=>refreshAnnDraft(result.draft),
 });
 const brandingUI=attachAnnBranding({api,readOnly,initial:boot.settings,
   onPreview:logo=>{
@@ -74,12 +79,33 @@ const brandingUI=attachAnnBranding({api,readOnly,initial:boot.settings,
   onSaved:()=>{readinessUI.onStoreChanged();drawKeep();},
   onContinue:()=>advance(),
 });
-const launchUI = attachAnnLaunch({api,readOnly,onStep:n=>go(({2:"payments",3:"shipping",4:"review"})[n]),onSaved:()=>say("Your choices are saved. Payments and automatic shipping only start when you explicitly activate them."),onDone:()=>{
+const launchUI = attachAnnLaunch({api,readOnly,onStep:n=>go(({2:"review",3:"shipping",4:"domain"})[n]),onSaved:()=>say("Your choices are saved. Payments and automatic shipping only start when you explicitly activate them."),onDone:()=>{
   const review=$("#ann-readiness-slot");const panel=review?.closest("details");
   if(panel)panel.open=true;
   review?.scrollIntoView({block:"start"});
   say("Your preferences are ready. Let us review the checks for opening your store.");
 }});
+// Onboarding controllers: brand and address write the REAL draft; gstin verifies explicitly.
+let obDone = { brand: false, gst: false, address: false };
+function refreshAnnDraft(draft){if(!draft)return;previewSource=structuredClone(draft);boot.settings={...draft.settings};boot.store={...boot.store,...draft.store};base=stylePreviewData(previewSource,{showcase:previewMode==="showcase"});renderPreview(false);}
+function onboardingDraft(env, { initial = false } = {}) {
+  const name = env.store?.name;
+  if (name) { boot.store.name = name;boot.speakerName=name;answers.store_name=name;previewSource.store = { ...previewSource.store, name };const h=app.querySelector("h1");if(h)h.textContent=`Build ${name} with Ann`; }
+  Object.assign(boot.settings, env.settings || {});
+  previewSource.settings = { ...previewSource.settings, ...(env.settings || {}) };
+  obDone.brand = !!name && !/^my store$/i.test(name);
+  obDone.gst = env.verification?.state==="verified"&&env.verification?.confirmed===true;
+  // Brand and GST writes refresh the preview source only. Sample or own products consent is untouched.
+  base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" });
+  if (!initial && obDone.brand && !readOnly && answers.store_name !== name) edit(() => { answers.store_name = name.slice(0, 120); });
+  renderPreview(false); readinessUI.onStoreChanged(); if (initial) drawKeep();
+}
+const obCommon = { api, storeId, readOnly, onDraft: onboardingDraft, onContinue: () => advance(),
+  onPreview: ({ brand_name }) => { previewSource.settings = { ...previewSource.settings, brand_name }; base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" }); renderPreview(false); } };
+const brandUI = attachAnnOnboarding({ ...obCommon, mode: "brand" });
+const gstUI = attachAnnOnboarding({ ...obCommon, mode: "gstin" });
+const addressUI = attachAnnOnboarding({ ...obCommon, mode: "address", onContinue: () => { obDone.address = true; advance(); } });
+const obUIs = { brand: brandUI, gstin: gstUI, address: addressUI };
 const extrasNow = currentExtras(base.layouts);
 const bag = new Map((base.products || []).slice(0, 2).map(p => [p.id, 1]));
 const frame = $("#ann-preview"), canvas = $("#ann-canvas"), log = $("#ann-log"), foot = $("#ann-foot"), statusEl = $("#ann-status");
@@ -95,12 +121,12 @@ let designUI = null;
 designUI = attachAnnDesign({ api, root, readOnly, mount: canvas, say,
   getAnswers: () => answers, getPreviewMode: () => previewMode, getBrand: () => boot.settings?.brand_name || boot.store?.name,
   getStyle: () => config().theme.style_preset,
-  applyPlan: plan => { answers = structuredClone(plan); },
+  applyPlan: plan => {const catalogue=Object.fromEntries(["collections","product_ideas"].filter(k=>Object.hasOwn(answers,k)).map(k=>[k,structuredClone(answers[k])]));answers={...structuredClone(plan),...catalogue};},
   onDraft: draft => { previewSource = draft; },
   onActivated: ({ useOwnProducts = false } = {}) => { if (useOwnProducts) ownProductsConfirmed = true; saved = structuredClone(answers); touched = false; autosavePaused = false; saveProblem = ""; conflict = false; setPreviewMode(ownProductsConfirmed ? "store" : "showcase", previewSource); page = previewMode === "showcase" || previewSource.products?.some(p => p.status !== "archived") ? "product" : "home"; draw("keep"); renderPreview(false); say(previewMode === "showcase" ? "Welcome back. Your saved design is safe. Explore with sample products, then choose your own whenever you are ready." : "Your design is saved to draft. Make it yours with your words and photos. Your live site is unchanged."); },
   onChange: () => { schedule(); drawFoot(); },
   onCatalogueConfirmed: () => { ownProductsConfirmed = true; setPreviewMode("store"); const next = pendingCatalogueAction; pendingCatalogueAction = null; next?.(); draw("keep"); renderPreview(false); say("You are now previewing your own products. Your catalogue and live site have not changed."); },
-  openCanvas: () => { requestOwnProducts(() => { page = "home"; app.dataset.view = "canvas"; syncSwitch(); renderPreview(false); setTimeout(fit, 0); }); },
+  openCanvas: () => { if(designUI?.hasUnsavedChanges()){say("Save your draft changes first, then open the theme editor so you see the same design.");return;}location.assign(`${root}/editor`); },
   backToDesign: plan => { requestOwnProducts(() => { answers = { ...answers, ...structuredClone(plan) }; draw("keep"); renderPreview(false); }); },
 });
 
@@ -152,7 +178,8 @@ function renderPreview(remember = true) {
   const cfg = config();
   designUI?.refresh();
   const projected = projectAnnPreview(base, cfg, { prefilled: prefilledSection, attributes: attrState.get(answers.subcategory_id)?.attrs || [] });
-  const dsg = previewMode === "store" ? designUI?.previewDesign() : null;
+  const candidate=designUI?.previewDesign();
+  const dsg = previewMode === "store"||candidate?.catalogue_mode==="sample" ? candidate : null;
   current = dsg ? designPreviewData(previewSource, dsg) : projected.data;
   const pack = resolveShowcasePack(current);
   const bagKey = `${previewMode}:${current.style_demo ? pack.key : "real"}`;
@@ -233,7 +260,7 @@ async function loadAttrs(subId) {
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || "Product questions could not be loaded.");
     if (attrState.get(subId)?.token !== token) return;
-    attrState.set(subId, { status: "ready", token, attrs: Array.isArray(body.attributes) ? body.attributes : [] });
+    attrState.set(subId, { status: "ready", token, attrs: Array.isArray(body.attributes) ? body.attributes : [],suggestions:Array.isArray(body.product_suggestions)?body.product_suggestions:[] });
   } catch (e) {
     if (attrState.get(subId)?.token !== token) return;
     attrState.set(subId, { status: "error", token, error: e.message });
@@ -258,13 +285,13 @@ let promptId = "category", reached = "category";
 const DETAIL_STEPS = ["collections", "products", "story"];
 
 function prompts() {
-  const list = [{ id: "category", step: "category" }];
+  const list = [{ id: "store_name", step: "business" }, { id: "gstin", step: "business" }, { id: "logo", step: "business" }, { id: "included_address", step: "selling" },
+    { id: "style", step: "style" }, { id: "bg", step: "palette" }, { id: "accent", step: "palette" }, { id: "button", step: "palette" }, { id: "font", step: "fonts" }, { id: "category", step: "category" }];
   if (!answers.category_id || subsFor(answers.category_id).length) list.push({ id: "subcategory", step: "category" });
-  list.push({ id: "style", step: "style" }, { id: "bg", step: "palette" }, { id: "accent", step: "palette" }, { id: "button", step: "palette" }, { id: "font", step: "fonts" }, { id: "collections", step: "collections" });
+  list.push({ id: "collections", step: "collections" });
   const cols = answers.collections || [];
   if (cols.length) for (const c of cols) list.push({ id: `ideas:${c.key}`, step: "products", col: c.key }); else list.push({ id: "ideas:none", step: "products" });
-  list.push({ id: "store_name", step: "story" }, { id: "logo", step: "story" }, { id: "tagline", step: "story" }, { id: "description", step: "story" }, { id: "sections", step: "story" },
-    {id:"domain",step:"domain"},{id:"payments",step:"payments"},{id:"shipping",step:"shipping"},{ id: "review", step: "review" });
+  list.push({ id: "catalogue", step: "products" }, { id: "sections", step: "story" }, { id: "payments", step: "payments" }, { id: "shipping", step: "shipping" }, { id: "domain", step: "domain" }, { id: "review", step: "review" });
   return list.filter(p => UI_STEPS.some(s => s[0] === p.step));
 }
 function curIdx(ps = prompts()) {
@@ -285,7 +312,7 @@ function def(p) {
   const txt = (key, lab, q, max, ph, area) => ({ kind: "text", key, label: lab, q, max, ph, area, reply: a[key] || "" });
   const setKey = key => v => { answers[key] = v; };
   switch (k) {
-    case "category": return sel("Category", `Hi${a.store_name ? `, ${a.store_name}` : ""}, I'm Ann. Let's make this store feel like you! What category of products do you sell? Pick the closest match below. We'll use sample products while you explore; nothing is published yet.`,
+    case "category": return sel("Category", `Now let's talk about what you sell. What category of products do you sell? Pick the closest match below. We'll use sample products while you explore; nothing is published yet.`,
       (ref?.categories || []).map(c => ({ v: c.category_id, t: c.name })), a.category_id, v => {
         const r = changeCategory(answers, Number(v)); answers = r.answers;
         const bits = []; if (r.cleared.subcategory) bits.push("the subcategory");
@@ -311,20 +338,25 @@ function def(p) {
       if (p.id === "ideas:none") return { kind: "info", label: "Products", q: "Want to plan your own products now? First add a collection, which is a group of related products. Or continue with the sample products and come back to this later.", reply: "" };
       const col = (a.collections || []).find(c => c.key === p.col);
       const items = (a.product_ideas || []).map((x, i) => [x, i]).filter(([x]) => x.collection_key === p.col);
-      return { kind: "list", list: "idea", label: "Product idea", q: `What product would you like to include in ${col?.name || "this collection"}? Start with its name. You can add up to five ideas here. These are planning notes, not products for sale yet, so you can also keep exploring with samples.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50 };
+      return { kind: "list", list: "idea", label: "Product idea", q: `What product would you like to include in ${col?.name || "this collection"}? Start with up to five product names. Tap a suggestion or type your own. Next we can turn them into real draft products.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50, sugg: suggestions() };
     }
-    case "store_name": return txt("store_name", "Store name", "What brand name should customers see on your store? Use the name you already have, or try one out. You can change it later.", 120, "Type your brand name");
+    case "store_name": return { kind: "onboard", mode: "brand", label: "Store name", q: "Hi, I'm Ann! Let's set up your store together. First, what is your brand name? Customers will see it on your store. You can change it later. Nothing is published yet.", max: 40, ph: "Type your brand name", reply: brandUI.summary() };
+    case "gstin": return { kind: "onboard", mode: "gstin", label: "GST details", q: "Now your GST registration. Choose the state of your registered address and enter your GSTIN. We will check it and show your registered business name and address for you to confirm. You can also do this later, but a verified GST is needed before you publish.", reply: gstUI.summary() };
+    case "included_address": return { kind: "onboard", mode: "address", label: "Store address", q: "Your store comes with its own web address. Here is the one we picked. Keep it, or change it to something shorter and easier to remember.", reply: addressUI.summary() };
+    case "catalogue": return { kind: "catalogue", label: "Create products", q: "Would you like to turn these ideas into real draft products now? You will confirm each price, GST rate, HSN code and stock yourself. Nothing is published, your design stays as it is, and you can skip this and do it later in Products.", reply: "" };
     case "logo": return {kind:"logo",label:"Brand logo",q:`Have a logo for ${a.store_name || boot.store.name || "your brand"}? Add it here and see it across your store, including the bag, checkout and browser tab. No logo yet? Your brand name works beautifully too.`,reply:brandingUI.reply()};
     case "tagline": return txt("tagline", "Tagline", "Would you like a short line that tells customers what your brand is about? That's a tagline, like Everyday comfort, made yours. A few words are enough, or you can skip it.", 160, "A few words about your brand");
     case "description": return txt("description", "About your brand", "What would you like customers to know about your brand? You could share why you started, what you make or what makes your products special. This helps shape your About page. A few sentences are plenty, and you can skip for now.", 1200, "Why you started and what makes your products special", true);
-    case "sections": return { kind: "sections", label: "Optional sections", q: "Would you like any extra sections on your store pages, such as a brand story or FAQs? Tap the options to add or remove them and watch the preview change. After this, we'll look at your store address, payments and delivery.", reply: sectionsReply() };
-    case "domain": return {kind:"launch",launchStep:1,label:"Store address",q:"What website address should customers use to visit your store? You can keep the address that comes with your store, or connect your own domain, like www.yourbrand.com. Not ready to decide? You can set this up later.",reply:launchUI.summary(1)};
+    case "sections": return { kind: "sections", label: "Optional sections", q: "Would you like any extra sections on your store pages, such as a brand story or FAQs? Tap the options to add or remove them and watch the preview change. After this, we'll look at payments, delivery and your own domain.", reply: sectionsReply() };
+    case "domain": return {kind:"launch",launchStep:1,label:"Store address",q:"Would you like customers to use your own domain, like www.yourbrand.com? This is optional. Your included address keeps working either way, so you can also set this up later.",reply:launchUI.summary(1)};
     case "payments": return {kind:"launch",launchStep:2,label:"Payments",q:"How would you like customers to pay for their orders? Cash on Delivery means they pay when their parcel arrives. Online payments use Razorpay and need a connected, activated account. Choose what suits you, or set this up later.",reply:launchUI.summary(2)};
     case "shipping": return {kind:"launch",launchStep:3,label:"Delivery",q:"How would you like to get orders to your customers? You can book deliveries with a courier yourself, or connect Shiprocket to help automate shipping. Automatic shipping only starts after you activate it. You can set this up later too.",reply:launchUI.summary(3)};
     default: return { kind: "review", label: "Review", q: "", reply: "" };
   }
 }
 
+function productHints(){return (attrState.get(answers.subcategory_id)?.suggestions||[]).filter(x=>x&&typeof x.name==="string"&&x.name.trim());}
+const suggestions = () => productHints();
 const listHtml = d => `<ul class="ann-items">${d.items.map(([it, i]) => `<li><span class="ann-it">${esc(it.name || "Untitled")}${it.description ? `<small>${esc(it.description)}</small>` : ""}</span><span class="ann-item-actions"><button type="button" class="ann-link" data-edit-item="${d.list}:${i}:name"${dis}>Rename</button><button type="button" class="ann-link" data-edit-item="${d.list}:${i}:description"${dis}>${it.description ? "Edit note" : "Add note"}</button><button type="button" class="ann-link" data-del-${d.list}="${i}"${dis}>Remove</button></span></li>`).join("")}</ul>`;
 const meBubble = (html, btn = "") => `<div class="ann-msg me">${btn}<div class="ann-message-content"><span class="ann-speaker">${esc(answers.store_name?.trim() || boot.store.name?.trim() || boot.speakerName || "You")}</span><div class="ann-bubble">${html}</div></div></div>`;
 const feedHtml = f => `<p class="ann-feed" data-state="${f.done ? "done" : "pending"}"><span class="ann-dot" aria-hidden="true"></span><span class="ann-feed-t">${esc(f.text)}</span><span class="ann-feed-s">${f.done ? "Preview updated" : "Updating preview"}</span><button type="button" class="ann-link ann-see" data-view-switch="canvas">See preview</button></p>`;
@@ -365,10 +397,7 @@ const collectionsDetail = () => { const cols = answers.collections || [];
     <button type="button" class="ann-link" data-del-col="${i}"${dis}>Remove collection</button></fieldset>`).join("") : `<p class="ann-empty">No collections yet.</p>`}
     <button type="button" class="ann-btn alt" data-add-col${cols.length >= 10 || readOnly ? " disabled" : ""}>Add a collection</button>`, "ann-card"); };
 const storyDetail = () => { const a = answers;
-  return bubble(`<label class="ann-field">Store name<input data-ans="store_name" maxlength="120" value="${esc(a.store_name || "")}"${dis}></label>
-    <label class="ann-field">Tagline<input data-ans="tagline" maxlength="160" value="${esc(a.tagline || "")}"${dis}></label>
-    <label class="ann-field">About your brand<textarea data-ans="description" maxlength="1200" rows="4"${dis}>${esc(a.description || "")}</textarea></label>
-    <h2>Optional sections</h2><p class="ann-note">These show in the preview and are saved as a plan only. Core shopping sections stay as they are.</p>
+  return bubble(`<h2>Optional sections</h2><p class="ann-note">These show in the preview and are saved as a plan only. Core shopping sections stay as they are.</p>
     ${Object.entries(ANN_EXTRA_SECTIONS).map(([p, list]) => `<fieldset class="ann-sections"><legend>${label(p)} page</legend>${list.map(t => `<label class="ann-check"><input type="checkbox" data-section="${p}:${t}" ${shown(p).includes(t) ? "checked" : ""}${dis}><span>${esc(label(t))}</span></label>`).join("")}<button type="button" class="ann-link" data-view-page="${p}">Show this page</button></fieldset>`).join("")}`, "ann-card"); };
 const detailHtml = () => `<section class="ann-detail" aria-label="Detailed editor"><div class="ann-detail-h"><h2>Detailed editor</h2><button type="button" class="ann-link" data-toggle-detail>Close</button></div>${step === "products" ? productsStep() : step === "collections" ? collectionsDetail() : storyDetail()}</section>`;
 
@@ -378,9 +407,14 @@ function composerKeyFor(p, d) {
 }
 /* Inline controls: rendered in the timeline directly under the active Ann question. */
 function inlineControls(p, d) {
-  const tail = DETAIL_STEPS.includes(p.step) && d.kind !== "info" ? `<button type="button" class="ann-link" data-toggle-detail aria-expanded="${detail}">${detail ? "Close detailed editor" : "Open detailed editor"}</button>` : "";
+  const detailLink = DETAIL_STEPS.includes(p.step) && d.kind !== "info" ? `<button type="button" class="ann-link" data-toggle-detail aria-expanded="${detail}">${detail ? "Close detailed editor" : "Open detailed editor"}</button>` : "";
+  const tail=detailLink+(p.step==="products"&&p.id!=="catalogue"&&answers.product_ideas?.length?`<div class="ann-comp-row"><button type="button" class="ann-btn" data-go-prompt="catalogue"${dis}>Set prices and save products</button><p class="ann-note">Ready with your first product? Confirm its price, tax and stock next. You can add more products and details later.</p></div>`:"");
   let body = "", name = d.label;
-  if (d.kind === "launch") {
+  if (d.kind === "onboard") {
+    body = `<div id="ann-ob-${d.mode}-slot"></div>`;
+  } else if (d.kind === "catalogue") {
+    body = `<div id="ann-application-slot"></div><div class="ann-comp-row"><button type="button" class="ann-btn alt" data-continue>Continue without creating products</button></div>`;
+  } else if (d.kind === "launch") {
     body='<div id="ann-launch-slot"></div>';
   } else if (d.kind === "logo") {
     body=`<div id="ann-branding-slot">${brandingUI.html()}</div>`;
@@ -391,10 +425,12 @@ function inlineControls(p, d) {
   } else if (d.kind === "sections") {
     name = "Optional sections";
     body = `${Object.entries(ANN_EXTRA_SECTIONS).map(([pg, l]) => `<div class="ann-sec-row"><span>${label(pg)} page</span><div class="ann-chips">${l.map(s => `<button type="button" class="ann-chip sm" data-toggle-section="${pg}:${s}" aria-pressed="${shown(pg).includes(s)}"${dis}><strong>${esc(label(s))}</strong></button>`).join("")}</div></div>`).join("")}
-      <div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>${readOnly ? "Continue" : "Continue to store address"}</button>${tail}</div>`;
+      <div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>${readOnly ? "Continue" : "Continue to payments"}</button>${tail}</div>`;
   } else if (d.kind === "text" || d.kind === "list") {
+    const have = new Set((answers.product_ideas || []).map(x => x.name.trim().toLowerCase()));
+    const pills = !editing && d.list === "idea" && d.sugg?.length ? `<div class="ann-chips" role="group" aria-label="Product name suggestions">${d.sugg.filter(x => !have.has(x.name.trim().toLowerCase())).slice(0, 8).map(x => `<button type="button" class="ann-chip sm" data-suggest="${esc(x.name)}"${d.full ? " disabled" : dis}><strong>${esc(x.name)}</strong>${x.hsn_code ? `<span>HSN ${esc(x.hsn_code)}${x.hsn_note ? `: ${esc(x.hsn_note)}` : ""}</span>` : ""}</button>`).join("")}</div>` : "";
     const btn = editing ? `<button type="button" class="ann-btn alt" data-cancel-edit>${editing.follow ? "Skip note" : "Cancel"}</button>` : d.kind === "list" ? `<button type="button" class="ann-btn alt" data-continue>${d.items.length ? "Continue" : "Skip for now"}</button>` : `<button type="button" class="ann-btn alt" data-continue>${d.reply ? "Keep and continue" : "Skip"}</button>`;
-    body = `<div class="ann-comp-row">${btn}${editing ? "" : tail}${p.step === "products" && !answers.subcategory_id ? `<button type="button" class="ann-link" data-go="category">Choose a subcategory for product questions</button>` : ""}</div>`;
+    body = `${pills}<div class="ann-comp-row">${btn}${editing ? "" : tail}${p.step === "products" && !answers.subcategory_id ? `<button type="button" class="ann-link" data-go="category">Choose a subcategory for product questions</button>` : ""}</div>`;
   } else if (d.kind === "info") {
     body = `<div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>Continue with samples</button><button type="button" class="ann-btn alt" data-go="collections">Add a collection</button></div>`;
   } else return "";
@@ -422,7 +458,7 @@ function drawComposer(force) {
   const val = composerDrafts.get(key) ?? original;
   const area = !choiceLike && (editing ? field === "description" : d.area);
   const full = !editing && d.kind === "list" && d.full;
-  const idle = ["info", "review", "sections"].includes(d.kind);
+  const idle = ["info", "review", "sections", "catalogue", "launch", "logo"].includes(d.kind) || (d.kind === "onboard" && d.mode !== "brand");
   const off = readOnly || full || idle;
   const ph = readOnly ? "Viewing only" : full ? "Limit reached" : idle ? "Use the options above" : choiceLike ? `Type your ${d.label.toLowerCase()} choice` : editing ? (editing.follow ? "Type a note, or skip it above" : "Type your change") : d.ph || "Type your answer";
   const lab = editing ? (editing.follow ? "Optional note" : editing.field === "name" ? "New name" : "New note") : d.label;
@@ -443,7 +479,8 @@ function drawComposer(force) {
 
 /* ---------- panel drawing ---------- */
 function drawSteps() {
-  const answered = annAnsweredStages(answers, ref || {});
+  const answered = new Set(annAnsweredStages(answers, ref || {}));
+  if (obDone.brand) answered.add("business"); if (obDone.address) answered.add("selling");
   const doneN = answered.size, total = UI_STEPS.filter(([k]) => !["domain","payments","shipping","review"].includes(k)).length;
   const state = isDirty() ? "Unsaved changes" : designUI?.active() ? "Design saved to draft" : session ? "Plan saved" : "Nothing saved yet";
   $("#ann-steps").innerHTML = `<div class="ann-rail">${UI_STEPS.map(([k, n], i) => { const st = k === step ? "current" : answered.has(k) ? "done" : "todo";
@@ -474,7 +511,7 @@ function draw(mode = "keep") {
   const y = log.scrollTop;
   const markup = timeline() + (detail && DETAIL_STEPS.includes(step) ? detailHtml() : "");
   if (markup !== logMarkup) { log.innerHTML = markup; logMarkup = markup; }
-  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); launchUI.mount(({domain:1,payments:2,shipping:3})[step]); brandingUI.mount();
+  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); launchUI.mount(({domain:1,payments:2,shipping:3})[step], { customDomainOnly: step === "domain" }); brandingUI.mount(); Object.values(obUIs).forEach(u => u.mount());
   if (mode === "active") scrollActive(); else log.scrollTop = y;
 }
 const drawKeep = () => draw("keep");
@@ -517,6 +554,11 @@ function focusIdea(index) {
   productId = (base.style_demo ? base.products?.[index]?.id : null) || `ann-product-${idea.key}`;
   page = "product";
 }
+function addIdeaNamed(d, p, v) {
+  edit(() => { const ideas = answers.product_ideas ||= []; ideas.push({ key: nextKey("idea", ideas.map(x => x.key)), collection_key: d.col, name: v.slice(0, 120), description: "", attributes: [] }); });
+  const i = answers.product_ideas.length - 1; focusIdea(i); feed(p.id, `Added product idea ${v.slice(0, 120)}`);
+  editing = { kind: "idea", i, field: "description", follow: true };
+}
 function submitComposer(raw) {
   if (readOnly) return;
   const v = raw.replace(/\r/g, "").trim(), p = cur(), d = def(p);
@@ -539,6 +581,7 @@ function submitComposer(raw) {
     composerDrafts.delete(composerKey);
     notice = ""; edit(() => d.pick(matches[0].v)); feed(p.id, `${d.label}: ${matches[0].t}`); return void advance();
   }
+  if (d.kind === "onboard" && d.mode === "brand") { composerDrafts.delete(composerKey); return void brandUI.submit(v); }
   if (d.kind === "text") { composerDrafts.delete(composerKey); edit(() => { answers[d.key] = v.slice(0, d.max); }); feed(p.id, `${d.label} sent to your plan`); return void advance(); }
   if (d.full) return say(d.list === "col" ? "Ten collections is the limit." : "Five ideas is the limit for one collection.");
   composerDrafts.delete(composerKey);
@@ -547,9 +590,7 @@ function submitComposer(raw) {
     page = "collection"; feed(p.id, `Added collection ${v.slice(0, 100)}`);
     editing = { kind: "col", i: answers.collections.length - 1, field: "description", follow: true };
   } else {
-    edit(() => { const ideas = answers.product_ideas ||= []; ideas.push({ key: nextKey("idea", ideas.map(x => x.key)), collection_key: d.col, name: v.slice(0, 120), description: "", attributes: [] }); });
-    const i = answers.product_ideas.length - 1; focusIdea(i); feed(p.id, `Added product idea ${v.slice(0, 120)}`);
-    editing = { kind: "idea", i, field: "description", follow: true };
+    addIdeaNamed(d, p, v);
   }
   focusComposer = true; draw("active"); drawComposer(true);
 }
@@ -601,12 +642,12 @@ function reviewStep() {
   const rows = [["category", "Category", [catName(a.category_id), subName(a.subcategory_id)].filter(Boolean).join(", ") || "Not chosen"],
     ["style", "Style", styleName(t.style_preset)], ["palette", "Colour", `${PALETTE_NAMES[t.color_preset] || t.color_preset}, accent ${t.accent_color}, ${t.button_style} buttons`],
     ["fonts", "Type", FONT_NAMES[t.font_preset] || t.font_preset], ["collections", "Collections", (a.collections || []).map(c => c.name).join(", ") || "None planned"],
-    ["products", "Product ideas", `${(a.product_ideas || []).length} planned`], ["story", "Story", a.store_name || "Not set"]];
+    ["products", "Product ideas", `${(a.product_ideas || []).length} planned`], ["business", "Business", `${brandUI.summary() || "Name not set"}. ${gstUI.summary() || "GST not verified yet. It is needed before you publish."}`], ["story", "Optional sections", sectionsReply()]];
   return bubble(`<p>Your store is taking shape. ${session || !dirty ? "Here is your plan so far." : "Save your plan so you can pick up where you left off."} Keep exploring with samples, or make it yours when you are ready. Nothing is live yet.</p>`) +
     bubble(`<dl class="ann-summary">${rows.map(([k, n, v]) => `<div><dt>${n}</dt><dd>${esc(v)}</dd><button type="button" class="ann-link" data-go="${k}">Change</button></div>`).join("")}</dl>
       <p class="ann-note">${dirty ? "You have unsaved changes." : designUI?.active() ? "Design saved to draft." : session ? "Your plan is saved." : "Not saved yet."}</p>`, "ann-card") +
     bubble(`<h2>Your next step, at your pace</h2><p>You can revisit Store address, Payments and Delivery using the steps above. Ready to go further? Review your products, business details and opening checks below. Nothing goes live until you review and publish.</p><div class="ann-actions"><button type="button" class="ann-btn alt sm" data-go="domain">Store address</button><button type="button" class="ann-btn alt sm" data-go="payments">Payments</button><button type="button" class="ann-btn alt sm" data-go="shipping">Delivery</button></div>`, "ann-card") +
-    `<details class="ann-review-step"><summary>Make it yours: business details and products</summary><section class="ann-card" id="ann-application-slot"></section></details>
+    `<p class="ann-note">Real draft products are created in the catalogue step. <button type="button" class="ann-link" data-go-prompt="catalogue">Open the catalogue step</button></p>
     <details class="ann-review-step"><summary>When you are ready: getting your store ready to open</summary><section class="ann-card" id="ann-readiness-slot"></section></details>
     <details class="ann-review-step" id="ann-launch-panel" open><summary>Your address, payments and delivery</summary><section class="ann-card" id="ann-launch-slot"></section></details>`;
 }
@@ -631,7 +672,9 @@ document.addEventListener("click", e => {
   if ("reload" in d) return void reloadLatest(false);
   if ("overwrite" in d) return void reloadLatest(true);
   if ("retryAttrs" in d) { attrState.delete(answers.subcategory_id); return void drawKeep(); }
+  if (d.goPrompt) return void toPrompt(d.goPrompt);
   if (readOnly) return;
+  if (d.suggest !== undefined) { const p = cur(), df = def(p); if (df.kind !== "list" || df.list !== "idea" || df.full || editing) return; composerDrafts.delete(composerKey); addIdeaNamed(df, p, d.suggest); focusComposer = true; draw("active"); return drawComposer(true); }
   if (d.pick !== undefined) {
     const p = cur(), df = def(p), o = df.opts.find(x => String(x.v) === d.pick); if (!o) return;
     notice = ""; edit(() => df.pick(d.pick)); feed(p.id, `${df.label}: ${o.t}`);
@@ -772,7 +815,7 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || launchUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || launchUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || Object.values(obUIs).some(u => u.hasUnsavedChanges()) || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
 if ((window.innerWidth || 1280) < 700) { canvas.dataset.device = "mobile"; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.device === "mobile"))); }

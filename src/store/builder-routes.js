@@ -31,20 +31,20 @@ export async function handleBuilderRoutes(request, env, db, user, tokenHash) {
       if (!isValidOrigin(request)) return json("This request did not come from the account website.", 403);
       if (target) return json("Choose a builder from the builder selection page.", 405);
       const form = await readForm(request);
-      const mode = form.get("mode");
+      const mode = form.get("mode"),chosenMode="ann";
       if (!["standard", "ann"].includes(mode)) return json("Choose a valid builder.", 400);
-      if (mode === "ann" && !annBuilderEnabled(env)) return json("Ann is not enabled. Use Standard Builder to continue.", 409);
+      if (!annBuilderEnabled(env)) return json("Ann is temporarily unavailable. Your saved store and theme editor are unchanged.", 409);
       await db.withMemberStore(id, tokenHash, async tx => {
         await dashboardAccess(tx, id, user.id, true);
-        if (mode === "ann") await annReady(tx);
+        await annReady(tx);
         // Merge only this preference. Do not invalidate policies, alter wizard
         // progress, write page layouts, change inventory or publish anything.
         await tx`INSERT INTO public.store_setup(store_id,settings)
-          VALUES(${id},jsonb_build_object('builder_mode', ${mode}::text))
+          VALUES(${id},jsonb_build_object('builder_mode', ${chosenMode}::text))
           ON CONFLICT(store_id) DO UPDATE SET settings =
             public.store_setup.settings || EXCLUDED.settings`;
       });
-      return redirect(`/stores/${id}/${mode === "standard" ? "setup" : "build/ann"}`);
+      return redirect(`/stores/${id}/build/ann`);
     }
     const data = await db.withMemberStore(id, tokenHash, async tx => {
       const role = await dashboardAccess(tx, id, user.id);
@@ -66,9 +66,9 @@ export async function handleBuilderRoutes(request, env, db, user, tokenHash) {
       }
       return data;
     });
-    if (target === "standard") return redirect(`/stores/${id}/setup`);
+    if (target !== "ann") return redirect(`/stores/${id}/build/ann`);
     // Never send this route into the legacy AI-generation interface.
-    if (target === "ann" && !annBuilderEnabled(env)) return redirect(`/stores/${id}/build`);
+    if (target === "ann" && !annBuilderEnabled(env)) data.annUnavailable="Ann is temporarily unavailable. Your saved store and theme editor are unchanged.";
     const html = target === "ann" && data.annAvailable
       ? renderAnnBuilder(data, user, data.annOptions)
       : renderBuilderChoice(data, user, {

@@ -1,3 +1,5 @@
+.ae-head,.ae-grid,.ae-pages{--ink:#38282b;--muted:#78686a;--line:#d8d1c4;--paper:#fff;--paper-2:#fff;--green:#6b1735;--green-dark:#4d1026;--lime:#f1e5ea;--white:#fff;--serif:Georgia,serif;--sans:Arial,sans-serif}
+.ae-head .ann-btn,.ae-pages .ann-btn,.ae-tools .ann-btn{border-radius:999px}
 .ann{--a:#6b1735;max-width:1560px;margin:0 auto;padding:20px 20px 28px;color:var(--ink)}
 .ann *{box-sizing:border-box}
 .ann-top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:16px;border-bottom:1px solid var(--line)}
@@ -227,3 +229,8 @@ body.ann-browser-shell{margin:0;height:100dvh;display:flex;flex-direction:column
   .ann-stage .ann-canvas{flex:0 0 65dvh;min-height:420px}
 }
 .ann-launch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0 10px}.ann-field select{border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 10px;font:400 14px var(--sans);width:100%}.ann-launch-diag{margin:8px 0;padding-left:18px;font-size:12px}.ann-launch-jobs{list-style:none;margin:6px 0;padding:0;display:grid;gap:8px}.ann-launch-jobs li{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;border:1px solid var(--line);padding:8px 10px;font-size:12px}.ann-launch-jobs small{color:var(--muted)}
+
+/* Onboarding controllers */
+[id^="ann-ob-"] { display: grid; gap: 10px; }
+[id^="ann-ob-"] .ann-check input[type="radio"] { margin-top: 3px; }
+.ann-inline > .ann-chips[aria-label="Product name suggestions"] { margin-bottom: 8px; }

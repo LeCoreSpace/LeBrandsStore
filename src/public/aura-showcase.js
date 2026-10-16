@@ -1,7 +1,7 @@
 /**
  * Style showcases: five deliberately different, script-free store compositions.
  * Used ONLY for the cloned style_demo catalogue. Real merchant pages, stored
- * layouts and the Standard Builder never pass through this module.
+ * layouts outside the saved Ann design renderer never pass through this module.
  */
 import { SHOWCASE_MEDIA, isShowcaseImage, resolveShowcasePack } from "./aura-showcase-assets.js";
 import { safeImage } from "./aura-sections.js";
@@ -68,7 +68,7 @@ for (const id of Object.keys(CONVERSION_COPY)) DEF[id] = { copy: CONVERSION_COPY
 /** Exact curated demo images, or merchant images that pass the storefront validator. */
 const okUrl = u => typeof u === "string" && (isShowcaseImage(u) || Boolean(safeImage(u))) && !/[\s"'<>]/.test(u);
 const img = (o, alt, key) => o && okUrl(o.url)
-  ? `<img${key && LIVE?.edit ? ` data-design-image="${key}"` : ""} src="${esc(o.url)}" alt="${esc(alt ?? o.alt ?? "")}" width="${Number(o.width) || 1024}" height="${Number(o.height) || 1024}" loading="lazy" decoding="async">` : "";
+  ? `<img${key && (LIVE?.edit||EDIT_SAMPLE) ? ` data-design-image="${key}"` : ""} src="${esc(o.url)}" alt="${esc(alt ?? o.alt ?? "")}" width="${Number(o.width) || 1024}" height="${Number(o.height) || 1024}" loading="lazy" decoding="async">` : "";
 
 export const showcaseCopy = style => DEF[style]?.copy || null;
 
@@ -146,9 +146,9 @@ export function designSeedCopy(data, settings = {}) {
 /* ------------------------------------------------------------------ */
 function context(data, settings, options) {
   const pack = resolveShowcasePack(data);
-  const style = settings.style_preset, media = pack.media, def = DEF[style];
+  const style = settings.style_preset, media = structuredClone(pack.media), def = DEF[style];
   const products = (data.products || []).filter(p => p.status !== "archived");
-  const collections = data.collections || [];
+  const collections = structuredClone(data.collections || []);
   const hero = (data.layouts?.home || []).find(s => s.type === "hero")?.settings || {};
   const brand = settings.brand_name || data.store?.name || "Your brand";
   const copy = {
@@ -165,6 +165,16 @@ function context(data, settings, options) {
   if (data.style_demo && data.showcase_voice) {
     for (const key of ["products", "collections", "about"]) if (data.showcase_voice[key]) copy[key] = data.showcase_voice[key];
   }
+  const design=data.settings?.ann_design;
+  if(design?.version===1&&design.style===style){
+    Object.assign(copy,design.copy||{});
+    copy.story=[copy.story0,copy.story1,copy.story2].filter(Boolean);
+    for(const key of ["hero","lifestyle"])if(design.media?.[key])media[key]=design.media[key];
+    for(let i=0;i<2;i++)if(design.media?.[`collection${i}`]){
+      media.collections[`c0${i+1}`]=design.media[`collection${i}`];
+      if(collections[i])collections[i].image=design.media[`collection${i}`];
+    }
+  }
   return { style, media, def, products, collections, brand, copy, world: pack.topic,
     profile: showcaseProfile({ ...data, showcase_niche: data.showcase_niche || pack }, style), options, page: options.page || "home" };
 }
@@ -174,7 +184,8 @@ const cHref = c => `/collections/${encodeURIComponent(c.slug || c.id)}`;
 const cImg = (c, x, i) => img(c.image || x.products.find(p => (c.product_ids || []).includes(p.id))?.images?.[0], c.title, LIVE && c.image && i < 2 ? `collection${i}` : undefined);
 const rv = (i = 0) => `class="rv" style="--i:${i}"`;
 let LIVE = null;
-const dc = key => LIVE?.edit ? ` data-design-copy="${key}"` : "";
+let EDIT_SAMPLE=false;
+const dc = key => LIVE?.edit||EDIT_SAMPLE ? ` data-design-copy="${key}"` : "";
 const rvc = (cls, i = 0) => `class="rv ${cls}" style="--i:${i}"`;
 
 const card = (p, i, extra = "") => `<a class="sc-card rv${LIVE ? " au-card" : ""}"${LIVE ? ` data-title="${esc(String(p.title || "").toLowerCase())}" data-price="${Number(p.price_paise) || 0}" data-available="${p.stock == null || Number(p.stock) > 0 ? 1 : 0}" data-index="${i}"` : ""} style="--i:${i}" href="${pHref(p)}"><span class="sc-img">${pImg(p)}</span><span class="sc-meta"><span class="sc-n">${num(i)}</span><b>${esc(p.title)}</b><span class="sc-price">${rupees(p.price_paise)}${LIVE ? "" : "<small>illustrative</small>"}</span>${extra}</span></a>`;
@@ -339,6 +350,7 @@ function themeOverrides(style, settings) {
   return { overrides, font, preset };
 }
 export function renderShowcase(data, settings, options = {}) {
+  EDIT_SAMPLE=Boolean(options.designEdit&&data.settings?.ann_design?.version===1);
   const page = options.page || "home";
   if (!isShowcase(data, settings.style_preset) || !SHOWCASE_PAGES.includes(page)) return null;
   const x = context(data, settings, options);
@@ -451,6 +463,7 @@ const CSS = BASE_CSS + CONVERSION_CSS;
 /* ---- saved design (real catalogue, no demo content) ---- */
 const liveMedia = o => o && typeof o === "object" && okUrl(o.url) ? { url: o.url, alt: String(o.alt || "").replace(/^illustrative\s+/i, "").replace(/^./, c => c.toUpperCase()), width: Number(o.width) || 1024, height: Number(o.height) || 1024 } : null;
 export function renderDesignLive(data, settings, options, design) {
+  EDIT_SAMPLE=false;
   const style = design.style, page = options.page || "home";
   if (!DEF[style] || !HOME[style] || !(page === "home" || ["collection", "product", "about", "contact"].includes(page))) return null;
   const pack = SHOWCASE_MEDIA?.[design.media_pack || style] || {}, m = design.media || {};

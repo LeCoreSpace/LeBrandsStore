@@ -31,10 +31,12 @@ const get = (tail = "", method = "GET") => new Request(`https://app.lebrands.sto
 const post = () => new Request(get(), { method: "POST", headers: { origin: "https://app.lebrands.store" },
   body: new URLSearchParams({ mode: "ann" }) });
 
-test("Ann chooser is enabled only with ready database and preference selection preserves content", async () => {
+test("All builder entry points lead to Ann and preference selection preserves content", async () => {
   const db = database(), user = { id: owner };
   const page = await handleBuilderRoutes(get(), {}, db, user, "a".repeat(64));
-  assert.match(await page.text(), /name="mode" value="ann"/);
+  assert.equal(page.status,303);
+  assert.equal(page.headers.get("location"),`/stores/${id}/build/ann`);
+  assert.equal((await handleBuilderRoutes(get("/standard"),{},db,user,"a".repeat(64))).headers.get("location"),`/stores/${id}/build/ann`);
   assert.equal(db.state.writes, 0);
   const selected = await handleBuilderRoutes(post(), {}, db, user, "a".repeat(64));
   assert.equal(selected.status, 303);
@@ -58,10 +60,11 @@ test("Ann route renders saved-planning interface without writes, supports HEAD a
     if (role === "editor") assert.equal((await handleBuilderRoutes(post(), {}, db, user, "a".repeat(64))).status, 403);
   }
 });
-test("Ann missing migration offers Standard Builder and rejects preference writes", async () => {
+test("Ann missing migration preserves the editor without offering a second builder", async () => {
   const db = database({ ready: false }), user = { id: owner };
   const html = await (await handleBuilderRoutes(get("/ann"), {}, db, user, "a".repeat(64))).text();
-  assert.match(html, /Standard Builder/);
+  assert.doesNotMatch(html, /Standard Builder/);
+  assert.match(html,/Open theme editor/);
   assert.match(html, /Stage 3 migration/);
   assert.doesNotMatch(html, /name="mode" value="ann"/);
   assert.equal((await handleBuilderRoutes(post(), {}, db, user, "a".repeat(64))).status, 503);
