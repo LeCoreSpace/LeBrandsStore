@@ -306,19 +306,23 @@ const clean = v => String(v ?? "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ")
 const LABEL = t => t.replace(/-/g, " ").replace(/^./, c => c.toUpperCase());
 /** Optional sections chosen in Ann, rendered from the projected (niche-aware) layout sections. */
 function extras(x, data) {
-  const chosen = data.showcase_options?.[x.page];
+  const chosen = data.settings?.ann_design?.plan?.section_options?.[x.page] ?? data.showcase_options?.[x.page];
   if (!Array.isArray(chosen) || !EXTRA_PAGES[x.page]) return "";
   return chosen.filter(t => EXTRA_PAGES[x.page].includes(t)).map((type, k) => {
-    const sec = (data.layouts?.[x.page] || []).find(i => i.type === type && !i.hidden);
-    if (!sec) return "";
+    const sec = (data.layouts?.[x.page] || []).find(i => i.type === type && !i.hidden) || {};
     const st = sec.settings || {};
     const title = clean(st.title || st.heading || st.kicker) || LABEL(type);
     // Reviews and trust marks are never invented for a demo.
-    if (type === "reviews" || type === "trust") return `<section class="sc-extra"><h2 ${rv(k)}>${esc(title)}</h2><p>${type === "reviews" ? "Customer reviews appear here once your store has real ones." : "Add your verified details here when you build the store."}</p></section>`;
+    if (type === "reviews" || type === "trust") return `<section class="sc-extra" data-section-type="${type}"><h2 ${rv(k)}>${esc(title)}</h2><p>${type === "reviews" ? "Customer reviews appear here once your store has real ones." : "Add your verified details here when you build the store."}</p></section>`;
     const body = clean(st.text || st.body || st.description || st.content);
     const items = (sec.blocks || []).map(b => { const t = b.settings || b; return [clean(t.title || t.question || t.name || t.label), clean(t.text || t.answer || t.description || t.value || t.body)]; }).filter(([a, c]) => a || c).slice(0, 6);
-    if (!body && !items.length) return "";
-    return `<section class="sc-extra"><h2 ${rv(k)}>${esc(title)}</h2>${body ? `<p ${rv(k)}>${esc(body)}</p>` : ""}${items.length ? `<ul>${items.map(([a, c], i) => `<li ${rv(i)}>${a ? `<b>${esc(a)}</b>` : ""}${c ? `<span>${esc(c)}</span>` : ""}</li>`).join("")}</ul>` : ""}</section>`;
+    const fallback = type === "statement" ? x.copy.statement :
+      type === "founder" ? x.copy.story?.[0] :
+      type === "lookbook" ? "Explore the collection through a different lens." :
+      `Add your own ${LABEL(type).toLowerCase()} details here.`;
+    const text = body || (!items.length ? fallback : "");
+    const photo = type === "lookbook" ? `<figure style="max-width:780px;aspect-ratio:3/2;overflow:hidden;margin:24px 0">${img(x.media.lifestyle || x.media.hero, undefined, "lifestyle")}</figure>` : "";
+    return `<section class="sc-extra" data-section-type="${type}"><h2 ${rv(k)}>${esc(title)}</h2>${photo}${text ? `<p ${rv(k)}>${esc(text)}</p>` : ""}${items.length ? `<ul>${items.map(([a, c], i) => `<li ${rv(i)}>${a ? `<b>${esc(a)}</b>` : ""}${c ? `<span>${esc(c)}</span>` : ""}</li>`).join("")}</ul>` : ""}</section>`;
   }).join("");
 }
 const BODY = { collection: collectionPage, product: productPage, cart: cartPage, checkout: checkoutPage, about: aboutPage, contact: contactPage };
@@ -486,6 +490,7 @@ export function renderDesignLive(data, settings, options, design) {
   LIVE = { edit: options.designEdit === true };
   try {
     let main = page === "home" ? HOME[style](x) : BODY[page](x);
+    main += extras(x, data);
     if (page === "home" && !products.length) main += '<section class="sc-sec"><p class="sc-empty">Products are being added. Check back soon.</p></section>';
     main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${kindOf(style)}"`)
       .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${kindOf(style)}"`);

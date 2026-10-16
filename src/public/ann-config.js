@@ -3,6 +3,13 @@ export const ANN_REFERENCE_VERSION = "ann-v1";
 export const ANN_STEPS = Object.freeze(["category","style","palette","fonts","collections","products","story","selling","business","policies","domain","payments","shipping","review"]);
 export const ANN_PALETTES = Object.freeze(["white","ivory","stone","midnight"]);
 export const ANN_FONTS = Object.freeze(["modern","serif","classic"]);
+export const ANN_SECTION_LABELS = Object.freeze({
+  statement:"Brand statement",lookbook:"Lookbook",craft:"Craft and materials",
+  founder:"Brand story",trust:"Trust and store details",reviews:"Customer reviews",
+  faq:"Frequently asked questions","collection-description":"Collection introduction",
+  "related-collections":"Related collections","material-care":"Materials and care",
+  "size-guide":"Size guide","how-to-use":"How to use",
+});
 export const ANN_EXTRA_SECTIONS = Object.freeze({
   home: ["statement","lookbook","craft","founder","trust","reviews","faq"],
   collection: ["collection-description","related-collections"],

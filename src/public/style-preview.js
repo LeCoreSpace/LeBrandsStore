@@ -62,7 +62,7 @@ export function renderStylePreview(data, settings, options = {}) {
       const mark=`<img class="sc-brand-logo" src="${esc(logo)}" alt="${esc(merged.brand_name || data.store?.name || "Brand logo")}" height="40">`;
       html=html.replace(/(<a class="sc-brand" href="\/">)[\s\S]*?(<\/a>)/g,(_,open,close)=>open+mark+close);
     }
-    return html.replace("</head>",`${logo?`<link rel="icon" href="${esc(logo)}">`:""}<style>html{overflow-y:scroll;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#777 #f1f1f1}html,body{min-height:100%}.sc-brand-logo{display:block;width:auto;height:auto;max-width:180px;max-height:52px;object-fit:contain}</style></head>`);
+    return html.replace("</head>",`${logo?`<link rel="icon" href="${esc(logo)}">`:""}<style>html{overflow-y:scroll;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#777 #f1f1f1}html,body{min-height:100%}.sc-brand-logo{display:block;width:auto;height:auto;max-width:180px;max-height:52px;object-fit:contain}${options.designEdit?'[data-design-copy],[data-design-image]{cursor:pointer}[data-design-copy]:hover,[data-design-image]:hover,[data-design-copy]:focus-visible,[data-design-image]:focus-visible{outline:2px dashed var(--acc,#661329);outline-offset:3px}[data-design-selected]{outline:2px solid var(--acc,#661329)!important;outline-offset:3px}':""}</style></head>`);
   };
   const showcase = renderShowcase(styled, merged, options);
   if (showcase) return finish(showcase);

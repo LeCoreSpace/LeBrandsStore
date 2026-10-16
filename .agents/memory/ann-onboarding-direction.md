@@ -90,11 +90,20 @@ without the merchant's acknowledgement.
 **How to apply:** Use the same projection for the pending preview and adoption,
 including category/subcategory settings as well as style, copy and creatives.
 An already-adopted design remains authoritative and must never be reseeded.
+Optional-section choices must come from the adopted design on every rendering
+surface, not just Ann's temporary conversation preview. Keep section identities
+stable when other sections are added or removed.
 Show any confirmation needed to unlock editing in full, not behind a collapsed
 control, and present editing tools only once the design is editable.
 
 **Why:** A hidden adoption prerequisite made the editor appear entirely broken
 to the merchant even though its save action was available.
+
+Direct text/photo selection must bring the selected editing field into view.
+State labels should make it clear whether canvas editing is on or off.
+
+**Why:** A field opening above the sidebar's scroll position, or an ambiguous
+toggle turning editing off, made direct selection look unresponsive.
 
 Catalogue confirmation must not also choose a theme, replace page content, or
 silently switch a sample preview to the merchant's products. Selecting real

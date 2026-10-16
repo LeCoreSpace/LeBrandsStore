@@ -110,6 +110,30 @@ test("pending theme editor exposes confirmation and unlocks edits after adopting
   } finally { h.close(); }
 });
 
+test("inline text and image selection opens their editors, including after editing was switched off",async()=>{
+  const h=harness({themeEditor:true});
+  try{
+    await tick();
+    const events=new Map();
+    const nodes=["title","hero"].map(key=>({
+      dataset:key==="title"?{designCopy:key}:{designImage:key},
+      setAttribute(){},removeAttribute(){},
+    }));
+    const doc={querySelectorAll:()=>nodes,addEventListener:(name,fn)=>events.set(name,fn)};
+    h.ui.bindPreview(doc);
+    for(const n of nodes){
+      events.get("click")({target:{closest:()=>n},preventDefault(){},stopImmediatePropagation(){}});
+      assert.match(h.el.innerHTML,n.dataset.designCopy?/data-design-input="title"/:/data-design-file/);
+    }
+    h.click("toggle");
+    assert.equal(h.ui.editing(),false);
+    h.ui.selectContent("copy","title");
+    assert.equal(h.ui.editing(),true);
+    assert.match(h.el.innerHTML,/data-design-input="title"/);
+    assert.equal(h.ui.canPublish(),true);
+  }finally{h.close();}
+});
+
 test("read-only Ann participants cannot adopt designs even if consent events are simulated", async () => {
   const h = harness({ saved: false, readOnly: true });
   try {

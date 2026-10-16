@@ -2,7 +2,7 @@ import {attachAnnDesign} from "./ann-design-ui.js";
 import {designPreviewData,renderStylePreview} from "./style-preview.js";
 import {designSections} from "./ann-section-layout.js";
 import {openAnnBrowserPreview,browserPreviewLocation} from "./ann-browser-preview.js";
-import {annPreviewConfiguration,ANN_EXTRA_SECTIONS} from "./ann-config.js";
+import {annPreviewConfiguration,ANN_EXTRA_SECTIONS,ANN_SECTION_LABELS} from "./ann-config.js";
 import {DESIGN_COPY_LIMITS,DESIGN_MEDIA_KEYS} from "./ann-design-model.js";
 import {attachAuraSearch,attachAuraCatalog} from "./aura-ui.js";
 import {attachStyleInteractions} from "./style-preview-interactions.js";
@@ -16,6 +16,11 @@ $("#ae-own").disabled=readOnly;
 const FIELD_LABELS={kicker:"Intro line",title:"Main headline",description:"Introduction",button:"Main button text",statement:"Brand statement",products:"Products heading",collections:"Collections heading",about:"About page heading",story0:"Story paragraph 1",story1:"Story paragraph 2",story2:"Story paragraph 3",footer:"Footer text",hero:"Main photo",lifestyle:"Lifestyle photo",collection0:"First collection photo",collection1:"Second collection photo"};
 const say=text=>{$("#ae-status").textContent=text;};
 let controller;
+let addedSection=null;
+function syncActions(){
+  $("#ae-save").disabled=!controller?.canSave();
+  $("#ae-publish").disabled=!controller?.canPublish();
+}
 const snapshot=()=>{
   const design=controller?.previewDesign()||source.settings.ann_design||initialDesign;
   const data=designPreviewData(source,design),theme=annPreviewConfiguration(plan,source.settings).theme;
@@ -23,6 +28,7 @@ const snapshot=()=>{
 };
 function controls() {
   const ready=controller?.active()===true;
+  syncActions();
   $("#ae-content").hidden=!ready;
   $("#ae-sections").hidden=!ready;
   $("#ae-own").disabled=readOnly||!ready;
@@ -34,7 +40,7 @@ function controls() {
     const x=map.get(id),hidden=cfg.hidden?.includes(id);
     return `<div class="ae-section"><span>${esc(x.label)}${hidden?" (removed)":""}</span><button data-ae-section="${id}" data-move="-1"${readOnly||x.required?" disabled":""}>Up</button><button data-ae-section="${id}" data-move="1"${readOnly||x.required?" disabled":""}>Down</button><button data-ae-section="${id}" data-toggle${readOnly||x.required?" disabled":""}>${hidden?"Restore":"Remove"}</button></div>`;
   }).join("")||'<p class="ae-muted">This page has a fixed shopping layout.</p>'}
-  ${(ANN_EXTRA_SECTIONS[page]||[]).length?`<fieldset><legend>Add optional sections</legend>${ANN_EXTRA_SECTIONS[page].map(type=>`<label><input type="checkbox" data-ae-extra="${type}"${plan.section_options?.[page]?.includes(type)?" checked":""}${readOnly?" disabled":""}> ${esc(type.replace(/-/g," "))}</label>`).join("")}</fieldset>`:""}`;
+  ${(ANN_EXTRA_SECTIONS[page]||[]).length?`<fieldset><legend>Add optional sections</legend>${ANN_EXTRA_SECTIONS[page].map(type=>`<label><input type="checkbox" data-ae-extra="${type}"${plan.section_options?.[page]?.includes(type)?" checked":""}${readOnly?" disabled":""}> ${esc(ANN_SECTION_LABELS[type]||type)}</label>`).join("")}</fieldset>`:""}`;
   if(!ready)for(const field of $("#ae-sections").querySelectorAll("button,input"))field.disabled=true;
 }
 function fit(){const area=frame.parentElement,w=device==="mobile"?390:1280,scale=Math.min(1,(area.clientWidth-24)/w);Object.assign(frame.style,{position:"absolute",width:`${w}px`,maxWidth:"none",height:`${Math.max(450,(area.clientHeight-24)/scale)}px`,transform:`scale(${scale})`,transformOrigin:"top left",left:`${Math.max(12,(area.clientWidth-w*scale)/2)}px`});area.style.position="relative";area.style.overflow="hidden";}
@@ -52,6 +58,8 @@ document.addEventListener("click",e=>{
   if(b.dataset.aeDevice){device=b.dataset.aeDevice;render();}
   if(b.id==="ae-browser"){const s=snapshot();openAnnBrowserPreview({data:s.data,theme:s.theme,...s.route,bag,device,storeName:source.settings.brand_name||source.store.name});}
   if(b.id==="ae-own"&&!readOnly)controller.requestCatalogue();
+  if(b.id==="ae-save"){const pending=controller.save();syncActions();void pending.finally(syncActions);}
+  if(b.id==="ae-publish"){void controller.publish();syncActions();}
   if(b.dataset.aeEdit)controller.selectContent(b.dataset.aeEdit,b.dataset.key);
   if(b.dataset.aeSection&&!readOnly) {
     const s=snapshot(),model=s.data.settings.ann_design,base=structuredClone(s.data);base.settings.ann_design.sections={};
@@ -64,13 +72,27 @@ document.addEventListener("click",e=>{
     controller.setSections(all);
   }
 });
+document.addEventListener("input",()=>queueMicrotask(syncActions));
+document.addEventListener("click",()=>queueMicrotask(syncActions));
 document.addEventListener("change",e=>{
   if(readOnly)return;const n=e.target;
-  if(n.dataset.aeExtra){plan.section_options||={};const values=new Set(plan.section_options[page]||[]);n.checked?values.add(n.dataset.aeExtra):values.delete(n.dataset.aeExtra);plan.section_options[page]=[...values];controller.planChanged();render();}
+  if(n.dataset.aeExtra){
+    plan.section_options||={};const values=new Set(plan.section_options[page]||[]);
+    n.checked?values.add(n.dataset.aeExtra):values.delete(n.dataset.aeExtra);
+    plan.section_options[page]=[...values];
+    if(n.checked){
+      addedSection=n.dataset.aeExtra;
+      const sections=structuredClone(controller.previewDesign()?.sections||{});
+      if(sections[page]?.hidden){sections[page].hidden=sections[page].hidden.filter(id=>id!==`slot-${n.dataset.aeExtra}-0`);controller.setSections(sections);}
+    }
+    say(`${ANN_SECTION_LABELS[n.dataset.aeExtra]||n.dataset.aeExtra} ${n.checked?"added to":"removed from"} this page. Save draft to keep this change.`);
+    controller.planChanged();render();
+  }
   if(n.dataset.aePlan){plan[n.dataset.aePlan]=n.value;controller.planChanged();render();}
 });
 frame.addEventListener("load",()=>{
   const doc=frame.contentDocument;if(!doc)return;controller.bindPreview(doc);
+  if(addedSection){doc.querySelector(`[data-section-type="${addedSection}"]`)?.scrollIntoView({behavior:"smooth",block:"start"});addedSection=null;}
   const s=snapshot(),go=r=>{page=r.page;productId=r.productId;collectionId=r.collectionId;policyKind=r.policyKind;render();};
   doc.addEventListener("submit",e=>e.preventDefault(),true);
   attachAuraSearch(doc,s.data);attachAuraCatalog(doc,s.data,s.route);

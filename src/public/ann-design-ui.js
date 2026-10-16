@@ -141,7 +141,14 @@ export function attachAnnDesign(o) {
   }
 
   /* ---------- editing ---------- */
-  function select(kind, key) { selected = { kind, key }; uploadNote = ""; paint(true); markSelected(); }
+  function select(kind, key) {
+    const wasEditing=editMode;editMode=true;
+    selected = { kind, key }; uploadNote = ""; paint(true); markSelected();
+    const panel=el.querySelector(".ann-design-edit");
+    panel?.scrollIntoView({block:"nearest",behavior:"smooth"});
+    panel?.querySelector("[data-design-input]")?.focus({preventScroll:true});
+    if(!wasEditing)o.onChange?.();
+  }
   function setCopy(key, value) {
     if (readOnly || !model) return;
     model.copy[key] = value.slice(0, DESIGN_COPY_LIMITS[key] || 2000);
@@ -235,7 +242,7 @@ export function attachAnnDesign(o) {
     return catalogueChoice + `<div class="ann-design-card">
       <div class="ann-design-head"><div><p class="ann-design-title">Your design: ${esc(styleName(model.style))}</p><p class="ann-note" data-design-state></p></div>
       <div class="ann-actions">
-        <button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>Edit on page</button>
+        <button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>${editMode?"Editing on":"Editing off"}</button>
         ${o.themeEditor?"":'<button type="button" class="ann-btn alt sm" data-design-act="theme">Open theme editor</button>'}
         <button type="button" class="ann-btn alt sm" data-design-act="save" data-design-save>Save draft</button>
         <button type="button" class="ann-btn sm" data-design-act="publish" data-design-publish>Review and publish</button></div></div>
@@ -315,6 +322,8 @@ export function attachAnnDesign(o) {
 
   return {
     active, editing, hasUnsavedChanges: () => dirty() || busy === "save" || busy === "use",
+    canSave:()=>!readOnly&&active()&&!busy&&!conflict&&(dirty()||Boolean(error)),
+    canPublish:()=>!readOnly&&active()&&!busy&&!conflict,
     requestCatalogue() { cataloguePrompt = true; catalogueAck = false; paint(true); el.scrollIntoView({ block: "nearest", behavior: "smooth" }); },
     save, publish, bindPreview, refresh: () => paint(), reload,
     /** Called by Ann when the plan answers change while a design is active. */

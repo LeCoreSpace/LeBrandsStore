@@ -30,7 +30,8 @@ test("editor restores a saved Ann plan without writes, then preserves the adopte
     assert.match(renderEditor({ ...original, role: "owner" }, user), /id="ed-preview"/);
     const answers = { style_preset: "boutique", category_id: 2, subcategory_id: 21,
       color_preset: "stone", font_preset: "serif", store_name: "Example Studio",
-      tagline: "A daily ritual", description: "Thoughtfully chosen everyday skincare." };
+      tagline: "A daily ritual", description: "Thoughtfully chosen everyday skincare.",
+      section_options: { home: ["lookbook"], product: ["size-guide"] } };
     await call("session", "PATCH", { expected_revision: 0, current_step: "style", answers });
     const before = await read(loadDraft);
     const pending = await read(loadEditorDraft);
@@ -40,6 +41,8 @@ test("editor restores a saved Ann plan without writes, then preserves the adopte
     const shell = renderEditor({ ...pending, role: "owner" }, user);
     assert.match(shell, /\/assets\/ann-theme-editor\.js/);
     assert.match(shell, /Your saved Ann plan is previewed here/);
+    assert.match(shell, /id="ae-save" disabled>Save draft/);
+    assert.match(shell, /id="ae-publish" disabled>Review and publish/);
     assert.doesNotMatch(shell, /\/assets\/editor\.js|Use Aura starter layout/);
     assert.deepEqual(await read(loadDraft), before, "Opening the editor cannot overwrite the draft");
     const state = await call("design", "GET");
@@ -49,6 +52,7 @@ test("editor restores a saved Ann plan without writes, then preserves the adopte
     const restored = await read(loadEditorDraft);
     assert.equal(restored.ann_design_pending, undefined);
     assert.deepEqual(restored.settings.ann_design, saved.design);
+    assert.deepEqual(restored.settings.ann_design.plan.section_options, answers.section_options);
     for (const page of ["home", "collection", "product", "cart", "checkout"]) {
       const html = draft => renderStylePreview(designPreviewData(draft, draft.settings.ann_design),
         annPreviewConfiguration(answers, draft.settings).theme, { page });
