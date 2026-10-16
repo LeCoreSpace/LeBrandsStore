@@ -31,6 +31,18 @@ The full requirements are not permission to build every described capability.
 **How to apply:** Keep later phases out of follow-up fixes unless requested.
 No deployment or migration execution is authorized by implementation work.
 
+Ann's end-to-end merchant flow must include domain connectivity, online payments
+and delivery/logistics connections as operational stages, not end at visual
+design and publication.
+
+**Why:** The user reminded us these were already agreed in earlier product
+phases when they were omitted from the Ann flow summary.
+
+**How to apply:** Carry those stages forward in flow explanations and subsequent
+implementation. Distinguish the agreed roadmap from working integrations;
+do not describe COD, manual shipping or an assigned subdomain as a connected
+payment gateway, logistics partner or custom domain.
+
 Production deploys must use only the root `wrangler.jsonc`. The second Wrangler
 config is for local preview only.
 
