@@ -108,7 +108,8 @@ export function renderHome() {
       <div class="m-hero-grid"></div><span class="m-orb m-orb-a"></span><span class="m-orb m-orb-b"></span>
       <svg class="m-hero-flow" viewBox="0 0 1200 700" preserveAspectRatio="xMidYMid slice" fill="none"><path class="m-flow m-flow-a" d="M-20 560 C220 470 330 640 560 520 S900 330 1220 400"/><path class="m-flow m-flow-b" d="M-20 180 C240 260 380 90 640 190 S980 330 1220 130"/></svg>
     </div>
-    <div class="m-hero-inner">
+    <div class="m-hero-stage" data-hero-stage>
+    <div class="m-hero-inner m-hero-front" data-hero-front>
       <div class="m-hero-copy">
         <p class="m-kicker">LeBrands.Store, live today</p>
         <h1 id="hero-title">A flagship store for your brand.</h1>
@@ -194,6 +195,7 @@ export function renderHome() {
         </div>
       </div>
       </div>
+    </div>
     </div>
     <span class="m-scroll-cue" aria-hidden="true">Scroll to explore <span></span></span>
   </section>

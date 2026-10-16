@@ -187,69 +187,117 @@
       if (line && sentence && line.textContent !== sentence) line.textContent = sentence;
       if (announce && live) live.textContent = (slides[current].getAttribute("aria-label") || "").replace(/^\d+ of \d+:\s*/, "") + `, ${current + 1} of ${slides.length}`;
     }
-    // Transition phases: rest, exit (current content flies out), then swap slide and headline, then enter (next content flies in).
-    // Exit and enter are gated by animationend on the scene root. animationcancel (class removed, hero offscreen, motion off) resolves to rest.
-    const scene = story.parentElement || null;
+    // Circular carousel: the whole scene (copy and preview, one front plane) turns on a ring. The next scene waits small and far behind.
+    // Phases: rest, then turn (class is-turning, data-hs-dir next|prev on the hero). The turn is gated by animationend of
+    // "m-hc-front-next" / "m-hc-front-prev" on [data-hero-front]; a timer of TURN_MS + 500 resolves it if no event arrives.
+    const TURN_MS = 4800;
+    const stage = heroEl.querySelector ? heroEl.querySelector("[data-hero-stage]") : null;
+    const front = stage ? stage.querySelector("[data-hero-front]") : null;
+    const lines = slides.map((slide) => slide.getAttribute("data-hs-line") || "");
+    let rear = null;
     let phase = "rest";
     let target = 0;
     let announceTarget = false;
+    let turnTimer = null;
     function canFly() {
-      return Boolean(scene) && !paused && !motionPreference.matches && !motionDisabled && !document.hidden &&
+      return Boolean(front) && !paused && !motionPreference.matches && !motionDisabled && !document.hidden &&
         heroEl.classList.contains("m-section-active");
     }
+    // Inert presentation clone: no ids, data hooks, live region, tab stops or extra slides; only the scene at `index` stays.
+    function buildRear(index) {
+      if (!front || !stage || !front.cloneNode) return;
+      if (!rear) {
+        rear = document.createElement("div");
+        rear.className = "m-hero-rear";
+        rear.setAttribute("aria-hidden", "true");
+        rear.setAttribute("inert", "");
+        stage.appendChild(rear);
+      }
+      const clone = front.cloneNode(true);
+      clone.classList.remove("m-hero-front");
+      for (const el of [clone, ...clone.querySelectorAll("*")]) {
+        el.removeAttribute("id");
+        el.removeAttribute("aria-live");
+        for (const name of el.getAttributeNames()) if (name.startsWith("data-")) el.removeAttribute(name);
+        if (el.tagName === "BUTTON") { el.setAttribute("tabindex", "-1"); el.disabled = true; }
+        if (el.tagName === "IMG") { el.setAttribute("loading", "lazy"); el.removeAttribute("fetchpriority"); }
+      }
+      for (const el of [...clone.querySelectorAll(".m-hs-live, .m-hs-notifications")]) el.remove();
+      [...clone.querySelectorAll(".m-hs-slide")].forEach((slide, n) => {
+        if (n !== index) { slide.remove(); return; }
+        slide.hidden = false;
+        slide.classList.add("is-active");
+        slide.removeAttribute("role");
+        slide.removeAttribute("aria-label");
+      });
+      [...clone.querySelectorAll(".m-hs-tab")].forEach((tab, n) => tab.setAttribute("aria-current", String(n === index)));
+      const hs = clone.querySelector(".m-hs");
+      if (hs) { hs.removeAttribute("role"); hs.removeAttribute("aria-label"); hs.removeAttribute("aria-roledescription"); }
+      const cloneLine = clone.querySelector(".m-hero-line");
+      if (cloneLine && lines[index]) cloneLine.textContent = lines[index];
+      const title = clone.querySelector("h1");
+      if (title) title.setAttribute("role", "presentation");
+      rear.replaceChildren(clone);
+      heroEl.setAttribute("data-hs-rear", String(index));
+    }
     function clearFlight() {
+      if (turnTimer !== null) window.clearTimeout(turnTimer);
+      turnTimer = null;
       phase = "rest";
-      heroEl.classList.remove("is-exit");
-      heroEl.classList.remove("is-enter");
-      heroEl.removeAttribute("data-hs-out");
-      heroEl.removeAttribute("data-hs-in");
+      heroEl.classList.remove("is-turning");
+      heroEl.removeAttribute("data-hs-dir");
+      heroEl.removeAttribute("data-hs-from");
+      heroEl.removeAttribute("data-hs-to");
+      heroEl.setAttribute("data-hs-phase", "rest");
+    }
+    function settle() {
+      show(current, false);
+      buildRear((current + 1) % slides.length);
     }
     function showNow(i, announce) {
       clearFlight();
       show(i, announce);
+      buildRear((current + 1) % slides.length);
     }
-    function beginEnter() {
-      heroEl.classList.remove("is-exit");
-      heroEl.removeAttribute("data-hs-out");
-      show(target, announceTarget);
-      phase = "enter";
-      heroEl.setAttribute("data-hs-in", String(current));
-      heroEl.classList.add("is-enter");
+    function finishTurn() {
+      if (phase !== "turn") return;
+      showNow(target, announceTarget);
     }
     function go(i, announce = true) {
       const index = (i + slides.length) % slides.length;
       if (phase === "rest" && index !== current && canFly()) {
+        const n = slides.length;
+        const dir = index === (current + 1) % n ? "next" : index === (current - 1 + n) % n ? "prev" : index > current ? "next" : "prev";
         target = index;
         announceTarget = announce;
-        phase = "exit";
-        heroEl.setAttribute("data-hs-out", String(current));
-        heroEl.classList.add("is-exit");
+        buildRear(index);
+        phase = "turn";
+        heroEl.setAttribute("data-hs-phase", "turn");
+        heroEl.setAttribute("data-hs-dir", dir);
+        heroEl.setAttribute("data-hs-from", String(current));
+        heroEl.setAttribute("data-hs-to", String(index));
+        heroEl.classList.add("is-turning");
+        turnTimer = window.setTimeout(finishTurn, TURN_MS + 500);
       } else {
         showNow(index, announce);
       }
     }
-    function onSceneEnd(event) {
-      if (event.target !== scene) return;
-      if (event.animationName === "m-hs-out" && phase === "exit") beginEnter();
-      else if (event.animationName === "m-hs-in" && phase === "enter") clearFlight();
-    }
-    function onSceneCancel(event) {
-      if (event.target !== scene) return;
-      if (event.animationName === "m-hs-out" && phase === "exit") showNow(target, announceTarget);
-      else if (event.animationName === "m-hs-in" && phase === "enter") clearFlight();
+    function onFrontEnd(event) {
+      if (event.target !== front) return;
+      if (/^m-hc-front-/.test(event.animationName || "")) finishTurn();
     }
     // Resolve interruptions independently of animationcancel, which browsers
     // may not deliver when the page or its motion settings change.
     function settleInterruptedFlight() {
-      if (phase !== "rest" && !canFly()) {
-        showNow(phase === "exit" ? target : current, phase === "exit" && announceTarget);
-      }
+      if (phase !== "rest" && !canFly()) showNow(target, announceTarget);
     }
     story.classList.add("is-enhanced");
     show(0, false);
-    if (scene) {
-      scene.addEventListener("animationend", onSceneEnd);
-      scene.addEventListener("animationcancel", onSceneCancel);
+    heroEl.setAttribute("data-hs-phase", "rest");
+    buildRear(1 % slides.length);
+    if (front) {
+      front.addEventListener("animationend", onFrontEnd);
+      front.addEventListener("animationcancel", onFrontEnd);
     }
     document.addEventListener?.("visibilitychange", settleInterruptedFlight);
     motionPreference.addEventListener?.("change", settleInterruptedFlight);
@@ -259,6 +307,8 @@
         attributeFilter: ["class"],
       });
     }
+    // Deterministic hook for tests: state() reads the carousel, go() starts a turn, finish() completes the current turn.
+    story.heroCarousel = { turnMs: TURN_MS, go, finish: finishTurn, settle, state: () => ({ phase, current, target, dir: heroEl.getAttribute("data-hs-dir") }) };
     const prev = story.querySelector("[data-hs-prev]");
     const next = story.querySelector("[data-hs-next]");
     if (prev) prev.addEventListener("click", () => go(current - 1));
@@ -271,7 +321,7 @@
       toggle.setAttribute("aria-label", paused ? "Play hero animation" : "Pause hero animation");
       toggle.textContent = paused ? "Play" : "Pause";
       if (root.classList) root.classList.toggle("m-fx-paused", paused);
-      if (paused && phase !== "rest") showNow(phase === "exit" ? target : current, announceTarget);
+      if (paused && phase !== "rest") showNow(target, announceTarget);
     });
     // The progress bar animation drives the story: it only runs while the hero is onscreen, the tab is visible and the user has not paused.
     story.addEventListener("animationend", (event) => {

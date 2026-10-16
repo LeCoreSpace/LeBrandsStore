@@ -69,19 +69,15 @@ as the story; label illustrative UI and future integrations honestly. Preserve
 the separate clothing concept and all operational screens. The hero's black
 background is an exception to the page's mode-dependent alternating bands.
 
-Keep the existing six-slide hero story, with coordinated fly-out and fly-in
-transitions for the left text and the entire realistic 3D dashboard, not rotating
-individual content panels. Its left side should use one short sentence
-synchronized to the active animation, rather than stacked explanatory paragraphs
-and feature chips.
+The hero's text and complete preview screen should travel together slowly along
+an oval path, left to right. The waiting scene belongs smaller and far toward the
+upper-left, not directly behind or overprinted on the current headline. Keep one
+short changing sentence on the left rather than explanatory paragraphs or chips.
 
-**Why:** The user confirmed "animation is nice .keep it" and said there was too
-much text on the left. They requested a changing line, a transparent hero logo
-and larger header menu text, then a realistic 3D dashboard look without replacing
-the animation. They then requested stronger flying and rotating entrances for
-every slide, making the entire hero a coordinated showcase. After content became
-obscured, they clarified that the left text and whole dashboard should appear and
-disappear with different transitions.
+**Why:** The user explicitly requested circular depth, then clarified an oval path
+and a separate upper-left waiting scene. This replaces earlier requests for
+different fly-in and fly-out effects. They also requested a transparent hero logo,
+larger header menu text and the realistic 3D dashboard appearance.
 
 **How to apply:** Preserve the visible SVG, slide and ambient motion when making
 future revisions. For Razorpay and logistics, use integration setup/contact
@@ -99,8 +95,8 @@ Keep them as individual animated slides following the discovery highlight.
 gradient. All intervening homepage sections are white in both modes, as requested
 in the user's later white-surface direction.
 
-The hero must lead with the fictional clothing storefront on desktop and mobile,
-then show the operational dashboards with the existing motion. Do not retain a
+The hero must lead with the fictional skincare storefront in Modern Boutique on
+desktop and mobile, then show the operational dashboards. Do not retain a
 separate brand-website showcase section or the hanging square decorative icons.
 
 **Why:** The user changed direction to show the store first inside the hero and
