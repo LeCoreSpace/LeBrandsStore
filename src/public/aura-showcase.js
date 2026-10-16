@@ -339,8 +339,13 @@ function themeOverrides(style, settings) {
   const display = { modern: '"Instrument Sans",system-ui,sans-serif', serif: '"Aura Editorial",Georgia,serif', classic: '"Aura Classic",Georgia,serif' }[font];
   const preset = ["white","ivory","stone","midnight"].includes(settings.color_preset) ? settings.color_preset : "white";
   const palette = { ivory: ["#f6f0e6","#29241e","#ebe3d4","#d7ccbb"], stone: ["#e9e8e4","#252723","#dddcd6","#c7c7c0"], midnight: ["#12151d","#eeeef2","#1b2030","#41485b"] }[preset];
+  // These three footers stay dark even when the page palette changes.
+  // Minimal stays white; the remaining footers use the palette's tint/ink pair.
+  const footerInk = ["editorial","architectural","vintage"].includes(style) ? "#ffffff"
+    : style === "minimal" ? "#131313" : "var(--ink)";
   const radius = { square: "2px", rounded: "6px", pill: "999px" }[settings.button_style];
   const overrides = [
+    `.sc .sc-ft{color:${footerInk}}.sc .sc-ft a,.sc .sc-ft .sc-brand,.sc .sc-ft p{color:inherit}.sc .sc-ft p{opacity:1;font-size:14px;line-height:1.65}.sc .sc-ft nav{font-size:14px}.sc .sc-ft nav a:hover,.sc .sc-ft nav a:focus-visible{text-decoration:underline;text-underline-offset:4px}.sc .sc-ft nav a:focus-visible{outline:2px solid currentColor;outline-offset:4px}`,
     accent ? `.sc{--acc:${accent};--acc-ink:${contrastColor(accent) || "#ffffff"}}.sc .sc-btn:not(.ghost):not(.text){color:var(--acc-ink)}` : "",
     font !== styleSettings(style).font_preset ? `.sc{--disp:${display};--body:"Instrument Sans",system-ui,sans-serif;--hw:400}` : "",
     palette ? `.sc{--paper:${palette[0]};--ink:${palette[1]};--tint:${palette[2]};--line:${palette[3]};background:var(--paper)}.sc .sc-hd,.sc .sc-searchbox,.sc .sc-menu,.sc .sc-tabbar,.sc .sc-form input,.sc .sc-form textarea{background:var(--paper);color:var(--ink)}` : "",

@@ -167,7 +167,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       const target = {
         "before-after": '[data-niche-section="before-after"]',
         bundle: ".sc-bundle", reviews: ".sc-reviews", ugc: ".sc-ugcs",
-        guide: "[data-niche-profile]",
+        guide: "[data-niche-profile]", footer: ".sc-ft",
       }[url.searchParams.get("section")];
       if (typeof target === "string") html = html.replace("</body>", `<script>
         document.getElementById("ann-preview").addEventListener("load",()=>setTimeout(()=>{

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { SHOWCASE_MEDIA, SHOWCASE_MEDIA_PREFIX } from "../src/public/aura-showcase-assets.js";
-import { showcaseCatalogue } from "../src/public/aura-showcase.js";
+import { showcaseCatalogue, SHOWCASE_STYLES } from "../src/public/aura-showcase.js";
 import { stylePreviewData, renderStylePreview } from "../src/public/style-preview.js";
 import { styleDemonstration } from "../src/public/style-demo-copy.js";
 import { styleSettings } from "../src/public/aura-styles.js";
@@ -12,6 +12,20 @@ const fixture = () => ({
   store: { store_id: "11111111-1111-4111-8111-111111111111", name: "Example Studio" },
   settings: { brand_name: "Example Studio", category: "fashion", subcategory: "mens-clothing" },
   products: [], collections: [], layouts: {}, policies: [], reviews: [],
+});
+
+test("footer contrast stays scoped and readable across all styles and light/dark palettes",()=>{
+  const data=stylePreviewData(fixture(),{showcase:true});
+  for(const style of SHOWCASE_STYLES)for(const color_preset of ["white","ivory","stone","midnight"]){
+    const html=renderStylePreview(data,{...styleSettings(style),color_preset},{page:"contact"});
+    const ink=["editorial","architectural","vintage"].includes(style)?"#ffffff":style==="minimal"?"#131313":"var(--ink)";
+    assert.ok(html.includes(`.sc .sc-ft{color:${ink}}`),`${style}/${color_preset}: footer needs its own foreground`);
+    assert.ok(html.includes(".sc .sc-ft a,.sc .sc-ft .sc-brand,.sc .sc-ft p{color:inherit}"),
+      "navigation and wordmarks must not pick up dark header/accent colours");
+    assert.ok(html.includes(".sc .sc-ft p{opacity:1;font-size:14px;line-height:1.65}"));
+    assert.ok(html.includes(".sc .sc-ft nav a:focus-visible{outline:2px solid currentColor;outline-offset:4px}"));
+    assert.match(html,/<nav aria-label="Footer">/);
+  }
 });
 
 test("five complete content packs can be reused without changing the comparison catalogue", () => {
