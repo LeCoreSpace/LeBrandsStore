@@ -76,7 +76,7 @@ export function publishChecklist(data) {
   const products = data.products ?? [], policies = data.policies ?? [];
   return [
     { label: "Brand basics and contact details complete", complete: Object.keys(validateBasics(data.settings)).length === 0 && data.settings.subdomain === data.store?.subdomain },
-    { label: "Aura theme configured", complete: Object.keys(validateTheme(data.settings)).length === 0 },
+    { label: "Store design ready", complete: Object.keys(validateTheme(data.settings)).length === 0 },
     ...(data.settings?.ann_design?.catalogue_mode==="sample"?[{label:"Select your real products instead of the sample catalogue before publishing",complete:false}]:[]),
     { label: "At least one complete product", complete: products.length > 0 && products.every((p) => !Object.keys(validateProduct(p)).length) },
     { label: "All six policy drafts generated and reviewed", complete: POLICY_KINDS.every((kind) => policies.some((p) => p.kind === kind && p.reviewed === true && length(p.body) >= 30)) },

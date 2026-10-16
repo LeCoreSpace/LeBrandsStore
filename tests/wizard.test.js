@@ -61,6 +61,13 @@ test("wizard basics, theme and product rules match requested boundaries", () => 
   assert.ok(validateProduct({ ...product, gst_rate: 99 }).gst_rate);
   assert.ok(validateProduct({ ...product, tags: Array(11).fill("tag") }).tags);
 });
+test("publication checklist uses merchant-facing design wording without changing validation", () => {
+  const data = fixture();
+  const design = publishChecklist(data).find(item => item.label === "Store design ready");
+  assert.ok(design);
+  assert.equal(design.complete, Object.keys(validateTheme(data.settings)).length === 0);
+  assert.ok(publishChecklist(data).every(item => !/aura/i.test(item.label)));
+});
 test("publish requires every product and every generated policy to be reviewed", () => {
   const data = fixture();
   assert.equal(publishChecklist(data).at(-1).complete, false);
