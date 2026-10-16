@@ -9,6 +9,7 @@ import { attachAuraMotion } from "./aura-motion.js";
 import { attachAnnApplication } from "./ann-application-ui.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { attachAnnLaunch } from "./ann-launch-ui.js";
+import { openAnnBrowserPreview } from "./ann-browser-preview.js";
 import { prefilledSection } from "./aura-starters.js";
 import { initialAnswers, diffAnswers, changeCategory, changeSubcategory, nextKey, planProblems, projectAnnPreview, currentExtras, annAnsweredStages } from "./ann-projection.js";
 
@@ -70,6 +71,11 @@ const launchUI = attachAnnLaunch({api,readOnly,onSaved:()=>say("Your connection 
 const extrasNow = currentExtras(base.layouts);
 const bag = new Map((base.products || []).slice(0, 2).map(p => [p.id, 1]));
 const frame = $("#ann-preview"), canvas = $("#ann-canvas"), log = $("#ann-log"), foot = $("#ann-foot"), statusEl = $("#ann-status");
+$("#ann-open-browser")?.addEventListener("click",()=>{
+  renderPreview();
+  if(!openAnnBrowserPreview({data:current,theme:config().theme,page,productId,collectionId,policyKind,device:canvas.dataset.device,bag}))
+    say("Please allow pop-ups for this site, then choose Open browser preview again.");
+});
 const app = $("#ann-app");
 const say = t => { statusEl.textContent = t; };
 const config = () => annPreviewConfiguration(answers, { ...boot.settings, ...(boot.sessionResponse?.preview?.theme || {}) });
@@ -228,8 +234,9 @@ const valName = v => v.label || v.name || v.value || `Option ${v.id}`;
 /* ---------- conversation ---------- */
 const reduce = () => !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 const dis = readOnly ? " disabled" : "";
-const bubble = (html, cls = "") => `<div class="ann-msg ${cls}"><span class="ann-av" aria-hidden="true">A</span><div class="ann-bubble">${html}</div></div>`;
-const annBubble = (text, cls = "", attrs = "") => `<div class="ann-msg ${cls}"${attrs}><span class="ann-av" aria-hidden="true">A</span><div class="ann-bubble"><p>${esc(text)}</p></div></div>`;
+const annContent = html => `<span class="ann-av" aria-hidden="true">A</span><div class="ann-message-content"><span class="ann-speaker">Ann</span><div class="ann-bubble">${html}</div></div>`;
+const bubble = (html, cls = "") => `<div class="ann-msg ${cls}">${annContent(html)}</div>`;
+const annBubble = (text, cls = "", attrs = "") => `<div class="ann-msg ${cls}"${attrs}>${annContent(`<p>${esc(text)}</p>`)}</div>`;
 const CHECK = `<svg viewBox="0 0 12 12" width="10" height="10" aria-hidden="true"><path d="M2 6.5l2.6 2.5L10 3.2" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>`;
 
 const feeds = {};
@@ -302,7 +309,7 @@ function def(p) {
 }
 
 const listHtml = d => `<ul class="ann-items">${d.items.map(([it, i]) => `<li><span class="ann-it">${esc(it.name || "Untitled")}${it.description ? `<small>${esc(it.description)}</small>` : ""}</span><span class="ann-item-actions"><button type="button" class="ann-link" data-edit-item="${d.list}:${i}:name"${dis}>Rename</button><button type="button" class="ann-link" data-edit-item="${d.list}:${i}:description"${dis}>${it.description ? "Edit note" : "Add note"}</button><button type="button" class="ann-link" data-del-${d.list}="${i}"${dis}>Remove</button></span></li>`).join("")}</ul>`;
-const meBubble = (html, btn = "") => `<div class="ann-msg me">${btn}<div class="ann-bubble">${html}</div></div>`;
+const meBubble = (html, btn = "") => `<div class="ann-msg me">${btn}<div class="ann-message-content"><span class="ann-speaker">${esc(answers.store_name?.trim() || boot.store.name?.trim() || boot.speakerName || "You")}</span><div class="ann-bubble">${html}</div></div></div>`;
 const feedHtml = f => `<p class="ann-feed" data-state="${f.done ? "done" : "pending"}"><span class="ann-dot" aria-hidden="true"></span><span class="ann-feed-t">${esc(f.text)}</span><span class="ann-feed-s">${f.done ? "Preview updated" : "Updating preview"}</span><button type="button" class="ann-link ann-see" data-view-switch="canvas">See preview</button></p>`;
 const feed = (id, text) => { feeds[id] = { text, done: false }; };
 const item = () => editing && (editing.kind === "col" ? answers.collections : answers.product_ideas)?.[editing.i];

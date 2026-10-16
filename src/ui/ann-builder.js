@@ -11,6 +11,7 @@ export function renderAnnBuilder(data = {}, user = null, options = {}) {
   // Explicit allow-list: no tokens or secrets reach the browser.
   const payload = {
     store: { store_id: store.store_id, name: store.name },
+    speakerName: store.name || user?.username || user?.name || "You",
     settings, products: data.products || [], collections: data.collections || [], layouts: data.layouts || {},
     policies: data.policies || [], reviews: data.reviews || [],
     aura_skeleton_enabled: data.aura_skeleton_enabled === true, aura_starter_enabled: data.aura_starter_enabled === true,
@@ -41,6 +42,7 @@ ${accountHeader(user)}
       <div class="ann-bar">
         <div class="ann-styles" id="ann-style-tabs" role="group" aria-label="Preview style"></div>
         <div class="ann-device" role="group" aria-label="Preview viewport"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div>
+        <button type="button" class="ann-btn alt sm" id="ann-open-browser">Open browser preview</button>
       </div>
       <div class="ann-pages" role="group" aria-label="Preview content">
         <button type="button" class="ann-tab" data-preview-mode="showcase" aria-pressed="true">Style showcase</button>
