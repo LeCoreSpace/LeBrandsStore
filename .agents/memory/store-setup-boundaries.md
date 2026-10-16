@@ -43,6 +43,16 @@ implementation. Distinguish the agreed roadmap from working integrations;
 do not describe COD, manual shipping or an assigned subdomain as a connected
 payment gateway, logistics partner or custom domain.
 
+Keep those provider connections optional: merchants may launch with the included
+subdomain, COD and manual fulfilment, then connect providers later.
+
+**Why:** The user approved that Ann launch path rather than requiring every
+external account to be ready before the merchant can open.
+
+**How to apply:** Preserve the existing mandatory business, catalogue, policy,
+GST and platform checks. Do not turn optional connection choices into mandatory
+publication blockers or treat credential verification as payment/shipping activation.
+
 Production deploys must use only the root `wrangler.jsonc`. The second Wrangler
 config is for local preview only.
 

@@ -24,7 +24,7 @@ ${accountHeader(user)}
 <main class="ann" id="ann-app" data-view="chat">
   <header class="ann-top">
     <div><p class="ann-eyebrow">Ann, store planning</p><h1>Plan ${esc(store.name || "your store")} in one conversation</h1></div>
-    <nav class="ann-links" aria-label="Store builder"><a href="${root}/build">Builder</a><a href="${root}/setup">Setup</a><a href="${root}/editor">Editor</a></nav>
+    <nav class="ann-links" aria-label="Store builder"><a href="${root}/build">Builder</a><a href="${root}/setup">Setup</a><a href="${root}/editor">Editor</a><a href="${root}/build/ann?launch=1">Store connections</a></nav>
   </header>
   <div class="ann-switch" role="group" aria-label="Show">
     <button type="button" data-view-switch="chat" aria-pressed="true">Conversation</button>

@@ -8,6 +8,7 @@ import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
 import { attachAuraMotion } from "./aura-motion.js";
 import { attachAnnApplication } from "./ann-application-ui.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
+import { attachAnnLaunch } from "./ann-launch-ui.js";
 import { prefilledSection } from "./aura-starters.js";
 import { initialAnswers, diffAnswers, changeCategory, changeSubcategory, nextKey, planProblems, projectAnnPreview, currentExtras, annAnsweredStages } from "./ann-projection.js";
 
@@ -36,7 +37,8 @@ let revision = session?.revision ?? 0;
 let saved = structuredClone(session?.answers || {});
 let answers = structuredClone(saved);
 if (!session) answers = { ...initialAnswers(boot.settings, boot.store, ref || {}), ...answers };
-let step = UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "category";
+let step = new URL(location.href).searchParams.get("launch") === "1" ? "review" :
+  UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "category";
 let touched = false, saving = false, conflict = false, notice = "", page = "product", productId, collectionId, policyKind;
 let queue = Promise.resolve(), lastSavedAt = session ? "Saved plan restored." : "";
 const notes = [];
@@ -59,6 +61,7 @@ const applicationUI = attachAnnApplication({ api, root, readOnly,
 const readinessUI = attachAnnReadiness({api,root,readOnly,
   onSaved:result=>{if(result.draft){setPreviewMode("store", result.draft);renderPreview(false);}},
 });
+const launchUI = attachAnnLaunch({api,readOnly,onSaved:()=>say("Your connection setup is saved. Your live checkout and shipping have not changed.")});
 const extrasNow = currentExtras(base.layouts);
 const bag = new Map((base.products || []).slice(0, 2).map(p => [p.id, 1]));
 const frame = $("#ann-preview"), canvas = $("#ann-canvas"), log = $("#ann-log"), foot = $("#ann-foot"), statusEl = $("#ann-status");
@@ -435,7 +438,7 @@ function draw(mode = "keep") {
   const y = log.scrollTop;
   const markup = timeline() + (detail && DETAIL_STEPS.includes(step) ? detailHtml() : "");
   if (markup !== logMarkup) { log.innerHTML = markup; logMarkup = markup; }
-  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount();
+  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); launchUI.mount();
   if (mode === "active") scrollActive(); else log.scrollTop = y;
 }
 const drawKeep = () => draw("keep");
@@ -568,7 +571,8 @@ function reviewStep() {
       <p class="ann-note">${dirty ? "You have unsaved changes." : designUI?.active() ? "Design saved to draft." : session ? "Your plan is saved." : "Not saved yet."}</p>`, "ann-card") +
     bubble(`<h2>Your next step, at your pace</h2><p>There is no need to finish everything now. Open either step below when you are ready. Your products, business details and the checks for opening your store stay separate, so you can review each before saving.</p>`, "ann-card") +
     `<details class="ann-review-step"><summary>Make it yours: business details and products</summary><section class="ann-card" id="ann-application-slot"></section></details>
-    <details class="ann-review-step"><summary>When you are ready: getting your store ready to open</summary><section class="ann-card" id="ann-readiness-slot"></section></details>`;
+    <details class="ann-review-step"><summary>When you are ready: getting your store ready to open</summary><section class="ann-card" id="ann-readiness-slot"></section></details>
+    <details class="ann-review-step" id="ann-launch-panel" open><summary>Your address, payments and delivery</summary><section class="ann-card" id="ann-launch-slot"></section></details>`;
 }
 
 
@@ -732,7 +736,7 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || launchUI.hasUnsavedChanges() || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
 if ((window.innerWidth || 1280) < 700) { canvas.dataset.device = "mobile"; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.device === "mobile"))); }

@@ -190,3 +190,16 @@
 .ann-log{min-height:0}
 @media(max-width:900px){.ann-inline{margin-left:0}.ann-hint{display:none}}
 @media(prefers-reduced-motion:reduce){.ann-inline{animation:none}}
+
+/* Launch setup */
+.ann-launch-step{margin:0 0 10px}.ann-launch-step h3{font:700 12px var(--sans);margin:12px 0 6px}
+.ann-launch-st{display:block;font:400 12px var(--sans);color:var(--muted)}
+.ann-launch-dns{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:6px;font-size:12px}
+.ann-launch-dns code{overflow-wrap:anywhere}
+.ann-launch-step .ann-field input{min-height:40px}
+@media(max-width:900px){
+  /* Wrapped style tabs and the consent card must not consume the iframe's
+     entire flex height. Let the stage scroll with the page on small screens. */
+  .ann-stage{height:auto}
+  .ann-stage .ann-canvas{flex:0 0 65dvh;min-height:420px}
+}

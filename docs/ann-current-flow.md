@@ -44,3 +44,40 @@ No catalogue deletion, design reset, database write or live publication change
 is required. After deployment, reopening Ann starts with samples instead of
 automatically restoring the old product photo. The saved design and real products
 remain available behind the explicit product-source choice.
+
+## Optional operational setup
+
+Ann Review now contains three separate, collapsible launch steps. They are also
+reachable through **Store connections** in Ann and dashboard settings.
+
+1. **Where should customers find your store?** Keep the included subdomain or add
+   a custom subdomain, receive CNAME/TXT instructions, check actual Cloudflare SSL
+   and DNS state, then explicitly activate. A root/apex domain is not supported.
+2. **How would you like to get paid?** Keep COD or verify a merchant-owned Razorpay
+   account. Test/live mode is inferred from the key ID, not an editable label.
+3. **How will you send your orders?** Keep manual fulfilment or verify a
+   merchant-owned Shiprocket API user and pickup-location access.
+
+These setup preferences save separately from the design and catalogue. Only the
+owner can write connections. Credential inputs stay in memory, never in chat,
+URLs or browser storage, and are encrypted in the database. Status responses
+exclude all credentials and remote customer/order/address data. Revision guards
+prevent stale tabs overwriting newer setup. Failed provider checks leave the
+saved connection unchanged. Disconnect explicitly removes saved credentials.
+
+### What is not activated by verification
+
+This release is the connection/setup stage, not the payment/shipping execution
+stage. Razorpay API authentication does **not** prove KYC, approved checkout
+domains, a working webhook or a successful live payment. Shiprocket
+authentication does **not** enable serviceability checks, shipment booking, AWB
+assignment or tracking sync. The UI explicitly says that online checkout and
+automatic shipping are not enabled, even after verification.
+
+COD checkout and manual fulfilment remain the working launch path. They still
+need their existing checkout settings, policies, catalogue, GSTIN and platform
+approval. No optional connection is added to mandatory publication checks.
+There is no domain purchase, Razorpay OAuth, Domain Connect or automatic billing.
+
+See [launch setup operations](ann-launch-setup.md) for migration, configuration,
+limitations and remaining activation work.

@@ -160,7 +160,7 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     const allDone = chk.length > 0 && chk.every(c => c.complete);
     const host = st.subdomain ? `Your assigned store subdomain is ${esc(st.subdomain)}.` : "Your store host is not assigned yet.";
     const reqDiff = st.requested_subdomain && st.requested_subdomain !== st.subdomain ? ` You requested ${esc(st.requested_subdomain)}, which is saved as a request but is not the live host.` : "";
-    const statusLine = `<p class="ann-note">Store status: ${esc(st.status || "unknown")}. ${host}${reqDiff} Custom domains are not connected here.${st.approval_enabled ? ` Platform review: ${esc(st.approval_status || "not requested")}.` : ""}</p>`;
+    const statusLine = `<p class="ann-note">Store status: ${esc(st.status || "unknown")}. ${host}${reqDiff} Optional domain setup is in <a href="${root}/build/ann?launch=1">Store connections</a>.${st.approval_enabled ? ` Platform review: ${esc(st.approval_status || "not requested")}.` : ""}</p>`;
     const lockNote = lockedOn() ? `<p class="ann-callout" id="rd-lock-note">Legal name, trade name, address, state and GSTIN come from your verified supplier record and cannot be edited here. Change them in <a href="${root}/setup">setup</a>.</p>` : `<p class="ann-note" id="rd-lock-note">Address availability, GST verification and uploads are handled in <a href="${root}/setup">setup</a>.</p>`;
     const L = k => lockedOn() && LOCKED.includes(k);
     const f = (k, o = {}) => field(`biz-${k}`, BIZ_LABELS[k], biz[k], { attr: `data-rd-biz="${k}"`, error: errs[k], locked: L(k), ...o });
@@ -184,7 +184,7 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
       ${mode === "free_above" ? field("co-free", "Free above (INR)", co.free_above, { attr: 'data-rd-co="free_above"', mode: "decimal", locked: !canEdit }) : ""}
       <label class="ann-check"><input type="checkbox" data-rd-key="co-cod" data-rd-co="cod_enabled"${co.cod_enabled ? " checked" : ""}${dis(!canEdit)}><span>Accept cash on delivery</span></label>
       ${co.cod_enabled ? field("co-codmax", "Largest COD order (INR, above zero)", co.cod_max, { attr: 'data-rd-co="cod_max"', mode: "decimal", locked: !canEdit }) : ""}
-      <p class="ann-note">Cash on delivery is the only payment method configured here. No online payment gateway is connected.</p>
+      <p class="ann-note">This checkout supports Cash on Delivery. Verify optional provider accounts in <a href="${root}/build/ann?launch=1">Store connections</a>. Account verification does not enable online checkout.</p>
        ${field("co-state", "Store state for tax", co.store_state, { attr: 'data-rd-co="store_state"', state:true, locked: !canEdit })}
       <label class="ann-check"><input type="checkbox" data-rd-key="ack-co" data-rd-ack="co"${ackCo ? " checked" : ""}${dis(!canEdit || !cd)}><span>I understand these shipping and COD changes go live for customers as soon as I save.</span></label>
       ${msg("checkout")}

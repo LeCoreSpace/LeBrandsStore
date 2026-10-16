@@ -115,13 +115,13 @@ function overview(data) {
   const period = Number(data.filters?.period) === 7 ? 7 : 30;
   const checks = [
     ["Products", catalogProducts.length ? "Catalogue is ready" : "Add your first product", catalogProducts.length ? "Done" : "Add product", catalogProducts.length > 0],
-    ["Payments", "Payment-provider integrations are not configured", "Not configured", false],
-    ["Shipping", "Courier integrations are not configured", "Not configured", false],
-    ["Domain", "Custom domain setup is not available here", "Not configured", false],
+    ["Payments", "Review COD and optional provider setup in Ann", "Store connections", false],
+    ["Shipping", "Review manual delivery and optional provider setup in Ann", "Store connections", false],
+    ["Domain", "Keep your included address or set up a custom domain in Ann", "Store connections", false],
     ["Policies", "Review store policies in setup", "Review policies", false],
   ];
   const setupDone = checks.filter(item => item[3]).length;
-  const setup = `<div class="lb-setup-progress"><span>${setupDone} of ${checks.length} steps complete</span><div role="progressbar" aria-label="Store setup progress" aria-valuemin="0" aria-valuemax="${checks.length}" aria-valuenow="${setupDone}"><i style="width:${setupDone / checks.length * 100}%"></i></div></div><div class="lb-checklist">${checks.map(([label, text, action, done]) => `<div class="lb-check-row"><span class="lb-check-dot ${done ? "" : "is-pending"}" aria-hidden="true"></span><div><strong>${esc(label)}</strong><small>${esc(text)}</small></div>${action === "Add product" ? `<a href="/stores/${storeId}/products/new">${action}</a>` : action === "Review policies" ? `<a href="/stores/${storeId}/setup">${action}</a>` : `<span class="lb-coming" ${action === "Not configured" ? 'aria-disabled="true"' : ""}>${esc(action)}</span>`}</div>`).join("")}</div>`;
+  const setup = `<div class="lb-setup-progress"><span>${setupDone} of ${checks.length} steps complete</span><div role="progressbar" aria-label="Store setup progress" aria-valuemin="0" aria-valuemax="${checks.length}" aria-valuenow="${setupDone}"><i style="width:${setupDone / checks.length * 100}%"></i></div></div><div class="lb-checklist">${checks.map(([label, text, action, done]) => `<div class="lb-check-row"><span class="lb-check-dot ${done ? "" : "is-pending"}" aria-hidden="true"></span><div><strong>${esc(label)}</strong><small>${esc(text)}</small></div>${action === "Add product" ? `<a href="/stores/${storeId}/products/new">${action}</a>` : action === "Review policies" ? `<a href="/stores/${storeId}/setup">${action}</a>` : action === "Store connections" ? `<a href="/stores/${storeId}/build/ann?launch=1">Open</a>` : `<span class="lb-coming" ${action === "Not configured" ? 'aria-disabled="true"' : ""}>${esc(action)}</span>`}</div>`).join("")}</div>`;
   const soldTop = top.filter(p => Number(p.quantity || 0) > 0);
   const sourced = sources.filter(s => Number(s.orders || 0) > 0);
   const rankRows = soldTop.length ? soldTop.slice(0, 5).map((p, i) => `<div class="lb-rank-row"><span class="lb-rank">${String(i + 1).padStart(2, "0")}</span><strong>${esc(p.title || "Untitled product")}</strong><span>${Number(p.quantity || 0)} sold</span><b>${money(p.revenue_paise)}</b></div>`).join("") : `<div class="lb-inline-empty">${top.length ? "No product sales in this period." : catalogProducts.length ? "Product sales will appear after orders are placed." : `Add a product before sales can be ranked. <a href="/stores/${storeId}/products/new">Add a product</a>.`}</div>`;
@@ -329,7 +329,7 @@ function settingsPage(data) {
   return `${pageHeading("", "Settings", "",`<button class="lb-button" type="submit" form="lb-business-form" ${["owner","admin"].includes(data.role)?"":"disabled"}>Save business details</button>`)}${actionError(data)}
     <div class="lb-settings-layout"><nav class="lb-settings-index" aria-label="Settings sections">
       <a href="#store-details">Store details</a><a href="#business-gst">Business &amp; GST</a><a href="#policies">Policies</a>
-      <a href="${`/stores/${id}/settings/checkout`}">Checkout</a><span>Payments <small>Unavailable</small></span><span>Shipping <small>Unavailable</small></span><span>Domains <small>Unavailable</small></span><span>Users <small>Unavailable</small></span>
+      <a href="${`/stores/${id}/settings/checkout`}">Checkout</a><a href="/stores/${id}/build/ann?launch=1">Store connections</a><span>Users <small>Unavailable</small></span>
     </nav><div class="lb-settings-panels">
       <div id="store-details">${card("Store details", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Store address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status === "awaiting_approval" ? "Awaiting approval" : store.status || "Setup in progress")}</dd></div><div><dt>Store setup</dt><dd><a class="lb-inline-link" href="/stores/${id}/setup">Open store setup</a></dd></div></dl>`)}</div>
       <div id="business-gst">${card("Business & GST", taxForm)}</div>
@@ -337,7 +337,7 @@ function settingsPage(data) {
       ${card("Checkout", `<p>Checkout and delivery settings are available in the existing checkout settings screen.</p><div class="lb-export-buttons"><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/settings/checkout">Open checkout settings</a></div><small>${esc(checkoutSettings.store_state ? `Registered state: ${stateName(checkoutSettings.store_state)}` : "Checkout configuration is not included in this dashboard view.")}</small>`)}
       ${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}
       ${card("Store availability", ownerActions)}
-      <section class="lb-card lb-settings-unavailable"><div class="lb-card-heading"><h2>Payments, shipping, domains and users</h2></div><p>These controls are not available in the current dashboard API. No changes can be saved here.</p></section>
+      <section class="lb-card"><div class="lb-card-heading"><h2>Store connections</h2></div><p>Choose your store address and verify optional payment and delivery accounts in Ann. Verifying an account does not activate online checkout or automatic shipping.</p><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/build/ann?launch=1">Open store connections</a><p>User management is not available in this settings screen.</p></section>
     </div></div>`;
 }
 

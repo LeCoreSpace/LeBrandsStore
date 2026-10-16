@@ -43,7 +43,7 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
     for (const file of ["0001_init.sql","0002_rls.sql","0003_accounts.sql","0004_password_pepper.sql","0005_store_wizard.sql","0006_cod_checkout.sql","0007_brand_dashboard.sql","0008_invoice_lockdown.sql","0009_required_gstin.sql","0010_store_pages.sql"]) {
       await pg.exec(await preparePageMigration(file, await readFile(new URL(`../db/migrations/${file}`, import.meta.url), "utf8")));
     }
-    for (const file of ["0012_aura_skeleton_sections.sql","0015_aura_starter_library.sql","0016_ann_foundation.sql"]) {
+    for (const file of ["0012_aura_skeleton_sections.sql","0015_aura_starter_library.sql","0016_ann_foundation.sql","0017_ann_launch_setup.sql"]) {
       await pg.exec(await preparePageMigration(file, await readFile(new URL(`../db/staged/${file}`, import.meta.url), "utf8")));
     }
     await pg.exec(`
@@ -164,7 +164,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       response = new Response(req.method === "HEAD" ? null : html,
       { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     } else {
-      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness|media|design)$/);
+      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness|media|design|launch)$/);
       if (!match) response = new Response("Not found", { status: 404 });
       else {
         url.pathname = `/api/stores/${storeId}/ann/${match[1]}`;
