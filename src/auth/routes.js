@@ -5,10 +5,9 @@ import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
 import { handlePageRoutes, isPageRoute } from "../store/page-routes.js";
 import {handleGSTINRoutes,isGSTINRoute} from "../gstin/routes.js";
 import {renderEditor} from "../ui/editor.js";
-import {renderAnnThemeEditor} from "../ui/ann-theme-editor.js";
 import {isAiRoute,handleAiRoutes} from "../ai/routes.js";
 import {aiEnabled} from "../ai/repository.js";
-import {loadDraft} from "../store/repository.js";
+import {loadEditorDraft} from "../store/editor-draft.js";
 import {isBuilderRoute,handleBuilderRoutes} from "../store/builder-routes.js";
 import {isAnnRoute,handleAnnRoutes} from "../store/ann-routes.js";
 import {isStyleStudioRoute,handleStyleStudio} from "../store/style-routes.js";
@@ -106,15 +105,13 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     if(editorMatch){
       if(request.method!=="GET")return html("error",{error:"Method not allowed."},405);
       const data=await db.withMemberStore(editorMatch[1],tokenHash,async tx=>{
-        const draft=await loadDraft(tx,editorMatch[1]);
+        const draft=await loadEditorDraft(tx,editorMatch[1]);
         draft.ai_builder_enabled=await aiEnabled(tx);
         if(draft.ai_builder_enabled)await tx`UPDATE public.ai_generation_jobs SET previewed_at=now()
           WHERE store_id=${editorMatch[1]} AND status='completed' AND previewed_at IS NULL`;
         const[member]=await tx`SELECT role FROM public.store_members WHERE store_id=${editorMatch[1]} AND user_id=${user.id}`;
         return{...draft,role:member?.role};
       });
-      if (data.settings?.ann_design?.version === 1)
-        return new Response(renderAnnThemeEditor(data,user),{headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
       return new Response(renderEditor(data,user),{headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
     }
     if (isDashboardPath(path,request.method)) return await handleDashboard(request,db,user,tokenHash,env);

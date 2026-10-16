@@ -5,9 +5,11 @@ description: User requirements for plan presentation and provider-neutral integr
 Show a 30-day Free offer followed by Launch, Grow, Scale and Flagship as individual
 cards at the top of pricing, with paid feature comparison in a separate section below. Integration descriptions
 must use generic provider categories rather than external provider brand names.
+Do not mention Aura or Bazaar themes on pricing; describe Ann and the theme editor instead.
 
 **Why:** The user explicitly requested this arrangement and provider-neutral
-integration wording. Payment subscription implementation is deferred.
+integration wording, then asked to remove Aura and Bazaar from pricing.
+Payment subscription implementation is deferred.
 
 **How to apply:** Preserve this separation during pricing updates. Do not treat
 publishing a proposed feature comparison as permission to enable billing or as

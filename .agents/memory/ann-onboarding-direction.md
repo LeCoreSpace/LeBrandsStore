@@ -79,6 +79,18 @@ individually editable, addable and removable. Preserve browser preview in both.
 **How to apply:** Do not rebuild an approximation from a style name on editor
 handoff, flatten the design into an image, or discard its sample content.
 
+A saved Ann conversation is not permission to overwrite an existing design.
+If no design has been adopted, show the saved plan in the editor as a pending
+preview and require explicit adoption before editing or persisting it.
+
+**Why:** Saving the conversation alone previously led to a blank default editor,
+but silently creating a design on opening the editor would replace a draft
+without the merchant's acknowledgement.
+
+**How to apply:** Use the same projection for the pending preview and adoption,
+including category/subcategory settings as well as style, copy and creatives.
+An already-adopted design remains authoritative and must never be reseeded.
+
 Catalogue confirmation must not also choose a theme, replace page content, or
 silently switch a sample preview to the merchant's products. Selecting real
 catalogue content is a separate, explicit choice. Sample prices and stock are

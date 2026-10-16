@@ -49,6 +49,8 @@ test("pricing shows the supplied billing terms without enabling billing", async 
 test("pricing uses provider-neutral integrations and accessible comparison tables", () => {
   const html = renderPricing();
   assert.doesNotMatch(html, /Razorpay|Shiprocket|Zoho|ZeptoMail|Brevo|Interakt|AiSensy|Gupshup|TeleCMI/i);
+  assert.doesNotMatch(html, /\bAura\b|\bBazaar\b/i);
+  assert.match(html, /Build with Ann, theme editor and version history/);
   for (const category of ["Payment gateway", "logistics partner", "Email provider", "Messaging provider", "Calling provider"]) {
     assert.ok(html.includes(category), category);
   }

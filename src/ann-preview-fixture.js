@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { renderAnnBuilder } from "./ui/ann-builder.js";
 import {renderAnnThemeEditor} from "./ui/ann-theme-editor.js";
+import {loadEditorDraft} from "./store/editor-draft.js";
 import { handleAnnRoutes } from "./store/ann-routes.js";
 import { annReference, annSessionResponse, loadAnnSession } from "./store/ann-repository.js";
 import { preparePageMigration } from "../db/page-schema-migration.js";
@@ -124,7 +125,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     const hash = (readonly ? "b" : "a").repeat(64);
     let response;
     if(url.pathname===`${prefix}/editor`&&["GET","HEAD"].includes(req.method)){
-      const draft=await db.withMemberStore(storeId,hash,tx=>loadDraft(tx,storeId));
+      const draft=await db.withMemberStore(storeId,hash,tx=>loadEditorDraft(tx,storeId));
       if(!draft.settings.ann_design)response=new Response("Save an Ann design in the isolated preview first.",{status:409});
       else response=new Response(renderAnnThemeEditor({...draft,role:readonly?"editor":"owner",ann_api_root:`${prefix}/${readonly?"read-only-api":"api"}`,ann_root:prefix},user),{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
     } else if (url.pathname===prefix && url.searchParams.get("checkout")==="1" && ["GET","HEAD"].includes(req.method)) {

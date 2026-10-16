@@ -23,8 +23,7 @@ const SECTIONS = [
     ["Instagram showcase and newsletter mention", N, N, N, Y],
   ] },
   { title: "Store and design", rows: [
-    ["Aura theme, drag and drop editor, version history", Y, Y, Y, Y],
-    ["Bazaar theme", N, Y, Y, Y],
+    ["Build with Ann, theme editor and version history", Y, Y, Y, Y],
     ["Brand logo on all pages through checkout, plus favicon", Y, Y, Y, Y],
     ["Fully branded, customisable checkout", Y, Y, Y, Y],
     ["Custom domain with SSL", Y, Y, Y, Y],

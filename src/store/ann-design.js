@@ -61,6 +61,29 @@ export async function prepareAnnDesign(tx, storeId, draft) {
     images: await ownedImages(tx, storeId), checklist: publishChecklist(data),
     publish_url: `/stores/${storeId}/setup?step=4` };
 }
+/** Read-only projection shared by design adoption and the editor handoff. */
+export function seedAnnDesign(data, answers, catalogueMode = "sample") {
+  const plan = structuredClone(answers);
+  const config = annPreviewConfiguration(plan, data.settings);
+  plan.style_preset = config.theme.style_preset;
+  const demo = styleDemonstration(projectAnnPreview(
+    stylePreviewData(data, { showcase: true }), config, { prefilled: prefilledSection }).data,
+  config.theme.style_preset);
+  return { version: 1, style: config.theme.style_preset, plan, catalogue_mode: catalogueMode, sections: {},
+    copy: designSeedCopy(demo, { ...demo.settings, ...config.theme }),
+    media_pack: resolveShowcasePack(demo).key,
+    media: seedDesignMedia(config.theme.style_preset, demo) };
+}
+
+export function annDesignSettings(data, plan, reference) {
+  const config = annPreviewConfiguration(plan, data.settings);
+  const category = reference.categories.find(c => Number(c.category_id) === Number(plan.category_id));
+  const subcategory = reference.subcategories.find(c => Number(c.subcategory_id) === Number(plan.subcategory_id));
+  return settingsPatch({ ...config.theme, theme: "aura",
+    ...(config.brand.store_name ? { brand_name: config.brand.store_name } : {}),
+    ...(category && subcategory ? { category: category.slug, subcategory: subcategory.slug } : {}) });
+}
+
 export async function saveAnnDesign(tx, storeId, userId, raw, creating = false) {
   const body = validateDesignRequest(raw, creating);
   const data = await loadDraft(tx, storeId);
@@ -77,13 +100,7 @@ export async function saveAnnDesign(tx, storeId, userId, raw, creating = false) 
   }
   let design;
   if (creating) {
-    const demo = styleDemonstration(projectAnnPreview(
-      stylePreviewData(data, { showcase: true }), config, { prefilled: prefilledSection }).data,
-    config.theme.style_preset);
-    design = { version: 1, style: config.theme.style_preset, plan, catalogue_mode:body.catalogue_mode||"sample",sections:{},
-      copy: designSeedCopy(demo, { ...demo.settings, ...config.theme }),
-      media_pack: resolveShowcasePack(demo).key,
-      media: seedDesignMedia(config.theme.style_preset, demo) };
+    design = seedAnnDesign(data, plan, body.catalogue_mode || "sample");
   } else design = { ...structuredClone(previous), plan,
     copy: { ...previous.copy, ...body.copy }, media: { ...previous.media } };
   if(body.sections)design.sections=structuredClone(body.sections);
@@ -102,11 +119,7 @@ export async function saveAnnDesign(tx, storeId, userId, raw, creating = false) 
         alt: image.alt_text || "", width: image.width || 1024, height: image.height || 1024, media_id: image.id };
     }
   }
-  const category = reference.categories.find(c => Number(c.category_id) === Number(plan.category_id));
-  const subcategory = reference.subcategories.find(c => Number(c.subcategory_id) === Number(plan.subcategory_id));
-  const validatedSettings = settingsPatch({ ...config.theme, theme: "aura",
-    ...(config.brand.store_name ? { brand_name: config.brand.store_name } : {}),
-    ...(category && subcategory ? { category: category.slug, subcategory: subcategory.slug } : {}) });
+  const validatedSettings = annDesignSettings(data, plan, reference);
   const settings = Object.fromEntries(Object.entries(validatedSettings)
     .filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(data.settings[key])));
   // Persist the validated model using the existing store_setup JSON document;

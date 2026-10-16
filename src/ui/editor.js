@@ -1,5 +1,7 @@
 import { escapeHtml, layout } from "./layout.js";
 import { LE_BRANDS_LOGO, LE_BRANDS_MARK } from "./brand.js";
+import { isAnnDesign } from "../public/ann-design-model.js";
+import { renderAnnThemeEditor } from "./ann-theme-editor.js";
 
 const APP_ORIGIN = "https://app.lebrands.store";
 const esc = escapeHtml;
@@ -10,6 +12,9 @@ const safeJson = value => JSON.stringify(value ?? {}).replace(/</g, "\\u003c").r
  * options.readOnly renders the shell without edit controls (used for signed-out previews and tests).
  */
 export function renderEditor(data = {}, user = {}, options = {}) {
+  if (isAnnDesign(data.settings?.ann_design)) {
+    return renderAnnThemeEditor({ ...data, role: options.readOnly ? "viewer" : data.role || "editor" }, user);
+  }
   const store = data.store || {};
   const storeId = String(store.store_id || "");
   const role = String(data.role || "editor");
