@@ -139,6 +139,18 @@ unneeded input form. The review handoff must not depend on old wizard progress.
 
 Products created through Ann should have a collection, tags and a vendor.
 
+Every product-creation capability added to Ann must also be available in
+Dashboard → Products → Add product and Edit product. Both entry points must
+operate on the same catalogue records with consistent validation, limits,
+variant/SKU behavior and media associations, not separate copies.
+
+**Why:** The user explicitly requires product-adding features in Ann to also
+appear in the dashboard Add product form.
+
+**How to apply:** Treat parity across Ann and dashboard product creation/editing
+as part of each feature's completion criteria. Preserve the distinction between
+Ann planning ideas/sample previews and actual saved catalogue products.
+
 **Why:** The user explicitly included these in the desired product-creation flow.
 
 **How to apply:** Include these catalogue details when implementing Ann product
