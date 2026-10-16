@@ -3,9 +3,20 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { renderPricing } from "../src/ui/marketing.js";
 
-test("pricing leads with four plan cards and a separate comparison below", () => {
+test("pricing leads with a 30-day Free offer, four paid cards and a separate comparison", () => {
   const html = renderPricing();
-  assert.equal((html.match(/<article class="m-pr-card\b/g) || []).length, 4);
+  assert.equal((html.match(/<article class="m-pr-card\b/g) || []).length, 5);
+  const free = html.match(/<article class="m-pr-card m-pr-free"[\s\S]*?<\/article>/)?.[0];
+  assert.ok(free);
+  assert.match(free, /id="plan-Free"/);
+  assert.match(free, /₹0/);
+  assert.match(free, /for 30 days/);
+  assert.match(free, /yourbrand\.lebrands\.store/);
+  assert.match(free, /Custom domain integration is available on paid plans only/);
+  assert.match(free, /href="https:\/\/app\.lebrands\.store\/signup"/);
+  assert.match(free, /Choose a paid plan to continue after 30 days/);
+  assert.ok(html.indexOf('id="plan-Free"') < html.indexOf('id="plan-Launch"'));
+  assert.doesNotMatch(html, /14 days|Free trial|Free forever|30 orders/i);
   for (const plan of ["Launch", "Grow", "Scale", "Flagship"]) {
     assert.match(html, new RegExp(`id="plan-${plan}"`));
     assert.match(html, new RegExp(`Discuss ${plan}`));
@@ -17,13 +28,13 @@ test("pricing leads with four plan cards and a separate comparison below", () =>
   assert.match(html, /Annual billing: custom quote/);
   assert.doesNotMatch(html, /custom, two months free/);
   assert.match(html, /never blocks checkout/);
-  assert.match(html, /Proposed plan comparison/);
+  assert.match(html, /Proposed paid plan comparison/);
   assert.match(html, /feature availability and assisted integration scope/);
 });
 
 test("pricing shows the supplied billing terms without enabling billing", async () => {
   const html = renderPricing();
-  for (const term of ["14 days.", "Discount to be decided.", "One GST invoice from LeBrandsSpace Digital Pvt Ltd", "Grow plan (includes LeBrands.Space Premium)", "plans move together", "7-day grace period", "dashboard read-only", "store paused", "90 days", "returns to free registration", "after 2 months over the band", "Checkout is never blocked."]) {
+  for (const term of ["30 days free", "Custom domain integration is not included in the 30-day Free plan", "Discount to be decided.", "One GST invoice from LeBrandsSpace Digital Pvt Ltd", "Grow plan (includes LeBrands.Space Premium)", "plans move together", "7-day grace period", "dashboard read-only", "store paused", "90 days", "returns to free registration", "after 2 months over the band", "Checkout is never blocked."]) {
     assert.ok(html.includes(term), term);
   }
   assert.match(html, /Automated billing is not enabled yet/);

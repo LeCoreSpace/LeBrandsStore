@@ -88,7 +88,8 @@ const ADDONS = [
 ];
 
 const BILLING_TERMS = [
-  ["Free trial", "14 days."],
+  ["Free plan", "30 days free on your included yourbrand.lebrands.store address. Choose a paid plan to continue after 30 days."],
+  ["Custom domains", "Available on paid plans only. Custom domain integration is not included in the 30-day Free plan."],
   ["Founding members", "Discounted pricing for the first brands. Discount to be decided."],
   ["Billing", 'One GST invoice from LeBrandsSpace Digital Pvt Ltd, for example: "Grow plan (includes LeBrands.Space Premium)".'],
   ["Upgrades and downgrades", "Store and LeBrands.Space plans move together."],
@@ -118,6 +119,7 @@ function planCard(p, i) {
     <div><dt>Commission on sales</dt><dd>0%</dd></div>
     <div><dt>LeBrands.Space plan</dt><dd>${p.space}</dd></div>
     <div><dt>Support</dt><dd>${p.support}</dd></div>
+    <div><dt>Custom domain with SSL</dt><dd>Included</dd></div>
   </dl>
   <a class="m-pr-btn" href="${mail(p.name)}">Discuss ${p.name}<span class="m-pr-sr"> plan by email</span></a>
 </article>`;
@@ -143,10 +145,29 @@ export function pricingMain() {
     <div class="m-pr-wrap">
       <p class="m-kicker">Proposed pricing</p>
       <h1 id="pricing-title">Pick the size of your flagship.</h1>
-      <p class="m-pr-lede">Four plans, one promise: 0% commission on your sales. Monthly prices are shown first. Launch, Grow and Scale include two months free with annual billing.</p>
+      <p class="m-pr-lede">Start free for 30 days on your included store address. When you are ready, choose a paid plan to continue and connect your own domain. 0% commission on your sales.</p>
     </div>
   </section>
   <section class="m-pr-plans" aria-label="Plans">
+    <div class="m-pr-wrap">
+      <article class="m-pr-card m-pr-free" aria-labelledby="plan-Free">
+        <div>
+          <div class="m-pr-card-top"><h2 id="plan-Free">Free</h2><span class="m-pr-tag">30 days</span></div>
+          <p>Give your brand a place to start.</p>
+          <ul class="m-pr-free-features">
+            <li>Build with Ann and customise in the theme editor.</li>
+            <li>Use your included <strong>yourbrand.lebrands.store</strong> address.</li>
+            <li>Custom domain integration is available on paid plans only.</li>
+          </ul>
+        </div>
+        <div class="m-pr-free-action">
+          <p class="m-pr-price"><b>₹0</b><span>for 30 days</span></p>
+          <a class="m-pr-btn" href="https://app.lebrands.store/signup">Start free for 30 days</a>
+          <p class="m-pr-note">Choose a paid plan to continue after 30 days.</p>
+        </div>
+      </article>
+      <p class="m-pr-paid-note">Paid plans below. Monthly prices are shown first. Launch, Grow and Scale include two months free with annual billing.</p>
+    </div>
     <div class="m-pr-wrap m-pr-cards">${PLANS.map(planCard).join("")}</div>
     <p class="m-pr-wrap m-pr-disclose">These are proposed packages. Pricing, feature availability and assisted integration scope are confirmed with our team before you subscribe.</p>
   </section>
@@ -154,7 +175,7 @@ export function pricingMain() {
     <div class="m-pr-wrap">
       <header class="m-pr-head m-reveal">
         <p class="m-kicker">Side by side</p>
-        <h2 id="compare-title">Proposed plan comparison</h2>
+        <h2 id="compare-title">Proposed paid plan comparison</h2>
         <p class="m-pr-lede">This comparison describes proposed packages. Several features are not yet implemented, so nothing here should be read as currently live. We confirm feature availability and assisted integration scope with you before you subscribe.</p>
       </header>
       ${SECTIONS.map(table).join("")}

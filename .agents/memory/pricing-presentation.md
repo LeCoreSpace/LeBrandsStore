@@ -2,8 +2,8 @@
 name: Pricing presentation
 description: User requirements for plan presentation and provider-neutral integration copy
 ---
-Show Launch, Grow, Scale and Flagship as individual cards at the top of pricing,
-with feature comparison in a separate section below. Integration descriptions
+Show a 30-day Free offer followed by Launch, Grow, Scale and Flagship as individual
+cards at the top of pricing, with paid feature comparison in a separate section below. Integration descriptions
 must use generic provider categories rather than external provider brand names.
 
 **Why:** The user explicitly requested this arrangement and provider-neutral
@@ -25,13 +25,13 @@ backgrounds with white; it does not change merchant theme presets.
 
 ## Billing terms
 
-- Free trial: 14 days.
+- Free plan: 30 days on the included store address, with no custom domain integration. Custom domains require a paid plan.
 - Founding members: discounted price for the first brands (to decide).
 - Billing: one GST invoice from LeBrandsSpace Digital Pvt Ltd, e.g. "Grow plan (includes LeBrands.Space Premium)".
 - Upgrades / downgrades: Store and LeBrands.Space plans move together.
 - Non-payment: 7-day grace, then dashboard read-only, then store paused; data kept 90 days; LeBrands.Space plan returns to free registration.
 - Order band exceeded: upgrade prompt after 2 months over the band, checkout never blocked.
 
-**Why:** The user asked to remember these billing terms.
+**Why:** The user asked to remember these billing terms, then replaced the 14-day trial with a 30-day Free plan without custom domain integration.
 
 **How to apply:** Preserve these terms when implementing billing later. The founding-member discount remains to be decided.

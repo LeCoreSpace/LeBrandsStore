@@ -336,7 +336,7 @@ export function renderPricing() {
 </div>`;
   return shell({
     title: "Pricing | LeBrands.Store",
-    description: "Proposed LeBrands.Store plans for Indian D2C brands. Talk to our team to confirm scope before subscribing.",
+    description: "Start with the proposed 30-day Free plan on your included LeBrands.Store address. Compare paid plans with custom domains. Confirm scope with our team.",
     canonical: "https://lebrands.store/pricing",
     pageClass: "m-pricing-document",
     body
