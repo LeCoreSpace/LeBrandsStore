@@ -1,6 +1,7 @@
 import { renderStylePreview } from "./style-preview.js";
 import { attachStyleInteractions } from "./style-preview-interactions.js";
 import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
+import { safeImage } from "./aura-sections.js";
 
 /** Only recognised, same-origin storefront links can change this private preview. */
 export function browserPreviewLocation(href, data, origin) {
@@ -39,6 +40,8 @@ export function openAnnBrowserPreview(snapshot,{openWindow=()=>window.open("abou
   const sheet=doc.createElement("link");sheet.rel="stylesheet";sheet.href=new URL("./ann-builder.css",import.meta.url).href;
   const viewport=doc.createElement("meta");viewport.name="viewport";viewport.content="width=device-width, initial-scale=1";
   doc.head.append(base,viewport,sheet);
+  const logo=safeImage(theme.logo_url ?? data.settings?.logo_url);
+  if(logo){const icon=doc.createElement("link");icon.rel="icon";icon.href=logo;doc.head.append(icon);}
   doc.body.className="ann-browser-shell";
   const toolbar=doc.createElement("header");toolbar.className="ann-browser-toolbar";
   const note=doc.createElement("p");

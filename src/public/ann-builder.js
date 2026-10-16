@@ -10,6 +10,7 @@ import { attachAnnApplication } from "./ann-application-ui.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { attachAnnLaunch } from "./ann-launch-ui.js";
 import { openAnnBrowserPreview } from "./ann-browser-preview.js";
+import { attachAnnBranding } from "./ann-branding-ui.js";
 import { prefilledSection } from "./aura-starters.js";
 import { initialAnswers, diffAnswers, changeCategory, changeSubcategory, nextKey, planProblems, projectAnnPreview, currentExtras, annAnsweredStages } from "./ann-projection.js";
 
@@ -38,7 +39,7 @@ let revision = session?.revision ?? 0;
 let saved = structuredClone(session?.answers || {});
 let answers = structuredClone(saved);
 if (!session) answers = { ...initialAnswers(boot.settings, boot.store, ref || {}), ...answers };
-let step = new URL(location.href).searchParams.get("launch") === "1" ? "review" :
+let step = new URL(location.href).searchParams.get("logo") === "1" ? "story" : new URL(location.href).searchParams.get("launch") === "1" ? "review" :
   UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "category";
 let touched = false, saving = false, conflict = false, notice = "", page = "product", productId, collectionId, policyKind;
 let queue = Promise.resolve(), lastSavedAt = session ? "Saved plan restored." : "";
@@ -61,6 +62,15 @@ const applicationUI = attachAnnApplication({ api, root, readOnly,
 });
 const readinessUI = attachAnnReadiness({api,root,readOnly,
   onSaved:result=>{if(result.draft){setPreviewMode("store", result.draft);renderPreview(false);}},
+});
+const brandingUI=attachAnnBranding({api,readOnly,initial:boot.settings,
+  onPreview:logo=>{
+    const settings={logo_media_id:logo.id || null,logo_url:logo.url || ""};
+    Object.assign(boot.settings,settings);Object.assign(previewSource.settings,settings);
+    base=stylePreviewData(previewSource,{showcase:previewMode==="showcase"});renderPreview(false);
+  },
+  onSaved:()=>{readinessUI.onStoreChanged();drawKeep();},
+  onContinue:()=>advance(),
 });
 const launchUI = attachAnnLaunch({api,readOnly,onSaved:()=>say("Your connection setup is saved. Only services you explicitly turn on are activated. You can review their status below."),onDone:()=>{
   const review=$("#ann-readiness-slot");const panel=review?.closest("details");
@@ -251,7 +261,7 @@ function prompts() {
   list.push({ id: "style", step: "style" }, { id: "bg", step: "palette" }, { id: "accent", step: "palette" }, { id: "button", step: "palette" }, { id: "font", step: "fonts" }, { id: "collections", step: "collections" });
   const cols = answers.collections || [];
   if (cols.length) for (const c of cols) list.push({ id: `ideas:${c.key}`, step: "products", col: c.key }); else list.push({ id: "ideas:none", step: "products" });
-  list.push({ id: "store_name", step: "story" }, { id: "tagline", step: "story" }, { id: "description", step: "story" }, { id: "sections", step: "story" }, { id: "review", step: "review" });
+  list.push({ id: "store_name", step: "story" }, { id: "logo", step: "story" }, { id: "tagline", step: "story" }, { id: "description", step: "story" }, { id: "sections", step: "story" }, { id: "review", step: "review" });
   return list.filter(p => UI_STEPS.some(s => s[0] === p.step));
 }
 function curIdx(ps = prompts()) {
@@ -260,7 +270,7 @@ function curIdx(ps = prompts()) {
   return i;
 }
 const reachedIdx = ps => Math.max(curIdx(ps), ps.findIndex(p => p.id === reached));
-promptId = prompts().find(p => p.step === step)?.id || "category"; reached = promptId;
+promptId = new URL(location.href).searchParams.get("logo") === "1" ? "logo" : prompts().find(p => p.step === step)?.id || "category"; reached = promptId;
 
 const cur = ps => (ps || prompts())[curIdx(ps)];
 const uniqueAccents = () => [...new Map(AURA_STYLES.map(s => [s.settings.accent_color.toLowerCase(), s.name])).entries()].map(([v, n]) => ({ v, t: `${n} accent` }));
@@ -301,6 +311,7 @@ function def(p) {
       return { kind: "list", list: "idea", label: "Product idea", q: `What might you sell in ${col?.name || "this collection"}? A name is enough for now. These are ideas, not products for sale. You can skip this and keep exploring with samples.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50 };
     }
     case "store_name": return txt("store_name", "Store name", "Now a little about you. What is your store called?", 120, "Type your store name");
+    case "logo": return {kind:"logo",label:"Brand logo",q:`Have a logo for ${a.store_name || boot.store.name || "your brand"}? Add it here and see it across your store, including the bag, checkout and browser tab. No logo yet? Your brand name works beautifully too.`,reply:brandingUI.reply()};
     case "tagline": return txt("tagline", "Tagline", "Would you like a short tagline? It is optional, so skip it if nothing comes to mind yet.", 160, "A few words about what you offer");
     case "description": return txt("description", "About your brand", "Tell me about your brand in your own words, as if chatting to a customer. It shapes your About page and home story. Optional, and you can polish it later.", 1200, "Why you started and what you love making", true);
     case "sections": return { kind: "sections", label: "Optional sections", q: "Last choice, and it is optional. Would you like any extra sections on your pages? Tap to switch them on or off and watch the preview change.", reply: sectionsReply() };
@@ -360,7 +371,9 @@ function composerKeyFor(p, d) {
 function inlineControls(p, d) {
   const tail = DETAIL_STEPS.includes(p.step) && d.kind !== "info" ? `<button type="button" class="ann-link" data-toggle-detail aria-expanded="${detail}">${detail ? "Close detailed editor" : "Open detailed editor"}</button>` : "";
   let body = "", name = d.label;
-  if (d.kind === "choice" || d.kind === "accent") {
+  if (d.kind === "logo") {
+    body=`<div id="ann-branding-slot">${brandingUI.html()}</div>`;
+  } else if (d.kind === "choice" || d.kind === "accent") {
     body = `<div class="ann-chips${d.stack ? " stack" : ""}">${d.opts.map(o => `<button type="button" class="ann-chip" data-pick="${esc(o.v)}" aria-pressed="${String(o.v).toLowerCase() === d.cur}"${o.c || d.kind === "accent" ? ` style="--c:${esc(o.c || o.v)}"` : ""}${dis}>${o.c || d.kind === "accent" ? `<i class="ann-sw" aria-hidden="true"></i>` : ""}<strong>${esc(o.t)}</strong>${o.sub ? `<span>${esc(o.sub)}</span>` : ""}</button>`).join("")}
       ${d.kind === "accent" ? `<label class="ann-chip ann-color"><strong>Custom</strong><input type="color" data-accent-input value="${esc(d.color)}" aria-label="Custom accent colour"${dis}></label>` : ""}</div>
       <div class="ann-comp-row">${d.reply || readOnly ? `<button type="button" class="ann-btn alt" data-continue>${readOnly ? "Continue" : `Keep ${esc(d.reply)} and continue`}</button>` : ""}${d.kind === "choice" && !d.opts.length ? `<p class="ann-note">Nothing to choose here yet.</p>` : ""}</div>`;
@@ -450,7 +463,7 @@ function draw(mode = "keep") {
   const y = log.scrollTop;
   const markup = timeline() + (detail && DETAIL_STEPS.includes(step) ? detailHtml() : "");
   if (markup !== logMarkup) { log.innerHTML = markup; logMarkup = markup; }
-  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); launchUI.mount();
+  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); launchUI.mount(); brandingUI.mount();
   if (mode === "active") scrollActive(); else log.scrollTop = y;
 }
 const drawKeep = () => draw("keep");
@@ -748,7 +761,7 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || launchUI.hasUnsavedChanges() || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || launchUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
 if ((window.innerWidth || 1280) < 700) { canvas.dataset.device = "mobile"; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.device === "mobile"))); }

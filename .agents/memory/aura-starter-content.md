@@ -34,6 +34,16 @@ content. Keep sample exploration separate from adopting a real-catalogue draft,
 with an explicit product-source confirmation. Never import samples as sellable
 inventory merely to reset a preview.
 
+Merchant branding is independent of the demonstration catalogue. A chosen brand
+logo should appear across all preview styles and pages, including cart, checkout
+and the separate browser preview's tab icon.
+
+**Why:** The user requested their logo throughout the preview, while retaining
+the separate, explicit choice to use their real products.
+
+**How to apply:** Applying a logo must not switch sample products to merchant
+inventory, adopt a design, publish the store or remove previously uploaded logos.
+
 The entire Ann conversation should feel engaging, friendly, inspirational and
 motivational without overwhelming non-technical merchants.
 

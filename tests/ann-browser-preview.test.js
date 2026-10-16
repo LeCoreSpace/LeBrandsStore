@@ -1,6 +1,7 @@
 import test, {mock} from "node:test";
 import assert from "node:assert/strict";
-import {stylePreviewData} from "../src/public/style-preview.js";
+import {stylePreviewData,renderStylePreview} from "../src/public/style-preview.js";
+import {STYLE_IDS} from "../src/public/aura-styles.js";
 import {renderAnnBuilder} from "../src/ui/ann-builder.js";
 mock.module("../src/public/aura-ui.js",{namedExports:{attachAuraSearch(){},attachAuraCatalog(){}}});
 const {browserPreviewLocation,openAnnBrowserPreview}=await import("../src/public/ann-browser-preview.js");
@@ -30,6 +31,7 @@ function fakeWindow(){
 test("new-tab preview uses an isolated catalogue and bag, restrictive sandbox, working viewport controls and no publishing",()=>{
   const {win,nodes}=fakeWindow();
   const sample=stylePreviewData({...data,products:[],collections:[]},{showcase:true});
+  sample.settings.logo_url="https://media.lebrands.store/stores/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.webp";
   const before=structuredClone(sample),bag=new Map([[sample.products[0].id,2]]);
   assert.equal(openAnnBrowserPreview({data:sample,theme:{style_preset:"editorial"},bag,device:"mobile"},
     {openWindow:()=>win}),true);
@@ -37,6 +39,7 @@ test("new-tab preview uses an isolated catalogue and bag, restrictive sandbox, w
   assert.equal(win.opener,null);
   assert.equal(frame.attrs.sandbox,"allow-same-origin");
   assert.equal(frame.attrs.referrerpolicy,"no-referrer");
+  assert.equal(nodes.find(n=>n.tag==="link"&&n.rel==="icon")?.href,sample.settings.logo_url);
   assert.match(frame.srcdoc,/<!doctype html>/i);
   assert.equal(frame.dataset.device,"mobile");
   const desktop=nodes.find(n=>n.textContent==="Desktop"),mobile=nodes.find(n=>n.textContent==="Mobile");
@@ -48,6 +51,19 @@ test("new-tab preview uses an isolated catalogue and bag, restrictive sandbox, w
 });
 test("blocked browser windows return a recoverable result",()=>{
   assert.equal(openAnnBrowserPreview({},{openWindow:()=>null}),false);
+});
+test("all eight styles carry the selected logo and favicon through every preview page, including cart and checkout",()=>{
+  const sample=stylePreviewData({...data,products:[],collections:[]},{showcase:true});
+  const logo="https://media.lebrands.store/stores/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.webp";
+  sample.settings.logo_url=logo;
+  for(const style of STYLE_IDS) for(const page of ["home","collection","product","cart","checkout","about","contact"]) {
+    const html=renderStylePreview(sample,{style_preset:style},{page,productId:sample.products[0]?.id});
+    assert.match(html,/<a class="sc-brand" href="\/"><img class="sc-brand-logo"/,`${style}/${page}`);
+    assert.ok(html.includes(`<link rel="icon" href="${logo}">`),`${style}/${page} favicon`);
+  }
+  sample.settings.logo_url="javascript:alert(1)";
+  const html=renderStylePreview(sample,{style_preset:"editorial"},{page:"checkout"});
+  assert.ok(!html.includes("javascript:alert"));assert.ok(!html.includes('class="sc-brand-logo"'));
 });
 test("Ann supplies brand-name and username labels without exposing user details or unsafe HTML",()=>{
   const actor=html=>JSON.parse(html.match(/<script[^>]*id="ann-data"[^>]*>([\s\S]*?)<\/script>/)[1]).speakerName;

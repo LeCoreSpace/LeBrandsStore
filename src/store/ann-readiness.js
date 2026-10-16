@@ -47,7 +47,7 @@ export async function prepareAnnReadiness(tx,id,userId) {
     ),errors:validateProduct(p)})),
     image_media:photos.map(m=>({id:m.id,url:mediaUrl(m.object_key),alt:m.alt_text||""})),
     policies:data.policies.map(p=>({kind:p.kind,title:p.title,body:p.body,reviewed:p.reviewed})),
-    logo_media:logos.map(m=>({id:m.id,label:m.alt_text || m.object_key.split("/").pop()})),
+    logo_media:logos.map(m=>({id:m.id,label:m.alt_text || m.object_key.split("/").pop(),url:mediaUrl(m.object_key)})),
     checkout:{available:s.checkoutAvailable,saved:s.checkoutSaved,can_edit:member?.role==="owner",settings:s.checkout},
     checklist:[...publishChecklist(data),
       {label:"Delivery and Cash on Delivery settings explicitly saved",complete:s.checkoutAvailable&&s.checkoutSaved},

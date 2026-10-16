@@ -54,13 +54,21 @@ export function designPreviewData(source, design) {
 export function renderStylePreview(data, settings, options = {}) {
   const styled = styleDemonstration(data, settings.style_preset);
   const merged = { ...styled.settings, ...settings };
+  const logo=safeImage(merged.logo_url);
+  const finish=html=>{
+    if(logo) {
+      const mark=`<img class="sc-brand-logo" src="${esc(logo)}" alt="${esc(merged.brand_name || data.store?.name || "Brand logo")}" height="40">`;
+      html=html.replace(/(<a class="sc-brand" href="\/">)[\s\S]*?(<\/a>)/g,(_,open,close)=>open+mark+close);
+    }
+    return html.replace("</head>",`${logo?`<link rel="icon" href="${esc(logo)}">`:""}<style>html{overflow-y:scroll;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#777 #f1f1f1}html,body{min-height:100%}.sc-brand-logo{display:block;width:auto;height:auto;max-width:180px;max-height:52px;object-fit:contain}</style></head>`);
+  };
   const showcase = renderShowcase(styled, merged, options);
-  if (showcase) return showcase.replace("</head>", "<style>html{overflow-y:scroll;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#777 #f1f1f1}html,body{min-height:100%}</style></head>");
+  if (showcase) return finish(showcase);
   const html = renderAura({ ...styled, settings: { ...styled.settings, ...settings } }, {
     ...options, preview: true, commerce: true, readOnly: true, embeddedPreview: true,
   }).replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
   // Trusted parent binds navigation, catalogue, demo cart and motion. Keep
   // the sandbox script-free rather than weakening it with allow-scripts.
   // A real scrolling document, independent from the surrounding style controls.
-  return html.replace("</head>", "<style>html{overflow-y:scroll;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#777 #f1f1f1}html,body{min-height:100%}</style></head>");
+  return finish(html);
 }
