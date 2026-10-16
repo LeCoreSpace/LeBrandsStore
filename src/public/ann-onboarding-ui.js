@@ -2,7 +2,7 @@ import { INDIAN_STATES } from "./commerce-rules.js";
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const GSTIN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const DEFAULT_NAME = /^my store$/i;
-export const GST_COPY = "This registered business name, GSTIN and address will be used on your invoices. Once you confirm, these details are locked and cannot be changed later. Please check them carefully.";
+export const GST_COPY = "This registered name, GSTIN and address go on your invoices. Confirming locks them permanently. Please check carefully.";
 
 /*
  * Ann onboarding controller. Modes:
@@ -151,7 +151,7 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
 
   function brandHtml() {
     const bad = nameProblem();
-    return `<p class="ann-note">Reply in the chat box below. Your brand name can be 2 to 40 characters. This changes your draft only.</p>${msgs()}
+    return `<p class="ann-note">Type your brand name below, or keep this one.</p>${msgs()}
       ${!bad?`<div class="ann-actions"><button type="button" class="ann-btn alt" data-ob="save"${off() || !env ? " disabled" : ""}>${busy === "brand" ? "Saving" : `Keep ${esc(displayName())} and continue`}</button></div>`:""}`;
   }
   function gstHtml() {
@@ -164,24 +164,23 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
     }
     const p = toConfirm(), list = addrList(p), g = gstValue(), problem = gstProblem();
     const hint = (g || stateCode) && problem ? `<p class="ann-note">${esc(problem)}</p>` : "";
-    return `${env?.verification?.enabled===false?'<div class="ann-error" role="alert">GST verification needs a platform update. Your entries are kept, but you must verify and confirm your invoice address before continuing.</div><button type="button" class="ann-btn alt" data-ob="retry">Check availability again</button>':""}<p class="ann-note">We will check your GSTIN with the GST service. Nothing counts as verified until you press Verify and confirm the address.</p>
+    return `${env?.verification?.enabled===false?'<div class="ann-error" role="alert">GST verification needs a platform update. Your entries are kept, but you must verify and confirm your invoice address before continuing.</div><button type="button" class="ann-btn alt" data-ob="retry">Check availability again</button>':""}
       <label class="ann-field">State of your registered address<select data-ob-in="state"${dis()}><option value="">Choose a state</option>${INDIAN_STATES.map(s => `<option value="${s.code}"${s.code === code() ? " selected" : ""}>${esc(s.name)}</option>`).join("")}</select></label>
-      <p class="ann-note">Send your 15-character GSTIN in the chat below. Its first two digits will select your registered state for you.</p>
+      <p class="ann-note">15 characters. We'll select your state automatically.</p>
       ${g?`<p class="ann-note">GSTIN submitted: <strong>${esc(g)}</strong></p>`:""}${hint}
       ${p ? `<fieldset class="ann-item"${dis()}><legend>Registered name and address</legend><p><strong>${esc(p.registration.legal_name || "")}</strong>${p.registration.trade_name ? `<br><small>${esc(p.registration.trade_name)}</small>` : ""}</p>
         ${list.map((a, i) => `<label class="ann-check"><input type="radio" name="ann-ob-addr" data-ob-in="addr" value="${i}"${i === pick ? " checked" : ""}><span>${esc(addrText(a))}</span></label>`).join("")}
         <p class="ann-note">${GST_COPY}</p></fieldset>` : ""}${msgs()}
       <div class="ann-actions"><button type="button" class="ann-btn${p ? " alt" : ""}" data-ob="verify"${off() || problem || env?.verification?.enabled===false ? " disabled" : ""}>${busy === "verify" ? "Verifying" : p || pending ? "Verify again" : "Verify GSTIN"}</button>
       ${p ? `<button type="button" class="ann-btn" data-ob="confirm"${off() ? " disabled" : ""}>${busy === "confirm" ? "Confirming" : "Confirm and lock this invoice address"}</button>` : ""}</div>
-      <p class="ann-note">Verify your GSTIN and confirm the registered invoice address to continue. If you leave now, your saved draft is kept.</p>`;
+      `;
   }
   function addressHtml() {
     const s = displaySub(), m = subMsg;
-    return `<p class="ann-note">Your included store address is <strong>${esc(s)}.lebrands.store</strong>. To change the part before .lebrands.store, type a new name in the chat below.</p>
+    return `<p class="ann-store-address"><strong>${esc(s)}.lebrands.store</strong></p>
       ${m ? `<p class="${m.bad ? "ann-error" : "ann-note"}" role="${m.bad ? "alert" : "status"}">${esc(m.text)}</p>` : ""}${msgs()}
       <div class="ann-actions"><button type="button" class="ann-btn alt" data-ob="check"${off() || !s ? " disabled" : ""}>${busy === "check" ? "Checking" : "Check this address"}</button>
-      <button type="button" class="ann-btn" data-ob="save"${off() || !env || subProblem() ? " disabled" : ""}>${busy === "address" ? "Saving" : "Keep this address and continue"}</button></div>
-      <p class="ann-note">Want your own domain, like www.yourbrand.com? You can connect it later in this conversation.</p>`;
+      <button type="button" class="ann-btn" data-ob="save"${off() || !env || subProblem() ? " disabled" : ""}>${busy === "address" ? "Saving" : "Use this address"}</button></div>`;
   }
   const html = () => mode === "brand" ? brandHtml() : mode === "gstin" ? gstHtml() : addressHtml();
   function draw() {

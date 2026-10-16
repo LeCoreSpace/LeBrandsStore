@@ -30,8 +30,8 @@ export function attachAnnApplication({ api, root, readOnly, context, beforePrepa
     const dis = disabled ? " disabled" : "";
     const targets = (items, selected, extra) => extra + items.map(i => `<option value="${esc(i.id)}"${selected === i.id ? " selected" : ""}>${esc(i.title)}</option>`).join("");
     node.innerHTML = `<h2>${cat ? "Create your draft products" : "Make this your store draft"}</h2>
-      <p>Link your existing products or create products with details you confirm. Example prices, stock and product photos are not imported. No changes are published.</p>
-      <p class="ann-note">${cat ? "Nothing here changes your design or pages. " : ""}Prices and catalogue choices below are saved only when you apply the draft, not when you save the Ann plan.</p>
+      <p>Choose existing products or create your own. Nothing goes live yet.</p>
+      <p class="ann-note">${cat ? "Your design stays unchanged. " : ""}Select Apply to save product details. Sample prices, stock and photos are not imported.</p>
       ${message ? `<p class="ann-callout" role="status">${esc(message)}</p>` : ""}
       ${dirty && !cat ? '<p class="ann-callout">Save your latest plan first.</p>' : ""}
       ${!prepared ? `<button type="button" class="ann-btn" data-ann-prepare${disabled || (!cat && (dirty || !revision)) ? " disabled" : ""}>${preparing ? "Preparing" : cat ? "Set product prices and stock" : "Prepare draft changes"}</button>` : `
@@ -42,7 +42,8 @@ export function attachAnnApplication({ api, root, readOnly, context, beforePrepa
         const target = collections.get(c.key) || prepared.application?.collections?.[c.key] || "new";
         return `<label class="ann-field">Collection: ${esc(c.name)}<select data-ann-collection="${esc(c.key)}"${dis}>${targets(prepared.collections, target, `<option value="new"${target === "new" ? " selected" : ""}>Create new collection</option>`)}</select></label>`;
       }).join("")}
-      <p class="ann-note">Existing collection text and images are kept. Confirmed products are added without removing current members.</p>
+      <p class="ann-note">Your existing collections stay intact.</p>
+      <details class="ann-hsn-help"><summary>About HSN suggestions</summary><p class="ann-note">Suggestions are unverified 4-digit headings. Confirm your exact HSN and GST rate with your accountant.</p></details>
       ${(answers.product_ideas || []).map(p => {
         const row = products.get(p.key) || { target: defaultTarget(p) };
         const sg = suggestFor(p.name);
@@ -52,7 +53,7 @@ export function attachAnnApplication({ api, root, readOnly, context, beforePrepa
             <label class="ann-field">Selling price (INR)<input inputmode="decimal" data-ann-product="${esc(p.key)}" data-ann-field="price" value="${esc(row.price || "")}" placeholder="1299.00"></label>
             <label class="ann-field">GST rate<select data-ann-product="${esc(p.key)}" data-ann-field="gst">${["",0,5,18,40].map(rate => `<option value="${rate}"${String(row.gst ?? "") === String(rate) ? " selected" : ""}>${rate === "" ? "Choose explicitly" : rate + "%"}</option>`).join("")}</select></label>
             <label class="ann-field">HSN code<input data-ann-product="${esc(p.key)}" data-ann-field="hsn" value="${esc(row.hsn || "")}" maxlength="8"></label>
-            ${sg ? `<p class="ann-note">Suggested HSN ${esc(sg.hsn_code)}${sg.hsn_note ? `: ${esc(sg.hsn_note)}` : ""}. Check it with your accountant. <button type="button" class="ann-link" data-ann-hsn="${esc(p.key)}" data-code="${esc(sg.hsn_code)}">Use this code</button></p>` : ""}
+            ${sg ? `<p class="ann-note">Suggested HSN ${esc(sg.hsn_code)} · <button type="button" class="ann-link" data-ann-hsn="${esc(p.key)}" data-code="${esc(sg.hsn_code)}">Use suggestion</button></p>` : ""}
             ${cat ? `<label class="ann-check"><input type="checkbox" data-ann-product="${esc(p.key)}" data-ann-field="hsnOk"${row.hsnOk ? " checked" : ""}><span>I confirm this HSN code is right for ${esc(p.name)}.</span></label>` : ""}
             <label class="ann-field">Stock quantity<input inputmode="numeric" data-ann-product="${esc(p.key)}" data-ann-field="stock" value="${esc(row.stock || "")}"></label>
             <p class="ann-note">Blank stock means inventory is not tracked. Zero means out of stock.</p>

@@ -12,7 +12,7 @@ async function harness(readOnly=false,onStep) {
     const list=events.get(name)||[];list.push(fn);events.set(name,list);
   }};
   let state={revision:0,can_edit:!readOnly,execution_available:true,included_address:"sample.lebrands.store",
-    preferences:{address:"included",payments:"cod",shipping:"manual"},providers:{},platform:{domains_available:false},jobs:[]};
+    preferences:{address:"included",payments:"cod",delivery:"manual"},providers:{},platform:{domains_available:false},jobs:[]};
   let fail=false,done=0,saved=0;
   globalThis.fetch=async(url,options={})=>{
     if(options.method==="PATCH") {
@@ -29,7 +29,7 @@ async function harness(readOnly=false,onStep) {
     for(const fn of events.get("click")||[])fn({target,preventDefault(){}});
     await flush();
   };
-  return {ui,slot,requests,click,setFailure:v=>{fail=v;},get done(){return done;},get saved(){return saved;},
+  return {ui,slot,requests,click,toggle:(provider,open)=>{for(const fn of events.get("toggle")||[])fn({target:{dataset:{lnProvider:provider},open}});},setFailure:v=>{fail=v;},get done(){return done;},get saved(){return saved;},
     async close(){await flush();globalThis.document=previous.document;globalThis.fetch=previous.fetch;}};
 }
 test("unavailable domain choices stay readable, explain their prerequisite and cannot be selected",async()=>{
@@ -71,7 +71,7 @@ test("save-and-continue retains failed choices, advances only after commit, and 
     assert.equal(h.ui.hasUnsavedChanges(),false);assert.equal(h.saved,1);
     assert.equal(h.requests.length,2);
     assert.ok(h.requests.every(r=>r.action==="choose" && r.confirm===true && r.expected_revision===0));
-    assert.deepEqual(h.requests[1].preferences,{address:"included",payments:"razorpay",shipping:"manual"});
+    assert.deepEqual(h.requests[1].preferences,{address:"included",payments:"both",delivery:"manual"});
   } finally {await h.close();}
 });
 test("readonly members cannot save or advance through owner actions",async()=>{
@@ -81,6 +81,32 @@ test("readonly members cannot save or advance through owner actions",async()=>{
     await h.click({lnA:"next",next:"4"});
     assert.equal(h.requests.length,0);assert.equal(h.done,0);
   } finally {await h.close();}
+});
+test("COD and manual tracking remain selected alongside partners, persist and reload without activation",async()=>{
+  const h=await harness();
+  try{
+    h.ui.mount(2);
+    await h.click({pref:"payments",v:"razorpay"});
+    assert.match(h.slot.innerHTML,/data-v="cod" aria-pressed="true"/);
+    assert.match(h.slot.innerHTML,/data-v="razorpay" aria-pressed="true"/);
+    assert.match(h.slot.innerHTML,/data-ln-provider="razorpay"><summary>/);
+    h.toggle("razorpay",true);h.ui.mount(2);
+    assert.match(h.slot.innerHTML,/data-ln-provider="razorpay" open/);
+    await h.click({pref:"payments",v:"cod"});
+    assert.match(h.slot.innerHTML,/data-v="cod" aria-pressed="false"/);
+    await h.click({pref:"payments",v:"cod"});
+    h.ui.mount(3);
+    await h.click({pref:"delivery",v:"shiprocket"});
+    assert.match(h.slot.innerHTML,/data-v="manual" aria-pressed="true"/);
+    assert.match(h.slot.innerHTML,/data-v="shiprocket" aria-pressed="true"/);
+    await h.click({lnA:"next",next:"4"});
+    assert.deepEqual(h.requests.map(r=>r.action),["choose"]);
+    assert.deepEqual(h.requests[0].preferences,{address:"included",payments:"both",delivery:"both"});
+    await h.click({lnA:"reload"});
+    assert.match(h.ui.summary(2),/Cash on Delivery \+ Razorpay.*pending/);
+    assert.match(h.ui.summary(3),/Manual tracking \+ Shiprocket.*pending/);
+    assert.equal(h.ui.hasUnsavedChanges(),false);
+  }finally{await h.close();}
 });
 test("selected choice hover has an explicit contrasting state and launch options do not use a clipped scroll area",async()=>{
   const css=await readFile("src/public/ann-builder.css","utf8");
@@ -130,7 +156,10 @@ test("Ann exposes address, payments and delivery as conversation stages and uses
   }
   assert.ok(js.includes("What category of products do you sell?"));
   assert.ok(!js.includes("Nothing goes live here. What do you sell?"));
-  assert.ok(js.includes("A collection is a group of related products"));
+  assert.ok(js.includes("Let's group your products. Name your first collection"));
+  assert.ok(js.includes("Pick Cash on Delivery, Razorpay online payments, or both."));
+  assert.ok(js.includes("Add tracking yourself, connect Shiprocket, or use both."));
+  assert.ok(!js.includes('${x.hsn_note}'),"do not repeat long HSN explanations inside each suggestion");
   assert.ok(js.includes('["business", "Business"'));
   assert.ok(js.includes('["selling", "Store address"'));
   assert.ok(js.includes('!["domain","payments","shipping","review"].includes(k)'),"payment and delivery setup must not inflate design progress");

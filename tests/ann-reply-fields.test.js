@@ -29,7 +29,9 @@ test("One composer preserves field identity, validation, editor normalization an
   }};
   globalThis.MutationObserver=class{observe(){}disconnect(){}};
   try{
-    nodes=[field("price","10.00"),field("hsn")];
+    const details={open:false,parentElement:null},partner=field("provider_key");
+    partner.parentElement={closest:()=>details};
+    nodes=[field("price","10.00"),field("hsn"),partner];
     const bridge=attachAnnReplyFields({root});await Promise.resolve();
     const key=bridge.current().key;bridge.refresh();assert.equal(bridge.current().key,key);
     assert.equal(nodes[0].hidden,true);assert.match(nodes[0].nextElementSibling.textContent,/Change in chat/);
@@ -39,6 +41,9 @@ test("One composer preserves field identity, validation, editor normalization an
     assert.deepEqual(events.slice(0,2),[{field:"price",type:"input",value:" 1299.00 "},{field:"price",type:"change",value:"1299.00"}]);
     assert.equal(bridge.current().label,"hsn");
     bridge.submit("6109");assert.equal(nodes[1].value,"6109");assert.equal(bridge.current(),null);
+    assert.equal(partner.nextElementSibling,undefined,"closed setup must not request credentials in chat");
+    details.open=true;bridge.refresh();assert.equal(bridge.current().label,"provider_key");
+    details.open=false;bridge.refresh();assert.equal(bridge.current(),null);
     bridge.disconnect();
   }finally{globalThis.document=doc;globalThis.MutationObserver=observer;}
 });

@@ -66,12 +66,16 @@ test("launch setup persists independently, keeps tenant/owner isolation and neve
     const before = (await pg.query("SELECT settings FROM store_setup WHERE store_id=$1", [id])).rows[0].settings;
     await assert.rejects(db.withMemberStore(id, "b".repeat(64), tx => saveAnnLaunch(tx, id, editor, cfg,
       { expected_revision: 0, confirm: true, action: "choose", preferences: state.preferences })), { status: 403 });
-    await assert.rejects(save(state, "choose", { preferences: { ...state.preferences, payments: "razorpay" } }), { status: 400 });
+    await assert.rejects(save(state, "choose", { preferences: { ...state.preferences, payments: "unknown" } }), { status: 400 });
     await assert.rejects(save(state, "choose", { preferences: { ...state.preferences, address: "custom" } }), { status: 400 });
     const stale = state;
     state = await save(state, "choose", { preferences: state.preferences });
     assert.equal(state.revision, 1);
     await assert.rejects(save(stale, "choose", { preferences: state.preferences }), { status: 409 });
+    state=await save(state,"choose",{preferences:{...state.preferences,payments:"both",delivery:"both"}});
+    assert.deepEqual((await get()).preferences,{address:"included",payments:"both",delivery:"both"});
+    assert.equal(Object.values(state.providers).some(p=>p.runtime_ready),false);
+    assert.equal((await pg.query("SELECT count(*)::integer AS n FROM integrations")).rows[0].n,0);
     state = await save(state, "razorpay-connect", { credentials: creds }, async () => json({ entity: "collection", items: [] }));
     assert.equal(state.providers.razorpay.verified, true); assert.equal(state.providers.razorpay.mode, "test");
     assert.equal(state.providers.razorpay.runtime_ready, false); assert.ok(!JSON.stringify(state).includes(creds.key_secret));

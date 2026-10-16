@@ -99,7 +99,8 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
           if (!locations.some(p=>p.name===s.pickup_location && p.pincode===s.pickup_pincode)) fail("The selected pickup address is no longer available.");
         }
         meta.enabled=body.enabled;meta.activated_at=body.enabled?new Date().toISOString():null;
-        preferences[provider==="razorpay"?"payments":"delivery"]=body.enabled?provider:(provider==="razorpay"?"cod":"manual");
+        const key=provider==="razorpay"?"payments":"delivery";
+        if(preferences[key]!=="both")preferences[key]=body.enabled?provider:(provider==="razorpay"?"cod":"manual");
       }
       await tx`UPDATE public.integrations SET metadata=${JSON.stringify(meta)}::text::jsonb,updated_at=now() WHERE store_id=${id} AND provider=${provider}`;
     }
@@ -107,14 +108,11 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
   if (body.action === "choose") {
     const p = body.preferences;
     if (!plain(p) || Object.keys(p).length !== 3 || !["included", "custom"].includes(p.address) ||
-        !["cod", "razorpay"].includes(p.payments) || !["manual", "shiprocket"].includes(p.delivery) ||
+        !["cod", "razorpay", "both"].includes(p.payments) || !["manual", "shiprocket", "both"].includes(p.delivery) ||
         Object.keys(p).some(k => !Object.hasOwn(defaults, k))) fail("Choose a store address, payment preference and delivery preference.");
     if (p.address === "custom" && current.domain?.status !== "active") fail("Activate a verified custom domain first, or keep your included address.");
-    for (const [key, provider] of [["payments", "razorpay"], ["delivery", "shiprocket"]]) {
-      if (p[key] === provider && !current.providers.some(r => r.provider === provider && r.status === "connected" && parse(r.metadata).credentials_verified === true))
-        fail(`Verify your ${provider === "razorpay" ? "Razorpay" : "Shiprocket"} account first, or keep the available option.`);
-    }
-    // Preferences are intentions, not activation of unsupported checkout/carrier code.
+    // Intention can be saved before connecting. Activation still requires verified
+    // live credentials, payment webhooks or shipping settings and explicit consent.
     preferences = { ...p };
     if (current.domain?.status === "active") {
       await tx`UPDATE public.domains SET is_primary=${p.address === "custom"} WHERE store_id=${id} AND id=${current.domain.id}`;

@@ -12,6 +12,27 @@ publishing. Products and Collections should be separate dashboard menu entries.
 **How to apply:** Replace the choice, not existing merchant data. Preserve existing
 stores, products, collections and saved drafts when changing onboarding.
 
+Keep every Ann question short, friendly and self-explanatory. Explain HSN
+suggestions once, not inside every product choice; keep optional provider setup
+behind disclosures so it does not overwhelm the conversation.
+
+**Why:** The user said the conversation and product/HSN choices had too much text
+and clutter, especially for non-technical merchants.
+
+**How to apply:** Prefer one short question with a brief hint where needed.
+Preserve GST invoice-lock warnings, tax confirmation and explicit live-service
+activation even when shortening the copy.
+
+Merchants may choose COD together with Razorpay, and manual tracking together
+with Shiprocket. Choosing a partner is an intention, not activation; allow
+preferences to be saved before connecting, while retaining activation checks.
+
+**Why:** The user explicitly wants both payment methods and both delivery
+approaches available together.
+
+**How to apply:** Preserve combined choices across save/reload and activation.
+Manual courier/tracking entry remains in Orders, separate from partner setup.
+
 The requested conversation starts with brand name, GSTIN API verification and
 the verified invoice address, then the logo and editable included store address.
 Explain that connecting a custom domain comes later. Continue through style,

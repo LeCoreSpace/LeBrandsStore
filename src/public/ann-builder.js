@@ -316,45 +316,45 @@ function def(p) {
   const txt = (key, lab, q, max, ph, area) => ({ kind: "text", key, label: lab, q, max, ph, area, reply: a[key] || "" });
   const setKey = key => v => { answers[key] = v; };
   switch (k) {
-    case "category": return sel("Category", `Now let's talk about what you sell. What category of products do you sell? Pick the closest match below. We'll use sample products while you explore; nothing is published yet.`,
+    case "category": return sel("Category", "What category of products do you sell? Pick your closest match.",
       (ref?.categories || []).map(c => ({ v: c.category_id, t: c.name })), a.category_id, v => {
         const r = changeCategory(answers, Number(v)); answers = r.answers;
         const bits = []; if (r.cleared.subcategory) bits.push("the subcategory");
         if (r.cleared.attributes) bits.push(`${r.cleared.attributes} product detail choice${r.cleared.attributes === 1 ? "" : "s"}`);
         notice = bits.length ? `Changing category cleared ${bits.join(" and ")} because they belonged to the old category. Your product names and descriptions are kept.` : "";
       });
-    case "subcategory": return sel("Product type", `Great, ${catName(a.category_id) || "your category"} it is! What type of products within this category do you sell? Choose the closest match so your preview feels more relevant.`, subsFor(a.category_id).map(s => ({ v: s.subcategory_id, t: s.name })), a.subcategory_id, v => {
+    case "subcategory": return sel("Product type", `Lovely! Which type of ${catName(a.category_id) || "products"} do you sell?`, subsFor(a.category_id).map(s => ({ v: s.subcategory_id, t: s.name })), a.subcategory_id, v => {
       const r = changeSubcategory(answers, Number(v)); answers = r.answers;
       notice = r.cleared.attributes ? `Changing subcategory cleared ${r.cleared.attributes} product detail choice${r.cleared.attributes === 1 ? "" : "s"}. Your product names and descriptions are kept.` : "";
     });
-    case "style": return sel("Style", `What look would you love for your store? Try any of these ${AURA_STYLES.length} styles and watch the preview change. They use the same sample products, so you can focus on the design. No wrong choice here; you can switch later.`,
+    case "style": return sel("Style", "Let's find your look! Tap a style and watch your store change. You can switch any time.",
       AURA_STYLES.map(s => ({ v: s.id, t: s.name, sub: s.description, c: s.settings.accent_color })), t.style_preset, v => {
         const s = styleSettings(v); setPreviewMode("showcase");
         for (const key of ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"]) if (s[key] !== undefined) answers[key] = s[key];
       }, { stack: true });
-    case "bg": return sel("Background colour", "What background colour would you like behind your products? Tap a colour and see it in the preview. You can change your mind any time.", ANN_PALETTES.map(v => ({ v, t: PALETTE_NAMES[v] || label(v) })), t.color_preset, setKey("color_preset"));
-    case "accent": return { ...sel("Button colour", "What colour would you like for buttons and highlights? Pick one below, or use the colour picker to match your brand.", uniqueAccents(), t.accent_color, setKey("accent_color")), kind: "accent", reply: t.accent_color, color: t.accent_color };
-    case "button": return sel("Button shape", "What shape would you like for your store's buttons? Choose square corners, rounded corners or a fully rounded pill shape. The preview will show you the difference.", ["square", "rounded", "pill"].map(v => ({ v, t: label(v) })), t.button_style, setKey("button_style"));
-    case "font": return sel("Fonts", "How would you like the words on your store to look? Choose a font style for your headings and text. Try one and see whether it feels like your brand.", ANN_FONTS.map(v => ({ v, t: FONT_NAMES[v] || label(v) })), t.font_preset, setKey("font_preset"));
+    case "bg": return sel("Background colour", "Which background makes your products stand out? Tap to try it.", ANN_PALETTES.map(v => ({ v, t: PALETTE_NAMES[v] || label(v) })), t.color_preset, setKey("color_preset"));
+    case "accent": return { ...sel("Button colour", "Pick a colour for buttons and highlights, or choose your own.", uniqueAccents(), t.accent_color, setKey("accent_color")), kind: "accent", reply: t.accent_color, color: t.accent_color };
+    case "button": return sel("Button shape", "Square, soft or rounded? Pick your button shape.", ["square", "rounded", "pill"].map(v => ({ v, t: label(v) })), t.button_style, setKey("button_style"));
+    case "font": return sel("Fonts", "Which lettering feels like your brand? Tap to try a font.", ANN_FONTS.map(v => ({ v, t: FONT_NAMES[v] || label(v) })), t.font_preset, setKey("font_preset"));
     case "collections": { const items = (a.collections || []).map((c, i) => [c, i]);
-      return { kind: "list", list: "col", label: "Collection", q: "Let's organise your products! A collection is a group of related products, like New arrivals or Everyday essentials. What would you like to call one of yours? You can add more or skip for now.", ph: "For example, Everyday essentials", max: 100, items, reply: items.map(([c]) => c.name).join(", "), full: items.length >= 10 }; }
+      return { kind: "list", list: "col", label: "Collection", q: "Let's group your products. Name your first collection, like New arrivals. You can add more later.", ph: "For example, Everyday essentials", max: 100, items, reply: items.map(([c]) => c.name).join(", "), full: items.length >= 10 }; }
     case "ideas": {
-      if (p.id === "ideas:none") return { kind: "info", label: "Products", q: "Want to plan your own products now? First add a collection, which is a group of related products. Or continue with the sample products and come back to this later.", reply: "" };
+      if (p.id === "ideas:none") return { kind: "info", label: "Products", q: "Add a collection to start your products, or explore with samples for now.", reply: "" };
       const col = (a.collections || []).find(c => c.key === p.col);
       const items = (a.product_ideas || []).map((x, i) => [x, i]).filter(([x]) => x.collection_key === p.col);
-      return { kind: "list", list: "idea", label: "Product idea", q: `What product would you like to include in ${col?.name || "this collection"}? Start with up to five product names. Tap a suggestion or type your own. Next we can turn them into real draft products.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50, sugg: suggestions() };
+      return { kind: "list", list: "idea", label: "Product idea", q: `What goes in ${col?.name || "this collection"}? Pick up to five products, or type your own.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50, sugg: suggestions() };
     }
-    case "store_name": return { kind: "onboard", mode: "brand", label: "Store name", q: "Hi, I'm Ann! Let's set up your store together. First, what is your brand name? Customers will see it on your store. You can change it later. Nothing is published yet.", max: 40, ph: "Type your brand name", reply: brandUI.summary() };
-    case "gstin": return { kind: "onboard", mode: "gstin", label: "GST details", q: "Let's verify your GST registration before we continue. Choose your registered business state and enter your GSTIN. We will show your registered business name and address for you to check. This address will be used on your invoices and cannot be changed after you confirm it.", reply: gstUI.summary() };
-    case "included_address": return { kind: "onboard", mode: "address", label: "Store address", q: "Your store comes with its own web address. Here is the one we picked. Keep it, or change it to something shorter and easier to remember.", reply: addressUI.summary() };
-    case "catalogue": return { kind: "catalogue", label: "Create products", q: "Would you like to turn these ideas into real draft products now? You will confirm each price, GST rate, HSN code and stock yourself. Nothing is published, your design stays as it is, and you can skip this and do it later in Products.", reply: "" };
-    case "logo": return {kind:"logo",label:"Brand logo",q:`Have a logo for ${a.store_name || boot.store.name || "your brand"}? Add it here and see it across your store, including the bag, checkout and browser tab. No logo yet? Your brand name works beautifully too.`,reply:brandingUI.reply()};
-    case "tagline": return txt("tagline", "Tagline", "Would you like a short line that tells customers what your brand is about? That's a tagline, like Everyday comfort, made yours. A few words are enough, or you can skip it.", 160, "A few words about your brand");
-    case "description": return txt("description", "About your brand", "What would you like customers to know about your brand? You could share why you started, what you make or what makes your products special. This helps shape your About page. A few sentences are plenty, and you can skip for now.", 1200, "Why you started and what makes your products special", true);
-    case "sections": return { kind: "sections", label: "Optional sections", q: "Would you like any extra sections on your store pages, such as a brand story or FAQs? Tap the options to add or remove them and watch the preview change. After this, we'll look at payments, delivery and your own domain.", reply: sectionsReply() };
-    case "domain": return {kind:"launch",launchStep:1,label:"Store address",q:"Would you like customers to use your own domain, like www.yourbrand.com? This is optional. Your included address keeps working either way, so you can also set this up later.",reply:launchUI.summary(1)};
-    case "payments": return {kind:"launch",launchStep:2,label:"Payments",q:"How would you like customers to pay for their orders? Cash on Delivery means they pay when their parcel arrives. Online payments use Razorpay and need a connected, activated account. Choose what suits you, or set this up later.",reply:launchUI.summary(2)};
-    case "shipping": return {kind:"launch",launchStep:3,label:"Delivery",q:"How would you like to get orders to your customers? You can book deliveries with a courier yourself, or connect Shiprocket to help automate shipping. Automatic shipping only starts after you activate it. You can set this up later too.",reply:launchUI.summary(3)};
+    case "store_name": return { kind: "onboard", mode: "brand", label: "Store name", q: "Hi, I'm Ann! Let's bring your store to life. What's your brand name?", max: 40, ph: "Type your brand name", reply: brandUI.summary() };
+    case "gstin": return { kind: "onboard", mode: "gstin", label: "GST details", q: "Type your GSTIN to find your registered name and address. These go on your invoices and cannot change after confirmation.", reply: gstUI.summary() };
+    case "included_address": return { kind: "onboard", mode: "address", label: "Store address", q: "Here's your store's web address. Keep it, or type a new name below. Your own domain comes later.", reply: addressUI.summary() };
+    case "catalogue": return { kind: "catalogue", label: "Create products", q: "Ready to create draft products? Check each price, HSN, GST rate and stock. You can also do this later.", reply: "" };
+    case "logo": return {kind:"logo",label:"Brand logo",q:`Add a logo for ${a.store_name || boot.store.name || "your brand"}. No logo yet? We'll use your brand name.`,reply:brandingUI.reply()};
+    case "tagline": return txt("tagline", "Tagline", "Describe your brand in a few words, like Everyday comfort, made yours. Or skip for now.", 160, "A few words about your brand");
+    case "description": return txt("description", "About your brand", "What's your brand's story? A couple of lines about what makes it special is plenty.", 1200, "Why you started and what makes your products special", true);
+    case "sections": return { kind: "sections", label: "Optional sections", q: "Make it yours! Tap to add or remove sections, like your story or FAQs.", reply: sectionsReply() };
+    case "domain": return {kind:"launch",launchStep:1,label:"Store address",q:"Have your own domain, like www.yourbrand.com? Connect it now or keep your included address.",reply:launchUI.summary(1)};
+    case "payments": return {kind:"launch",launchStep:2,label:"Payments",q:"How should customers pay? Pick Cash on Delivery, Razorpay online payments, or both.",reply:launchUI.summary(2)};
+    case "shipping": return {kind:"launch",launchStep:3,label:"Delivery",q:"How will you deliver? Add tracking yourself, connect Shiprocket, or use both.",reply:launchUI.summary(3)};
     default: return { kind: "review", label: "Review", q: "", reply: "" };
   }
 }
@@ -432,7 +432,7 @@ function inlineControls(p, d) {
       <div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>${readOnly ? "Continue" : "Continue to payments"}</button>${tail}</div>`;
   } else if (d.kind === "text" || d.kind === "list") {
     const have = new Set((answers.product_ideas || []).map(x => x.name.trim().toLowerCase()));
-    const pills = !editing && d.list === "idea" && d.sugg?.length ? `<div class="ann-chips" role="group" aria-label="Product name suggestions">${d.sugg.filter(x => !have.has(x.name.trim().toLowerCase())).slice(0, 8).map(x => `<button type="button" class="ann-chip sm" data-suggest="${esc(x.name)}"${d.full ? " disabled" : dis}><strong>${esc(x.name)}</strong>${x.hsn_code ? `<span>HSN ${esc(x.hsn_code)}${x.hsn_note ? `: ${esc(x.hsn_note)}` : ""}</span>` : ""}</button>`).join("")}</div>` : "";
+    const pills = !editing && d.list === "idea" && d.sugg?.length ? `<div class="ann-chips ann-product-suggestions" role="group" aria-label="Product name suggestions">${d.sugg.filter(x => !have.has(x.name.trim().toLowerCase())).slice(0, 8).map(x => `<button type="button" class="ann-chip sm" data-suggest="${esc(x.name)}"${d.full ? " disabled" : dis}><strong>${esc(x.name)}</strong>${x.hsn_code ? `<span>HSN ${esc(x.hsn_code)}</span>` : ""}</button>`).join("")}</div><details class="ann-hsn-help"><summary>About HSN suggestions</summary><p class="ann-note">These are suggested 4-digit headings, not verified tax codes. Confirm your product's exact HSN and GST rate before saving.</p></details>` : "";
     const btn = editing ? `<button type="button" class="ann-btn alt" data-cancel-edit>${editing.follow ? "Skip note" : "Cancel"}</button>` : d.kind === "list" ? `<button type="button" class="ann-btn alt" data-continue>${d.items.length ? "Continue" : "Skip for now"}</button>` : `<button type="button" class="ann-btn alt" data-continue>${d.reply ? "Keep and continue" : "Skip"}</button>`;
     body = `${pills}<div class="ann-comp-row">${btn}${editing ? "" : tail}${p.step === "products" && !answers.subcategory_id ? `<button type="button" class="ann-link" data-go="category">Choose a subcategory for product questions</button>` : ""}</div>`;
   } else if (d.kind === "info") {

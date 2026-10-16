@@ -6,6 +6,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
   let state = null, loading = false, loadError = "", busy = "", stale = false;
   const msgs = {}, open = { 1: true, 2: false, 3: false };
   let prefs = null, prefsDirty = false;
+  const providerOpen={razorpay:false,shiprocket:false};
   let focusedStep=null, customOnly=false;
   const skipped=new Set();
   // Drafts live only in memory. Values are applied to inputs as DOM properties, never written into HTML.
@@ -84,7 +85,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
     return `<div class="ann-chips stack" role="group" aria-label="${esc(group)}">${items.map(([val, t, d]) => {
       const unavailable=group==="address" && val==="custom" && !state?.platform?.domains_available && !state?.domain;
       const description=unavailable?"Not available yet. Platform domain setup is needed first.":d;
-      return `<button type="button" class="ann-chip ann-launch-option" data-pref="${group}" data-v="${val}" aria-pressed="${prefs[group] === val}"${unavailable?' aria-disabled="true"':""}${dis(unavailable)}><strong>${esc(t)}</strong><span>${esc(description)}</span></button>`;
+      return `<button type="button" class="ann-chip ann-launch-option" data-pref="${group}" data-v="${val}" aria-pressed="${prefs[group] === val || (group!=="address" && prefs[group]==="both")}"${unavailable?' aria-disabled="true"':""}${dis(unavailable)}><strong>${esc(t)}</strong><span>${esc(description)}</span></button>`;
     }).join("")}</div>`;
   }
   function step(n, title, status, body) {
@@ -92,7 +93,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
     if(n===1 && !state?.domain) status="Included address ready";
     return `<details class="ann-review-step ann-launch-step" data-step="${n}"${open[n] ? " open" : ""}><summary>${n}. ${esc(title)} <span class="ann-launch-st">${esc(status)}</span></summary>${body}</details>`;
   }
-  const saveRow = next => `${msg("choose")}<div class="ann-actions ann-launch-actions"><button type="button" class="ann-btn alt sm" data-ln-a="choose"${dis(!prefsDirty)}>${busy === "choose" ? "Saving" : "Save my choices"}</button><button type="button" class="ann-btn sm" data-ln-a="next" data-next="${next}"${dis()}>${prefsDirty?"Save and continue":next===2?(customOnly?"Continue to review":"Continue to payments"):next===3?"Continue to delivery":"Return to store review"}</button></div><p class="ann-note">Saving choices does not activate a service. Use Continue to move on; you can keep these defaults.</p>`;
+  const saveRow = next => `${msg("choose")}<div class="ann-actions ann-launch-actions"><button type="button" class="ann-btn alt sm" data-ln-a="choose"${dis(!prefsDirty)}>${busy === "choose" ? "Saving" : "Save choices"}</button><button type="button" class="ann-btn sm" data-ln-a="next" data-next="${next}"${dis()}>${prefsDirty?"Save and continue":next===2?(customOnly?"Continue to review":"Continue to payments"):next===3?"Continue to delivery":"Review my store"}</button></div><p class="ann-note">Choices saved here do not activate services.</p>`;
   function advance(next) {
     const move=()=>{
       if(focusedStep&&onStep){skipped.delete(focusedStep);onStep(next);return;}
@@ -114,7 +115,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
   }
 
   function html() {
-    const head = focusedStep?`<p class="ann-note">You can come back to this any time.</p><button type="button" class="ann-link" data-ln-a="skip"${busy?" disabled":""}>Set this up later</button>`:`<h2>Launch setup</h2><p class="ann-note">Every step is optional. You can skip all of this and come back later.</p>`;
+    const head = focusedStep?`<button type="button" class="ann-link" data-ln-a="skip"${busy?" disabled":""}>Set up later</button>`:`<h2>Launch setup</h2><p class="ann-note">Start now, or come back later.</p>`;
     if (loading && !state) return `${head}<div class="ann-skel" aria-busy="true"><i></i><i></i><i></i></div>`;
     if (!state) return `${head}${loadError ? `<p class="ann-error" role="alert">${esc(loadError)}</p>` : ""}<button type="button" class="ann-btn" data-ln-a="load">${loadError ? "Try again" : "Load launch setup"}</button>`;
     const s = state, p = s.providers || {}, d = s.domain, plat = s.platform || {};
@@ -140,7 +141,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
     const s1 = `${own}${customOnly ? `<p class="ann-note">Your included store address keeps working. Connecting your own domain is optional.</p>` : addr}${dom}${saveRow(2)}`;
 
     // Step 2: payments
-    const pay = opts("payments", [["cod", "Cash on delivery", "Available once you enable it in checkout settings."], ["razorpay", "Online payments with Razorpay", "Optional. Verify your account below."]]);
+    const pay = `<p class="ann-note">Choose one or both.</p>${opts("payments", [["cod", "Cash on Delivery", "Customers pay when their order arrives."], ["razorpay", "Razorpay", "Customers pay online. Connect below or finish later."]])}`;
     const rzTime = when(rzp.checked_at);
     const execOff = s.execution_available === false;
     const execNote = execOff ? `<p class="ann-note">Activation is unavailable until the platform database migration is applied. Ask the platform team. Nothing here has been turned on.</p>` : "";
@@ -152,10 +153,10 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
     const rzBlock = `<h3>Razorpay</h3>` + (rzp.verified
       ? rzVerified
       : `<p class="ann-note">Paste keys from your Razorpay dashboard. They are sent once and are never kept in this page after saving.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify account"}</button></div>`);
-    const s2 = `${own}${pay}${prefs.payments==="razorpay"||rzp.verified?rzBlock:""}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${checkoutHref ? `<p class="ann-note">Turn cash on delivery on in <a href="${esc(checkoutHref)}">checkout settings</a>.</p>` : ""}${saveRow(3)}`;
+    const s2 = `${own}${pay}${prefs.payments==="razorpay"||prefs.payments==="both"||rzp.verified?`<details class="ann-provider-setup" data-ln-provider="razorpay"${providerOpen.razorpay?" open":""}><summary>Connect Razorpay${rzOn?" · active":""}</summary>${rzBlock}</details>`:""}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${saveRow(3)}`;
 
     // Step 3: delivery
-    const del = opts("delivery", [["manual", "I ship orders myself", "Your real readiness may still need delivery charges set in checkout settings."], ["shiprocket", "Shiprocket", "Optional. Verify your account below."]]);
+    const del = `<p class="ann-note">Choose one or both. Add manual tracking from Orders.</p>${opts("delivery", [["manual", "I'll add tracking myself", "Use your courier and add its tracking number in Orders."], ["shiprocket", "Shiprocket", "Connect your account for automatic shipping."]])}`;
     const srTime = when(shp.checked_at);
     const srOn = !!shp.runtime_ready, locs = shp.pickup_locations || [], cfg = shp.shipping;
     const picked = locs.some(l => l.name === draftVals["ship.pickup"]);
@@ -166,11 +167,11 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
     const srBlock = `<h3>Shiprocket</h3>` + (shp.verified
       ? `<p class="ann-callout">Account verified${shp.pickup_count != null ? `, ${esc(shp.pickup_count)} pickup location(s)` : ""}${srTime ? `, checked ${esc(srTime)}` : ""}.</p>${srForm}${srAuto}${jobsHtml}`
       : `<p class="ann-note">Use an API user email and password, not your main Shiprocket login.</p>${inp("sr.email", "API user email", "email")}${inp("sr.password", "API user password", "password")}${msg("sr")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="sr"${dis(!v("sr.email") || !draftVals["sr.password"])}>${busy === "sr" ? "Checking" : "Verify account"}</button></div>`);
-    const s3 = `${own}${del}${prefs.delivery==="shiprocket"||shp.verified?srBlock:""}${msg("disc-shiprocket")}${confirmDisc === "shiprocket" ? discBox() : ""}${saveRow(4)}`;
+    const s3 = `${own}${del}${prefs.delivery==="shiprocket"||prefs.delivery==="both"||shp.verified?`<details class="ann-provider-setup" data-ln-provider="shiprocket"${providerOpen.shiprocket?" open":""}><summary>Connect Shiprocket${srOn?" · active":""}</summary>${srBlock}</details>`:""}${msg("disc-shiprocket")}${confirmDisc === "shiprocket" ? discBox() : ""}${saveRow(4)}`;
 
     function discBox() { return `<div class="ann-conflict" role="alertdialog"><p>Disconnect ${esc(confirmDisc)}? Its saved credentials are removed.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="disc-yes"${dis()}>Yes, disconnect</button><button type="button" class="ann-btn alt sm" data-ln-a="disc-no">Keep connected</button></div></div>`; }
 
-    return `${head}${stale || loadError ? `<div class="ann-conflict" role="alert"><p>${esc(loadError || "Status was refreshed. Your entries are kept.")}</p></div>` : ""}${step(1, "Where should customers find your store?", d ? `${d.hostname}: ${d.status}` : prefs.address === "custom" ? "own domain chosen" : "included address", s1)}${step(2, "How would you like to get paid?", `${rzOn ? "online checkout active" : rzp.verified ? "Razorpay verified, not active" : prefs.payments === "razorpay" ? "Razorpay chosen, not set up" : "Cash on delivery"}`, s2)}${step(3, "How will you send your orders?", `${srOn ? "automatic shipping active" : shp.verified ? "Shiprocket verified, not active" : prefs.delivery === "shiprocket" ? "Shiprocket chosen, not set up" : "Manual shipping"}`, s3)}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="reload"${busy || loading ? " disabled" : ""}>Reload status</button></div>`;
+    return `${head}${stale || loadError ? `<div class="ann-conflict" role="alert"><p>${esc(loadError || "Status was refreshed. Your entries are kept.")}</p></div>` : ""}${step(1, "Where should customers find your store?", d ? `${d.hostname}: ${d.status}` : prefs.address === "custom" ? "own domain chosen" : "included address", s1)}${step(2, "How would you like to get paid?", prefs.payments==="both"?"COD + Razorpay":prefs.payments==="razorpay"?"Razorpay":"Cash on Delivery", s2)}${step(3, "How will you send your orders?", prefs.delivery==="both"?"Manual tracking + Shiprocket":prefs.delivery==="shiprocket"?"Shiprocket":"Manual tracking", s3)}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="reload"${busy || loading ? " disabled" : ""}>Reload status</button></div>`;
   }
 
   // Button enabled states that depend on typed drafts, updated without redrawing.
@@ -205,7 +206,15 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
     if (b.disabled) return;
     if (b.dataset.pref) {
       const unavailable=b.dataset.pref==="address" && b.dataset.v==="custom" && !state?.platform?.domains_available && !state?.domain;
-      if (canEdit() && !busy && !loading && !unavailable && prefs[b.dataset.pref]!==b.dataset.v) { prefs[b.dataset.pref] = b.dataset.v; prefsDirty = true; draw(); }
+      if (canEdit() && !busy && !loading && !unavailable) {
+        const group=b.dataset.pref,value=b.dataset.v;
+        const choices=group==="payments"?["cod","razorpay"]:group==="delivery"?["manual","shiprocket"]:["included","custom"];
+        if(!choices.includes(value))return;
+        const current=prefs[group];
+        // Keep at least one option; adding a second retains the first.
+        prefs[group]=group==="address"?value:current==="both"?choices.find(x=>x!==value):current===value?current:"both";
+        prefsDirty=JSON.stringify(prefs)!==JSON.stringify(state.preferences);draw();
+      }
       return;
     }
     const a = b.dataset.lnA, id = state?.domain?.id;
@@ -250,6 +259,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
   });
   document.addEventListener("toggle", e => {
     const t = e.target; if (t?.dataset?.step && slot()?.contains(t)) open[t.dataset.step] = t.open;
+    if(t?.dataset?.lnProvider&&slot()?.contains(t))providerOpen[t.dataset.lnProvider]=t.open;
   }, true);
   document.addEventListener("submit", e => { if (slot()?.contains(e.target)) e.preventDefault(); });
 
@@ -259,8 +269,8 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
       if(skipped.has(n))return "Left unchanged. I'll set this up later.";
       if(!state)return "";
       if(n===1)return state.domain?`${state.domain.hostname}: ${state.domain.status}`:"Included store address; no custom domain connected.";
-      if(n===2)return state.providers?.razorpay?.runtime_ready?"Online payments active":state.preferences.payments==="razorpay"?"Online payments chosen, not active":"Cash on Delivery preference; check checkout settings before opening.";
-      return state.providers?.shiprocket?.runtime_ready?"Automatic shipping active":"I'll arrange delivery myself, or finish connecting Shiprocket later.";
+      if(n===2)return `${state.preferences.payments==="both"?"Cash on Delivery + Razorpay":state.preferences.payments==="razorpay"?"Razorpay":"Cash on Delivery"}${state.preferences.payments!=="cod"?(state.providers?.razorpay?.runtime_ready?" · online payments active":" · online setup pending"):" · enable in checkout settings"}`;
+      return `${state.preferences.delivery==="both"?"Manual tracking + Shiprocket":state.preferences.delivery==="shiprocket"?"Shiprocket":"Manual tracking"}${state.preferences.delivery!=="manual"?(state.providers?.shiprocket?.runtime_ready?" · automatic shipping active":" · partner setup pending"):" · add tracking in Orders"}`;
     },
     hasUnsavedChanges: () => !!busy || prefsDirty || shipDirty || hasCreds(),
   };

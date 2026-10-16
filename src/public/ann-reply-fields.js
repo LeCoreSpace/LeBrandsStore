@@ -4,6 +4,10 @@ export function attachAnnReplyFields({root=document.body,onChange=()=>{}}={}){
   let active=null,signature="",queued=false;
   const fields=new Map(),answered=new Set();
   const selector='textarea,input:not([type]),input[type="text"],input[type="number"],input[type="email"],input[type="url"],input[type="tel"],input[type="search"]';
+  function insideClosedDetails(n){
+    for(let d=n.parentElement?.closest("details");d;d=d.parentElement?.closest("details"))if(!d.open)return true;
+    return false;
+  }
   function keyFor(n){
     const scope=n.closest('[id]:not(html):not(body)')?.id||"ann";
     return scope+"|"+n.getAttributeNames().filter(k=>k==="id"||k==="name"||(k.startsWith("data-")&&!k.startsWith("data-reply"))).sort().map(k=>k+"="+n.getAttribute(k)).join("|");
@@ -26,7 +30,7 @@ export function attachAnnReplyFields({root=document.body,onChange=()=>{}}={}){
   function refresh(){
     fields.clear();
     for(const n of root.querySelectorAll(selector)){
-      if(n.closest("#ann-composer")||n.readOnly||n.type==="password")continue;
+      if(n.closest("#ann-composer")||n.readOnly||n.type==="password"||insideClosedDetails(n))continue;
       const key=keyFor(n);
       fields.set(key,n);
       if(!n.dataset.replyLabel)n.dataset.replyLabel=describe(n);
@@ -54,7 +58,7 @@ export function attachAnnReplyFields({root=document.body,onChange=()=>{}}={}){
     document.getElementById("ann-input")?.focus();
   });
   const observer=new MutationObserver(schedule);
-  observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:["disabled","readonly","value"]});
+  observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:["disabled","readonly","value","open"]});
   schedule();
   return {current,refresh,
     submit(value){
