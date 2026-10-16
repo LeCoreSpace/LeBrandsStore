@@ -29,6 +29,7 @@ export function validateDesignRequest(body, creating = false) {
   if (body.copy !== undefined) {
     if(!plain(body.copy)||Object.keys(body.copy).length>300||Object.keys(body.copy).some(key=>!isDesignCopyKey(key)))throw badInput("Choose supported section text fields.");
     for (const [key, text] of Object.entries(body.copy)) {
+      if(text===null&&key.startsWith("section."))continue;
       if (typeof text !== "string" || [...text].length > getDesignCopyLimit(key) ||
         /[<>\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(text)) {
         throw badInput(`Use plain text within ${getDesignCopyLimit(key)} characters for ${key}.`);
@@ -110,6 +111,7 @@ export async function saveAnnDesign(tx, storeId, userId, raw, creating = false) 
     design = seedAnnDesign(data, plan, body.catalogue_mode || "sample");
   } else design = { ...structuredClone(previous), plan,
     copy: { ...previous.copy, ...body.copy }, media: { ...previous.media } };
+  for(const [key,value] of Object.entries(design.copy))if(value===null)delete design.copy[key];
   if(body.sections)design.sections=structuredClone(body.sections);
   if(body.catalogue_mode)design.catalogue_mode=body.catalogue_mode;
   if (body.media) {

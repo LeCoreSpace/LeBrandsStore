@@ -19,6 +19,7 @@ let controller;
 let addedSection=null,previewScroll=0;
 const sectionMeta=new Map();
 function syncActions(){
+  $("#ae-undo").disabled=!controller?.canUndo();
   $("#ae-save").disabled=!controller?.canSave();
   $("#ae-publish").disabled=!controller?.canPublish();
 }
@@ -34,6 +35,10 @@ function controls() {
   $("#ae-sections").hidden=!ready;
   $("#ae-own").disabled=readOnly||!ready;
   for(const field of $("#ae-content").querySelectorAll("button,input,select"))field.disabled=readOnly||!ready;
+  for(const field of $("#ae-content").querySelectorAll("[data-ae-plan]")){
+    const key=field.dataset.aePlan;
+    field.value=plan[key]||source.settings[key]||({color_preset:"white",font_preset:"modern",accent_color:"#661329"}[key]);
+  }
   const s=snapshot(),design=s.data.settings.ann_design,base=structuredClone(s.data);base.settings.ann_design.sections={};
   const items=designSections(renderStylePreview(base,s.theme,{...s.route,designEdit:true}),page).sections;
   const cfg=design.sections?.[page]||{},order=[...(cfg.order||[]),...items.map(i=>i.id)].filter((id,i,a)=>a.indexOf(id)===i),map=new Map(items.map(i=>[i.id,i]));
@@ -74,6 +79,7 @@ document.addEventListener("click",e=>{
   if(b.id==="ae-own"&&!readOnly)controller.requestCatalogue();
   if(b.id==="ae-save"){const pending=controller.save();syncActions();void pending.finally(syncActions);}
   if(b.id==="ae-publish"){void controller.publish();syncActions();}
+  if(b.id==="ae-undo"){controller.undo();syncActions();}
   if(b.dataset.aeEdit)controller.selectContent(b.dataset.aeEdit,b.dataset.key);
   if(b.dataset.aeSection&&!readOnly)sectionAction(b.dataset.aeSection,b.hasAttribute("data-toggle")?"toggle":Number(b.dataset.move)<0?"up":"down");
 });

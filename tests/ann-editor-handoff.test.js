@@ -43,6 +43,7 @@ test("editor restores a saved Ann plan without writes, then preserves the adopte
     assert.match(shell, /Your saved Ann plan is previewed here/);
     assert.match(shell, /id="ae-save" disabled>Save draft/);
     assert.match(shell, /id="ae-publish" disabled>Review and publish/);
+    assert.match(shell,/id="ae-undo"[^>]*disabled>Undo/);
     assert.doesNotMatch(shell, /\/assets\/editor\.js|Use Aura starter layout/);
     assert.deepEqual(await read(loadDraft), before, "Opening the editor cannot overwrite the draft");
     const state = await call("design", "GET");
@@ -81,9 +82,9 @@ test("editor restores a saved Ann plan without writes, then preserves the adopte
     assert.match(html,/Behind our collection/);
     assert.match(html,/data-design-video="section.home.slot-lookbook-0.video0"/);
     const reset=await call("design","PATCH",{expected_draft:edited.expected_draft,confirm:true,
-      media:{[videoKey]:null},answers});
+      media:{[videoKey]:null},copy:{[textKey]:null},answers});
     assert.equal(reset.design.media[videoKey],undefined);
-    assert.equal(reset.design.copy[textKey],"Behind our collection");
+    assert.equal(reset.design.copy[textKey],undefined,"Undoing a saved section override restores its base content");
     assert.deepEqual(reset.draft.products,before.products,"Section media cannot change inventory");
   } finally { await pg.close(); }
 });

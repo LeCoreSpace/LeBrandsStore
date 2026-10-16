@@ -18,15 +18,25 @@ function harness({ saved = true, readOnly = false, themeEditor = false, contextu
     plan: { style_preset: "editorial" }, copy: {}, media: {} };
   globalThis.fetch = async (url, opts) => {
     requests.push(opts);
+    if(opts.method==="PATCH"){
+      const body=JSON.parse(opts.body);
+      for(const [key,value] of Object.entries(body.copy||{})){
+        if(value===null)delete design.copy[key];else design.copy[key]=value;
+      }
+      design.plan=body.answers||design.plan;
+      design.sections=body.sections||design.sections;
+      design.catalogue_mode=body.catalogue_mode||design.catalogue_mode;
+    }
     return new Response(JSON.stringify({
       expected_draft: "2026-10-16T10:00:00.000001Z",
       design: opts.method === "POST" ? { ...design, catalogue_mode: JSON.parse(opts.body).catalogue_mode } : saved ? design : null, images: [],
     }), { status: 200 });
   };
+  let answers={style_preset:"editorial"};
   const ui = attachAnnDesign({
     api: "/fixture", root: "/fixture", readOnly, themeEditor, contextual,
     mount: { parentNode: { insertBefore() {} } }, say() {},
-    getAnswers: () => ({ style_preset: "editorial" }),
+    getAnswers: () => answers,applyPlan:p=>{answers=structuredClone(p);},
     getPreviewMode: () => mode,
     onActivated: data => activations.push(data),
     onCatalogueConfirmed: () => { confirmed++; mode = "store"; },
@@ -35,6 +45,8 @@ function harness({ saved = true, readOnly = false, themeEditor = false, contextu
   const click = action => events.get("click")({ target: { closest: () => ({ dataset: { designAct: action } }) } });
   return { el, ui, requests, activations, change, click,
     key:key=>events.get("keydown")({key,preventDefault(){},stopPropagation(){}}),
+    input:(key,value)=>events.get("input")({target:{dataset:{designInput:key},value}}),
+    setPlan:p=>{answers={...answers,...p};ui.planChanged();},
     get confirmed() { return confirmed; },
     close() { Object.assign(globalThis, previous); } };
 }
@@ -55,6 +67,55 @@ test("saved Ann designs load without automatically consenting to merchant catalo
     assert.equal(h.confirmed, 1);
     assert.equal(h.requests.length, 1, "preview confirmation never writes catalogue, draft or publications");
   } finally { h.close(); }
+});
+
+test("theme undo groups typing, reverses sections and optional/theme choices, and never writes automatically",async()=>{
+  const h=harness({themeEditor:true});
+  try{
+    await tick();assert.equal(h.ui.canUndo(),false);
+    h.input("title","H");h.input("title","Hello");h.input("title","Hello world");
+    assert.equal(h.ui.previewDesign().copy.title,"Hello world");
+    h.ui.undo();
+    assert.equal(h.ui.previewDesign().copy.title,undefined);
+    assert.equal(h.ui.canUndo(),false,"One typing burst is one undo step");
+    h.setPlan({accent_color:"#ff0000",section_options:{home:["lookbook"]}});
+    h.ui.setSections({home:{hidden:["slot-lookbook-0"]}});
+    h.ui.undo();assert.deepEqual(h.ui.previewDesign().sections,{});
+    assert.equal(h.ui.previewDesign().plan.accent_color,"#ff0000");
+    h.ui.undo();assert.equal(h.ui.previewDesign().plan.accent_color,undefined);
+    assert.equal(h.ui.previewDesign().plan.section_options,undefined);
+    assert.equal(h.requests.length,1,"Undo does not write drafts or publish");
+    assert.equal(h.ui.hasUnsavedChanges(),false);
+  }finally{h.close();}
+});
+
+test("undo survives saves in the current session and saves deletion of newly added copy overrides",async()=>{
+  const h=harness({themeEditor:true});
+  try{
+    await tick();
+    const key="section.home.slot-craft-0.text0";
+    h.input(key,"Our craft");await h.ui.save();
+    assert.equal(h.ui.canUndo(),true);
+    h.ui.undo();assert.equal(h.ui.previewDesign().copy[key],undefined);
+    assert.equal(h.ui.canSave(),true);
+    await h.ui.save();
+    const body=JSON.parse(h.requests.at(-1).body);
+    assert.equal(body.copy[key],null,"Reset needs an explicit tombstone, not an omitted PATCH field");
+    assert.equal(h.ui.hasUnsavedChanges(),false);
+    assert.equal(h.ui.previewDesign().copy[key],undefined);
+    assert.equal(h.ui.canUndo(),false);
+    await h.ui.reload();assert.equal(h.ui.canUndo(),false);
+  }finally{h.close();}
+});
+
+test("read-only theme viewers cannot undo even after simulated mutations",async()=>{
+  const h=harness({themeEditor:true,readOnly:true});
+  try{
+    await tick();h.input("title","Cannot change");
+    h.ui.setSections({home:{hidden:["slot-lookbook-0"]}});
+    h.ui.undo();assert.equal(h.ui.canUndo(),false);
+    assert.equal(h.ui.previewDesign().copy.title,undefined);
+  }finally{h.close();}
 });
 
 test("declining merchant catalogue keeps samples and requires fresh consent next time", async () => {

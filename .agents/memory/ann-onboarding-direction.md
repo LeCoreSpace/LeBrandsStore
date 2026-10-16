@@ -119,3 +119,11 @@ products later, with explicit consent before using their existing products.
 **How to apply:** Preserve the current visual design when committing catalogue
 records, keep sample previews isolated, and retain the real-catalogue
 publication checks.
+
+Theme Undo is scoped to the current store's editing session and must not reset a
+shared style or change the live site. Keep it usable across draft saves in that
+session; applying an undone version still requires Save draft. A reload starts a
+new session, not a historical-version rollback.
+
+**Why:** The user requested a top-right Undo control after explicitly checking
+that theme edits affect only their brand and leave the base style unchanged.

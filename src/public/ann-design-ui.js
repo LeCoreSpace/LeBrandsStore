@@ -41,6 +41,7 @@ export function attachAnnDesign(o) {
   let busy = "", error = "", conflict = false, ack = false, editMode = true, selected = null, uploadAlt = "", uploadNote = "";
   let lastKey = "";
   let catalogueAck = false, cataloguePrompt = false, consentOpen = false;
+  let undoStack=[],historyState=null,historyGroup="",historyTime=0,savedPlan="";
 
   const active = () => Boolean(model);
   const mediaIds = m => Object.fromEntries([...new Set([...DESIGN_MEDIA_KEYS, ...Object.keys(m || {}), ...Object.keys(design?.media || {})])].filter(k => isDesignMediaKey(k)).map(k => [k, m?.[k]?.media_id || null]));
@@ -50,6 +51,28 @@ export function attachAnnDesign(o) {
   const browsingStyle = () => o.getStyle?.() || o.getAnswers().style_preset || "editorial";
   const sameStyle = () => active() && browsingStyle() === model.style;
   const editing = () => active() && !readOnly && editMode && (mode() === "store"||model.catalogue_mode==="sample") && sameStyle();
+  const captureHistory=()=>model?structuredClone({copy:model.copy,media:model.media,sections:model.sections,catalogue_mode:model.catalogue_mode,plan:planPayload()}):null;
+  function remember(group=""){
+    if(!o.themeEditor||readOnly||!model)return;
+    const next=captureHistory();
+    if(JSON.stringify(next)===JSON.stringify(historyState))return;
+    const now=Date.now(),typing=group.startsWith("copy:");
+    if(historyState&&!(typing&&group===historyGroup&&now-historyTime<1000)){
+      undoStack.push(historyState);if(undoStack.length>50)undoStack.shift();
+    }
+    historyState=next;historyGroup=group;historyTime=now;
+  }
+  const canUndo=()=>Boolean(o.themeEditor&&!readOnly&&model&&!busy&&!conflict&&undoStack.length);
+  function undo(){
+    if(!canUndo())return;
+    const previous=undoStack.pop();
+    model.copy=structuredClone(previous.copy);model.media=structuredClone(previous.media);
+    model.sections=structuredClone(previous.sections);model.catalogue_mode=previous.catalogue_mode;
+    model.plan=structuredClone(previous.plan);o.applyPlan?.(structuredClone(previous.plan));
+    planDirty=JSON.stringify(planPayload())!==savedPlan;
+    historyState=captureHistory();historyGroup="";selected=null;error="";
+    paint(true);markSelected();say("Last edit undone. Save draft to keep this version.");o.onChange?.();
+  }
 
   async function call(method, payload) {
     const res = await fetch(`${api}/design`, { method, credentials: "same-origin", headers: payload ? { "content-type": "application/json" } : undefined, body: payload ? JSON.stringify(payload) : undefined });
@@ -68,6 +91,8 @@ export function attachAnnDesign(o) {
       model = { style: d.style, media_pack: d.media_pack,catalogue_mode:d.catalogue_mode||"own",sections:structuredClone(d.sections||{}), plan: d.plan || {}, copy: { ...d.copy }, media: structuredClone(d.media || {}) };
       baseline = snapshot(); planDirty = false;
       if (hydrate) o.applyPlan?.(d.plan || {});
+      savedPlan=JSON.stringify({...d.plan,style_preset:d.style});
+      if(hydrate){undoStack=[];historyState=captureHistory();historyGroup="";}
     }
   }
   async function load() {
@@ -114,6 +139,10 @@ export function attachAnnDesign(o) {
     for (const k of Object.keys(model.copy)) if (!String(model.copy[k] ?? "").trim()) model.copy[k] = designNeutralCopy(model.style, o.getBrand?.() || "Your brand")?.[k] ?? model.copy[k];
     busy = "save"; error = ""; paint(); say("Saving your draft design");
     const sent = snapshot(), sentPlan = planPayload(), live = { copy: { ...model.copy }, media: structuredClone(model.media) };
+    // Null resets an individual section field to its base content. This also
+    // lets Undo remove a new override that was saved during this session.
+    for(const key of Object.keys(design?.copy||{}))
+      if(key.startsWith("section.")&&!Object.hasOwn(live.copy,key))live.copy[key]=null;
     try {
       const { res, body } = await call("PATCH", { expected_draft: expected, confirm: true, copy: live.copy, media: mediaIds(live.media),sections:model.sections,catalogue_mode:model.catalogue_mode, answers: sentPlan });
       if (res.status === 409) { conflict = true; throw new Error("Another window changed this draft. Your edits are kept here and nothing was overwritten."); }
@@ -127,7 +156,7 @@ export function attachAnnDesign(o) {
       say(changed || newerPlan ? "Draft saved. Your newer edits still need saving." : "Draft saved. Your live site is unchanged.");
       return true;
     } catch (e) { error = e.message || "Your design could not be saved. Your edits are kept."; say(error); return false; }
-    finally { busy = ""; paint(); o.onChange?.(); }
+    finally { busy = "";historyState=captureHistory();historyGroup=""; paint(); o.onChange?.(); }
   }
   async function publish() {
     if (readOnly || busy || conflict) return;
@@ -154,6 +183,7 @@ export function attachAnnDesign(o) {
 
   /* ---------- editing ---------- */
   function select(kind, key) {
+    historyGroup="";
     const wasEditing=editMode;editMode=true;
     selected = { kind, key }; uploadNote = ""; paint(true); markSelected();
     const panel=o.contextual?el.querySelector(".ann-ctx"):el.querySelector(".ann-design-edit");
@@ -165,6 +195,7 @@ export function attachAnnDesign(o) {
   function setCopy(key, value) {
     if (readOnly || !model) return;
     model.copy[key] = value.slice(0, getDesignCopyLimit(key));
+    remember(`copy:${key}`);
     error = conflict ? error : ""; paintDynamic(); o.onChange?.();
   }
   function setMedia(key, item) {
@@ -172,6 +203,7 @@ export function attachAnnDesign(o) {
     if(/\.image\d+$/.test(key))delete model.media[key.replace(/\.image(\d+)$/,".video$1")];
     if (item) model.media[key] = { url: item.url, alt: item.alt_text ?? item.alt ?? "", width: Number(item.width) || 1024, height: Number(item.height) || 1024, media_id: item.id };
     else { const prev = design?.media?.[key]; if (prev && !prev.media_id) model.media[key] = structuredClone(prev); else delete model.media[key]; }
+    remember();
     paint(true); o.onChange?.();
   }
   async function upload(file) {
@@ -378,7 +410,7 @@ export function attachAnnDesign(o) {
     if (t.dataset.designChild) { const [kind, ...rest] = t.dataset.designChild.split(":"); select(kind, rest.join(":")); return; }
     if (t.dataset.designPick) { const m = (selected?.kind === "video" ? videos : images).find(i => i.id === t.dataset.designPick); if (m && selected) setMedia(selected.key, m); return; }
     const act = t.dataset.designAct;
-    if (act === "catalogue") { if (!catalogueAck) return; cataloguePrompt = false;if(active())model.catalogue_mode="own";o.onCatalogueConfirmed?.();paint(true);o.onChange?.();return; }
+    if (act === "catalogue") { if (!catalogueAck) return; cataloguePrompt = false;if(active())model.catalogue_mode="own";o.onCatalogueConfirmed?.();remember();paint(true);o.onChange?.();return; }
     if (act === "samples") { cataloguePrompt = false; catalogueAck = false; paint(true); return; }
     if (act === "retry") return void load();
     if (act === "use") return void use();
@@ -395,6 +427,7 @@ export function attachAnnDesign(o) {
       const seed = designNeutralCopy(model.style, o.getBrand?.() || "Your brand");
       if(selected.key.startsWith("section."))delete model.copy[selected.key];
       else model.copy[selected.key] = seed?.[selected.key] ?? "";
+      remember();
       paint(true); o.onChange?.(); return;
     }
     if ((act === "use-video" || act === "goto-image") && t.dataset.designKey) { select(act === "use-video" ? "video" : "image", t.dataset.designKey); return; }
@@ -423,17 +456,18 @@ export function attachAnnDesign(o) {
     active, editing, hasUnsavedChanges: () => dirty() || busy === "save" || busy === "use",
     canSave:()=>!readOnly&&active()&&!busy&&!conflict&&(dirty()||Boolean(error)),
     canPublish:()=>!readOnly&&active()&&!busy&&!conflict,
+    canUndo,undo,
     requestCatalogue() { cataloguePrompt = true; catalogueAck = false; paint(true); el.scrollIntoView({ block: "nearest", behavior: "smooth" }); },
     save, publish, bindPreview, refresh: () => {paint();placePop();}, reload,
     /** Called by Ann when the plan answers change while a design is active. */
-    planChanged() { if (active()) { planDirty = true; paintDynamic(); } },
+    planChanged() { if (active()) { planDirty = true;remember(); paintDynamic(); } },
     receive(result) { ingest(result || {}, { hydrate: true }); paint(true); },
     /** The design to preview, or null when the page should show the showcase instead. */
     previewDesign() {
       if (!active() || !sameStyle()) return null;
       return { version: 1, style: model.style, media_pack: model.media_pack,catalogue_mode:model.catalogue_mode,sections:structuredClone(model.sections), plan: planPayload(), copy: { ...model.copy }, media: { ...model.media } };
     },
-    setSections(value){if(readOnly||!model)return;model.sections=structuredClone(value);planDirty=true;paintDynamic();o.onChange?.();},
+    setSections(value){if(readOnly||!model)return;model.sections=structuredClone(value);planDirty=true;remember();paintDynamic();o.onChange?.();},
     selectContent(kind,key){if(readOnly||!model)return;if(kind==="copy"&&isDesignCopyKey(key)||(kind==="image"||kind==="video")&&isDesignMediaKey(key)||kind==="section"&&o.contextual&&typeof key==="string"&&key)select(kind,key);},
     isActive: active,
   };
