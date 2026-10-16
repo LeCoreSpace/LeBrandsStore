@@ -11,7 +11,7 @@ export const GST_COPY = "This registered business name, GSTIN and address will b
  *   address - included store address (subdomain), custom domain comes later
  * Nothing here publishes. GST is never treated as verified from local checks.
  */
-export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", onDraft, onContinue, onPreview }) {
+export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", onDraft, onContinue, onPreview, onStateChange }) {
   const url = `${api}/onboarding`, gstApi = `${api.replace(/\/ann$/,"")}/gstin`;
   const slotId = `ann-ob-${mode}-slot`;
   let env = null, loading = false, busy = "", error = "", note = "", attempted = false, done = false;
@@ -114,11 +114,12 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
   }
   async function verify() {
     if (off()) return;
+    if(env?.verification?.enabled===false){error="GST verification needs a platform update. Your GSTIN is kept in the chat below. Verification and address confirmation are required before continuing.";draw();return;}
     const problem = gstProblem(); if (problem) { error = problem; draw(); return; }
     busy = "verify"; error = ""; unavailable = false; note = ""; draw();
     try {
       const { res, result } = await call(`${gstApi}/verify`, "POST", { gstin: gstValue(), state_code: code() });
-      if (!res.ok) { unavailable = res.status >= 500 || res.status === 429; throw new Error(result.code==="GSTIN_SETUP_REQUIRED"?"GST verification needs a platform update. Your entries are kept. Verification and address confirmation are required to continue.":unavailable ? "The GST service is not available right now. Your entries are kept. Please retry; verification is required to continue." : failText(result, "We could not verify this GSTIN. Check it and try again.")); }
+      if (!res.ok) { unavailable = res.status >= 500 || res.status === 429; throw new Error(result.code || res.status===429 ? failText(result,"GST verification could not finish.") : unavailable ? "The GST service is not available right now. Your entries are kept. Please retry; verification is required to continue." : failText(result, "We could not verify this GSTIN. Check it and try again.")); }
       if (result.enabled === false) throw new Error("GST verification needs a platform update. Your entries are kept. Verification is required to continue.");
       pending = result; pick = 0;
       if (result.state === "unverified") { unavailable = true; error = result.message || "Verification is unavailable right now. Try again later."; }
@@ -150,9 +151,8 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
 
   function brandHtml() {
     const bad = nameProblem();
-    return `<label class="ann-field">Brand name<input data-ob-in="name" maxlength="40" autocomplete="organization" placeholder="Type your brand name" value="${esc(displayName())}"${dis()}></label>
-      <p class="ann-note">2 to 40 characters. This changes your draft only. Your live store is unchanged.</p>${msgs()}
-      <div class="ann-actions"><button type="button" class="ann-btn" data-ob="save"${off() || !env || bad ? " disabled" : ""}>${busy === "brand" ? "Saving" : "Save name and continue"}</button></div>`;
+    return `<p class="ann-note">Reply in the chat box below. Your brand name can be 2 to 40 characters. This changes your draft only.</p>${msgs()}
+      ${!bad?`<div class="ann-actions"><button type="button" class="ann-btn alt" data-ob="save"${off() || !env ? " disabled" : ""}>${busy === "brand" ? "Saving" : `Keep ${esc(displayName())} and continue`}</button></div>`:""}`;
   }
   function gstHtml() {
     if (confirmed()) {
@@ -166,7 +166,8 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
     const hint = (g || stateCode) && problem ? `<p class="ann-note">${esc(problem)}</p>` : "";
     return `${env?.verification?.enabled===false?'<div class="ann-error" role="alert">GST verification needs a platform update. Your entries are kept, but you must verify and confirm your invoice address before continuing.</div><button type="button" class="ann-btn alt" data-ob="retry">Check availability again</button>':""}<p class="ann-note">We will check your GSTIN with the GST service. Nothing counts as verified until you press Verify and confirm the address.</p>
       <label class="ann-field">State of your registered address<select data-ob-in="state"${dis()}><option value="">Choose a state</option>${INDIAN_STATES.map(s => `<option value="${s.code}"${s.code === code() ? " selected" : ""}>${esc(s.name)}</option>`).join("")}</select></label>
-      <label class="ann-field">GSTIN<input data-ob-in="gstin" maxlength="15" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="15 characters" value="${esc(gstValue())}"${dis()}></label>${hint}
+      <p class="ann-note">Send your 15-character GSTIN in the chat below. Its first two digits will select your registered state for you.</p>
+      ${g?`<p class="ann-note">GSTIN submitted: <strong>${esc(g)}</strong></p>`:""}${hint}
       ${p ? `<fieldset class="ann-item"${dis()}><legend>Registered name and address</legend><p><strong>${esc(p.registration.legal_name || "")}</strong>${p.registration.trade_name ? `<br><small>${esc(p.registration.trade_name)}</small>` : ""}</p>
         ${list.map((a, i) => `<label class="ann-check"><input type="radio" name="ann-ob-addr" data-ob-in="addr" value="${i}"${i === pick ? " checked" : ""}><span>${esc(addrText(a))}</span></label>`).join("")}
         <p class="ann-note">${GST_COPY}</p></fieldset>` : ""}${msgs()}
@@ -176,7 +177,7 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
   }
   function addressHtml() {
     const s = displaySub(), m = subMsg;
-    return `<label class="ann-field">Your store address name<input data-ob-in="sub" maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false" value="${esc(s)}"${dis()}></label>
+    return `<p class="ann-note">Your included store address is <strong>${esc(s)}.lebrands.store</strong>. To change the part before .lebrands.store, type a new name in the chat below.</p>
       ${m ? `<p class="${m.bad ? "ann-error" : "ann-note"}" role="${m.bad ? "alert" : "status"}">${esc(m.text)}</p>` : ""}${msgs()}
       <div class="ann-actions"><button type="button" class="ann-btn alt" data-ob="check"${off() || !s ? " disabled" : ""}>${busy === "check" ? "Checking" : "Check this address"}</button>
       <button type="button" class="ann-btn" data-ob="save"${off() || !env || subProblem() ? " disabled" : ""}>${busy === "address" ? "Saving" : "Keep this address and continue"}</button></div>
@@ -184,6 +185,7 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
   }
   const html = () => mode === "brand" ? brandHtml() : mode === "gstin" ? gstHtml() : addressHtml();
   function draw() {
+    onStateChange?.();
     const n = slot(); if (!n) return;
     const a = document.activeElement, k = n.contains(a) ? a.dataset?.obIn : null;
     const sel = k && a.selectionStart != null ? [a.selectionStart, a.selectionEnd] : null;
@@ -229,8 +231,25 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
     html,
     refresh: () => load(),
     mount() { const n = slot(); if (!n) return; if (!attempted) void load(); else if (!n.childElementCount) draw(); },
-    // Brand mode only: the bottom composer sends a typed name here.
-    submit(text) { if (mode !== "brand") return; name = String(text || "").trim().slice(0, 40); draw(); void saveBrand(); },
+    async submit(text) {
+      if(off()||!env){error="Please wait for your store details to finish loading, then send your reply again.";draw();return false;}
+      error="";
+      if(mode==="brand"){name=String(text||"").trim().slice(0,40);draw();await saveBrand();}
+      else if(mode==="address"){sub=String(text||"").trim().toLowerCase();subMsg=null;draw();await saveAddress();}
+      else {
+        if(confirmed()||toConfirm()){error="Please confirm the verified invoice address above before continuing.";draw();return false;}
+        gstinVal=String(text||"").trim().toUpperCase();
+        const detected=INDIAN_STATES.find(s=>s.code===gstinVal.slice(0,2));
+        if(detected)stateCode=detected.code;
+        pending=null;draw();await verify();
+      }
+      return !error;
+    },
+    composer() {return {max:mode==="gstin"?15:mode==="brand"?40:30,
+      placeholder:mode==="gstin"?"Type your 15-character GSTIN":mode==="address"?"Type a new store address name":"Type your brand name",
+      value:mode==="gstin"?gstValue():"",
+      disabled:off()||!env||(mode==="gstin"&&(confirmed()||!!toConfirm())),
+      label:mode==="gstin"?"GSTIN":mode==="address"?"Store address":"Brand name"};},
     envelope: () => env,
     isConfirmed: () => confirmed(),
     summary() {

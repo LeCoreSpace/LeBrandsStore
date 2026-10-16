@@ -27,6 +27,16 @@ delivery, custom-domain connection and review.
 non-technical merchants. Preserve the existing verified-registration and
 historical-invoice boundaries.
 
+All merchant-typed answers in Ann must use the single chat text box at the
+bottom, not separate text inputs inside the conversation.
+
+**Why:** The user repeatedly requested a natural chat flow and explicitly said
+all user-typed input should come from that bottom text box.
+
+**How to apply:** Keep selectable choices and explicit confirmations beside the
+question. When additional details are needed, clearly identify which question
+the bottom reply will answer rather than introducing another text-entry location.
+
 GSTIN verification and explicit confirmation of the registered invoice address
 are mandatory at the opening business stage, not deferrable until publication.
 After confirmation, the invoice legal name, GSTIN and registered address cannot

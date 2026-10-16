@@ -31,6 +31,8 @@ export async function verifyGSTIN(tx,env,id,{gstin,state_code},{lookup=lookupGST
  if(invalid)throw problem(invalid);
  if(!INDIAN_STATES.some(s=>s.code===state_code)||gstin.slice(0,2)!==state_code)throw problem("GSTIN state code must match the registered business state.");
  if(!await gstinEnabled(tx))throw problem("GSTIN verification migration has not been applied.",503);
+ if(lookup===lookupGSTIN&&(typeof env?.GSTIN_KEY!=="string"||!env.GSTIN_KEY.trim()))
+  throw Object.assign(problem("GST verification is not configured on the platform. Please contact LeBrands support.",503),{publicCode:"GSTIN_CONFIGURATION_REQUIRED"});
  const[previous]=await tx`SELECT * FROM public.store_gstin_verifications WHERE store_id=${id} AND gstin=${gstin} ORDER BY created_at DESC,id DESC LIMIT 1`;
  if(previous && now-new Date(previous.created_at).getTime()< (previous.state==="unverified"?60000:86400000))
   return publicResult(previous,previous.state==="unverified"?60:0);
@@ -38,15 +40,28 @@ export async function verifyGSTIN(tx,env,id,{gstin,state_code},{lookup=lookupGST
  if(!quota?.reservation?.allowed)throw Object.assign(problem("GSTIN lookup limit reached. Please retry later.",429),{retry_after:quota?.reservation?.retry_after||60});
  let result,state,errorCode=null;
  try{result=await lookup(env,gstin);state=result.registration.status==="Active"&&result.registration.taxpayer_type==="Regular"?"verified":"blocked";}
- catch(error){state="unverified";errorCode=["NOT_FOUND","TIMEOUT","MALFORMED","HTTP_ERROR","RATE_LIMIT","UNAVAILABLE","CONFIGURATION"].includes(error.code)?error.code:"PROVIDER_ERROR";}
+ catch(error){state="unverified";errorCode=["NOT_FOUND","TIMEOUT","MALFORMED","HTTP_ERROR","RATE_LIMIT","UNAVAILABLE","CONFIGURATION","UNCONFIGURED","NETWORK_ERROR"].includes(error.code)?error.code:"PROVIDER_ERROR";}
  const[row]=await tx`INSERT INTO public.store_gstin_verifications(store_id,gstin,state,normalized,raw_response,verified_at,error_code)
  VALUES(${id},${gstin},${state},${result?JSON.stringify(result.registration):null}::jsonb,
  ${result?JSON.stringify(result.raw_response):null}::jsonb,${state==="verified"?new Date(now).toISOString():null},${errorCode}) RETURNING *`;
  return publicResult(row,state==="unverified"?60:0);
 }
-function publicResult(row,retry=0){return {id:row.id,gstin:row.gstin,state:row.state,registration:row.normalized,verified_at:row.verified_at,
+const failureMessages={
+ NETWORK_ERROR:"We could not connect to the GST provider. Your GSTIN has not been rejected. Please retry in a minute.",
+ TIMEOUT:"The GST provider took too long to respond. Please retry in a minute.",
+ NOT_FOUND:"The GST provider could not verify this registration. Check your GSTIN and try again.",
+ MALFORMED:"The GST provider returned incomplete registration details. Please retry; contact LeBrands support if this continues.",
+ HTTP_ERROR:"The GST provider could not accept this request. Please retry; contact LeBrands support if this continues.",
+ RATE_LIMIT:"The GST provider is receiving too many requests. Please wait a minute before retrying.",
+ CONFIGURATION:"GST verification is not configured on the platform. Please contact LeBrands support.",
+ UNCONFIGURED:"GST verification is not configured on the platform. Please contact LeBrands support.",
+ UNAVAILABLE:"The GST provider is temporarily unavailable. Please retry in a minute.",
+ PROVIDER_ERROR:"GST verification could not finish. Please retry; contact LeBrands support if this continues."
+};
+function publicResult(row,retry=0){const errorCode=Object.hasOwn(failureMessages,row.error_code)?row.error_code:"PROVIDER_ERROR";return {id:row.id,gstin:row.gstin,state:row.state,registration:row.normalized,verified_at:row.verified_at,
+ error_code:row.state==="unverified"?errorCode:undefined,
  retry_after:retry,message:row.state==="blocked"?"An active Regular GSTIN is required. Inactive and Composition registrations cannot publish or issue tax invoices.":
- row.state==="unverified"?"Verification is unavailable. You may enter your address manually, but invoices remain blocked until verification succeeds.":"Registration verified. Confirm a registered address."};}
+ row.state==="unverified"?`${failureMessages[errorCode]} Verification and registered-address confirmation are required to continue.`:"Registration verified. Confirm a registered address."};}
 export async function protectSupplier(tx,id,patch,current){
  if(patch.gstin&&patch.gstin!==current.gstin)return;
  const state=await verificationState(tx,id,current);

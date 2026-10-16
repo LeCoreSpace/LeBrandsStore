@@ -43,5 +43,11 @@ export async function handleGSTINRoutes(request,env,db,user,tokenHash){
    return saveSetup(tx,id,patch);
   });
   return json(result);
-  }catch(error){return json({error:error.status?error.message:"GSTIN services are unavailable.",code:error.publicCode,retry_after:error.retry_after},error.code==="42501"?403:error.status||503);}
+   }catch(error){
+    const diagnostic=!error.status&&/^[0-9A-Z]{5}$/.test(error.code||"")?error.code:undefined;
+    if(!error.status)console.error(JSON.stringify({event:"gstin_request_failed",action,diagnostic:diagnostic||"UNEXPECTED"}));
+    return json({error:error.status?error.message:`GST verification could not finish. Please retry; if this continues, share support code GST-${diagnostic||"REQUEST"} with LeBrands.`,
+      code:error.publicCode||(!error.status?"GSTIN_REQUEST_FAILED":undefined),retry_after:error.retry_after},
+      error.code==="42501"?403:error.status||503);
+   }
 }

@@ -8,6 +8,7 @@ import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
 import { attachAuraMotion } from "./aura-motion.js";
 import { attachAnnApplication } from "./ann-application-ui.js";
 import { attachAnnOnboarding } from "./ann-onboarding-ui.js";
+import { attachAnnReplyFields } from "./ann-reply-fields.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { attachAnnLaunch } from "./ann-launch-ui.js";
 import { openAnnBrowserPreview } from "./ann-browser-preview.js";
@@ -102,6 +103,7 @@ function onboardingDraft(env, { initial = false } = {}) {
   renderPreview(false); readinessUI.onStoreChanged(); if (initial) drawKeep();
 }
 const obCommon = { api, storeId, readOnly, onDraft: onboardingDraft, onContinue: () => advance(),
+  onStateChange:()=>queueMicrotask(()=>drawComposer(true)),
   onPreview: ({ brand_name }) => { previewSource.settings = { ...previewSource.settings, brand_name }; base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" }); renderPreview(false); } };
 const brandUI = attachAnnOnboarding({ ...obCommon, mode: "brand" });
 const gstUI = attachAnnOnboarding({ ...obCommon, mode: "gstin" });
@@ -443,7 +445,8 @@ function inlineControls(p, d) {
 function drawComposer(force) {
   const box = $("#ann-composer"); if (!box) return;
   const ps = prompts(), p = cur(ps), d = def(p);
-  const key = composerKeyFor(p, d);
+  const linked = d.kind==="onboard"?null:replyFields.current(), onboarding = d.kind==="onboard" ? obUIs[d.mode]?.composer() : null;
+  const key = linked ? `field:${linked.key}` : composerKeyFor(p, d);
   const ae = document.activeElement;
   const hadFocus = box.contains(ae) && ae.tagName === "TEXTAREA";
   if (!force && key === composerKey && hadFocus) return;
@@ -454,18 +457,18 @@ function drawComposer(force) {
   const it = editing ? item() : null;
   const choiceLike = d.kind === "choice" || d.kind === "accent";
   const field = editing ? editing.field : "name";
-  const max = choiceLike ? 120 : editing ? (editing.kind === "col" ? (field === "name" ? 100 : 800) : (field === "name" ? 120 : 1200)) : d.max || 120;
-  const original = choiceLike ? "" : editing ? (it?.[field] || "") : d.kind === "text" ? d.reply : "";
+  const max = linked?.max || onboarding?.max || (choiceLike ? 120 : editing ? (editing.kind === "col" ? (field === "name" ? 100 : 800) : (field === "name" ? 120 : 1200)) : d.max || 120);
+  const original = linked ? linked.value : onboarding ? onboarding.value : choiceLike ? "" : editing ? (it?.[field] || "") : d.kind === "text" ? d.reply : "";
   composerOriginals.set(key, original);
   const val = composerDrafts.get(key) ?? original;
-  const area = !choiceLike && (editing ? field === "description" : d.area);
+  const area = linked ? linked.area : !choiceLike && (editing ? field === "description" : d.area);
   const full = !editing && d.kind === "list" && d.full;
-  const idle = ["info", "review", "sections", "catalogue", "launch", "logo"].includes(d.kind) || (d.kind === "onboard" && d.mode !== "brand");
-  const off = readOnly || full || idle;
-  const ph = readOnly ? "Viewing only" : full ? "Limit reached" : idle ? "Use the options above" : choiceLike ? `Type your ${d.label.toLowerCase()} choice` : editing ? (editing.follow ? "Type a note, or skip it above" : "Type your change") : d.ph || "Type your answer";
-  const lab = editing ? (editing.follow ? "Optional note" : editing.field === "name" ? "New name" : "New note") : d.label;
+  const idle = !linked&&!onboarding&&["info", "review", "sections", "catalogue", "launch", "logo"].includes(d.kind);
+  const off = readOnly || full || idle || linked?.disabled || onboarding?.disabled;
+  const ph = readOnly ? "Viewing only" : linked ? linked.placeholder : onboarding ? onboarding.placeholder : full ? "Limit reached" : idle ? "Choose an option above to continue" : choiceLike ? `Type your ${d.label.toLowerCase()} choice` : editing ? (editing.follow ? "Type a note, or skip it above" : "Type your change") : d.ph || "Type your answer";
+  const lab = linked?.label || onboarding?.label || (editing ? (editing.follow ? "Optional note" : editing.field === "name" ? "New name" : "New note") : d.label);
   box.innerHTML = `<form class="ann-form ann-compose" data-composer novalidate><label class="ann-sr" id="ann-cq" for="ann-input">Reply to Ann: ${esc(lab)}</label>
-    <div class="ann-input"><textarea id="ann-input" data-composer-input rows="${area ? 3 : 1}" maxlength="${max}" aria-describedby="ann-count" placeholder="${esc(ph)}"${off ? " disabled" : ""}>${esc(val)}</textarea>
+    ${linked?`<p class="ann-note ann-reply-context">Replying to ${esc(linked.label)}</p>`:""}<div class="ann-input"><textarea id="ann-input" data-composer-input rows="${area ? 3 : 1}" maxlength="${max}"${linked?.inputMode?` inputmode="${esc(linked.inputMode)}"`:""} aria-describedby="ann-count" placeholder="${esc(ph)}"${off ? " disabled" : ""}>${esc(val)}</textarea>
     <button type="submit" class="ann-send" aria-label="Send"${off ? " disabled" : ""}><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></button></div>
     <span id="ann-count" class="ann-note ann-hint">${off ? "" : `<span data-count>${val.length}</span> of ${max}. Enter sends, Shift+Enter adds a line. Your reply answers Ann's current question.`}</span></form>`;
   const ta = box.querySelector("textarea");
@@ -563,9 +566,19 @@ function addIdeaNamed(d, p, v) {
   const i = answers.product_ideas.length - 1; focusIdea(i); feed(p.id, `Added product idea ${v.slice(0, 120)}`);
   editing = { kind: "idea", i, field: "description", follow: true };
 }
-function submitComposer(raw) {
+async function submitComposer(raw) {
   if (readOnly) return;
   const v = raw.replace(/\r/g, "").trim(), p = cur(), d = def(p);
+  if(d.kind==="onboard"){
+    const key=composerKey,ui=obUIs[d.mode];
+    if(await ui.submit(v))composerDrafts.delete(key);
+    drawComposer(true);return;
+  }
+  if(replyFields.current()){
+    try{const key=composerKey;replyFields.submit(v);composerDrafts.delete(key);drawComposer(true);say("Answer entered. Review it above, then use the save or continue button when you are ready.");}
+    catch(error){say(error.message);}
+    return;
+  }
   if (editing) {
     const it = item(); if (!it) { editing = null; draw("active"); return; }
     const f = editing.field, kind = editing.kind;
@@ -585,7 +598,6 @@ function submitComposer(raw) {
     composerDrafts.delete(composerKey);
     notice = ""; edit(() => d.pick(matches[0].v)); feed(p.id, `${d.label}: ${matches[0].t}`); return void advance();
   }
-  if (d.kind === "onboard" && d.mode === "brand") { composerDrafts.delete(composerKey); return void brandUI.submit(v); }
   if (d.kind === "text") { composerDrafts.delete(composerKey); edit(() => { answers[d.key] = v.slice(0, d.max); }); feed(p.id, `${d.label} sent to your plan`); return void advance(); }
   if (d.full) return say(d.list === "col" ? "Ten collections is the limit." : "Five ideas is the limit for one collection.");
   composerDrafts.delete(composerKey);
@@ -822,6 +834,7 @@ async function reloadLatest(keepEdits) {
 window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || launchUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || Object.values(obUIs).some(u => u.hasUnsavedChanges()) || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
+const replyFields=attachAnnReplyFields({onChange:()=>drawComposer(true)});
 if ((window.innerWidth || 1280) < 700) { canvas.dataset.device = "mobile"; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.device === "mobile"))); }
 if (clearedNote.length) notice = "Some earlier choices were cleared because they no longer matched.";
 if (answers.subcategory_id && step === "products") loadAttrs(answers.subcategory_id);

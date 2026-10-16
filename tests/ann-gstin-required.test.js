@@ -62,7 +62,10 @@ test("Ann cannot skip GST, distinguishes platform setup, and locks the confirmed
   globalThis.document={activeElement:null,getElementById:()=>slot,addEventListener:(kind,fn)=>(listeners[kind]||=[]).push(fn)};
   globalThis.fetch=async(url,options)=>{
     if(url.endsWith("/onboarding"))return Response.json(env);
-    if(url.endsWith("/verify"))return Response.json({id:"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",state:"verified",registration});
+    if(url.endsWith("/verify")){
+      assert.equal(JSON.parse(options.body).state_code,registration.gstin.slice(0,2),"the typed GSTIN supplies the registered state");
+      return Response.json({id:"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",state:"verified",registration});
+    }
     if(url.endsWith("/confirm")){
       confirmBody=JSON.parse(options.body);
       const a=registration.principal_address;
@@ -81,8 +84,12 @@ test("Ann cannot skip GST, distinguishes platform setup, and locks the confirmed
     await ui.refresh();
     assert.match(ui.html(),/platform update/);assert.doesNotMatch(ui.html(),/Save for later and continue|data-ob="skip"/);
     assert.doesNotThrow(()=>ui.summary());click("skip");click("continue");assert.equal(continued,0);
-    env={...env,settings:{gstin:registration.gstin,business_state:registration.principal_address.state_code},verification:{enabled:true,state:"unverified",confirmed:false}};
-    await ui.refresh();click("verify");await flush();
+    assert.equal(await ui.submit(registration.gstin),false);
+    assert.match(ui.html(),/platform update/);
+    env={...env,settings:{business_state:"07"},verification:{enabled:true,state:"unverified",confirmed:false}};
+    await ui.refresh();
+    assert.doesNotMatch(ui.html(),/<input[^>]+data-ob-in="gstin"/);
+    await ui.submit(registration.gstin);
     assert.match(ui.html(),/Confirm and lock this invoice address/);
     click("continue");assert.equal(continued,0);
     click("confirm");await flush();

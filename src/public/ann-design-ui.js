@@ -29,7 +29,7 @@ export function attachAnnDesign(o) {
   let design = null, model = null, baseline = "", planDirty = false;
   let busy = "", error = "", conflict = false, ack = false, editMode = true, selected = null, uploadAlt = "", uploadNote = "";
   let lastKey = "";
-  let catalogueAck = false, cataloguePrompt = false;
+  let catalogueAck = false, cataloguePrompt = false, consentOpen = false;
 
   const active = () => Boolean(model);
   const mediaIds = m => Object.fromEntries(DESIGN_MEDIA_KEYS.map(k => [k, m?.[k]?.media_id || null]));
@@ -222,8 +222,9 @@ export function attachAnnDesign(o) {
       <div class="ann-actions"><button type="button" class="ann-btn alt" data-design-act="mine">Edit my saved design</button></div></div>` : browsing || !active() ? `<div class="ann-design-card">
       <p class="ann-design-title">${active() ? `Switch to the ${esc(styleName(browsingStyle()))} design` : `Use the ${esc(styleName(browsingStyle()))} design`}</p>
       <p class="ann-note">${active() ? "This builds the selected style as your draft design and keeps the words and photos only if you choose them again." : "Start your store with this exact look. You can then change its words and photos right on the page."}</p>
+      <details class="ann-consent" data-design-consent ${consentOpen || ack || catalogueAck ? "open" : ""}><summary>Confirm before you continue${ack ? " (replacement confirmed)" : ""}</summary>
       <label class="ann-check"><input type="checkbox" data-design-ack ${ack ? "checked" : ""} ${readOnly ? "disabled" : ""}> I understand this replaces my existing draft design. My live site is not changed.</label>
-      <label class="ann-check"><input type="checkbox" data-design-catalogue-ack ${catalogueAck ? "checked" : ""} ${readOnly ? "disabled" : ""}> Use my own catalogue products in the saved design. Sample products are for preview only.</label>
+      <label class="ann-check"><input type="checkbox" data-design-catalogue-ack ${catalogueAck ? "checked" : ""} ${readOnly ? "disabled" : ""}> Use my own catalogue products in the saved design. Sample products are for preview only.</label></details>
       <div class="ann-actions"><button type="button" class="ann-btn" data-design-act="use" ${readOnly || !ack || busy ? "disabled" : ""}>${busy === "use" ? "Creating" : "Use this design"}</button>
       ${active() && !sameStyle() ? `<button type="button" class="ann-btn alt" data-design-act="back">Back to my design</button>` : ""}
       ${active() && sameStyle() ? `<button type="button" class="ann-btn alt" data-design-act="mine">View my design</button>` : ""}</div>
@@ -296,6 +297,7 @@ export function attachAnnDesign(o) {
     if (act === "reset-copy" && selected) { const seed = designNeutralCopy(model.style, o.getBrand?.() || "Your brand"); model.copy[selected.key] = seed?.[selected.key] ?? ""; paint(true); o.onChange?.(); return; }
     if (act === "reset-image" && selected) setMedia(selected.key, null);
   });
+  el.addEventListener("toggle", e => { if (e.target.matches?.("[data-design-consent]")) consentOpen = e.target.open; }, true);
   el.addEventListener("input", e => {
     const t = e.target;
     if (t.dataset?.designInput) setCopy(t.dataset.designInput, t.value);

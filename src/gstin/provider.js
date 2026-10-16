@@ -134,6 +134,7 @@ export async function parseGSTINResponse(response, expectedGSTIN) {
 }
 
 const safeFailures = {
+  NETWORK_ERROR: "We could not connect to the GST provider. Please retry in a minute.",
   MALFORMED: "The GSTIN provider returned an incomplete or invalid response.",
   NOT_FOUND: "The GSTIN provider could not verify this registration.",
   RATE_LIMIT: "The GSTIN provider is temporarily rate limited.",
@@ -166,7 +167,7 @@ export async function lookupGSTIN(env, gstin, { fetchImpl = fetch, timeoutMs = 8
     const result = await Promise.race([
       (async () => {
         const response = await fetchImpl(
-          `https://sheet.gstincheck.co.in/check/${encodeURIComponent(key)}/${encodeURIComponent(gstin)}`,
+          `https://sheet.gstincheck.co.in/check/${encodeURIComponent(key.trim())}/${encodeURIComponent(gstin)}`,
           { method: "GET", redirect: "manual", signal: controller.signal },
         );
         const raw = await responseBody(response);
