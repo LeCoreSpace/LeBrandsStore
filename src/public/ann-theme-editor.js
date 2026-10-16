@@ -23,6 +23,8 @@ const snapshot=()=>{
 };
 function controls() {
   const ready=controller?.active()===true;
+  $("#ae-content").hidden=!ready;
+  $("#ae-sections").hidden=!ready;
   $("#ae-own").disabled=readOnly||!ready;
   for(const field of $("#ae-content").querySelectorAll("button,input,select"))field.disabled=readOnly||!ready;
   const s=snapshot(),design=s.data.settings.ann_design,base=structuredClone(s.data);base.settings.ann_design.sections={};

@@ -7,10 +7,10 @@ import { attachAnnDesign } from "../src/public/ann-design-ui.js";
 const source = await readFile(new URL("../src/public/ann-builder.js", import.meta.url), "utf8");
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-function harness({ saved = true, readOnly = false } = {}) {
+function harness({ saved = true, readOnly = false, themeEditor = false } = {}) {
   const previous = { document: globalThis.document, fetch: globalThis.fetch };
   const events = new Map(), requests = [], activations = [];
-  let confirmed = 0, mode = "showcase";
+  let confirmed = 0, mode = themeEditor ? "store" : "showcase";
   const el = { innerHTML: "", setAttribute() {}, scrollIntoView() {},
     querySelector: () => null, addEventListener: (name, fn) => events.set(name, fn) };
   globalThis.document = { activeElement: null, createElement: () => el };
@@ -20,11 +20,11 @@ function harness({ saved = true, readOnly = false } = {}) {
     requests.push(opts);
     return new Response(JSON.stringify({
       expected_draft: "2026-10-16T10:00:00.000001Z",
-      design: saved || opts.method === "POST" ? design : null, images: [],
+      design: opts.method === "POST" ? { ...design, catalogue_mode: JSON.parse(opts.body).catalogue_mode } : saved ? design : null, images: [],
     }), { status: 200 });
   };
   const ui = attachAnnDesign({
-    api: "/fixture", root: "/fixture", readOnly,
+    api: "/fixture", root: "/fixture", readOnly, themeEditor,
     mount: { parentNode: { insertBefore() {} } }, say() {},
     getAnswers: () => ({ style_preset: "editorial" }),
     getPreviewMode: () => mode,
@@ -41,7 +41,7 @@ test("saved Ann designs load without automatically consenting to merchant catalo
   const h = harness();
   try {
     await tick();
-    assert.deepEqual(h.activations, [{ restored: true }]);
+    assert.deepEqual(h.activations, [{ restored: true, useOwnProducts: false }]);
     assert.match(h.el.innerHTML, /Your saved Editorial design/);
     assert.match(h.el.innerHTML, /sample products/);
     h.ui.requestCatalogue();
@@ -74,16 +74,39 @@ test("adopting a design requires separate explicit catalogue consent, not just r
   const h = harness({ saved: false });
   try {
     await tick();
-    h.change({ designAck: "" }, true);
     h.click("use");
     await tick();
     assert.equal(h.requests.length, 1);
+    h.change({ designAck: "" }, true);
     h.change({ designCatalogueAck: "" }, true);
     h.click("use");
     await tick();
     assert.equal(h.requests.length, 2);
     assert.equal(h.requests[1].method, "POST");
     assert.deepEqual(h.activations, [{ restored: false, useOwnProducts: true }]);
+  } finally { h.close(); }
+});
+
+test("pending theme editor exposes confirmation and unlocks edits after adopting samples", async () => {
+  const h = harness({ saved: false, themeEditor: true });
+  try {
+    await tick();
+    assert.equal(h.ui.active(), false);
+    assert.match(h.el.innerHTML, /Confirm below, then choose Use this design to unlock editing/);
+    assert.doesNotMatch(h.el.innerHTML, /<details\b/);
+    assert.match(h.el.innerHTML, /data-design-ack/);
+    assert.match(h.el.innerHTML, /data-design-act="use" disabled/);
+    h.click("use");
+    await tick();
+    assert.equal(h.requests.length, 1, "Opening the editor cannot adopt a design");
+    h.change({ designAck: "" }, true);
+    assert.match(h.el.innerHTML, /data-design-act="use" >Use this design/);
+    h.click("use");
+    await tick();
+    assert.equal(h.ui.active(), true);
+    assert.equal(h.ui.editing(), true);
+    assert.equal(JSON.parse(h.requests[1].body).catalogue_mode, "sample");
+    assert.deepEqual(h.activations, [{ restored: false, useOwnProducts: false }]);
   } finally { h.close(); }
 });
 
