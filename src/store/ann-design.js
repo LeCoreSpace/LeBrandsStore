@@ -6,7 +6,7 @@ import { draftFingerprint } from "./ann-application.js";
 import { settingsPatch, badInput } from "./input.js";
 import { annPreviewConfiguration } from "../public/ann-config.js";
 import { publishChecklist, UUID } from "../public/validation.js";
-import { DESIGN_COPY_LIMITS, DESIGN_MEDIA_KEYS, isAnnDesign } from "../public/ann-design-model.js";
+import { isDesignCopyKey, isDesignMediaKey, getDesignCopyLimit, isAnnDesign } from "../public/ann-design-model.js";
 import { SHOWCASE_MEDIA, resolveShowcasePack } from "../public/aura-showcase-assets.js";
 import { designSeedCopy } from "../public/aura-showcase.js";
 import { styleDemonstration } from "../public/style-demo-copy.js";
@@ -27,16 +27,16 @@ export function validateDesignRequest(body, creating = false) {
   if (body.confirm !== true || !/^[a-f0-9]{64}$/.test(body.expected_draft || "")) throw badInput("Load the current draft and confirm your design changes.");
   if (creating && !plain(body.answers)) throw badInput("Choose a design before saving it.");
   if (body.copy !== undefined) {
-    keys(body.copy, Object.keys(DESIGN_COPY_LIMITS));
+    if(!plain(body.copy)||Object.keys(body.copy).length>300||Object.keys(body.copy).some(key=>!isDesignCopyKey(key)))throw badInput("Choose supported section text fields.");
     for (const [key, text] of Object.entries(body.copy)) {
-      if (typeof text !== "string" || [...text].length > DESIGN_COPY_LIMITS[key] ||
+      if (typeof text !== "string" || [...text].length > getDesignCopyLimit(key) ||
         /[<>\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(text)) {
-        throw badInput(`Use plain text within ${DESIGN_COPY_LIMITS[key]} characters for ${key}.`);
+        throw badInput(`Use plain text within ${getDesignCopyLimit(key)} characters for ${key}.`);
       }
     }
   }
   if (body.media !== undefined) {
-    keys(body.media, DESIGN_MEDIA_KEYS);
+    if(!plain(body.media)||Object.keys(body.media).length>150||Object.keys(body.media).some(key=>!isDesignMediaKey(key)))throw badInput("Choose supported section media fields.");
     if (Object.values(body.media).some(id => id !== null && !UUID.test(id || ""))) throw badInput("Choose an image uploaded to this store.");
   }
   if (new TextEncoder().encode(JSON.stringify(body)).length > 60000) throw badInput("This design is too large. Shorten the text before saving.");
@@ -54,11 +54,18 @@ async function ownedImages(tx, storeId) {
     ORDER BY created_at DESC,id LIMIT 500`;
   return rows.map(row => ({ ...row, url: `https://media.lebrands.store/${row.object_key}` }));
 }
+async function ownedVideos(tx,storeId){
+  const rows=await tx`SELECT id,alt_text,object_key,width,height FROM public.media m WHERE store_id=${storeId}
+    AND upload_type='video' AND kind='video'
+    AND COALESCE(to_jsonb(m)->>'approval_status','approved')='approved'
+    ORDER BY created_at DESC,id LIMIT 500`;
+  return rows.map(row=>({...row,kind:"video",url:`https://media.lebrands.store/${row.object_key}`}));
+}
 export async function prepareAnnDesign(tx, storeId, draft) {
   const data = draft || await loadDraft(tx, storeId);
   return { expected_draft: await draftFingerprint(data), draft: data,
     design: isAnnDesign(data.settings.ann_design) ? data.settings.ann_design : null,
-    images: await ownedImages(tx, storeId), checklist: publishChecklist(data),
+    images: await ownedImages(tx, storeId), videos:await ownedVideos(tx,storeId), checklist: publishChecklist(data),
     publish_url: `/stores/${storeId}/setup?step=4` };
 }
 /** Read-only projection shared by design adoption and the editor handoff. */
@@ -107,16 +114,17 @@ export async function saveAnnDesign(tx, storeId, userId, raw, creating = false) 
   if(body.catalogue_mode)design.catalogue_mode=body.catalogue_mode;
   if (body.media) {
     for (const [key, id] of Object.entries(body.media)) {
-      if (id === null) { design.media[key] = seedDesignMedia(design.media_pack || design.style)[key]; continue; }
+      if (id === null) { const original=seedDesignMedia(design.media_pack || design.style)[key];if(original)design.media[key]=original;else delete design.media[key]; continue; }
       // Resolve each identifier against this tenant, not an arbitrary client URL
       // or a limited picker page. Previously uploaded images remain editable.
+      const kind=/\.video\d+$/.test(key)?"video":"image";
       const [image] = await tx`SELECT id,object_key,alt_text,width,height FROM public.media m WHERE store_id=${storeId}
-        AND id=${id} AND upload_type='image' AND kind='image'
+        AND id=${id} AND upload_type=${kind} AND kind=${kind}
         AND COALESCE(to_jsonb(m)->>'approval_status','approved')='approved'`;
       if (!image || !image.object_key?.startsWith(`stores/${storeId}/`))
-        throw Object.assign(new Error("Choose an approved image belonging to this store."), { status: 403 });
+        throw Object.assign(new Error("Choose approved media belonging to this store."), { status: 403 });
       design.media[key] = { url: `https://media.lebrands.store/${image.object_key}`,
-        alt: image.alt_text || "", width: image.width || 1024, height: image.height || 1024, media_id: image.id };
+        alt: image.alt_text || "", width: image.width || 1024, height: image.height || 1024, media_id: image.id,kind };
     }
   }
   const validatedSettings = annDesignSettings(data, plan, reference);

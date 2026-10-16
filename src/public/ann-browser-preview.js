@@ -37,9 +37,22 @@ export function openAnnBrowserPreview(snapshot,{openWindow=()=>window.open("abou
   const doc=win.document;
   doc.title=`${data.store?.name || "Your store"} | Private preview`;
   const base=doc.createElement("base");base.href=new URL("/",import.meta.url).href;
-  const sheet=doc.createElement("link");sheet.rel="stylesheet";sheet.href=new URL("./ann-builder.css",import.meta.url).href;
+  // The about:blank window must size itself immediately and independently of
+  // the editor's external stylesheet and inherited resource policy.
+  const sheet=doc.createElement("style");sheet.textContent=`
+    *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0}
+    body.ann-browser-shell{height:100dvh;display:flex;flex-direction:column;background:#f3f1f2;color:#30262b;font:14px system-ui,sans-serif}
+    .ann-browser-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 16px;background:#fff;border-bottom:1px solid #ddd5d9}
+    .ann-browser-toolbar p{flex:1 1 240px;margin:0;font-size:12px;line-height:1.5}
+    .ann-browser-toolbar button{font:inherit;cursor:pointer;border:1px solid #d7cdd2;border-radius:999px;padding:8px 14px;background:#fff;color:#30262b}
+    .ann-browser-toolbar button[aria-pressed=true]{background:#30262b;color:#fff}
+    .ann-browser-toolbar button:focus-visible{outline:3px solid #86566c;outline-offset:2px}
+    .ann-browser-viewport{flex:1;min-height:0;display:flex;justify-content:center;overflow:hidden}
+    .ann-browser-frame{display:block;flex:1;width:100%;height:100%;border:0;background:#fff;min-width:0}
+    .ann-browser-frame[data-device=mobile]{flex:none;width:390px;max-width:100%}
+  `;
   const viewport=doc.createElement("meta");viewport.name="viewport";viewport.content="width=device-width, initial-scale=1";
-  doc.head.append(base,viewport,sheet);
+  doc.head.append(viewport,sheet);
   const logo=safeImage(theme.logo_url ?? data.settings?.logo_url);
   if(logo){const icon=doc.createElement("link");icon.rel="icon";icon.href=logo;doc.head.append(icon);}
   doc.body.className="ann-browser-shell";

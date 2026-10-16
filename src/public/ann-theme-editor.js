@@ -16,7 +16,8 @@ $("#ae-own").disabled=readOnly;
 const FIELD_LABELS={kicker:"Intro line",title:"Main headline",description:"Introduction",button:"Main button text",statement:"Brand statement",products:"Products heading",collections:"Collections heading",about:"About page heading",story0:"Story paragraph 1",story1:"Story paragraph 2",story2:"Story paragraph 3",footer:"Footer text",hero:"Main photo",lifestyle:"Lifestyle photo",collection0:"First collection photo",collection1:"Second collection photo"};
 const say=text=>{$("#ae-status").textContent=text;};
 let controller;
-let addedSection=null;
+let addedSection=null,previewScroll=0;
+const sectionMeta=new Map();
 function syncActions(){
   $("#ae-save").disabled=!controller?.canSave();
   $("#ae-publish").disabled=!controller?.canPublish();
@@ -36,22 +37,35 @@ function controls() {
   const s=snapshot(),design=s.data.settings.ann_design,base=structuredClone(s.data);base.settings.ann_design.sections={};
   const items=designSections(renderStylePreview(base,s.theme,{...s.route,designEdit:true}),page).sections;
   const cfg=design.sections?.[page]||{},order=[...(cfg.order||[]),...items.map(i=>i.id)].filter((id,i,a)=>a.indexOf(id)===i),map=new Map(items.map(i=>[i.id,i]));
+  sectionMeta.clear();const vis=order.filter(id=>map.has(id));vis.forEach((id,i)=>sectionMeta.set(id,{label:map.get(id).label,required:Boolean(map.get(id).required),hidden:Boolean(cfg.hidden?.includes(id)),index:i,count:vis.length}));
   $("#ae-sections").innerHTML=`<h3>Page sections</h3><p class="ae-muted">Move sections or remove them from this page. Removed sections can be restored. Product purchase and contact forms are protected.</p>${order.filter(id=>map.has(id)).map(id=>{
     const x=map.get(id),hidden=cfg.hidden?.includes(id);
-    return `<div class="ae-section"><span>${esc(x.label)}${hidden?" (removed)":""}</span><button data-ae-section="${id}" data-move="-1"${readOnly||x.required?" disabled":""}>Up</button><button data-ae-section="${id}" data-move="1"${readOnly||x.required?" disabled":""}>Down</button><button data-ae-section="${id}" data-toggle${readOnly||x.required?" disabled":""}>${hidden?"Restore":"Remove"}</button></div>`;
+    return `<div class="ae-section"><span>${esc(x.label)}${hidden?" (removed)":""}</span><button type="button" data-ae-edit="section" data-key="${id}"${readOnly?" disabled":""}>Edit</button><button data-ae-section="${id}" data-move="-1"${readOnly||x.required?" disabled":""}>Up</button><button data-ae-section="${id}" data-move="1"${readOnly||x.required?" disabled":""}>Down</button><button data-ae-section="${id}" data-toggle${readOnly||x.required?" disabled":""}>${hidden?"Restore":"Remove"}</button></div>`;
   }).join("")||'<p class="ae-muted">This page has a fixed shopping layout.</p>'}
   ${(ANN_EXTRA_SECTIONS[page]||[]).length?`<fieldset><legend>Add optional sections</legend>${ANN_EXTRA_SECTIONS[page].map(type=>`<label><input type="checkbox" data-ae-extra="${type}"${plan.section_options?.[page]?.includes(type)?" checked":""}${readOnly?" disabled":""}> ${esc(ANN_SECTION_LABELS[type]||type)}</label>`).join("")}</fieldset>`:""}`;
   if(!ready)for(const field of $("#ae-sections").querySelectorAll("button,input"))field.disabled=true;
 }
 function fit(){const area=frame.parentElement,w=device==="mobile"?390:1280,scale=Math.min(1,(area.clientWidth-24)/w);Object.assign(frame.style,{position:"absolute",width:`${w}px`,maxWidth:"none",height:`${Math.max(450,(area.clientHeight-24)/scale)}px`,transform:`scale(${scale})`,transformOrigin:"top left",left:`${Math.max(12,(area.clientWidth-w*scale)/2)}px`});area.style.position="relative";area.style.overflow="hidden";}
-function render() {clearTimeout(timer);const s=snapshot();frame.classList.toggle("is-mobile",device==="mobile");frame.srcdoc=renderStylePreview(s.data,s.theme,{...s.route,designEdit:controller?.editing()});controls();fit();}
+function render() {clearTimeout(timer);previewScroll=frame.contentDocument?.scrollingElement?.scrollTop||0;const s=snapshot();frame.classList.toggle("is-mobile",device==="mobile");frame.srcdoc=renderStylePreview(s.data,s.theme,{...s.route,designEdit:controller?.editing()});controls();fit();}
 function schedule(){clearTimeout(timer);timer=setTimeout(render,160);}
 controller=attachAnnDesign({api,root,readOnly,themeEditor:true,mount:$("#ae-design-mount"),say,
-  getPreviewMode:()=>"store",getStyle:()=>plan.style_preset||initialDesign.style,getAnswers:()=>plan,getBrand:()=>source.settings.brand_name||source.store.name,
+  getPreviewMode:()=>"store",contextual:true,sectionState:id=>sectionMeta.get(id)||null,onSectionAction:(id,act)=>sectionAction(id,act),getStyle:()=>plan.style_preset||initialDesign.style,getAnswers:()=>plan,getBrand:()=>source.settings.brand_name||source.store.name,
   applyPlan:p=>{plan=structuredClone(p);},onDraft:d=>{source=d.settings?.ann_design?d:{...d,settings:{...d.settings,...initialVisualSettings}};},onChange:schedule,onActivated:schedule,onCatalogueConfirmed:()=>{say("Your own products are selected. Save draft to keep this choice.");render();},
   getPreview:()=>frame,});
 $("#ae-content").innerHTML=`<h3>Edit text and images</h3>${Object.keys(DESIGN_COPY_LIMITS).map(k=>`<button type="button" class="ann-btn alt sm" data-ae-edit="copy" data-key="${k}"${readOnly?" disabled":""}>${esc(FIELD_LABELS[k]||k)}</button>`).join("")}<h3>Photos</h3>${DESIGN_MEDIA_KEYS.map(k=>`<button type="button" class="ann-btn alt sm" data-ae-edit="image" data-key="${k}"${readOnly?" disabled":""}>${esc(FIELD_LABELS[k]||k)}</button>`).join("")}
 <fieldset><legend>Colours and fonts</legend><label>Background<select data-ae-plan="color_preset"${readOnly?" disabled":""}>${["white","ivory","stone","midnight"].map(v=>`<option${plan.color_preset===v?" selected":""}>${v}</option>`).join("")}</select></label><label>Font style<select data-ae-plan="font_preset"${readOnly?" disabled":""}>${["modern","serif","classic"].map(v=>`<option${plan.font_preset===v?" selected":""}>${v}</option>`).join("")}</select></label><label>Button and highlight colour<input type="color" data-ae-plan="accent_color" value="${esc(plan.accent_color||source.settings.accent_color||"#661329")}"${readOnly?" disabled":""}></label></fieldset>`;
+function sectionAction(id,act){
+  if(readOnly||!id)return;
+  const s=snapshot(),model=s.data.settings.ann_design,base=structuredClone(s.data);base.settings.ann_design.sections={};
+  const items=designSections(renderStylePreview(base,s.theme,s.route),page).sections,map=new Map(items.map(x=>[x.id,x]));
+  const all=structuredClone(model.sections||{}),cfg=all[page]||={order:[],hidden:[]};
+  cfg.order=[...(cfg.order||[]),...items.map(x=>x.id)].filter((x,i,a)=>a.indexOf(x)===i&&map.has(x));
+  cfg.hidden||=[];
+  if(map.get(id)?.required)return;
+  if(act==="toggle")cfg.hidden=cfg.hidden.includes(id)?cfg.hidden.filter(x=>x!==id):[...cfg.hidden,id];
+  else {const i=cfg.order.indexOf(id),j=i+(act==="up"?-1:1);if(i>=0&&j>=0&&j<cfg.order.length&&!map.get(cfg.order[j])?.required)[cfg.order[i],cfg.order[j]]=[cfg.order[j],cfg.order[i]];}
+  controller.setSections(all);
+}
 document.addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b||b.disabled)return;
   if(b.dataset.aePage){page=b.dataset.aePage;render();}
@@ -61,16 +75,7 @@ document.addEventListener("click",e=>{
   if(b.id==="ae-save"){const pending=controller.save();syncActions();void pending.finally(syncActions);}
   if(b.id==="ae-publish"){void controller.publish();syncActions();}
   if(b.dataset.aeEdit)controller.selectContent(b.dataset.aeEdit,b.dataset.key);
-  if(b.dataset.aeSection&&!readOnly) {
-    const s=snapshot(),model=s.data.settings.ann_design,base=structuredClone(s.data);base.settings.ann_design.sections={};
-    const items=designSections(renderStylePreview(base,s.theme,s.route),page).sections,map=new Map(items.map(x=>[x.id,x]));
-    const all=structuredClone(model.sections||{}),cfg=all[page]||={order:[],hidden:[]};
-    cfg.order=[...(cfg.order||[]),...items.map(x=>x.id)].filter((id,i,a)=>a.indexOf(id)===i&&map.has(id));
-    cfg.hidden||=[];const id=b.dataset.aeSection;
-    if(b.hasAttribute("data-toggle"))cfg.hidden=cfg.hidden.includes(id)?cfg.hidden.filter(x=>x!==id):[...cfg.hidden,id];
-    else {const i=cfg.order.indexOf(id),j=i+Number(b.dataset.move);if(i>=0&&j>=0&&j<cfg.order.length&&!map.get(cfg.order[j])?.required)[cfg.order[i],cfg.order[j]]=[cfg.order[j],cfg.order[i]];}
-    controller.setSections(all);
-  }
+  if(b.dataset.aeSection&&!readOnly)sectionAction(b.dataset.aeSection,b.hasAttribute("data-toggle")?"toggle":Number(b.dataset.move)<0?"up":"down");
 });
 document.addEventListener("input",()=>queueMicrotask(syncActions));
 document.addEventListener("click",()=>queueMicrotask(syncActions));
@@ -91,8 +96,13 @@ document.addEventListener("change",e=>{
   if(n.dataset.aePlan){plan[n.dataset.aePlan]=n.value;controller.planChanged();render();}
 });
 frame.addEventListener("load",()=>{
-  const doc=frame.contentDocument;if(!doc)return;controller.bindPreview(doc);
-  if(addedSection){doc.querySelector(`[data-section-type="${addedSection}"]`)?.scrollIntoView({behavior:"smooth",block:"start"});addedSection=null;}
+  const doc=frame.contentDocument;if(!doc)return;controller.bindPreview(doc);controller.refresh();
+  if(addedSection){
+    const section=doc.querySelector(`[data-section-type="${addedSection}"]`);
+    section?.scrollIntoView({block:"start"});
+    if(section?.dataset.designSection)controller.selectContent("section",section.dataset.designSection);
+    addedSection=null;
+  }else if(doc.scrollingElement)doc.scrollingElement.scrollTop=previewScroll;
   const s=snapshot(),go=r=>{page=r.page;productId=r.productId;collectionId=r.collectionId;policyKind=r.policyKind;render();};
   doc.addEventListener("submit",e=>e.preventDefault(),true);
   attachAuraSearch(doc,s.data);attachAuraCatalog(doc,s.data,s.route);

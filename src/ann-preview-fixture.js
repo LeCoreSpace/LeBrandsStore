@@ -100,7 +100,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     if(url.pathname.startsWith(ANN_FIXTURE_MEDIA_PREFIX) || url.pathname.startsWith(`${prefix}/media/`)){
       const mediaPrefix=url.pathname.startsWith(ANN_FIXTURE_MEDIA_PREFIX)?ANN_FIXTURE_MEDIA_PREFIX:`${prefix}/media/`;
       const file=url.pathname.slice(mediaPrefix.length);
-      if(!["GET","HEAD"].includes(req.method)||!/^[a-f0-9-]{36}\.(?:png|jpg|webp)$/.test(file)){res.statusCode=404;res.end();return true;}
+      if(!["GET","HEAD"].includes(req.method)||!/^[a-f0-9-]{36}\.(?:png|jpg|webp|mp4|webm)$/.test(file)){res.statusCode=404;res.end();return true;}
       res.setHeader("cache-control","no-store");
       const item=memoryMedia.get(`stores/${storeId}/${file}`);
       if(item){res.setHeader("content-type",item.type);res.end(req.method==="HEAD"?undefined:item.bytes);}
@@ -216,7 +216,12 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     // Fixture photos never request production media. All bytes and records
     // above belong to this isolated process, not a merchant's R2 bucket.
     if(response.body&&/application\/json|text\/html/.test(response.headers.get("content-type")||"")){
-      let text=(await response.text()).replaceAll(`https://media.lebrands.store/stores/${storeId}/`,ANN_FIXTURE_MEDIA_PREFIX);
+      // Images use the existing local-image namespace. Keep video URLs in their
+      // real allowlisted shape; isolated browser tests intercept these exact
+      // synthetic-store URLs and fulfill them from the in-memory media route.
+      let text=(await response.text()).replace(
+        new RegExp(`https://media\\.lebrands\\.store/stores/${storeId}/([a-f0-9-]{36}\\.(?:png|jpe?g|webp|svg))`,"gi"),
+        (_,file)=>ANN_FIXTURE_MEDIA_PREFIX+file);
       if(/application\/json/.test(response.headers.get("content-type")||"")){
         const body=JSON.parse(text);
         if(body.publish_url)body.publish_url=`${prefix}/review`;

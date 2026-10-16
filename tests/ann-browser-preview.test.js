@@ -39,6 +39,10 @@ test("new-tab preview uses an isolated catalogue and bag, restrictive sandbox, w
   assert.equal(win.opener,null);
   assert.equal(frame.attrs.sandbox,"allow-same-origin");
   assert.equal(frame.attrs.referrerpolicy,"no-referrer");
+  const shellCSS=nodes.find(n=>n.tag==="style")?.textContent;
+  assert.match(shellCSS,/\.ann-browser-frame\{[^}]*width:100%;height:100%/);
+  assert.match(shellCSS,/height:100dvh/);
+  assert.ok(!nodes.some(n=>n.tag==="link"&&n.rel==="stylesheet"),"Popup dimensions cannot depend on an external editor stylesheet");
   assert.equal(nodes.find(n=>n.tag==="link"&&n.rel==="icon")?.href,sample.settings.logo_url);
   assert.match(frame.srcdoc,/<!doctype html>/i);
   assert.equal(frame.dataset.device,"mobile");

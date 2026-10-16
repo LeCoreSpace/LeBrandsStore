@@ -4,7 +4,7 @@
  * data-design-copy / data-design-image annotations that this module binds from outside.
  * Edits update a validated model (plain text and owned media ids), never raw HTML.
  */
-import { DESIGN_COPY_LIMITS, DESIGN_MEDIA_KEYS } from "./ann-design-model.js";
+import { DESIGN_MEDIA_KEYS, isDesignCopyKey, isDesignMediaKey, getDesignCopyLimit } from "./ann-design-model.js";
 import { designNeutralCopy } from "./aura-showcase.js";
 import { AURA_STYLES } from "./aura-styles.js";
 
@@ -15,6 +15,17 @@ const COPY_LABEL = {
   story0: "Story, paragraph 1", story1: "Story, paragraph 2", story2: "Story, paragraph 3", footer: "Footer line",
 };
 const IMAGE_LABEL = { hero: "Main photo", lifestyle: "Lifestyle photo", collection0: "First collection photo", collection1: "Second collection photo" };
+const humanize = k => { const t = String(k).replace(/[-_.:]+/g, " ").replace(/([a-z])(\d+)$/i, "$1 $2").trim(); return t.charAt(0).toUpperCase() + t.slice(1); };
+const labelOf = (kind, k) => {
+  const fixed = kind === "copy" ? COPY_LABEL[k] : kind === "image" ? IMAGE_LABEL[k] : "";
+  if (fixed) return fixed;
+  const m = /^(text|image|video)(\d+)$/.exec(String(k).split(".").pop());
+  if (m) return `${{ text: "Text", image: "Photo", video: "Video" }[m[1]]} ${Number(m[2]) + 1}`;
+  return kind === "video" ? "Video" : humanize(k);
+};
+const MAX_VIDEO = 10 * 1024 * 1024;
+const imageKeyOf = k => String(k).replace(/\.video(\d+)$/, ".image$1");
+const CTX_CSS = ".ann-ctx{position:fixed;z-index:50;box-sizing:border-box;max-height:calc(100dvh - 16px);overflow:auto;background:#fff;color:#252525;border:1px solid #9a9a9a;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);padding:12px;display:grid;gap:8px}.ann-ctx *{box-sizing:border-box;min-width:0}.ann-ctx input,.ann-ctx textarea,.ann-ctx video{max-width:100%;width:100%}.ann-ctx .ann-actions{flex-wrap:wrap}.ann-ctx.sheet{left:8px;right:8px;bottom:8px;top:auto;width:auto}.ann-ctx-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.ann-ctx-list{display:flex;flex-wrap:wrap;gap:6px}";
 const STYLE_KEYS = ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"];
 const styleName = id => AURA_STYLES.find(s => s.id === id)?.name || id;
 const MAX_UPLOAD = 8 * 1024 * 1024;
@@ -25,14 +36,14 @@ export function attachAnnDesign(o) {
   el.id = "ann-design"; el.className = "ann-design"; el.setAttribute("aria-label", "Your design");
   mount.parentNode.insertBefore(el, mount);
 
-  let loaded = false, loadError = "", expected = "", images = [], publishUrl = `${root}/setup?step=4`;
+  let loaded = false, loadError = "", expected = "", images = [], videos = [], publishUrl = `${root}/setup?step=4`;
   let design = null, model = null, baseline = "", planDirty = false;
   let busy = "", error = "", conflict = false, ack = false, editMode = true, selected = null, uploadAlt = "", uploadNote = "";
   let lastKey = "";
   let catalogueAck = false, cataloguePrompt = false, consentOpen = false;
 
   const active = () => Boolean(model);
-  const mediaIds = m => Object.fromEntries(DESIGN_MEDIA_KEYS.map(k => [k, m?.[k]?.media_id || null]));
+  const mediaIds = m => Object.fromEntries([...new Set([...DESIGN_MEDIA_KEYS, ...Object.keys(m || {}), ...Object.keys(design?.media || {})])].filter(k => isDesignMediaKey(k)).map(k => [k, m?.[k]?.media_id || null]));
   const snapshot = () => model ? JSON.stringify({ c: model.copy, m: mediaIds(model.media),s:model.sections,catalogue:model.catalogue_mode }) : "";
   const dirty = () => active() && (snapshot() !== baseline || planDirty);
   const mode = () => o.getPreviewMode();
@@ -48,6 +59,7 @@ export function attachAnnDesign(o) {
   function ingest(body, { hydrate }) {
     expected = body.expected_draft || expected;
     if (Array.isArray(body.images)) images = body.images;
+    if (Array.isArray(body.videos)) videos = body.videos;
     if (body.publish_url) publishUrl = body.publish_url;
     if (body.draft) o.onDraft?.(body.draft);
     const d = body.design;
@@ -144,36 +156,40 @@ export function attachAnnDesign(o) {
   function select(kind, key) {
     const wasEditing=editMode;editMode=true;
     selected = { kind, key }; uploadNote = ""; paint(true); markSelected();
-    const panel=el.querySelector(".ann-design-edit");
-    panel?.scrollIntoView({block:"nearest",behavior:"smooth"});
-    panel?.querySelector("[data-design-input]")?.focus({preventScroll:true});
+    const panel=o.contextual?el.querySelector(".ann-ctx"):el.querySelector(".ann-design-edit");
+    if(o.contextual)anchorNode()?.scrollIntoView?.({block:"nearest"});else panel?.scrollIntoView({block:"nearest",behavior:"smooth"});
+    if(o.contextual)placePop();
+    (panel?.querySelector("[data-design-input]")||panel?.querySelector("button"))?.focus({preventScroll:true});
     if(!wasEditing)o.onChange?.();
   }
   function setCopy(key, value) {
     if (readOnly || !model) return;
-    model.copy[key] = value.slice(0, DESIGN_COPY_LIMITS[key] || 2000);
+    model.copy[key] = value.slice(0, getDesignCopyLimit(key));
     error = conflict ? error : ""; paintDynamic(); o.onChange?.();
   }
   function setMedia(key, item) {
     if (readOnly || !model) return;
+    if(/\.image\d+$/.test(key))delete model.media[key.replace(/\.image(\d+)$/,".video$1")];
     if (item) model.media[key] = { url: item.url, alt: item.alt_text ?? item.alt ?? "", width: Number(item.width) || 1024, height: Number(item.height) || 1024, media_id: item.id };
     else { const prev = design?.media?.[key]; if (prev && !prev.media_id) model.media[key] = structuredClone(prev); else delete model.media[key]; }
     paint(true); o.onChange?.();
   }
   async function upload(file) {
     if (readOnly || busy || !file || !selected) return;
-    if (!/^image\/(png|jpe?g|webp)$/.test(file.type) || file.size > MAX_UPLOAD) { uploadNote = "Choose a PNG, JPEG or WebP image under 8 MB."; return paint(true); }
+    const target={...selected},isVideo = target.kind === "video";
+    if (isVideo ? !/^video\/(mp4|webm)$/.test(file.type) || file.size > MAX_VIDEO : !/^image\/(png|jpe?g|webp)$/.test(file.type) || file.size > MAX_UPLOAD) { uploadNote = isVideo ? "Choose an MP4 or WebM video under 10 MB." : "Choose a PNG, JPEG or WebP image under 8 MB."; return paint(true); }
     busy = "upload"; uploadNote = "Uploading"; paint(true);
     try {
       const fd = new FormData();
-      fd.append("file", file); fd.append("type", "image"); fd.append("alt", uploadAlt.trim());
+      fd.append("file", file); fd.append("type", isVideo ? "video" : "image"); fd.append("alt", uploadAlt.trim());
       const res = await fetch(`${api}/media`, { method: "POST", credentials: "same-origin", body: fd });
       const out = await res.json().catch(() => ({}));
-      if (!res.ok || !out.media?.id) throw new Error(out.error || "The image could not be uploaded. Your edits are kept.");
+      if (!res.ok || !out.media?.id) throw new Error(out.error || "The file could not be uploaded. Your edits are kept.");
       const md = out.media;
-      images = [{ id: md.id, alt_text: md.alt ?? "", url: md.url, width: md.width, height: md.height, object_key: "" }, ...images.filter(i => i.id !== md.id)];
-      uploadAlt = ""; uploadNote = "Uploaded. Select it to use it here.";
-      setMedia(selected.key, images[0]);
+      const item = { id: md.id, alt_text: md.alt ?? "", url: md.url, width: md.width, height: md.height, object_key: "", ...(isVideo ? { kind: "video" } : {}) };
+      if (isVideo) videos = [item, ...videos.filter(i => i.id !== md.id)]; else images = [item, ...images.filter(i => i.id !== md.id)];
+      uploadAlt = ""; uploadNote = "Uploaded and selected.";
+      setMedia(target.key, item);
     } catch (e) { uploadNote = e.message; }
     finally { busy = ""; paint(true); }
   }
@@ -181,31 +197,73 @@ export function attachAnnDesign(o) {
   /* ---------- preview binding (parent only; the iframe has no scripts) ---------- */
   let boundDoc = null;
   const boundDocs = new WeakSet();
-  const nodes = () => boundDoc ? [...boundDoc.querySelectorAll("[data-design-copy],[data-design-image]")] : [];
+  const nodes = () => boundDoc ? [...boundDoc.querySelectorAll("[data-design-copy],[data-design-image],[data-design-video]")] : [];
   function markSelected() {
     for (const n of nodes()) {
-      const hit = selected && (selected.kind === "copy" ? n.dataset.designCopy === selected.key : n.dataset.designImage === selected.key);
+      const hit = selected && (selected.kind === "copy" ? n.dataset.designCopy === selected.key : selected.kind === "video" ? (n.dataset.designVideo === selected.key || n.dataset.designVideoSlot === selected.key) : n.dataset.designImage === selected.key);
       if (hit) n.setAttribute("data-design-selected", ""); else n.removeAttribute("data-design-selected");
     }
+    if (o.contextual && boundDoc) for (const n of boundDoc.querySelectorAll("[data-design-section]")) {
+      if (selected?.kind === "section" && n.dataset.designSection === selected.key) n.setAttribute("data-design-section-selected", ""); else n.removeAttribute("data-design-section-selected");
+    }
+  }
+  const secNode = id => boundDoc?.querySelector(`[data-design-section="${CSS.escape(id)}"]`) || null;
+  function anchorNode() {
+    if (!selected || !boundDoc) return null;
+    if (selected.kind === "section") return secNode(selected.key);
+    const q = CSS.escape(selected.key);
+    if (selected.kind === "video") return boundDoc.querySelector(`[data-design-video="${q}"]`) || boundDoc.querySelector(`[data-design-video-slot="${q}"]`);
+    return boundDoc.querySelector(selected.kind === "copy" ? `[data-design-copy="${q}"]` : `[data-design-image="${q}"],[data-design-image-slot="${q}"]`);
+  }
+  const sectionOfSelected = () => selected?.kind === "section" ? selected.key : anchorNode()?.closest?.("[data-design-section]")?.dataset.designSection || null;
+  function placePop() {
+    const pop = el.querySelector(".ann-ctx"); if (!pop) return;
+    const f = o.getPreview?.(), a = anchorNode(), vw = window.innerWidth, vh = window.innerHeight;
+    if (vw < 700 || !a || !f) { pop.classList.add("sheet"); pop.style.cssText = ""; return; }
+    pop.classList.remove("sheet");
+    const fr = f.getBoundingClientRect(), sc = fr.width / (f.offsetWidth || fr.width) || 1, r = a.getBoundingClientRect();
+    const w = Math.min(340, vw - 16); pop.style.width = `${w}px`;
+    const h = pop.offsetHeight, top = fr.top + r.top * sc, bottom = fr.top + r.bottom * sc;
+    let y = bottom + 8; if (y + h > vh - 8) y = top - h - 8;
+    y = Math.max(8, Math.min(y, vh - h - 8));
+    pop.style.left = `${Math.max(8, Math.min(fr.left + r.left * sc, vw - w - 8))}px`; pop.style.top = `${y}px`;
+  }
+  function closeCtx() {
+    const a = anchorNode(); selected = null; paint(true); markSelected();
+    if (o.contextual) a?.focus?.({ preventScroll: true });
+  }
+  if(o.contextual){
+    globalThis.window?.addEventListener("resize", () => placePop());
+    globalThis.window?.addEventListener("scroll", () => placePop(), true);
   }
   function pick(n) {
     if (n.dataset.designCopy) select("copy", n.dataset.designCopy);
+    else if (n.dataset.designVideo) select("video", n.dataset.designVideo);
     else if (n.dataset.designImage) select("image", n.dataset.designImage);
   }
   function bindPreview(doc) {
     boundDoc = doc;
     if (!editing()) return;
-    for (const n of nodes()) { n.tabIndex = 0; n.setAttribute("aria-label", `Edit: ${COPY_LABEL[n.dataset.designCopy] || IMAGE_LABEL[n.dataset.designImage] || "content"}`); }
+    for (const n of nodes()) { n.tabIndex = 0; n.setAttribute("aria-label", `Edit: ${n.dataset.designCopy ? labelOf("copy", n.dataset.designCopy) : n.dataset.designVideo ? labelOf("video", n.dataset.designVideo) : n.dataset.designImage ? labelOf("image", n.dataset.designImage) : "content"}`); }
+    if (o.contextual) {
+      for (const n of boundDoc.querySelectorAll("[data-design-section]")) { n.tabIndex = 0; n.setAttribute("aria-label", `Edit section: ${o.sectionState?.(n.dataset.designSection)?.label || humanize(n.dataset.designSection)}`); }
+      if (!doc.getElementById("ann-ctx-style") && doc.head) { const st = doc.createElement("style"); st.id = "ann-ctx-style"; st.textContent = "[data-design-section-selected]{outline:2px solid #1a5fd0;outline-offset:-2px}[data-design-selected]{outline:2px solid #1a5fd0;outline-offset:2px}[data-design-section]:hover{outline:1px dashed #1a5fd0;outline-offset:-1px}"; doc.head.appendChild(st); }
+    }
     if (boundDocs.has(doc)) { markSelected(); return; }
     boundDocs.add(doc);
     doc.addEventListener("click", e => {
-      const n = e.target.closest?.("[data-design-copy],[data-design-image]");
-      if (!n || !editing()) return;
-      e.preventDefault(); e.stopImmediatePropagation(); pick(n);
+      if (!editing()) return;
+      const n = e.target.closest?.("[data-design-copy],[data-design-image],[data-design-video]");
+      const sec = !n && o.contextual ? e.target.closest?.("[data-design-section]") : null;
+      if (!n && !sec) return;
+      e.preventDefault(); e.stopImmediatePropagation();
+      if (n) pick(n); else select("section", sec.dataset.designSection);
     }, true);
     doc.addEventListener("keydown", e => {
+      if (e.key === "Escape" && selected && o.contextual && editing()) { e.preventDefault(); closeCtx(); return; }
       if (e.key !== "Enter" && e.key !== " ") return;
-      const n = e.target.closest?.("[data-design-copy],[data-design-image]");
+      if (o.contextual && editing() && e.target.matches?.("[data-design-section]")) { e.preventDefault(); select("section", e.target.dataset.designSection); return; }
+      const n = e.target.closest?.("[data-design-copy],[data-design-image],[data-design-video]");
       if (!n || !editing()) return;
       e.preventDefault(); pick(n);
     }, true);
@@ -246,17 +304,44 @@ export function attachAnnDesign(o) {
         ${o.themeEditor?"":'<button type="button" class="ann-btn alt sm" data-design-act="theme">Open theme editor</button>'}
         <button type="button" class="ann-btn alt sm" data-design-act="save" data-design-save>Save draft</button>
         <button type="button" class="ann-btn sm" data-design-act="publish" data-design-publish>Review and publish</button></div></div>
-      ${readOnly ? `<p class="ann-note">You can look around. Only an owner or admin can edit this design.</p>` : editMode ? (selected ? panel() : `<p class="ann-note">Select any text or photo on the page to change it. Changes show instantly and are saved when you choose Save draft.</p>`) : ""}
+      ${readOnly ? `<p class="ann-note">You can look around. Only an owner or admin can edit this design.</p>` : editMode ? (selected ? (o.contextual ? ctxPanel() : panel()) : `<p class="ann-note">Select any text or photo on the page to change it. Changes show instantly and are saved when you choose Save draft.</p>`) : ""}
       <p class="ann-note">${model.catalogue_mode==="sample"?"This draft preview uses sample products and illustrative prices. Add your real products and explicitly choose them before publishing.":"Product names, prices and photos come from your catalogue."} <a href="${root}/products">Edit products</a></p></div>${err}`;
+  }
+  function ctxPanel() {
+    const s = selected, sid = sectionOfSelected(), st = sid ? o.sectionState?.(sid) : null;
+    const secName = st?.label || (sid ? humanize(sid) : "");
+    const title = s.kind === "section" ? secName || "Section" : labelOf(s.kind, s.key);
+    let inner;
+    if (s.kind === "section") {
+      const seen = new Set(), kids = [];
+      for (const n of secNode(s.key)?.querySelectorAll("[data-design-copy],[data-design-image],[data-design-video]") || []) {
+        const kind = n.dataset.designCopy ? "copy" : n.dataset.designVideo ? "video" : "image", key = n.dataset.designCopy || n.dataset.designVideo || n.dataset.designImage, id = `${kind}:${key}`;
+        if (!seen.has(id)) { seen.add(id); kids.push({ kind, key, id }); }
+      }
+      const dis = readOnly || !st || st.required ? "disabled" : "";
+      inner = `<p class="ann-note">Choose what to edit in this section.</p>${kids.length ? `<div class="ann-ctx-list">${kids.map(k => `<button type="button" class="ann-btn alt sm" data-design-child="${esc(k.id)}">${esc(labelOf(k.kind, k.key))}</button>`).join("")}</div>` : `<p class="ann-note">This section has no editable text or photos. You can still move or remove it.</p>`}
+        <div class="ann-ctx-list" role="group" aria-label="Section controls"><button type="button" class="ann-btn alt sm" data-design-act="sec-up" ${dis || st.index <= 0 ? "disabled" : ""}>Move up</button><button type="button" class="ann-btn alt sm" data-design-act="sec-down" ${dis || st.index >= st.count - 1 ? "disabled" : ""}>Move down</button><button type="button" class="ann-btn alt sm" data-design-act="sec-toggle" ${dis}>${st?.hidden ? "Restore section" : "Remove section"}</button></div>${st?.required ? `<p class="ann-note">This protected section cannot be moved or removed.</p>` : ""}`;
+    } else inner = panel() + (sid ? `<button type="button" class="ann-btn alt sm" data-design-act="select-section" data-design-section-id="${esc(sid)}">Back to ${esc(secName || "section")}</button>` : "");
+    return `<div class="ann-ctx" role="dialog" aria-labelledby="ann-ctx-title"><style>${CTX_CSS}</style><div class="ann-ctx-head"><strong id="ann-ctx-title">${esc(title)}</strong><button type="button" class="ann-btn alt sm" data-design-act="done" aria-label="Close editor">Close</button></div>${inner}</div>`;
   }
   function panel() {
     if (selected.kind === "copy") {
-      const k = selected.key, lim = DESIGN_COPY_LIMITS[k] || 2000, v = model.copy[k] ?? "", long = lim > 300;
-      return `<div class="ann-design-edit"><label class="ann-field">${esc(COPY_LABEL[k] || k)}${long ? `<textarea rows="4" maxlength="${lim}" data-design-input="${esc(k)}">${esc(v)}</textarea>` : `<input type="text" maxlength="${lim}" value="${esc(v)}" data-design-input="${esc(k)}">`}</label>
+      const k = selected.key, lim = getDesignCopyLimit(k), v = k in model.copy ? String(model.copy[k] ?? "") : (anchorNode()?.textContent || "").trim().slice(0, lim), long = lim > 300;
+      return `<div class="ann-design-edit"><label class="ann-field">${esc(labelOf("copy", k))}${long ? `<textarea rows="4" maxlength="${lim}" data-design-input="${esc(k)}">${esc(v)}</textarea>` : `<input type="text" maxlength="${lim}" value="${esc(v)}" data-design-input="${esc(k)}">`}</label>
         <div class="ann-actions"><span class="ann-note" data-design-count>${v.length} of ${lim}</span><button type="button" class="ann-btn alt sm" data-design-act="reset-copy">Use suggested text</button><button type="button" class="ann-btn alt sm" data-design-act="done">Done</button></div></div>`;
     }
     const k = selected.key, cur = model.media[k];
-    return `<div class="ann-design-edit"><p class="ann-design-title">${esc(IMAGE_LABEL[k] || "Photo")}</p>
+    if (selected.kind === "video") {
+      const back = o.contextual && boundDoc?.querySelector(`[data-design-image="${CSS.escape(imageKeyOf(k))}"]`) ? imageKeyOf(k) : "";
+      return `<div class="ann-design-edit"><p class="ann-design-title">${esc(labelOf("video", k))}</p>
+      ${videos.length ? `<div class="ann-design-grid" role="listbox" aria-label="Your uploaded videos">${videos.map(m => `<figure class="ann-design-vid" style="margin:0"><video controls preload="metadata" src="${esc(m.url)}" aria-label="${esc(m.alt_text || "Video")}" style="width:100%;max-height:120px"></video><button type="button" class="ann-btn alt sm" role="option" aria-selected="${cur?.media_id === m.id}" data-design-pick="${esc(m.id)}">${cur?.media_id === m.id ? "In use" : "Use this video"}</button></figure>`).join("")}</div>` : `<p class="ann-note">You have no uploaded videos yet. Upload one below.</p>`}
+      <label class="ann-field">Upload a new video<input type="file" accept="video/mp4,video/webm" data-design-file ${busy ? "disabled" : ""}></label>
+      <p class="ann-note">MP4 or WebM, up to 10 MB.</p>
+      ${uploadNote ? `<p class="ann-note" role="status">${esc(uploadNote)}</p>` : ""}
+      <div class="ann-actions"><button type="button" class="ann-btn alt sm" data-design-act="reset-video">${back ? "Use original photo" : "Remove video"}</button>${back ? `<button type="button" class="ann-btn alt sm" data-design-act="goto-image" data-design-key="${esc(back)}">Photo options</button>` : ""}<button type="button" class="ann-btn alt sm" data-design-act="done">Done</button></div></div>`;
+    }
+    const slot = o.contextual ? anchorNode()?.dataset.designVideoSlot : "";
+    return `<div class="ann-design-edit"><p class="ann-design-title">${esc(labelOf("image", k))}</p>${slot && isDesignMediaKey(slot) ? `<button type="button" class="ann-btn alt sm" data-design-act="use-video" data-design-key="${esc(slot)}">Use a video in this slot</button>` : ""}
       ${images.length ? `<div class="ann-design-grid" role="listbox" aria-label="Your uploaded photos">${images.map(m => `<button type="button" class="ann-design-thumb" role="option" aria-selected="${cur?.media_id === m.id}" data-design-pick="${esc(m.id)}" title="${esc(m.alt_text || "Photo")}"><img src="${esc(m.url)}" alt="${esc(m.alt_text || "")}" loading="lazy"></button>`).join("")}</div>` : `<p class="ann-note">You have no uploaded photos yet. Upload one below.</p>`}
       <label class="ann-field">Description for a new upload<input type="text" maxlength="200" value="${esc(uploadAlt)}" data-design-alt placeholder="What the new photo shows"></label>
       <p class="ann-note">This description is saved with a new upload. Choosing an existing photo keeps its existing description.</p>
@@ -264,16 +349,18 @@ export function attachAnnDesign(o) {
       ${uploadNote ? `<p class="ann-note" role="status">${esc(uploadNote)}</p>` : ""}
       <div class="ann-actions"><button type="button" class="ann-btn alt sm" data-design-act="reset-image">Use original photo</button><button type="button" class="ann-btn alt sm" data-design-act="done">Done</button></div></div>`;
   }
-  const struct = () => JSON.stringify([loaded, loadError, mode(), active(), model?.style, browsingStyle(), editMode, selected, busy, error, conflict, ack, readOnly, images.length, uploadNote, model && selected?.kind === "image" ? model.media[selected.key]?.media_id : "", design?.style]);
+  const struct = () => JSON.stringify([loaded, loadError, mode(), active(), model?.style, browsingStyle(), editMode, selected, busy, error, conflict, ack, readOnly, images.length, uploadNote, model && (selected?.kind === "image" || selected?.kind === "video") ? model.media[selected.key]?.media_id : "", design?.style, selected && o.contextual ? JSON.stringify(o.sectionState?.(sectionOfSelected() || "") || null) : ""]);
   function paint(force) {
     const key = struct();
     if (!force && key === lastKey) return paintDynamic();
     lastKey = key;
     const focus = document.activeElement?.closest?.("#ann-design") ? document.activeElement.getAttribute("data-design-input") : null;
     const pos = focus ? document.activeElement.selectionStart : 0;
+    const fa = !focus && document.activeElement?.closest?.("#ann-design") ? document.activeElement.getAttribute("data-design-act") : null;
     el.innerHTML = body();
+    if (fa) el.querySelector(`[data-design-act="${fa}"]`)?.focus({ preventScroll: true });
     if (focus) { const f = el.querySelector(`[data-design-input="${focus}"]`); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch {} } }
-    paintDynamic();
+    paintDynamic(); placePop();
   }
   function paintDynamic() {
     const save = el.querySelector("[data-design-save]"), st = el.querySelector("[data-design-state]"), pub = el.querySelector("[data-design-publish]");
@@ -283,12 +370,13 @@ export function attachAnnDesign(o) {
     if (st) st.textContent = busy === "save" ? "Saving your draft design" : d ? "Unsaved changes. The page already shows them." : "Saved to your draft. Your live site is unchanged.";
     const input = el.querySelector("[data-design-input]");
     const c = el.querySelector("[data-design-count]");
-    if (input && c) c.textContent = `${input.value.length} of ${DESIGN_COPY_LIMITS[input.dataset.designInput] || 2000}`;
+    if (input && c) c.textContent = `${input.value.length} of ${getDesignCopyLimit(input.dataset.designInput)}`;
   }
 
   el.addEventListener("click", e => {
-    const t = e.target.closest("[data-design-act],[data-design-pick]"); if (!t) return;
-    if (t.dataset.designPick) { const m = images.find(i => i.id === t.dataset.designPick); if (m && selected) setMedia(selected.key, m); return; }
+    const t = e.target.closest("[data-design-act],[data-design-pick],[data-design-child]"); if (!t) return;
+    if (t.dataset.designChild) { const [kind, ...rest] = t.dataset.designChild.split(":"); select(kind, rest.join(":")); return; }
+    if (t.dataset.designPick) { const m = (selected?.kind === "video" ? videos : images).find(i => i.id === t.dataset.designPick); if (m && selected) setMedia(selected.key, m); return; }
     const act = t.dataset.designAct;
     if (act === "catalogue") { if (!catalogueAck) return; cataloguePrompt = false;if(active())model.catalogue_mode="own";o.onCatalogueConfirmed?.();paint(true);o.onChange?.();return; }
     if (act === "samples") { cataloguePrompt = false; catalogueAck = false; paint(true); return; }
@@ -299,10 +387,21 @@ export function attachAnnDesign(o) {
     if (act === "reload") return void reload();
     if (act === "toggle") { editMode = !editMode; selected = null; paint(true); o.onChange?.(); return; }
     if (act === "theme") { editMode = true; selected = null; paint(true); o.openCanvas?.(); el.scrollIntoView({ block: "nearest" }); return; }
-    if (act === "done") { selected = null; paint(true); markSelected(); return; }
+    if (act === "done") { closeCtx(); return; }
+    if (act === "select-section") { select("section", t.dataset.designSectionId); return; }
+    if (act === "sec-up" || act === "sec-down" || act === "sec-toggle") { if (selected) o.onSectionAction?.(sectionOfSelected(), act.slice(4)); return; }
     if (act === "mine" || act === "back") { o.backToDesign?.(model.plan); paint(true); o.onChange?.(); return; }
-    if (act === "reset-copy" && selected) { const seed = designNeutralCopy(model.style, o.getBrand?.() || "Your brand"); model.copy[selected.key] = seed?.[selected.key] ?? ""; paint(true); o.onChange?.(); return; }
-    if (act === "reset-image" && selected) setMedia(selected.key, null);
+    if (act === "reset-copy" && selected) {
+      const seed = designNeutralCopy(model.style, o.getBrand?.() || "Your brand");
+      if(selected.key.startsWith("section."))delete model.copy[selected.key];
+      else model.copy[selected.key] = seed?.[selected.key] ?? "";
+      paint(true); o.onChange?.(); return;
+    }
+    if ((act === "use-video" || act === "goto-image") && t.dataset.designKey) { select(act === "use-video" ? "video" : "image", t.dataset.designKey); return; }
+    if ((act === "reset-image" || act === "reset-video") && selected) setMedia(selected.key, null);
+  });
+  el.addEventListener("keydown",e=>{
+    if(o.contextual&&selected&&e.key==="Escape"){e.preventDefault();e.stopPropagation();closeCtx();}
   });
   el.addEventListener("toggle", e => { if (e.target.matches?.("[data-design-consent]")) consentOpen = e.target.open; }, true);
   el.addEventListener("input", e => {
@@ -325,7 +424,7 @@ export function attachAnnDesign(o) {
     canSave:()=>!readOnly&&active()&&!busy&&!conflict&&(dirty()||Boolean(error)),
     canPublish:()=>!readOnly&&active()&&!busy&&!conflict,
     requestCatalogue() { cataloguePrompt = true; catalogueAck = false; paint(true); el.scrollIntoView({ block: "nearest", behavior: "smooth" }); },
-    save, publish, bindPreview, refresh: () => paint(), reload,
+    save, publish, bindPreview, refresh: () => {paint();placePop();}, reload,
     /** Called by Ann when the plan answers change while a design is active. */
     planChanged() { if (active()) { planDirty = true; paintDynamic(); } },
     receive(result) { ingest(result || {}, { hydrate: true }); paint(true); },
@@ -335,7 +434,7 @@ export function attachAnnDesign(o) {
       return { version: 1, style: model.style, media_pack: model.media_pack,catalogue_mode:model.catalogue_mode,sections:structuredClone(model.sections), plan: planPayload(), copy: { ...model.copy }, media: { ...model.media } };
     },
     setSections(value){if(readOnly||!model)return;model.sections=structuredClone(value);planDirty=true;paintDynamic();o.onChange?.();},
-    selectContent(kind,key){if(readOnly||!model)return;if(kind==="copy"&&key in DESIGN_COPY_LIMITS||kind==="image"&&DESIGN_MEDIA_KEYS.includes(key))select(kind,key);},
+    selectContent(kind,key){if(readOnly||!model)return;if(kind==="copy"&&isDesignCopyKey(key)||(kind==="image"||kind==="video")&&isDesignMediaKey(key)||kind==="section"&&o.contextual&&typeof key==="string"&&key)select(kind,key);},
     isActive: active,
   };
 }

@@ -26,3 +26,14 @@ surface. No credentials were entered and no live write was performed.
 **How to apply:** Inspect navigation destinations before testing actions, keep
 test review pages incapable of publication, and never continue into real
 accounts when an isolated test unexpectedly redirects there.
+
+After changing Worker dependencies, re-establish the isolated adopted design
+through the fixture API before continuing browser editing checks. Do not try to
+complete real GST onboarding to repair a missing synthetic design.
+
+**Why:** A Worker dependency change restarted Vite and erased the in-memory
+adoption. The tester reached GST onboarding rather than the intended editor.
+
+**How to apply:** Confirm the fixture editor returns 200 before browser handoff.
+Keep setup synthetic, and check newly imported browser modules return 200 too;
+a unit-tested controller can still fail to initialize if a module is not served.

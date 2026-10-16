@@ -64,5 +64,26 @@ test("editor restores a saved Ann plan without writes, then preserves the adopte
     const readOnly = renderEditor({ ...restored, role: "owner" }, user, { readOnly: true });
     assert.match(readOnly, /"role":"viewer"/);
     assert.deepEqual((await read(loadEditorDraft)).settings.ann_design, saved.design, "Repeated entry never reseeds edits");
+    const video="dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+    await pg.query(`INSERT INTO media(id,store_id,object_key,kind,content_type,size_bytes,upload_type,alt_text)
+      VALUES($1,$2,$3,'video','video/mp4',1024,'video','Example clip')`,
+      [video,store,`stores/${store}/${video}.mp4`]);
+    const videoKey="section.home.slot-lookbook-0.video0";
+    const textKey="section.home.slot-lookbook-0.text0";
+    const edited=await call("design","PATCH",{expected_draft:saved.expected_draft,confirm:true,
+      copy:{[textKey]:"Behind our collection"},media:{[videoKey]:video},answers});
+    assert.equal(edited.design.copy[textKey],"Behind our collection");
+    assert.equal(edited.design.media[videoKey].media_id,video);
+    assert.ok(edited.videos.some(v=>v.id===video));
+    const loaded=await read(loadEditorDraft);
+    const html=renderStylePreview(designPreviewData(loaded,loaded.settings.ann_design),
+      annPreviewConfiguration(answers,loaded.settings).theme,{page:"home",designEdit:true});
+    assert.match(html,/Behind our collection/);
+    assert.match(html,/data-design-video="section.home.slot-lookbook-0.video0"/);
+    const reset=await call("design","PATCH",{expected_draft:edited.expected_draft,confirm:true,
+      media:{[videoKey]:null},answers});
+    assert.equal(reset.design.media[videoKey],undefined);
+    assert.equal(reset.design.copy[textKey],"Behind our collection");
+    assert.deepEqual(reset.draft.products,before.products,"Section media cannot change inventory");
   } finally { await pg.close(); }
 });

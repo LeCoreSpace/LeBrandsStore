@@ -7,7 +7,7 @@ import { attachAnnDesign } from "../src/public/ann-design-ui.js";
 const source = await readFile(new URL("../src/public/ann-builder.js", import.meta.url), "utf8");
 const tick = () => new Promise(resolve => setImmediate(resolve));
 
-function harness({ saved = true, readOnly = false, themeEditor = false } = {}) {
+function harness({ saved = true, readOnly = false, themeEditor = false, contextual = false } = {}) {
   const previous = { document: globalThis.document, fetch: globalThis.fetch };
   const events = new Map(), requests = [], activations = [];
   let confirmed = 0, mode = themeEditor ? "store" : "showcase";
@@ -24,7 +24,7 @@ function harness({ saved = true, readOnly = false, themeEditor = false } = {}) {
     }), { status: 200 });
   };
   const ui = attachAnnDesign({
-    api: "/fixture", root: "/fixture", readOnly, themeEditor,
+    api: "/fixture", root: "/fixture", readOnly, themeEditor, contextual,
     mount: { parentNode: { insertBefore() {} } }, say() {},
     getAnswers: () => ({ style_preset: "editorial" }),
     getPreviewMode: () => mode,
@@ -33,7 +33,9 @@ function harness({ saved = true, readOnly = false, themeEditor = false } = {}) {
   });
   const change = (dataset, checked) => events.get("change")({ target: { dataset, checked } });
   const click = action => events.get("click")({ target: { closest: () => ({ dataset: { designAct: action } }) } });
-  return { el, ui, requests, activations, change, click, get confirmed() { return confirmed; },
+  return { el, ui, requests, activations, change, click,
+    key:key=>events.get("keydown")({key,preventDefault(){},stopPropagation(){}}),
+    get confirmed() { return confirmed; },
     close() { Object.assign(globalThis, previous); } };
 }
 
@@ -119,7 +121,10 @@ test("inline text and image selection opens their editors, including after editi
       dataset:key==="title"?{designCopy:key}:{designImage:key},
       setAttribute(){},removeAttribute(){},
     }));
-    const doc={querySelectorAll:()=>nodes,addEventListener:(name,fn)=>events.set(name,fn)};
+    const previousCSS=globalThis.CSS;
+    globalThis.CSS={escape:value=>value};
+    const doc={querySelector:selector=>nodes.find(n=>selector.includes(`="${n.dataset.designCopy||n.dataset.designImage}"`))||null,
+      querySelectorAll:()=>nodes,addEventListener:(name,fn)=>events.set(name,fn)};
     h.ui.bindPreview(doc);
     for(const n of nodes){
       events.get("click")({target:{closest:()=>n},preventDefault(){},stopImmediatePropagation(){}});
@@ -131,6 +136,7 @@ test("inline text and image selection opens their editors, including after editi
     assert.equal(h.ui.editing(),true);
     assert.match(h.el.innerHTML,/data-design-input="title"/);
     assert.equal(h.ui.canPublish(),true);
+    globalThis.CSS=previousCSS;
   }finally{h.close();}
 });
 
@@ -144,6 +150,19 @@ test("read-only Ann participants cannot adopt designs even if consent events are
     await tick();
     assert.equal(h.requests.length, 1);
   } finally { h.close(); }
+});
+
+test("Escape from a parent contextual text field dismisses the panel without disabling editing",async()=>{
+  const h=harness({themeEditor:true,contextual:true});
+  try{
+    await tick();
+    h.ui.selectContent("copy","title");
+    assert.match(h.el.innerHTML,/class="ann-ctx"/);
+    assert.match(h.el.innerHTML,/data-design-input="title"/);
+    h.key("Escape");
+    assert.doesNotMatch(h.el.innerHTML,/class="ann-ctx"/);
+    assert.equal(h.ui.editing(),true);
+  }finally{h.close();}
 });
 
 test("every Ann visit resets old browser preferences to samples and automatic callbacks cannot bypass consent", () => {

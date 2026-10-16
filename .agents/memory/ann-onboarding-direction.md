@@ -99,11 +99,14 @@ control, and present editing tools only once the design is editable.
 **Why:** A hidden adoption prerequisite made the editor appear entirely broken
 to the merchant even though its save action was available.
 
-Direct text/photo selection must bring the selected editing field into view.
-State labels should make it clear whether canvas editing is on or off.
+Selecting a section or individual text, image or video should open its own
+editing controls beside the selection on the canvas, not send the merchant
+back to a distant general settings panel. Keep a section-level view for choosing
+its contents. State labels must make editing on/off clear.
 
-**Why:** A field opening above the sidebar's scroll position, or an ambiguous
-toggle turning editing off, made direct selection look unresponsive.
+**Why:** The user repeated that direct selection should work like Shopify's
+contextual editor. A field above the sidebar's scroll position looked
+unresponsive, and added sections listed only in the sidebar were insufficient.
 
 Catalogue confirmation must not also choose a theme, replace page content, or
 silently switch a sample preview to the merchant's products. Selecting real
