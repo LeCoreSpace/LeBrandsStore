@@ -113,8 +113,16 @@ function completion(data, progress) {
   return (progress.completed ?? []).filter((n) => complete[n - 1]);
 }
 export async function saveSetup(tx, id, settings, progress, options = {}) {
+  await tx`SELECT store_id FROM public.stores WHERE store_id=${id} FOR UPDATE`;
   await ensureSetup(tx, id);
+  await tx`SELECT store_id FROM public.store_setup WHERE store_id=${id} FOR UPDATE`;
   const data = await loadDraft(tx, id);
+  if(data.settings.gstin_invoice_identity_locked===true&&settings){
+    const identity=["gstin","legal_name","trade_name","business_line1","business_line2","business_city","business_pincode","business_state","address"];
+    if(identity.some(k=>Object.hasOwn(settings,k)&&(settings[k]||"")!==(data.settings[k]||""))||
+      Object.hasOwn(settings,"gstin_invoice_identity_locked")&&settings.gstin_invoice_identity_locked!==true)
+      throw conflict("Your confirmed GST registration and invoice address are locked and cannot be changed.");
+  }
   if (settings && !validCategoryPair(settings.category ?? data.settings.category, settings.subcategory ?? data.settings.subcategory)) {
     throw badInput("Choose a matching subcategory.", { subcategory: "Choose a subcategory belonging to this category." });
   }

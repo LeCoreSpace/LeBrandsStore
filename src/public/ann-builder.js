@@ -94,7 +94,8 @@ function onboardingDraft(env, { initial = false } = {}) {
   Object.assign(boot.settings, env.settings || {});
   previewSource.settings = { ...previewSource.settings, ...(env.settings || {}) };
   obDone.brand = !!name && !/^my store$/i.test(name);
-  obDone.gst = env.verification?.state==="verified"&&env.verification?.confirmed===true;
+  obDone.gst = env.verification?.state==="verified"&&env.verification?.confirmed===true&&env.settings?.gstin_invoice_identity_locked===true;
+  if(!readOnly&&!obDone.gst&&curIdx(prompts())>prompts().findIndex(p=>p.id==="gstin")){promptId="gstin";step="business";editing=null;detail=false;}
   // Brand and GST writes refresh the preview source only. Sample or own products consent is untouched.
   base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" });
   if (!initial && obDone.brand && !readOnly && answers.store_name !== name) edit(() => { answers.store_name = name.slice(0, 120); });
@@ -104,6 +105,7 @@ const obCommon = { api, storeId, readOnly, onDraft: onboardingDraft, onContinue:
   onPreview: ({ brand_name }) => { previewSource.settings = { ...previewSource.settings, brand_name }; base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" }); renderPreview(false); } };
 const brandUI = attachAnnOnboarding({ ...obCommon, mode: "brand" });
 const gstUI = attachAnnOnboarding({ ...obCommon, mode: "gstin" });
+queueMicrotask(()=>{void gstUI.refresh();});
 const addressUI = attachAnnOnboarding({ ...obCommon, mode: "address", onContinue: () => { obDone.address = true; advance(); } });
 const obUIs = { brand: brandUI, gstin: gstUI, address: addressUI };
 const extrasNow = currentExtras(base.layouts);
@@ -341,7 +343,7 @@ function def(p) {
       return { kind: "list", list: "idea", label: "Product idea", q: `What product would you like to include in ${col?.name || "this collection"}? Start with up to five product names. Tap a suggestion or type your own. Next we can turn them into real draft products.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50, sugg: suggestions() };
     }
     case "store_name": return { kind: "onboard", mode: "brand", label: "Store name", q: "Hi, I'm Ann! Let's set up your store together. First, what is your brand name? Customers will see it on your store. You can change it later. Nothing is published yet.", max: 40, ph: "Type your brand name", reply: brandUI.summary() };
-    case "gstin": return { kind: "onboard", mode: "gstin", label: "GST details", q: "Now your GST registration. Choose the state of your registered address and enter your GSTIN. We will check it and show your registered business name and address for you to confirm. You can also do this later, but a verified GST is needed before you publish.", reply: gstUI.summary() };
+    case "gstin": return { kind: "onboard", mode: "gstin", label: "GST details", q: "Let's verify your GST registration before we continue. Choose your registered business state and enter your GSTIN. We will show your registered business name and address for you to check. This address will be used on your invoices and cannot be changed after you confirm it.", reply: gstUI.summary() };
     case "included_address": return { kind: "onboard", mode: "address", label: "Store address", q: "Your store comes with its own web address. Here is the one we picked. Keep it, or change it to something shorter and easier to remember.", reply: addressUI.summary() };
     case "catalogue": return { kind: "catalogue", label: "Create products", q: "Would you like to turn these ideas into real draft products now? You will confirm each price, GST rate, HSN code and stock yourself. Nothing is published, your design stays as it is, and you can skip this and do it later in Products.", reply: "" };
     case "logo": return {kind:"logo",label:"Brand logo",q:`Have a logo for ${a.store_name || boot.store.name || "your brand"}? Add it here and see it across your store, including the bag, checkout and browser tab. No logo yet? Your brand name works beautifully too.`,reply:brandingUI.reply()};
@@ -519,6 +521,8 @@ async function toPrompt(id) {
   if (navigating) return;
   let ps = prompts(); const ci = curIdx(ps);
   let ti = ps.findIndex(p => p.id === id); if (ti < 0) return;
+  const gstIndex=ps.findIndex(p=>p.id==="gstin");
+  if(!readOnly&&!obDone.gst&&ti>gstIndex){promptId="gstin";step="business";editing=null;detail=false;draw("active");say("Verify your GSTIN and confirm the registered invoice address before continuing.");return;}
   navigating = true;
   try {
     const saveAfterTransition = ti > ci && ps[ti].step !== step && !readOnly && !conflict && !autosavePaused;

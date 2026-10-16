@@ -27,6 +27,18 @@ delivery, custom-domain connection and review.
 non-technical merchants. Preserve the existing verified-registration and
 historical-invoice boundaries.
 
+GSTIN verification and explicit confirmation of the registered invoice address
+are mandatory at the opening business stage, not deferrable until publication.
+After confirmation, the invoice legal name, GSTIN and registered address cannot
+be changed through merchant settings.
+
+**Why:** The user corrected the skip/later behaviour and said this is the
+address used on invoices and cannot be changed later.
+
+**How to apply:** Keep failed verification on this stage, retain typed entries,
+block navigation past it, and enforce the confirmed-identity lock on the server.
+Do not mistake workspace secret availability for a deployed Worker binding.
+
 Ann and the theme editor must open the same saved design, including section
 arrangement, text, sample creatives, colours and typography. Keep sections
 individually editable, addable and removable. Preserve browser preview in both.

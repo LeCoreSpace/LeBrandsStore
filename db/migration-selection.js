@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if (values.length === 1 && values[0] === "--staged-gstin") {
+    return { staged: true, filename: "0011_gstin_approval.sql", requires: "0009_required_gstin.sql" };
+  }
   if (values.length === 1 && values[0] === "--staged-commerce") {
     return { staged: true, filename: "0018_commerce_runtime.sql", requires: "0017_ann_launch_setup.sql" };
   }
@@ -22,5 +25,5 @@ export function migrationSelection(args) {
   if (values.length === 1 && values[0] === "--staged-starters") {
     return { staged: true, filename: "0015_aura_starter_library.sql", requires: "0012_aura_skeleton_sections.sql" };
   }
-  throw new Error("Use no arguments for regular migrations, --staged-aura, --staged-ai, --staged-email, --staged-starters, --staged-ann, --staged-launch or --staged-commerce.");
+  throw new Error("Use no arguments for regular migrations, --staged-gstin, --staged-aura, --staged-ai, --staged-email, --staged-starters, --staged-ann, --staged-launch or --staged-commerce.");
 }

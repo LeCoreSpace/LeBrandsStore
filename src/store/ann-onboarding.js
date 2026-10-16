@@ -8,6 +8,12 @@ export async function prepareAnnOnboarding(tx,id) {
   return {expected_draft:await draftFingerprint(draft),draft,store:draft.store,settings:draft.settings,
     verification:await gstinEnabled(tx)?await verificationState(tx,id,draft.settings):{enabled:false,state:"unverified"}};
 }
+export async function requireAnnGSTIN(tx,id){
+  if(!await gstinEnabled(tx))throw Object.assign(new Error("GST verification needs a platform database update before onboarding can continue."),{status:503});
+  const draft=await loadDraft(tx,id),state=await verificationState(tx,id,draft.settings);
+  if(state.state!=="verified"||!state.confirmed||draft.settings.gstin_invoice_identity_locked!==true)
+    throw Object.assign(new Error("Verify your GSTIN and confirm the registered invoice address before continuing."),{status:409});
+}
 export async function saveAnnOnboarding(tx,id,userId,body) {
   if(!body||typeof body!=="object"||Array.isArray(body)||Object.keys(body).some(k=>!["expected_draft","confirm","brand_name","subdomain"].includes(k))||
     body.confirm!==true||!/^[a-f0-9]{64}$/.test(body.expected_draft||"")||

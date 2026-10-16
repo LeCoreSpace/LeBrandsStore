@@ -2,7 +2,7 @@ import { SECURITY_HEADERS, isValidOrigin } from "../auth/security.js";
 import { UUID } from "../public/validation.js";
 import { dashboardAccess } from "../dashboard/repository.js";
 import { readJson } from "./input.js";
-import { prepareAnnOnboarding, saveAnnOnboarding } from "./ann-onboarding.js";
+import { prepareAnnOnboarding, saveAnnOnboarding, requireAnnGSTIN } from "./ann-onboarding.js";
 import { validateAnnSave, mergeAnnAnswers, validateAnnAnswers } from "./ann-input.js";
 import { annReady, annReference, loadAnnSession, annSessionResponse } from "./ann-repository.js";
 import { prepareAnnApplication, applyAnnApplication } from "./ann-application.js";
@@ -66,6 +66,7 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
       }
       if (!writing) return annSessionResponse(tx, storeId, session);
       const body = validateAnnSave(await readJson(request));
+      if(body.current_step!=="business"&&(body.current_step==="selling"||session?.current_step==="business"))await requireAnnGSTIN(tx,storeId);
       if ((session?.revision || 0) !== body.expected_revision) return { conflict: true };
       const merged = mergeAnnAnswers(session?.answers, body.answers);
       const reference = await annReference(tx, Number.isSafeInteger(merged.answers.subcategory_id) ? merged.answers.subcategory_id : null);

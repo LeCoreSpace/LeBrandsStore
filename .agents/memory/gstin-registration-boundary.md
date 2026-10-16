@@ -16,13 +16,15 @@ behavior, replacing the earlier optional-GSTIN approach.
 server-side publication and new invoice issuance. Existing live documents
 remain historical; do not silently alter legacy financial records.
 
-Supplier legal details must be repairable in Settings before shipping, then
-frozen when the invoice is issued. Do not force an incomplete old checkout
+Legacy supplier details that have not been locked by Ann must be repairable in
+Settings before shipping, then frozen when the invoice is issued. Ann-confirmed
+invoice identities are instead locked at address confirmation and must not be
+editable by the merchant afterward. Do not force an incomplete old checkout
 supplier snapshot into a new financial document, or overwrite an issued one.
 
-**Why:** The polish requirements explicitly require fixing supplier details in
-Settings before marking shipped, including orders placed before those fields
-were available.
+**Why:** Earlier polish requirements require repairing incomplete legacy supplier
+details before shipping. The user subsequently required Ann verification and
+address confirmation at onboarding, with no later changes to that invoice identity.
 
 **How to apply:** Invoice issuance uses complete current registered business
 details while preserving the order's stored amounts and validating its tax

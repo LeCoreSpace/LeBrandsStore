@@ -2,7 +2,7 @@ import { INDIAN_STATES } from "./commerce-rules.js";
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const GSTIN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/;
 const DEFAULT_NAME = /^my store$/i;
-export const GST_COPY = "This verified address will appear on your invoices. You cannot edit it here.";
+export const GST_COPY = "This registered business name, GSTIN and address will be used on your invoices. Once you confirm, these details are locked and cannot be changed later. Please check them carefully.";
 
 /*
  * Ann onboarding controller. Modes:
@@ -14,7 +14,7 @@ export const GST_COPY = "This verified address will appear on your invoices. You
 export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", onDraft, onContinue, onPreview }) {
   const url = `${api}/onboarding`, gstApi = `${api.replace(/\/ann$/,"")}/gstin`;
   const slotId = `ann-ob-${mode}-slot`;
-  let env = null, loading = false, busy = "", error = "", note = "", attempted = false, skipped = false, done = false;
+  let env = null, loading = false, busy = "", error = "", note = "", attempted = false, done = false;
   let name = null, sub = null, subMsg = null, timer = 0;
   let stateCode = null, gstinVal = null, pending = null, pick = 0, unavailable = false;
   const slot = () => document.getElementById(slotId);
@@ -61,7 +61,7 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
       if (mode === "gstin") {
         const record=result.verification;
         if(isVerified(record)&&!isConfirmed(record)&&!pending)pending=record;
-        if(isConfirmed(record)&&stateCode==null&&gstinVal==null){stateCode=result.settings?.business_state_code||"";gstinVal=record.gstin||"";}
+        if(isConfirmed(record)&&stateCode==null&&gstinVal==null){stateCode=result.settings?.business_state||"";gstinVal=record.gstin||"";}
       }
     } catch (e) { error = e.message; }
     finally { loading = false; draw(); }
@@ -118,8 +118,8 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
     busy = "verify"; error = ""; unavailable = false; note = ""; draw();
     try {
       const { res, result } = await call(`${gstApi}/verify`, "POST", { gstin: gstValue(), state_code: code() });
-      if (!res.ok) { unavailable = res.status >= 500 || res.status === 429; throw new Error(unavailable ? "The GST service is not available right now. Your entries are kept. You can try again or save for later." : failText(result, "We could not verify this GSTIN. Check it and try again.")); }
-      if (result.enabled === false) throw new Error("GST checks are not turned on yet. Your entries are kept. You can save for later.");
+      if (!res.ok) { unavailable = res.status >= 500 || res.status === 429; throw new Error(result.code==="GSTIN_SETUP_REQUIRED"?"GST verification needs a platform update. Your entries are kept. Verification and address confirmation are required to continue.":unavailable ? "The GST service is not available right now. Your entries are kept. Please retry; verification is required to continue." : failText(result, "We could not verify this GSTIN. Check it and try again.")); }
+      if (result.enabled === false) throw new Error("GST verification needs a platform update. Your entries are kept. Verification is required to continue.");
       pending = result; pick = 0;
       if (result.state === "unverified") { unavailable = true; error = result.message || "Verification is unavailable right now. Try again later."; }
       else if (result.state === "blocked") error = result.message || "An active Regular GSTIN is required.";
@@ -128,15 +128,20 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
     finally { busy = ""; draw(); }
   }
   async function confirm() {
-    const v = toConfirm(); if (off() || !v?.id) return;
+    const v = toConfirm()||(confirmed()?env.verification:null); if (off() || !v?.id) return;
+    const index=confirmed()?addrList(v).findIndex(a=>(a.line1||a.line2)===env.settings.business_line1&&
+      (a.line1?a.line2:"")===(env.settings.business_line2||"")&&a.city===env.settings.business_city&&
+      a.pin===env.settings.business_pincode&&a.state_code===env.settings.business_state):pick;
+    if(index<0){error="Choose a verified registered address before confirming.";draw();return;}
     busy = "confirm"; error = ""; draw();
     try {
-      const { res, result } = await call(`${gstApi}/confirm`, "POST", { verification_id: v.id, address_index: pick });
+      const { res, result } = await call(`${gstApi}/confirm`, "POST", { verification_id: v.id, address_index:index, lock_invoice_address:true });
       if (!res.ok) throw new Error(failText(result, "We could not confirm this address. Try again."));
       pending = null;
       // Fresh onboarding GET is the source of truth; no local confirmed flag.
       if (!await refetch()) throw new Error("Confirmed, but your details could not be refreshed. Reload this page to see them.");
       note = confirmed() ? "Your GST details are verified and saved to your draft." : "The address was saved, but it is not shown as confirmed yet. Reload to check.";
+      if(confirmed()&&env.settings?.gstin_invoice_identity_locked===true){busy="";draw();onContinue?.();}
     } catch (e) { error = e.message; }
     finally { busy = ""; draw(); }
   }
@@ -155,20 +160,19 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
       return `<div class="ann-callout" role="status"><strong>GST verified</strong></div>
         <dl class="ann-summary"><div><dt>Legal name</dt><dd>${esc(r.legal_name || "")}</dd></div><div><dt>Registered address</dt><dd>${esc(addrText(a))}</dd></div></dl>
         <p class="ann-note">${GST_COPY}</p>${msgs()}
-        <div class="ann-actions"><button type="button" class="ann-btn" data-ob="continue">Continue</button></div>`;
+        <div class="ann-actions"><button type="button" class="ann-btn" data-ob="continue">${env.settings?.gstin_invoice_identity_locked===true?"Continue":"Confirm and lock this invoice address"}</button></div>`;
     }
     const p = toConfirm(), list = addrList(p), g = gstValue(), problem = gstProblem();
     const hint = (g || stateCode) && problem ? `<p class="ann-note">${esc(problem)}</p>` : "";
-    return `<p class="ann-note">We will check your GSTIN with the GST service. Nothing counts as verified until you press Verify and confirm the address.</p>
+    return `${env?.verification?.enabled===false?'<div class="ann-error" role="alert">GST verification needs a platform update. Your entries are kept, but you must verify and confirm your invoice address before continuing.</div><button type="button" class="ann-btn alt" data-ob="retry">Check availability again</button>':""}<p class="ann-note">We will check your GSTIN with the GST service. Nothing counts as verified until you press Verify and confirm the address.</p>
       <label class="ann-field">State of your registered address<select data-ob-in="state"${dis()}><option value="">Choose a state</option>${INDIAN_STATES.map(s => `<option value="${s.code}"${s.code === code() ? " selected" : ""}>${esc(s.name)}</option>`).join("")}</select></label>
       <label class="ann-field">GSTIN<input data-ob-in="gstin" maxlength="15" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="15 characters" value="${esc(gstValue())}"${dis()}></label>${hint}
       ${p ? `<fieldset class="ann-item"${dis()}><legend>Registered name and address</legend><p><strong>${esc(p.registration.legal_name || "")}</strong>${p.registration.trade_name ? `<br><small>${esc(p.registration.trade_name)}</small>` : ""}</p>
         ${list.map((a, i) => `<label class="ann-check"><input type="radio" name="ann-ob-addr" data-ob-in="addr" value="${i}"${i === pick ? " checked" : ""}><span>${esc(addrText(a))}</span></label>`).join("")}
         <p class="ann-note">${GST_COPY}</p></fieldset>` : ""}${msgs()}
-      <div class="ann-actions"><button type="button" class="ann-btn${p ? " alt" : ""}" data-ob="verify"${off() || problem ? " disabled" : ""}>${busy === "verify" ? "Verifying" : p || pending ? "Verify again" : "Verify GSTIN"}</button>
-      ${p ? `<button type="button" class="ann-btn" data-ob="confirm"${off() ? " disabled" : ""}>${busy === "confirm" ? "Confirming" : "Confirm this address"}</button>` : ""}
-      <button type="button" class="ann-link" data-ob="skip"${busy ? " disabled" : ""}>Save for later and continue</button></div>
-      <p class="ann-note">You can skip for now and your draft is kept. A verified and confirmed GST registration is required before you can publish your store.</p>`;
+      <div class="ann-actions"><button type="button" class="ann-btn${p ? " alt" : ""}" data-ob="verify"${off() || problem || env?.verification?.enabled===false ? " disabled" : ""}>${busy === "verify" ? "Verifying" : p || pending ? "Verify again" : "Verify GSTIN"}</button>
+      ${p ? `<button type="button" class="ann-btn" data-ob="confirm"${off() ? " disabled" : ""}>${busy === "confirm" ? "Confirming" : "Confirm and lock this invoice address"}</button>` : ""}</div>
+      <p class="ann-note">Verify your GSTIN and confirm the registered invoice address to continue. If you leave now, your saved draft is kept.</p>`;
   }
   function addressHtml() {
     const s = displaySub(), m = subMsg;
@@ -190,7 +194,7 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
     const n = slot(); if (!n) return;
     const set = (a, bad) => { const b = n.querySelector(`[data-ob="${a}"]`); if (b) b.disabled = off() || !env || !!bad; };
     if (mode === "brand") set("save", nameProblem());
-    else if (mode === "gstin") set("verify", gstProblem());
+    else if (mode === "gstin") set("verify", gstProblem()||env?.verification?.enabled===false);
     else { set("save", subProblem()); const c = n.querySelector('[data-ob="check"]'); if (c) c.disabled = off() || !displaySub(); }
   }
   document.addEventListener("input", e => {
@@ -214,13 +218,16 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
     else if (a === "check") void checkSub();
     else if (a === "verify") void verify();
     else if (a === "confirm") void confirm();
-    else if (a === "skip") { skipped = true; onContinue?.(); }
-    else if (a === "continue") onContinue?.();
+    else if (a === "continue") {
+      if(mode==="gstin"&&(!confirmed()||env.settings?.gstin_invoice_identity_locked!==true)){if(confirmed())void confirm();else{error="Verify your GSTIN and confirm the registered invoice address to continue.";draw();}return;}
+      onContinue?.();
+    }
   });
   document.addEventListener("submit", e => { if (slot()?.contains(e.target)) e.preventDefault(); });
 
   return {
     html,
+    refresh: () => load(),
     mount() { const n = slot(); if (!n) return; if (!attempted) void load(); else if (!n.childElementCount) draw(); },
     // Brand mode only: the bottom composer sends a typed name here.
     submit(text) { if (mode !== "brand") return; name = String(text || "").trim().slice(0, 40); draw(); void saveBrand(); },
@@ -228,7 +235,7 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
     isConfirmed: () => confirmed(),
     summary() {
       if (mode === "brand") return env && !DEFAULT_NAME.test(env.store?.name || "") ? env.store.name : "";
-      if (mode === "gstin") return confirmed() ? `GST verified${env.verification.registration?.legal_name ? `: ${env.verification.registration.legal_name}` : ""}` : skipped ? "Skipped for now. Verified GST is needed before you can publish." : toConfirm() ? "Verified, address not confirmed yet" : "";
+      if (mode === "gstin") return confirmed() ? `GST verified${env.verification.registration?.legal_name ? `: ${env.verification.registration.legal_name}` : ""}` : toConfirm() ? "Verified, address not confirmed yet" : "";
       return done && env?.store?.subdomain ? `Address name: ${env.store.subdomain}` : "";
     },
     hasUnsavedChanges: () => !!busy || (mode === "brand" && name !== null && name.trim() !== (env?.store?.name || "")) || (mode === "address" && sub !== null && sub !== env?.store?.subdomain) || (mode === "gstin" && !!toConfirm()),
