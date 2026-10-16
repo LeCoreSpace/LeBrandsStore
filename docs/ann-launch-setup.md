@@ -150,9 +150,16 @@ Production Worker bindings:
 - `CLOUDFLARE_WORKER_NAME=lebrands-store`
 
 The operator creates fallback `store-origin.lebrands.store` (proxied AAAA `100::`)
-and customer CNAME target `brands.lebrands.store`. The root Wrangler production
-configuration now includes the `*/*` route for this zone; subsequent deployments
-must retain it. Deployment applies that shared route, so review conflicts first.
+and customer CNAME target `brands.lebrands.store`. The default root Wrangler
+configuration deliberately contains only the platform's existing domain routes.
+Cloudflare rejects `*/*` with error 10022 until Cloudflare for SaaS is enabled,
+which would otherwise partially fail an ordinary deployment.
+
+Only after the account owner has enabled Cloudflare for SaaS and reviewed route
+conflicts, add `{"pattern":"*/*","zone_name":"lebrands.store"}` to the root
+configuration's `routes` array and run the checked platform setup. Once customer
+domains are activated, retain that route on future deployments. Do not add it
+merely because payment or shipping integrations are being deployed.
 The old `CUSTOM_DOMAINS_ROUTING_READY` flag is no longer proof of readiness:
 activation freshly reads actual fallback, DNS and Worker route configuration.
 

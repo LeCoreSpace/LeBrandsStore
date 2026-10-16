@@ -44,6 +44,10 @@ test("root production Worker imports neither preview adapter nor synthetic displ
   const local=JSON.parse(await readFile("wrangler.preview.jsonc","utf8"));
   assert.equal(prod.main,"src/index.js");
   assert.equal(local.main,"src/preview.js");
+  assert.deepEqual(prod.routes,[
+    {pattern:"lebrands.store/*",zone_name:"lebrands.store"},
+    {pattern:"*.lebrands.store/*",zone_name:"lebrands.store"},
+  ],"Default deployments must not require the optional Cloudflare for SaaS wildcard route");
   const visited=new Set();
   async function walk(file){
     file=resolve(file);
