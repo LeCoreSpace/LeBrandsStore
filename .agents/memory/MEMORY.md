@@ -11,7 +11,7 @@
 - [Dashboard visual boundary](dashboard-design-boundary.md) — professional commerce admin is separate from Aura; visual-only work must not invent backend capabilities.
 - [Long-page screenshots](long-page-screenshots.md) — an image-limit error can still leave a complete saved capture; inspect its dimensions and crops before retrying.
 - [Browser video capture](browser-video-capture.md) — remote native recording may lack FFmpeg; actual CDP screencast frames can be encoded locally.
-- [Homepage showcase boundary](homepage-showcase-boundary.md) — original clothing concept replaces Stonescence; preserve operational visuals and defer live Aura integration.
+- [Homepage showcase boundary](homepage-showcase-boundary.md) — use Ann Modern Boutique skincare for hero/preview/Crafted details; preserve operational visuals and live stores.
 - [Mobile animation viewport](mobile-animation-viewport.md) — off-screen transforms can inflate Chromium's mobile viewport; compare against the requested width, not only scroll width.
 - [3D dashboard compositing](3d-dashboard-compositing.md) — flatten dashboard content; animate the whole surface to avoid hiding amounts behind its background.
 - [Replit preview boundary](replit-preview-boundary.md) — native Preview must show the real site, not just a sample gallery; visibility does not authorise live-data access.

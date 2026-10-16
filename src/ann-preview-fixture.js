@@ -109,12 +109,13 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     }
     // Public marketing captures use only fictional, in-memory sample content.
     if (url.pathname === `${prefix}/storefront` && ["GET","HEAD"].includes(req.method)) {
-      const settings = { ...styleSettings("editorial"), brand_name: "Example Studio", category: "fashion", subcategory: "womens-clothing" };
+      const settings = { ...styleSettings("boutique"), brand_name: "Example Studio", category: "beauty-and-personal-care", subcategory: "skincare" };
       const sample = stylePreviewData({ store: { store_id: storeId, name: "Example Studio" }, settings,
         products: [], collections: [], layouts: {}, policies: [], reviews: [] }, { showcase: true });
       res.setHeader("content-type","text/html; charset=utf-8");
       res.setHeader("cache-control","no-store");
-      res.end(req.method === "HEAD" ? undefined : renderStylePreview(sample, settings, { page: "home" }));
+      const page = ["product","checkout"].includes(url.searchParams.get("page")) ? url.searchParams.get("page") : "home";
+      res.end(req.method === "HEAD" ? undefined : renderStylePreview(sample, settings, { page }));
       return true;
     }
     const pg = await getDatabase(), db = annFixtureAdapter(pg);

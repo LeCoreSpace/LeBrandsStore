@@ -22,6 +22,19 @@ test("Ann replaces the old wizard and dashboard captures retain current branding
 import worker from "../src/index.js";
 
 const text=html=>html.replace(/<[^>]+>/g," ").replace(/\s+/g," ");
+test("hero, Ann preview and Crafted details share Modern Boutique skincare imagery",async()=>{
+  const html=renderHome();
+  assert.match(html,/skincare sample store in Modern Boutique/);
+  assert.doesNotMatch(html,/ann-store-editorial|REPLACE-store-photo|REPLACE-checkout|ann-conversation-builder\./);
+  for(const media of [MARKETING_MEDIA.exampleDesktop,MARKETING_MEDIA.exampleMobile,MARKETING_MEDIA.annBuilder,MARKETING_MEDIA.productPhoto,MARKETING_MEDIA.checkout]){
+    assert.match(media.src,/^\/img\/ann-skincare-boutique-/);
+    assert.match(media.alt,/skincare/i);
+    assert.ok(html.includes(media.src));
+    for(const url of [media.src,...media.srcset.split(",").map(value=>value.trim().split(" ")[0])]){
+      assert.ok((await stat("src/public"+url)).size>0,`Missing skincare preview: ${url}`);
+    }
+  }
+});
 const forbidden=/\b(?:unleash|elevate|empower|seamless|seamlessly|supercharge|effortless|effortlessly|revolutionise|game-changer|next-level|cutting-edge|robust|leverage|unlock|journey|tailored|delve|world-class|in today's fast-paced)\b/i;
 
 test("homepage output has no en/em dashes, forbidden copy, or fake old pricing",()=>{
@@ -36,7 +49,7 @@ test("homepage has the exact title, canonical, Ann store OG image, single H1 and
   const html=renderHome();
   assert.match(html,/<title>LeBrands\.Store \| A flagship online store for Indian D2C brands<\/title>/);
   assert.match(html,/<link rel="canonical" href="https:\/\/lebrands\.store">/);
-  assert.match(html,/<meta property="og:image" content="https:\/\/lebrands\.store\/img\/ann-store-editorial-desktop\.jpg">/);
+  assert.match(html,/<meta property="og:image" content="https:\/\/lebrands\.store\/img\/ann-skincare-boutique-desktop\.jpg">/);
   assert.doesNotMatch(html,/stonescence/i);
   assert.match(html,/Example Studio is a fictional sample store designed with Ann/);
   assert.equal((html.match(/<h1\b/g)||[]).length,1);
@@ -163,7 +176,7 @@ test("marketing routes are read-only, scoped CSP supports font/video, and previe
     const post=await worker.fetch(new Request("https://lebrands.store"+pathname,{method:"POST"}),env,{});
     assert.equal(post.status,405);
   }
-  const annMedia=[MARKETING_MEDIA.exampleDesktop,MARKETING_MEDIA.exampleMobile,MARKETING_MEDIA.annBuilder];
+  const annMedia=[MARKETING_MEDIA.exampleDesktop,MARKETING_MEDIA.exampleMobile,MARKETING_MEDIA.annBuilder,MARKETING_MEDIA.productPhoto,MARKETING_MEDIA.checkout];
   const annPaths=annMedia.flatMap(media=>[media.src,...media.srcset.split(",").map(value=>value.trim().split(" ")[0])]);
   for(const pathname of ["/assets/marketing.css","/assets/marketing.js","/assets/instrument-sans-latin.woff2",...new Set(annPaths)]){
     const response=await worker.fetch(new Request("https://lebrands.store"+pathname),env,{});

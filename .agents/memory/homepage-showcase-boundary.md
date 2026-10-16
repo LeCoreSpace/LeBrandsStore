@@ -1,27 +1,25 @@
 ---
 name: Homepage showcase boundary
-description: Original premium clothing concept versus live Aura and operational media
+description: Modern Boutique skincare homepage previews versus live stores and operational media
 ---
 
-Use an original fictional premium clothing-store design for landing-page
-showcases, not Stonescence samples. Preserve the dashboard, wizard and invoice
-visuals when changing the storefront showcase.
+Use the existing Ann skincare sample store in Modern Boutique for the homepage
+hero, Ann preview and Crafted details storefront/checkout images. Preserve the
+operational dashboard and invoice visuals.
 
-**Why:** The user explicitly requested removing the Stonescence sample while
-keeping those operational visuals, with transfer of the new design into Aura
-as a later step.
+**Why:** The user explicitly selected the existing skincare Modern Boutique
+design after the earlier Editorial clothing showcase.
 
-**How to apply:** Stage and review the clothing design independently. A landing
-page refresh is not permission to change live Aura stores or operational screens.
-Treat Aura integration as separate work until the user requests it.
+**How to apply:** Use fictional, isolated Ann captures and fresh asset URLs.
+A homepage refresh is not permission to change live merchant stores or
+operational screens.
 
-The landing page should alternate clearly light and dark bands, not two dark
-shades and not one continuous background. Its store, checkout, back-office and paperwork showcase
-belongs in one auto-playing carousel, not four tall stacked rows.
+Only the homepage hero and footer remain dark; the other sections are white in
+both modes. Its store, checkout, back-office and paperwork showcase belongs in
+one auto-playing carousel, not four tall stacked rows.
 
-**Why:** The user clarified that alternating bands are wanted, but one must be
-light and the other dark. They also requested one auto carousel instead of four
-stacked showcase rows.
+**Why:** The later white-section request supersedes alternating bands. The user
+also requested one auto carousel instead of four stacked showcase rows.
 
 **How to apply:** Keep the preserved operational imagery, but present it together.
 Use actual visible carousel movement rather than claiming static screenshots or

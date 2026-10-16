@@ -1,54 +1,50 @@
 export const MARKETING_MEDIA = Object.freeze({
   exampleDesktop: Object.freeze({
     available: true,
-    src: "/img/ann-store-editorial-desktop.webp",
-    srcset: "/img/ann-store-editorial-desktop-640.webp 640w, /img/ann-store-editorial-desktop-1280.webp 1280w, /img/ann-store-editorial-desktop.webp 1440w",
+    src: "/img/ann-skincare-boutique-desktop.webp",
+    srcset: "/img/ann-skincare-boutique-desktop-640.webp 640w, /img/ann-skincare-boutique-desktop-1280.webp 1280w, /img/ann-skincare-boutique-desktop.webp 1440w",
     sizes: "(max-width: 600px) 92vw, (max-width: 900px) 88vw, 58vw",
     width: 1440,
     height: 900,
-    alt: "Example Studio sample clothing store in Ann's Editorial style, desktop preview"
+    alt: "Fictional Example Studio skincare store in Ann's Modern Boutique style, desktop preview"
   }),
   exampleMobile: Object.freeze({
     available: true,
-    src: "/img/ann-store-editorial-mobile.webp",
-    srcset: "/img/ann-store-editorial-mobile-260.webp 260w, /img/ann-store-editorial-mobile.webp 390w",
+    src: "/img/ann-skincare-boutique-mobile.webp",
+    srcset: "/img/ann-skincare-boutique-mobile-260.webp 260w, /img/ann-skincare-boutique-mobile.webp 390w",
     sizes: "(max-width: 600px) 111px, 205px",
     width: 390,
     height: 844,
-    alt: "Example Studio sample clothing store in Ann's Editorial style, mobile preview",
+    alt: "Fictional Example Studio skincare store in Ann's Modern Boutique style, mobile preview",
     caption: "Example store concept"
   }),
   annBuilder: Object.freeze({
     available: true,
-    src: "/img/ann-conversation-builder.webp",
-    srcset: "/img/ann-conversation-builder-640.webp 640w, /img/ann-conversation-builder-1280.webp 1280w, /img/ann-conversation-builder.webp 1440w",
+    src: "/img/ann-skincare-boutique-builder.webp",
+    srcset: "/img/ann-skincare-boutique-builder-640.webp 640w, /img/ann-skincare-boutique-builder-1280.webp 1280w, /img/ann-skincare-boutique-builder.webp 1440w",
     sizes: "(max-width: 600px) 92vw, 85vw",
     width: 1440,
     height: 960,
-    alt: "Build with Ann: a friendly conversation on the left and a live store preview on the right. Fictional sample store."
+    alt: "Build with Ann: a conversation beside a Modern Boutique skincare store preview. Fictional sample store."
   }),
   productPhoto: Object.freeze({
     available: true,
-    src: "/img/REPLACE-store-photo.webp",
-    fallback: "/img/REPLACE-store-photo.jpg",
-    srcset: "/img/REPLACE-store-photo-640.webp 640w, /img/REPLACE-store-photo-1280.webp 1280w",
-    avifSrcset: "/img/REPLACE-store-photo-640.avif 640w, /img/REPLACE-store-photo-1280.avif 1280w",
+    src: "/img/ann-skincare-boutique-product.webp",
+    srcset: "/img/ann-skincare-boutique-product-640.webp 640w, /img/ann-skincare-boutique-product-1280.webp 1280w, /img/ann-skincare-boutique-product.webp 1440w",
     sizes: "(max-width: 600px) 92vw, (max-width: 900px) 88vw, 58vw",
-    width: 2880,
-    height: 1100,
-    alt: "Fictional Example Studio handmade cotton apparel storefront, a demo store and not an actual customer.",
+    width: 1440,
+    height: 900,
+    alt: "Fictional Example Studio skincare product page in Ann's Modern Boutique style, a sample store.",
     caption: "Example store"
   }),
   checkout: Object.freeze({
     available: true,
-    src: "/img/REPLACE-checkout.webp",
-    fallback: "/img/REPLACE-checkout.jpg",
-    srcset: "/img/REPLACE-checkout-390.webp 390w, /img/REPLACE-checkout-640.webp 640w",
-    avifSrcset: "/img/REPLACE-checkout-390.avif 390w, /img/REPLACE-checkout-640.avif 640w, /img/REPLACE-checkout.avif 780w",
+    src: "/img/ann-skincare-boutique-checkout.webp",
+    srcset: "/img/ann-skincare-boutique-checkout-260.webp 260w, /img/ann-skincare-boutique-checkout.webp 390w",
     sizes: "(max-width: 600px) 92vw, 44vw",
-    width: 780,
-    height: 1688,
-    alt: "Fictional Example Studio Cash on Delivery checkout, a demo store screen and not an actual customer.",
+    width: 390,
+    height: 844,
+    alt: "Fictional Example Studio skincare checkout in Ann's Modern Boutique style, a read-only sample screen.",
     caption: "Example store"
   }),
   dashboard: Object.freeze({

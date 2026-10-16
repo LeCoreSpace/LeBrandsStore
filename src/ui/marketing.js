@@ -43,7 +43,7 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
   <meta property="og:url" content="${canonical}">
-  <meta property="og:image" content="https://lebrands.store/img/ann-store-editorial-desktop.jpg">
+  <meta property="og:image" content="https://lebrands.store/img/ann-skincare-boutique-desktop.jpg">
   <meta property="og:image:width" content="1440">
   <meta property="og:image:height" content="900">
   <meta name="twitter:card" content="summary_large_image">
@@ -136,7 +136,7 @@ export function renderHome() {
         <div class="m-hs-slides">
           <article class="m-hs-slide m-hs-slide-store is-active" data-hs-slide data-hs-line="Your products. Your flagship store." role="group" aria-roledescription="slide" aria-label="1 of 7: Premium storefront on desktop and mobile">
             <div class="m-hs-card m-hs-store"><div class="m-hs-store-desktop">${imageMarkup(MARKETING_MEDIA.exampleDesktop, { eager: true })}</div><div class="m-hs-store-phone">${imageMarkup(MARKETING_MEDIA.exampleMobile, { eager: true })}</div><span class="m-hs-store-cap">Example Studio, a concept store</span></div>
-            <div class="m-hs-copy"><strong>Built with Ann. Made for your brand.</strong><p>Explore the Editorial look on desktop and mobile. Example Studio is a fictional sample store designed with Ann.</p></div>
+            <div class="m-hs-copy"><strong>Built with Ann. Made for your brand.</strong><p>Explore our skincare sample store in Modern Boutique, on desktop and mobile. Example Studio is a fictional sample store designed with Ann.</p></div>
           </article>
           <article class="m-hs-slide" data-hs-slide data-hs-line="Your products. Your flagship store." role="group" aria-roledescription="slide" aria-label="2 of 7: Catalogue and collections" hidden>
             <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
