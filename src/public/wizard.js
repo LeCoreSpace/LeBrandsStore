@@ -17,6 +17,7 @@ const fullscreen = document.getElementById("preview-fullscreen");
 const statusNode = document.getElementById("save-status");
 const storeId = root?.dataset.storeId || "";
 const visualOnly = root?.dataset.visualOnly === "true";
+const reviewOnly = root?.dataset.reviewOnly === "true" || new URLSearchParams(window.location.search).get("step")==="4";
 const initial = JSON.parse(document.getElementById("wizard-data")?.textContent || "{}");
 const clone = (value) => JSON.parse(JSON.stringify(value ?? {}));
 let serverSettings = clone(initial.settings||{});
@@ -27,7 +28,8 @@ const POLICY_KINDS = ["privacy","terms","shipping","cancellation-refund","contac
 const POLICY_NAMES = {privacy:"Privacy policy",terms:"Terms & Conditions",shipping:"Shipping policy","cancellation-refund":"Cancellation & Refunds",contact:"Contact",pricing:"Pricing"};
 const API = `/api/stores/${encodeURIComponent(storeId)}`;
 let data = initial;
-let step = resumeStep(data);
+let reviewGST=null,reviewGSTError="";
+let step = reviewOnly?4:resumeStep(data);
 let previewPage = step===3?"product":step===4?"collection":"home";
 let device = "mobile";
 let activeProductId = null;
@@ -227,9 +229,9 @@ function field(name,label,value="",opts={}){
   if(error)control=control.replace(/^<(input|textarea|select)\b/, "<$1 aria-invalid=\"true\"");
   return `<div class="field"><label for="${esc(name)}">${esc(label)}</label>${control}${opts.help?`<span class="field-help">${opts.help}</span>`:""}${fields(error)}</div>`;
 }
-function progressBar(){return `<nav class="step-progress" aria-label="Setup steps">${["Brand basics","Choose a theme","Your products","Review & publish"].map((label,i)=>`<button type="button" data-step="${i+1}" aria-current="${step===i+1?"step":"false"}" data-complete="${(data.progress?.completed||[]).includes(i+1)}"><span class="step-number">0${i+1}</span>${label}</button>`).join("")}</nav>`}
+function progressBar(){if(reviewOnly)return '<p class="field-help">Your saved design and details are shown below. Nothing is published until you confirm.</p>';return `<nav class="step-progress" aria-label="Setup steps">${["Brand basics","Choose a theme","Your products","Review & publish"].map((label,i)=>`<button type="button" data-step="${i+1}" aria-current="${step===i+1?"step":"false"}" data-complete="${(data.progress?.completed||[]).includes(i+1)}"><span class="step-number">0${i+1}</span>${label}</button>`).join("")}</nav>`}
 function footerNav(){
-  return `<div class="bottom-nav"><button class="btn btn-secondary" type="button" data-action="back" ${step===1?"disabled":""}>Back</button><span class="field-error-summary" id="step-error" role="status">${esc(formErrors._step||"")}</span>${step<4?`<button class="btn" type="button" data-action="next">Continue <span aria-hidden="true">→</span></button>`:`<button class="btn" id="publish-button" type="button" data-action="publish" ${!publishReady()||busy||uploadBusy?"disabled":""}>${busy?"Publishing…":data.store?.status==="live"?"Publish changes":data.store?.status==="awaiting_approval"?"Resubmit for approval":"Publish store"}</button>`}</div>`;
+  return `<div class="bottom-nav">${reviewOnly?`<a class="btn btn-secondary" href="/stores/${encodeURIComponent(storeId)}/editor">Back to theme editor</a>`:`<button class="btn btn-secondary" type="button" data-action="back" ${step===1?"disabled":""}>Back</button>`}<span class="field-error-summary" id="step-error" role="status">${esc(formErrors._step||"")}</span>${step<4?`<button class="btn" type="button" data-action="next">Continue <span aria-hidden="true">→</span></button>`:`<button class="btn" id="publish-button" type="button" data-action="publish" ${!publishReady()||busy||uploadBusy?"disabled":""}>${busy?"Publishing…":data.store?.status==="live"?"Publish changes":data.store?.status==="awaiting_approval"?"Resubmit for approval":"Publish store"}</button>`}</div>`;
 }
 function shellStep(kicker,title,intro,content){return `${progressBar()}<div class="step-card"><div class="step-kicker">${esc(kicker)}</div><h2>${esc(title)}</h2><p class="step-intro">${esc(intro)}</p>${formErrors._general?`<div class="form-error" role="alert">${esc(formErrors._general)}</div>`:""}${content}${footerNav()}</div>`}
 function renderBasics(){
@@ -376,16 +378,21 @@ function renderReview(){
  const policies=data.policies||[];
  const checks=checklistItems();
  const s=currentSettings(),gstErrors=businessGSTINErrors(s);
+ const registered=reviewGST?.gstin===s.gstin&&reviewGST.state==="verified"?
+   [reviewGST.registration?.principal_address,...(reviewGST.registration?.additional_addresses||[])].find(a=>a&&(a.line1||a.line2)===s.business_line1&&a.city===s.business_city):null;
  delete formErrors.gstin;delete formErrors.business_state;
  formErrors={...formErrors,...gstErrors};
- return shellStep("Step 04 · Nearly there","A final look before launch.","Review the essentials, read each policy draft, and publish when everything feels right.",`
+ return shellStep(reviewOnly?"Publication review":"Step 04 · Nearly there","A final look before launch.","Review the essentials, read each policy draft, and publish when everything feels right.",`
   <div class="review-note">Policy drafts are starting points for your own review. LeBrands.Store does not provide legal advice.</div>
-  <p class="field-help">Registered business address: ${esc(s.address||"Complete your address in Brand basics.")}</p>
-  <div class="field-grid">${field("gstin","GSTIN (required)",s.gstin||"",{max:15})}${field("business_state","Registered business state",registeredBusinessState(s),{select:true,placeholder:"Choose the registered address state",options:INDIAN_STATES.map(s=>({value:s.code,label:s.name}))})}</div>
+  <dl class="publication-summary"><dt>Brand</dt><dd>${esc(s.brand_name||data.store?.name||"Not set")}</dd><dt>Legal business name</dt><dd>${esc(s.legal_name||"Not set")}</dd><dt>GSTIN</dt><dd>${esc(s.gstin||"Not set")}</dd><dt>Saved invoice address</dt><dd style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(s.address||"Not set")}</dd><dt>Registered state</dt><dd>${esc(INDIAN_STATES.find(x=>x.code===registeredBusinessState(s))?.name||"Not set")}</dd><dt>Support email</dt><dd>${esc(s.support_email||"Not set")}</dd><dt>Support phone</dt><dd>${esc(s.support_phone||"Not set")}</dd></dl>
+  ${registered?.formatted_address?`<details class="policy-card"><summary>Full address returned by the GST service</summary><p style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(registered.formatted_address)}</p><p class="field-help">This is the provider's full address text. Your saved invoice address above has not been changed.</p></details>`:""}
+  ${reviewGSTError?`<p class="field-help" role="status">${esc(reviewGSTError)}</p>`:""}
+  <p class="field-help">These are your saved details, not a new setup form. <a href="/stores/${encodeURIComponent(storeId)}/build/ann">Return to Ann</a> if something is missing. A confirmed invoice address stays locked.</p>
    <ul class="checklist">${checks.map(c=>`<li><span class="check-indicator ${c.complete?"complete":""}" aria-hidden="true">${c.complete?"✓":""}</span><span>${esc(c.label)}</span></li>`).join("")}</ul>
    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:19px 0 6px"><strong style="font:500 22px var(--serif)">Store policies</strong><button class="btn btn-secondary" type="button" data-action="generate-policies" ${busy||uploadBusy?"disabled":""}>Generate drafts</button></div>
   <p class="field-help">Generating again replaces the current drafts. You'll be asked first.</p>
-  ${POLICY_KINDS.map(kind=>{const policy=policies.find(p=>p.kind===kind)||{kind,title:POLICY_NAMES[kind],body:"",reviewed:false};return `<details class="policy-card"><summary>${esc(policy.title||POLICY_NAMES[kind])}${policy.reviewed?" · reviewed":" · draft"}</summary><textarea data-policy="${esc(kind)}" aria-label="${esc(POLICY_NAMES[kind])} text">${esc(policy.body||"")}</textarea><div class="policy-actions"><label class="checkline"><input type="checkbox" data-policy-reviewed="${esc(kind)}" ${policy.reviewed?"checked":""}>I have reviewed this policy</label><span class="field-help">${(policy.body||"").length} characters</span></div></details>`}).join("")}
+  <p class="field-help"><a href="/stores/${encodeURIComponent(storeId)}/settings#policies">Edit policies in store settings</a>. Read each draft here before marking it reviewed.</p>
+  ${POLICY_KINDS.map(kind=>{const policy=policies.find(p=>p.kind===kind)||{kind,title:POLICY_NAMES[kind],body:"",reviewed:false};return `<details class="policy-card"><summary>${esc(policy.title||POLICY_NAMES[kind])}${policy.reviewed?" · reviewed":" · draft"}</summary><div class="policy-review-body" style="white-space:pre-wrap;overflow-wrap:anywhere;max-height:24rem;overflow:auto;padding:16px">${esc(policy.body||"No policy draft yet.")}</div><div class="policy-actions"><button type="button" class="btn btn-secondary" data-review-policy="${esc(kind)}" ${busy||visualOnly||!policy.body?.trim()?"disabled":""}>${policy.reviewed?"Mark as not reviewed":"I have reviewed this policy"}</button><span class="field-help">${(policy.body||"").length} characters</span></div></details>`}).join("")}
   ${data.store?.status==="awaiting_approval"?`<div class="publish-result" role="status"><strong>Awaiting approval.</strong><br>A LeBrands reviewer must approve your store before customers can visit it. Your storefront is offline until then.<br><button class="btn-quiet" type="button" data-action="unpublish">Withdraw request</button></div>`:data.store?.status==="live"?`<div class="publish-result" role="status"><strong>Your store is live.</strong><br><a href="https://${esc(data.store.subdomain||currentSettings().subdomain)}.lebrands.store/" target="_blank" rel="noopener">Visit ${esc(data.store.subdomain||currentSettings().subdomain)}.lebrands.store</a><br><button class="btn-quiet" type="button" data-action="unpublish">Unpublish store</button></div>`:""}
   ${formErrors._publish?`<div class="form-error" role="alert">${esc(formErrors._publish)}</div>`:""}`);
 }
@@ -484,6 +491,7 @@ function validateStep(){
  return true;
 }
 async function goStep(next){
+  if(reviewOnly)return;
   if(uploadBusy||busy){formErrors={_general:"Wait for the current operation to finish before changing steps."};renderPanel();return}
  if(next>step&&!validateStep())return;
   busy=true;renderPanel();
@@ -736,6 +744,7 @@ function onClick(event){
  const button=event.target.closest("button");if(!button)return;
   const action=button.dataset.action||"";
   const mutating=Boolean(button.dataset.step||button.dataset.theme||button.dataset.productSelect||
+    button.dataset.reviewPolicy||
     button.dataset.imageMove!==undefined||button.dataset.imageRemove!==undefined||
     button.dataset.tagRemove!==undefined||
     ["next","back","add-tag","add-product","delete-product","generate-policies","publish","unpublish","retry-save","retry-load"].includes(action));
@@ -743,6 +752,14 @@ function onClick(event){
     formErrors={_general:"Wait for the current operation to finish before making another change."};
     renderPanel();
     return;
+  }
+  if(button.dataset.reviewPolicy){
+    if(visualOnly)return;
+    const kind=button.dataset.reviewPolicy,policy=data.policies?.find(p=>p.kind===kind);
+    if(!POLICY_KINDS.includes(kind)||!policy?.body?.trim())return;
+    policy.reviewed=!policy.reviewed;policyRevision.set(kind,++policySequence);
+    pendingPolicies.add(kind);setStatus("saving","Saving");renderPanel();
+    void savePolicy(kind).then(()=>renderPanel());return;
   }
  if(button.dataset.format){
   const textarea=document.getElementById("description");
@@ -800,8 +817,9 @@ async function loadSetup(){
   setStatus("saving","Loading");
   const result=await api(`${API}/setup`);
   data=result.store?result:result.data||result;
+   if(reviewOnly&&!visualOnly){try{reviewGST=await api(`/api/stores/${encodeURIComponent(storeId)}/gstin/state`);reviewGSTError="";}catch{reviewGST=null;reviewGSTError="The GST service's full address could not be loaded. Your saved invoice details are shown above.";}}
    serverSettings=clone(data.settings||{});
-  step=resumeStep(data);
+   step=reviewOnly?4:resumeStep(data);
    savedRevision=revision=0;
    savedProductRevisions.clear();
    savedProductSnapshots.clear();

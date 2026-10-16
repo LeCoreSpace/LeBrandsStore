@@ -127,3 +127,12 @@ new session, not a historical-version rollback.
 
 **Why:** The user requested a top-right Undo control after explicitly checking
 that theme edits affect only their brand and leave the base style unchanged.
+
+Publishing from the theme editor must stay on publication review, not resume
+the legacy setup wizard. Show saved business and GST details without asking
+merchants to enter them again. Keep missing-requirement checks and explicit
+policy-review/publication confirmation; link corrections back to their proper
+editing surfaces.
+
+**Why:** The user finalised a design but publication sent them back to an
+unneeded input form. The review handoff must not depend on old wizard progress.

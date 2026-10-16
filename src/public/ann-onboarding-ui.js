@@ -34,7 +34,7 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
   const isConfirmed = v => !!v && v.state === "verified" && v.confirmed === true;
   const isVerified = v => !!v && v.state === "verified" && !!v.registration;
   const confirmed = () => isConfirmed(env?.verification);
-  const addrText = a => a ? [a.line1, a.line2, [a.city, a.pin].filter(Boolean).join(" "), a.state].filter(Boolean).join(", ") : "";
+  const addrText = a => a ? a.formatted_address || [a.line1, a.line2, [a.city, a.pin].filter(Boolean).join(" "), a.state].filter(Boolean).join(", ") : "";
   const addrList = v => v?.registration ? [v.registration.principal_address, ...(v.registration.additional_addresses || [])].filter(Boolean) : [];
   // A verified record that is not yet confirmed still needs an address choice.
   const toConfirm = () => [pending, env?.verification].find(v => isVerified(v) && !isConfirmed(v) && addrList(v).length) || null;

@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { Readable } from "node:stream";
 import { renderAnnBuilder } from "./ui/ann-builder.js";
 import {renderAnnThemeEditor} from "./ui/ann-theme-editor.js";
+import {renderWizard} from "./ui/wizard.js";
 import {loadEditorDraft} from "./store/editor-draft.js";
 import { handleAnnRoutes } from "./store/ann-routes.js";
 import { annReference, annSessionResponse, loadAnnSession } from "./store/ann-repository.js";
@@ -125,7 +126,8 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     const hash = (readonly ? "b" : "a").repeat(64);
     let response;
     if(url.pathname===`${prefix}/review`&&["GET","HEAD"].includes(req.method)){
-      response=new Response('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Isolated publication review</title></head><body><h1>Isolated publication review</h1><p>This test preview cannot publish a store or change live data. Real stores use the guarded publication review.</p><a href="/__ann-builder-preview/editor">Back to theme editor</a></body></html>',{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
+      const draft=await db.withMemberStore(storeId,hash,tx=>loadDraft(tx,storeId));
+      response=new Response(renderWizard(draft,{}, {reviewOnly:true}).replace('id="wizard"','id="wizard" data-visual-only="true"'),{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
     } else if(url.pathname===`${prefix}/editor`&&["GET","HEAD"].includes(req.method)){
       const draft=await db.withMemberStore(storeId,hash,tx=>loadEditorDraft(tx,storeId));
       if(!draft.settings.ann_design)response=new Response("Save an Ann design in the isolated preview first.",{status:409});

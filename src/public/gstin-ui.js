@@ -39,7 +39,8 @@ export function observeGSTINForms(root,storeId,options={}){
    const r=record.registration,summary=document.createElement("p");summary.textContent=`${r.legal_name}${r.trade_name?` • ${r.trade_name}`:""}`;choices.append(summary);
    [r.principal_address,...r.additional_addresses].forEach((address,index)=>{
     const button=document.createElement("button");button.type="button";
-    button.textContent=`Use ${index===0?"principal":"additional"} address: ${[address.line1,address.line2,address.city,address.state,address.pin].filter(Boolean).join(", ")}`;
+    button.textContent=`Use ${index===0?"principal":"additional"} address: ${address.formatted_address||[address.line1,address.line2,address.city,address.state,address.pin].filter(Boolean).join(", ")}`;
+    button.style.whiteSpace="normal";button.style.textAlign="left";button.style.overflowWrap="anywhere";button.style.height="auto";
     button.addEventListener("click",async()=>{
      if(busy)return;busy=true;button.disabled=true;const expectedGSTIN=input.value.toUpperCase();
      try{const stamp=await options.beforeConfirm?.();const saved=await api("confirm",{verification_id:record.id,address_index:index});

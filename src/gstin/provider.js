@@ -47,6 +47,7 @@ function address(value, gstin) {
   return {
     line1,
     line2,
+    ...(typeof value.adr==="string"&&value.adr.trim()?{formatted_address:value.adr.trim()}:{}),
     // Provider field selection, not invented data. Raw values remain in the
     // raw response returned separately for store-scoped server persistence.
     city: text(source.city) || text(source.loc) || text(source.dst),

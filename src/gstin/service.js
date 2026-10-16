@@ -1,6 +1,15 @@
 import {lookupGSTIN} from "./provider.js";
 import {gstinError,INDIAN_STATES} from "../public/commerce-rules.js";
 const problem=(message,status=400)=>Object.assign(new Error(message),{status});
+// Presentation only: older cached registrations predate formatted-address
+// retention. Recover that public address without changing confirmed supplier
+// fields, verification evidence or a locked invoice identity.
+export function registrationForDisplay(row){
+ const registration=row.normalized;if(!registration)return registration;
+ const full=row.raw_response?.data?.pradr?.adr;
+ if(typeof full!=="string"||!full.trim()||!registration.principal_address)return registration;
+ return {...registration,principal_address:{...registration.principal_address,formatted_address:full.trim()}};
+}
 export async function gstinEnabled(tx){const[r]=await tx`SELECT to_regclass('public.store_gstin_verifications') IS NOT NULL AS enabled`;return !!r?.enabled}
 export function supplierPatch(registration,index=0){
  const addresses=[registration.principal_address,...registration.additional_addresses],a=addresses[index];
@@ -18,10 +27,10 @@ export function supplierMatches(settings,registration){
  });
 }
 export async function verificationState(tx,id,settings){
- const[row]=await tx`SELECT id,gstin,state,normalized,verified_at,created_at,error_code FROM public.store_gstin_verifications
+ const[row]=await tx`SELECT id,gstin,state,normalized,raw_response,verified_at,created_at,error_code FROM public.store_gstin_verifications
  WHERE store_id=${id} AND gstin=${settings.gstin||""} ORDER BY created_at DESC,id DESC LIMIT 1`;
  if(!row)return{enabled:true,state:"unverified",confirmed:false};
- return {enabled:true,id:row.id,gstin:row.gstin,state:row.state,registration:row.normalized,
+  return {enabled:true,id:row.id,gstin:row.gstin,state:row.state,registration:registrationForDisplay(row),
  verified_at:row.verified_at,checked_at:row.created_at,error_code:row.error_code,
  confirmed:row.state==="verified"&&supplierMatches(settings,row.normalized)};
 }
@@ -58,7 +67,7 @@ const failureMessages={
  UNAVAILABLE:"The GST provider is temporarily unavailable. Please retry in a minute.",
  PROVIDER_ERROR:"GST verification could not finish. Please retry; contact LeBrands support if this continues."
 };
-function publicResult(row,retry=0){const errorCode=Object.hasOwn(failureMessages,row.error_code)?row.error_code:"PROVIDER_ERROR";return {id:row.id,gstin:row.gstin,state:row.state,registration:row.normalized,verified_at:row.verified_at,
+function publicResult(row,retry=0){const errorCode=Object.hasOwn(failureMessages,row.error_code)?row.error_code:"PROVIDER_ERROR";return {id:row.id,gstin:row.gstin,state:row.state,registration:registrationForDisplay(row),verified_at:row.verified_at,
  error_code:row.state==="unverified"?errorCode:undefined,
  retry_after:retry,message:row.state==="blocked"?"An active Regular GSTIN is required. Inactive and Composition registrations cannot publish or issue tax invoices.":
  row.state==="unverified"?`${failureMessages[errorCode]} Verification and registered-address confirmation are required to continue.`:"Registration verified. Confirm a registered address."};}

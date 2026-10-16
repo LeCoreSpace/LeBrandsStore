@@ -21,6 +21,7 @@ test("public-search fields normalize using only the supplied schema", () => {
     principal_address: {
       line1: "101, Synthetic Building",
       line2: "Example Street, Example Locality",
+      formatted_address:"101, Synthetic Building, Example Locality, Example District, Maharashtra, 400001",
       city: "Example Locality",
       district: "Example District",
       state: "Maharashtra",

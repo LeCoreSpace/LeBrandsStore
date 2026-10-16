@@ -55,6 +55,15 @@ Stonescence's verification, and GST responses commonly leave city empty.
 verification consumers; keep provider-selected business details distinct
 from customer delivery addresses.
 
+Retain the provider's full formatted registered address for display alongside
+the structured fields. Existing cached evidence may contain that fuller text
+even when an earlier normalizer omitted it. Display recovery must not silently
+rewrite a confirmed invoice identity or alter stored verification evidence.
+
+**Why:** A merchant reported a missing address beginning. The provider's
+formatted address and structured building/street fields can differ; silently
+choosing new invoice fields would violate the confirmed-address lock.
+
 The numbering/GSTIN polish rollout must be migrated and deployed before the
 provider-verification schema is applied. The user requires the polish security
 section before authorizing any migration.

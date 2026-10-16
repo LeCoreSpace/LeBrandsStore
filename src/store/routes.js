@@ -34,7 +34,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         return new Response(null,{status:303,headers:{...SECURITY_HEADERS,"cache-control":"no-store",location:`/stores/${id}/build/ann`}});
       }
       const data = await db.withMemberStore(id, tokenHash, (tx) => loadDraft(tx, id));
-      return new Response(request.method === "HEAD" ? null : renderWizard(data, user), {
+      return new Response(request.method === "HEAD" ? null : renderWizard(data, user,{reviewOnly:true}), {
         headers: { ...SECURITY_HEADERS, "content-type": "text/html; charset=utf-8" },
       });
     }
