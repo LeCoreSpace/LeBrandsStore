@@ -136,3 +136,10 @@ editing surfaces.
 
 **Why:** The user finalised a design but publication sent them back to an
 unneeded input form. The review handoff must not depend on old wizard progress.
+
+Products created through Ann should have a collection, tags and a vendor.
+
+**Why:** The user explicitly included these in the desired product-creation flow.
+
+**How to apply:** Include these catalogue details when implementing Ann product
+creation, rather than saving only product names and descriptions.
