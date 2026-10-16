@@ -26,13 +26,6 @@ function imageMarkup(media, { eager = false, className = "", alt = media.alt } =
   return `<img class="${className}" src="${media.src}"${srcset} width="${media.width}" height="${media.height}" alt="${alt}" ${priority} decoding="async">`;
 }
 
-function videoMarkup(media) {
-  if (!media.available) {
-    return `<div class="m-asset-placeholder" role="img" aria-label="${media.alt}. Awaiting video at ${media.src} and poster at ${media.poster.src}."><span><strong>Video awaiting supply</strong>${media.src}<br>Poster: ${media.poster.src}</span></div>`;
-  }
-  return `<div class="m-wizard-poster" data-wizard-poster>${imageMarkup(media.poster)}</div><video muted playsinline loop preload="none" aria-label="${media.alt}" aria-hidden="true"><source data-src="${media.src}" type="video/webm"></video><span class="m-media-caption">${media.caption}</span>`;
-}
-
 function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://lebrands.store", pageClass = "", body }) {
   return `<!doctype html>
 <html lang="en">
@@ -50,9 +43,9 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
   <meta property="og:url" content="${canonical}">
-  <meta property="og:image" content="https://lebrands.store/img/REPLACE-example-desktop.jpg">
-  <meta property="og:image:width" content="2880">
-  <meta property="og:image:height" content="1800">
+  <meta property="og:image" content="https://lebrands.store/img/ann-store-editorial-desktop.jpg">
+  <meta property="og:image:width" content="1440">
+  <meta property="og:image:height" content="900">
   <meta name="twitter:card" content="summary_large_image">
   ${platformSeoHead({ canonical, title, description })}
   <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -143,7 +136,7 @@ export function renderHome() {
         <div class="m-hs-slides">
           <article class="m-hs-slide m-hs-slide-store is-active" data-hs-slide data-hs-line="Your products. Your flagship store." role="group" aria-roledescription="slide" aria-label="1 of 7: Premium storefront on desktop and mobile">
             <div class="m-hs-card m-hs-store"><div class="m-hs-store-desktop">${imageMarkup(MARKETING_MEDIA.exampleDesktop, { eager: true })}</div><div class="m-hs-store-phone">${imageMarkup(MARKETING_MEDIA.exampleMobile, { eager: true })}</div><span class="m-hs-store-cap">Example Studio, a concept store</span></div>
-            <div class="m-hs-copy"><strong>A storefront that looks the part.</strong><p>Example Studio is a fictional clothing store concept, built with LeBrands.Store and shown on desktop and mobile.</p></div>
+            <div class="m-hs-copy"><strong>Built with Ann. Made for your brand.</strong><p>Explore the Editorial look on desktop and mobile. Example Studio is a fictional sample store designed with Ann.</p></div>
           </article>
           <article class="m-hs-slide" data-hs-slide data-hs-line="Your products. Your flagship store." role="group" aria-roledescription="slide" aria-label="2 of 7: Catalogue and collections" hidden>
             <div class="m-hs-card"><span class="m-hs-tag">Sample UI, illustrative</span>
@@ -247,16 +240,16 @@ export function renderHome() {
   <section class="m-how m-band-light" id="features">
     <div class="m-wrap">
       <div class="m-how-heading m-reveal">
-        <div><span class="m-kicker">From first details to first look</span><h2 class="m-section-title">In one sitting.</h2></div>
-        <p>A guided setup that gets the shape of your brand right before you go live.</p>
+        <div><span class="m-kicker">Build your store with Ann</span><h2 class="m-section-title">In one sitting.</h2></div>
+        <p>A conversation, not a complicated setup. Ann asks one simple question at a time while your store takes shape beside you.</p>
       </div>
       <div class="m-how-grid">
-        <div class="m-wizard-media m-reveal">${videoMarkup(MARKETING_MEDIA.wizardVideo)}</div>
+        <div class="m-wizard-media m-reveal">${imageMarkup(MARKETING_MEDIA.annBuilder, { className: "m-ann-builder-image" })}<span class="m-media-caption">A conversation with Ann. Your store coming to life beside it. Sample store shown.</span></div>
         <div>
           <div class="m-steps">
-            <article class="m-step m-reveal"><span class="m-step-no">01</span><div><h3>Tell us about your brand.</h3></div></article>
-            <article class="m-step m-reveal"><span class="m-step-no">02</span><div><h3>Choose your look and watch it build live.</h3></div></article>
-            <article class="m-step m-reveal"><span class="m-step-no">03</span><div><h3>Add your products and publish.</h3><p>Your store is live at yourbrand.lebrands.store.</p></div></article>
+            <article class="m-step m-reveal"><span class="m-step-no">01</span><div><h3>Say hello to Ann.</h3><p>Share your brand name and verify your business. Ann guides you through the essentials.</p></div></article>
+            <article class="m-step m-reveal"><span class="m-step-no">02</span><div><h3>Pick a look. See it come to life.</h3><p>Explore styles, colours and fonts with a live preview. Start with sample products or add your own.</p></div></article>
+            <article class="m-step m-reveal"><span class="m-step-no">03</span><div><h3>Make it yours. Get ready to open.</h3><p>Review payments, delivery and your web address. Preview in your browser, then submit for publishing. Fine-tune your text, images and sections in the theme editor whenever you like.</p></div></article>
           </div>
           <p class="m-clarification m-reveal">First publication requires platform approval.</p>
         </div>

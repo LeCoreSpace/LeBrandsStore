@@ -6,16 +6,17 @@ import { renderHome,renderLegal } from "../src/ui/home.js";
 import { renderPricing } from "../src/ui/marketing.js";
 import { MARKETING_MEDIA } from "../src/ui/marketing-media.js";
 
-test("wizard and dashboard showcase use refreshed branding in every responsive and fallback asset", () => {
+test("Ann replaces the old wizard and dashboard captures retain current branding", () => {
   const html = renderHome();
-  for (const media of [MARKETING_MEDIA.dashboard, MARKETING_MEDIA.wizardVideo.poster]) {
+  for (const media of [MARKETING_MEDIA.dashboard]) {
     for (const url of [media.src, media.fallback, ...`${media.srcset},${media.avifSrcset}`.split(",").map(value => value.trim().split(" ")[0])]) {
       assert.match(url, /-branded-clean(?:-\d+)?\.(?:webp|avif|jpg)$/);
       assert.ok(html.includes(url));
     }
   }
   assert.equal(MARKETING_MEDIA.wizardVideo.src, "/img/REPLACE-wizard-loop-branded-clean.webm");
-  assert.ok(html.includes(MARKETING_MEDIA.wizardVideo.src));
+  assert.ok(html.includes(MARKETING_MEDIA.annBuilder.src));
+  assert.ok(!html.includes(MARKETING_MEDIA.wizardVideo.src));
   assert.doesNotMatch(html, /\/img\/REPLACE-(?:dashboard(?:-\d+)?\.(?:webp|avif|jpg)|wizard-poster(?:-\d+)?\.(?:webp|avif|jpg)|wizard-loop\.webm)/);
 });
 import worker from "../src/index.js";
@@ -31,13 +32,13 @@ test("homepage output has no en/em dashes, forbidden copy, or fake old pricing",
   }
 });
 
-test("homepage has the exact title, canonical, original concept OG image, single H1 and required CTA destinations",()=>{
+test("homepage has the exact title, canonical, Ann store OG image, single H1 and required CTA destinations",()=>{
   const html=renderHome();
   assert.match(html,/<title>LeBrands\.Store \| A flagship online store for Indian D2C brands<\/title>/);
   assert.match(html,/<link rel="canonical" href="https:\/\/lebrands\.store">/);
-  assert.match(html,/<meta property="og:image" content="https:\/\/lebrands\.store\/img\/REPLACE-example-desktop\.jpg">/);
+  assert.match(html,/<meta property="og:image" content="https:\/\/lebrands\.store\/img\/ann-store-editorial-desktop\.jpg">/);
   assert.doesNotMatch(html,/stonescence/i);
-  assert.match(html,/Example Studio is a fictional clothing store concept/);
+  assert.match(html,/Example Studio is a fictional sample store designed with Ann/);
   assert.equal((html.match(/<h1\b/g)||[]).length,1);
   assert.match(html,/<h1[^>]*>A flagship store for your brand\.<\/h1>/);
   for(const href of ["https://app.lebrands.store/signup","https://app.lebrands.store/login","/pricing","/refund-policy","/privacy","/terms","/contact"]){
@@ -51,8 +52,8 @@ test("homepage preserves the requested story, six native FAQ items, and honest a
   assert.doesNotMatch(html, /m-statement|Built around your point of view|Most store builders give you a website/);
   for(const required of [
     "Your products. Your flagship store.",
-    "Tell us about your brand.","Choose your look and watch it build live.",
-    "Add your products and publish.","Your store is live at yourbrand.lebrands.store.",
+    "Build your store with Ann","Say hello to Ann.","Pick a look. See it come to life.",
+    "Make it yours. Get ready to open.","Fine-tune your text, images and sections in the theme editor whenever you like.",
     "Product pages, collections, cart and checkout designed to sell, on every screen size.",
     "Cash on Delivery with built-in fraud protection, COD limits and order tracking for your customers.",
     "Orders from packed to delivered, customers, and payment collection in one calm dashboard.",
@@ -96,9 +97,7 @@ test("real UI captures exist, concepts are labelled, responsive and lazy, and he
       if(media.poster){
         assert.ok((await stat("src/public"+media.poster.src)).size>0);
         assert.ok((await stat("src/public"+media.poster.fallback)).size>0);
-        assert.ok(html.includes(media.poster.avifSrcset));
-        assert.ok(html.includes(`data-src="${media.src}"`));
-        assert.ok(!html.includes(` src="${media.src}"`),"Video is loaded only when visible");
+        assert.ok(!html.includes(media.src),"The old wizard recording must not appear in the Ann section");
       }else{
         assert.ok(media.src.endsWith(".webp"));
         assert.ok(html.includes(media.srcset));
@@ -119,11 +118,29 @@ test("real UI captures exist, concepts are labelled, responsive and lazy, and he
   }
   assert.equal((html.match(/<img\b[^>]*fetchpriority="high"/g)||[]).length,2,"Only the first-scene desktop and phone storefront images are prioritised");
   assert.match(html,/loading="lazy"/);
-  assert.equal((html.match(/class="m-media-caption">Example store</g)||[]).length,5);
+  assert.equal((html.match(/class="m-media-caption">Example store</g)||[]).length,4);
   assert.doesNotMatch(html,/Image awaiting supply|Video awaiting supply/);
   const eagerBytes=(await stat("src/public/instrument-sans-latin.woff2")).size+
     Buffer.byteLength(html.match(/<section class="m-hero"[\s\S]*?<\/section>/)[0]);
   assert.ok(eagerBytes<150000,"Font and inline SVG hero budget is under 150 KB");
+});
+
+test("homepage middle sections are white in both modes without changing hero, footer or pricing",async()=>{
+  const css=await readFile("src/public/marketing.css","utf8"),html=renderHome();
+  const band=css.match(/:root:root #top > section:not\(\.m-hero\)\s*\{([^}]+)\}/)?.[1];
+  assert.ok(band,"White surfaces must apply to every non-hero homepage section");
+  assert.match(band,/background:\s*#ffffff/);
+  assert.match(band,/color-scheme:\s*light/);
+  assert.match(band,/--band-fg:\s*#38282b/);
+  assert.match(band,/--m-paper:\s*#ffffff/);
+  assert.match(css,/\.m-footer, \.m-pricing-page \.m-footer \{ background-color: #0c090b; background-image: var\(--m-dark-grad\)/);
+  assert.match(css,/#top \.m-principles \.m-promise-stage \{ background: #ffffff; color: #38282b/);
+  const section=html.match(/<section class="m-how[\s\S]*?<\/section>/)?.[0];
+  assert.match(section,/Build your store with Ann/);
+  assert.ok(section.includes(MARKETING_MEDIA.annBuilder.src));
+  assert.doesNotMatch(section,/<video|REPLACE-wizard/);
+  assert.ok(html.includes(MARKETING_MEDIA.exampleDesktop.src));
+  assert.ok(html.includes(MARKETING_MEDIA.exampleMobile.src));
 });
 
 test("marketing routes are read-only, scoped CSP supports font/video, and preview routes are absent in production",async()=>{
@@ -146,7 +163,9 @@ test("marketing routes are read-only, scoped CSP supports font/video, and previe
     const post=await worker.fetch(new Request("https://lebrands.store"+pathname,{method:"POST"}),env,{});
     assert.equal(post.status,405);
   }
-  for(const pathname of ["/assets/marketing.css","/assets/marketing.js","/assets/instrument-sans-latin.woff2",MARKETING_MEDIA.exampleDesktop.src,MARKETING_MEDIA.exampleMobile.src]){
+  const annMedia=[MARKETING_MEDIA.exampleDesktop,MARKETING_MEDIA.exampleMobile,MARKETING_MEDIA.annBuilder];
+  const annPaths=annMedia.flatMap(media=>[media.src,...media.srcset.split(",").map(value=>value.trim().split(" ")[0])]);
+  for(const pathname of ["/assets/marketing.css","/assets/marketing.js","/assets/instrument-sans-latin.woff2",...new Set(annPaths)]){
     const response=await worker.fetch(new Request("https://lebrands.store"+pathname),env,{});
     assert.equal(response.status,200);assert.equal(response.headers.get("x-content-type-options"),"nosniff");
   }

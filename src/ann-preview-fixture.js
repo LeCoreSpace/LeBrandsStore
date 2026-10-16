@@ -14,6 +14,7 @@ import { STYLE_IDS, styleSettings } from "./public/aura-styles.js";
 import { TAXONOMY } from "./public/aura-taxonomy-data.js";
 import { renderAura } from "./public/aura.js";
 import { defaultPageLayouts } from "./public/aura-layout.js";
+import { stylePreviewData, renderStylePreview } from "./public/style-preview.js";
 
 const storeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ownerId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -104,6 +105,16 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       if(item){res.setHeader("content-type",item.type);res.end(req.method==="HEAD"?undefined:item.bytes);}
       else if(file===`${samplePhotoId}.webp`){res.statusCode=302;res.setHeader("location","/assets/img/aura-starters/c001-s001/v01/c001-s001-product-p01-front-v01.webp");res.end();}
       else{res.statusCode=404;res.end();}
+      return true;
+    }
+    // Public marketing captures use only fictional, in-memory sample content.
+    if (url.pathname === `${prefix}/storefront` && ["GET","HEAD"].includes(req.method)) {
+      const settings = { ...styleSettings("editorial"), brand_name: "Example Studio", category: "fashion", subcategory: "womens-clothing" };
+      const sample = stylePreviewData({ store: { store_id: storeId, name: "Example Studio" }, settings,
+        products: [], collections: [], layouts: {}, policies: [], reviews: [] }, { showcase: true });
+      res.setHeader("content-type","text/html; charset=utf-8");
+      res.setHeader("cache-control","no-store");
+      res.end(req.method === "HEAD" ? undefined : renderStylePreview(sample, settings, { page: "home" }));
       return true;
     }
     const pg = await getDatabase(), db = annFixtureAdapter(pg);

@@ -97,9 +97,9 @@ Keep them as individual animated slides following the discovery highlight.
 
 **Why:** The user asked for each promise to have its own slide.
 
-**How to apply:** Dark marketing
-sections share the hero's black-to-plum gradient; lighter bands must stay genuinely
-light in both modes, not alternate between two dark browns.
+**How to apply:** Only the homepage hero and footer keep the black-to-plum
+gradient. All intervening homepage sections are white in both modes, as requested
+in the user's later white-surface direction.
 
 The hero must lead with the fictional clothing storefront on desktop and mobile,
 then show the operational dashboards with the existing motion. Do not retain a

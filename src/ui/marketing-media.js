@@ -1,26 +1,31 @@
 export const MARKETING_MEDIA = Object.freeze({
   exampleDesktop: Object.freeze({
     available: true,
-    src: "/img/REPLACE-example-desktop.webp",
-    fallback: "/img/REPLACE-example-desktop.jpg",
-    srcset: "/img/REPLACE-example-desktop-640.webp 640w, /img/REPLACE-example-desktop-1280.webp 1280w",
-    avifSrcset: "/img/REPLACE-example-desktop-640.avif 640w, /img/REPLACE-example-desktop-1280.avif 1280w",
+    src: "/img/ann-store-editorial-desktop.webp",
+    srcset: "/img/ann-store-editorial-desktop-640.webp 640w, /img/ann-store-editorial-desktop-1280.webp 1280w, /img/ann-store-editorial-desktop.webp 1440w",
     sizes: "(max-width: 600px) 92vw, (max-width: 900px) 88vw, 58vw",
-    width: 2880,
-    height: 1800,
-    alt: "A responsive desktop view of the fictional Example Studio clothing storefront, a concept preview"
+    width: 1440,
+    height: 900,
+    alt: "Example Studio sample clothing store in Ann's Editorial style, desktop preview"
   }),
   exampleMobile: Object.freeze({
     available: true,
-    src: "/img/REPLACE-example-mobile.webp",
-    fallback: "/img/REPLACE-example-mobile.jpg",
-    srcset: "/img/REPLACE-example-mobile-260.webp 260w, /img/REPLACE-example-mobile-390.webp 390w",
-    avifSrcset: "/img/REPLACE-example-mobile-260.avif 260w, /img/REPLACE-example-mobile-390.avif 390w",
+    src: "/img/ann-store-editorial-mobile.webp",
+    srcset: "/img/ann-store-editorial-mobile-260.webp 260w, /img/ann-store-editorial-mobile.webp 390w",
     sizes: "(max-width: 600px) 111px, 205px",
-    width: 780,
-    height: 1688,
-    alt: "A responsive mobile view of the fictional Example Studio clothing storefront, a concept preview",
+    width: 390,
+    height: 844,
+    alt: "Example Studio sample clothing store in Ann's Editorial style, mobile preview",
     caption: "Example store concept"
+  }),
+  annBuilder: Object.freeze({
+    available: true,
+    src: "/img/ann-conversation-builder.webp",
+    srcset: "/img/ann-conversation-builder-640.webp 640w, /img/ann-conversation-builder-1280.webp 1280w, /img/ann-conversation-builder.webp 1440w",
+    sizes: "(max-width: 600px) 92vw, 85vw",
+    width: 1440,
+    height: 960,
+    alt: "Build with Ann: a friendly conversation on the left and a live store preview on the right. Fictional sample store."
   }),
   productPhoto: Object.freeze({
     available: true,
