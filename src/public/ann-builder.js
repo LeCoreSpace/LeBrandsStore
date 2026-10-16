@@ -61,7 +61,12 @@ const applicationUI = attachAnnApplication({ api, root, readOnly,
 const readinessUI = attachAnnReadiness({api,root,readOnly,
   onSaved:result=>{if(result.draft){setPreviewMode("store", result.draft);renderPreview(false);}},
 });
-const launchUI = attachAnnLaunch({api,readOnly,onSaved:()=>say("Your connection setup is saved. Only services you explicitly turn on are activated. You can review their status below.")});
+const launchUI = attachAnnLaunch({api,readOnly,onSaved:()=>say("Your connection setup is saved. Only services you explicitly turn on are activated. You can review their status below."),onDone:()=>{
+  const review=$("#ann-readiness-slot");const panel=review?.closest("details");
+  if(panel)panel.open=true;
+  review?.scrollIntoView({block:"start"});
+  say("Your preferences are ready. Let us review the checks for opening your store.");
+}});
 const extrasNow = currentExtras(base.layouts);
 const bag = new Map((base.products || []).slice(0, 2).map(p => [p.id, 1]));
 const frame = $("#ann-preview"), canvas = $("#ann-canvas"), log = $("#ann-log"), foot = $("#ann-foot"), statusEl = $("#ann-status");
