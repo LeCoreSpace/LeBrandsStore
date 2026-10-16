@@ -1,6 +1,10 @@
 import { audit } from "../dashboard/repository.js";
 import { cloudflareAvailable, sealCredentials, verifyRazorpay, verifyShiprocket,
   domainHostname, provisionDomain, checkDomain, domainEvidence } from "../connections/providers.js";
+import { runtimeAvailable } from "../connections/payments.js";
+import { connection, shiprocketClient } from "../connections/runtime-client.js";
+import { shippingSettings, pickupLocations } from "../connections/shipping.js";
+import { domainPlatform } from "../connections/domain-platform.js";
 
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 const plain = v => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -19,21 +23,28 @@ async function rows(tx, id) {
 }
 export async function prepareAnnLaunch(tx, id, userId, env = {}) {
   const state = await rows(tx, id);
+  const execution_available=await runtimeAvailable(tx);
   const [member] = await tx`SELECT role FROM public.store_members WHERE store_id=${id} AND user_id=${userId}`;
   const [store] = await tx`SELECT subdomain FROM public.stores WHERE store_id=${id}`;
   const providers = {};
   for (const provider of ["razorpay", "shiprocket"]) {
     const row = state.providers.find(r => r.provider === provider), meta = row ? parse(row.metadata) : {};
     providers[provider] = { verified: row?.status === "connected" && meta.credentials_verified === true,
-      checked_at: meta.checked_at || null, runtime_ready: false,
-      ...(provider === "razorpay" ? { mode: meta.mode || null, webhook_verified: false } : { pickup_count: meta.pickup_count || 0 }) };
+      checked_at: meta.checked_at || null, runtime_ready: execution_available && row?.status==="connected" && meta.enabled===true &&
+        meta.credentials_verified===true && (provider==="razorpay"?meta.mode==="live" && meta.webhook_verified===true:Boolean(meta.shipping)),
+      ...(provider === "razorpay" ? { mode: meta.mode || null, webhook_verified: meta.webhook_verified===true,
+        webhook_url:`https://app.lebrands.store/webhooks/razorpay/${id}` } : { pickup_count: meta.pickup_count || 0,
+        shipping:meta.shipping||null,pickup_locations:meta.pickup_locations||[] }) };
   }
-  return { revision: state.revision, can_edit: member?.role === "owner", included_address: store?.subdomain ? `${store.subdomain}.lebrands.store` : null,
+  const jobs=execution_available?await tx`SELECT j.id,o.order_number,j.kind,j.status,j.last_error,j.updated_at FROM public.commerce_jobs j
+    JOIN public.orders o ON o.store_id=j.store_id AND o.id=j.order_id WHERE j.store_id=${id} ORDER BY j.updated_at DESC LIMIT 20`:[];
+  return { revision: state.revision,execution_available,jobs, can_edit: member?.role === "owner", included_address: store?.subdomain ? `${store.subdomain}.lebrands.store` : null,
     preferences: state.preferences, providers, optional: true,
     domain: state.domain ? { id: state.domain.id, hostname: state.domain.hostname, status: state.domain.status,
       primary: state.domain.is_primary, ...state.evidence } : null,
     platform: { domains_available: cloudflareAvailable(env),
-      domain_activation_available: cloudflareAvailable(env) && env.CUSTOM_DOMAINS_ROUTING_READY === "true" } };
+      domain_activation_available: cloudflareAvailable(env),
+      diagnostics:state.evidence.platform_diagnostics||[{label:"Cloudflare credentials and zone configured",complete:cloudflareAvailable(env)}] } };
 }
 export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) {
   const [member] = await tx`SELECT role FROM public.store_members WHERE store_id=${id} AND user_id=${userId}`;
@@ -42,6 +53,8 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
     choose: ["preferences"], "razorpay-connect": ["credentials"], "shiprocket-connect": ["credentials"],
     disconnect: ["provider"], "domain-add": ["hostname"], "domain-check": ["id"],
     "domain-activate": ["id", "provider_domain_confirmed"], "domain-remove": ["id"],
+    activate:["provider","enabled","provider_domain_confirmed"],"shipping-settings":["shipping"],
+    "retry-job":["id","provider_absence_confirmed"],"refresh-provider":["provider"],
   };
   if (!plain(body) || !Object.hasOwn(fields, body.action) || body.confirm !== true ||
       !Number.isSafeInteger(body.expected_revision) || body.expected_revision < 0 ||
@@ -51,6 +64,46 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
   if (current.revision !== body.expected_revision) fail("Connections changed in another window. Reload their status, review your choice and try again.", 409);
   if (current.revision >= 2147483646) fail("Connection history needs platform assistance.", 409);
   let preferences = { ...current.preferences }, evidence = { ...current.evidence };
+  if (["activate","shipping-settings","retry-job","refresh-provider"].includes(body.action)) {
+    if (!await runtimeAvailable(tx)) fail("Apply the commerce-runtime migration before activating these connections.",503);
+    if (body.action==="retry-job") {
+      if (!UUID.test(body.id||"") || (body.provider_absence_confirmed!==undefined && typeof body.provider_absence_confirmed!=="boolean")) fail("Choose a job to retry.");
+      const [j]=await tx`SELECT payload::text,status FROM public.commerce_jobs WHERE store_id=${id} AND id=${body.id} FOR UPDATE`;
+      if (!j || !["attention","waiting"].includes(j.status)) fail("This job cannot be retried right now.",409);
+      const payload=JSON.parse(j.payload);
+      if (body.provider_absence_confirmed===true) {
+        for (const flag of ["refund_attempted","create_attempted","awb_attempted","pickup_attempted"]) delete payload[flag];
+      }
+      await tx`UPDATE public.commerce_jobs SET status='waiting',attempts=0,lease_until=NULL,last_error=NULL,next_attempt_at=now(),updated_at=now(),
+        payload=${JSON.stringify(payload)}::text::jsonb WHERE store_id=${id} AND id=${body.id}`;
+    } else {
+      const provider=body.action==="shipping-settings"?"shiprocket":body.provider;
+      if (!["razorpay","shiprocket"].includes(provider)) fail("Choose a supported provider.");
+      const c=await connection(tx,id,provider,env),meta={...c.metadata};
+      if (body.action==="shipping-settings" || body.action==="refresh-provider") {
+        if (provider!=="shiprocket") fail("Use the payment webhook status to verify Razorpay.");
+        const locations=await pickupLocations(shiprocketClient(c.credentials,fetcher));
+        meta.pickup_locations=locations;meta.pickup_count=locations.length;
+        if (body.action==="shipping-settings") {
+          const s=shippingSettings(body.shipping);
+          if (!locations.some(p=>p.name===s.pickup_location && p.pincode===s.pickup_pincode)) fail("Choose an existing, verified Shiprocket pickup address.");
+          meta.shipping=s;
+        }
+      } else {
+        if (typeof body.enabled!=="boolean" || (body.enabled && body.provider_domain_confirmed!==true)) fail("Confirm provider approval and any automatic booking charges.");
+        if (body.enabled && (meta.credentials_verified!==true || (provider==="razorpay" &&
+          (meta.mode!=="live" || meta.webhook_verified!==true)))) fail("Use live credentials and verify the signed Razorpay webhook before enabling payments.",409);
+        if (body.enabled && provider==="shiprocket") {
+          const s=shippingSettings(meta.shipping);
+          const locations=await pickupLocations(shiprocketClient(c.credentials,fetcher));
+          if (!locations.some(p=>p.name===s.pickup_location && p.pincode===s.pickup_pincode)) fail("The selected pickup address is no longer available.");
+        }
+        meta.enabled=body.enabled;meta.activated_at=body.enabled?new Date().toISOString():null;
+        preferences[provider==="razorpay"?"payments":"delivery"]=body.enabled?provider:(provider==="razorpay"?"cod":"manual");
+      }
+      await tx`UPDATE public.integrations SET metadata=${JSON.stringify(meta)}::text::jsonb,updated_at=now() WHERE store_id=${id} AND provider=${provider}`;
+    }
+  }
   if (body.action === "choose") {
     const p = body.preferences;
     if (!plain(p) || Object.keys(p).length !== 3 || !["included", "custom"].includes(p.address) ||
@@ -99,7 +152,7 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
     if (result.hostname !== hostname) fail("Cloudflare did not return the requested hostname.", 502);
     await tx`UPDATE public.domains SET cloudflare_hostname_id=${result.id} WHERE store_id=${id} AND id=${reserved.id}`;
     evidence = domainEvidence(result, env);
-  } else {
+  } else if (body.action.startsWith("domain-")) {
     const domain = current.domain;
     if (typeof body.id !== "string" || !UUID.test(body.id) || !domain || domain.id !== body.id) fail("This domain does not belong to this store.", 404);
     if (body.action === "domain-remove") {
@@ -109,13 +162,15 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
       // Always recheck provider and DNS on activation. Never trust browser statuses.
       const result = await checkDomain(env, domain.cloudflare_hostname_id, domain.hostname, fetcher);
       evidence = domainEvidence(result, env);
+      const platform=await domainPlatform(env,fetcher);
+      evidence.platform_diagnostics=platform.diagnostics;
       if (body.action === "domain-check" && domain.status === "active" &&
           (evidence.hostname_status !== "active" || evidence.ssl_status !== "active" || !evidence.cname_verified)) {
         await tx`UPDATE public.domains SET status='failed',is_primary=false WHERE store_id=${id} AND id=${domain.id}`;
         preferences.address = "included";
       }
       if (body.action === "domain-activate") {
-        if (env.CUSTOM_DOMAINS_ROUTING_READY !== "true") fail("Domain routing still needs platform configuration. Your included address stays active.", 503);
+        if (!platform.ready) fail("Domain routing still needs platform configuration. Your included address stays active.", 503);
         if (evidence.hostname_status !== "active" || evidence.ssl_status !== "active" || !evidence.cname_verified)
           fail("DNS ownership, CNAME routing and SSL must all be verified before activation.");
         if (current.providers.some(p => p.provider === "razorpay" && p.status === "connected") && body.provider_domain_confirmed !== true)

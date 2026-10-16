@@ -53,10 +53,12 @@ reachable through **Store connections** in Ann and dashboard settings.
 1. **Where should customers find your store?** Keep the included subdomain or add
    a custom subdomain, receive CNAME/TXT instructions, check actual Cloudflare SSL
    and DNS state, then explicitly activate. A root/apex domain is not supported.
-2. **How would you like to get paid?** Keep COD or verify a merchant-owned Razorpay
-   account. Test/live mode is inferred from the key ID, not an editable label.
-3. **How will you send your orders?** Keep manual fulfilment or verify a
-   merchant-owned Shiprocket API user and pickup-location access.
+2. **How would you like to get paid?** Keep COD or connect a merchant-owned Razorpay
+   account, verify its signed webhook, confirm KYC/address approval, then separately
+   activate live checkout. Test keys cannot activate a live store.
+3. **How will you send your orders?** Keep manual fulfilment or connect Shiprocket,
+   choose a verified pickup, enter actual package dimensions/weight and limits,
+   choose pickup scheduling, then consent to automatic booking charges and activate.
 
 These setup preferences save separately from the design and catalogue. Only the
 owner can write connections. Credential inputs stay in memory, never in chat,
@@ -65,16 +67,16 @@ exclude all credentials and remote customer/order/address data. Revision guards
 prevent stale tabs overwriting newer setup. Failed provider checks leave the
 saved connection unchanged. Disconnect explicitly removes saved credentials.
 
-### What is not activated by verification
+### Activation and runtime behaviour
 
-This release is the connection/setup stage, not the payment/shipping execution
-stage. Razorpay API authentication does **not** prove KYC, approved checkout
-domains, a working webhook or a successful live payment. Shiprocket
-authentication does **not** enable serviceability checks, shipment booking, AWB
-assignment or tracking sync. The UI explicitly says that online checkout and
-automatic shipping are not enabled, even after verification.
+Account verification alone does not activate anything or prove KYC. Once explicitly
+activated, Razorpay powers server-priced Checkout, captured-payment confirmation,
+pending-stock recovery and refunds. Shiprocket checks serviceability and handles
+durable booking/AWB/pickup/tracking jobs. A five-minute scheduler recovers work after
+browser or network failures. Recent failed operations and reconciliation controls
+are shown in Store connections. OAuth follows partner approval in a later stage.
 
-COD checkout and manual fulfilment remain the working launch path. They still
+COD checkout and manual fulfilment remain an independent launch path. They still
 need their existing checkout settings, policies, catalogue, GSTIN and platform
 approval. No optional connection is added to mandatory publication checks.
 There is no domain purchase, Razorpay OAuth, Domain Connect or automatic billing.

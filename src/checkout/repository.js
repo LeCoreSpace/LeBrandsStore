@@ -1,4 +1,6 @@
 import { DEFAULT_CHECKOUT_SETTINGS, checkoutSettings, inferStoreState, registeredBusinessState, quoteCart, commerceError } from "../public/commerce-rules.js";
+import { onlineAvailable, reservePayment, runtimeAvailable } from "../connections/payments.js";
+import { checkShipping } from "../connections/shipping.js";
 
 const denied = () => commerceError("This store is not available for checkout.",undefined,404);
 export async function checkoutContext(tx, id, lock = false) {
@@ -28,7 +30,8 @@ export async function inventoryFor(tx,id,items,lock = false) {
 }
 export async function checkoutQuote(tx,id,items,state = "") {
   const context = await checkoutContext(tx,id);
-  return quoteCart(context.snapshot.products ?? [],await inventoryFor(tx,id,items),items,context.settings,state);
+  return {...quoteCart(context.snapshot.products ?? [],await inventoryFor(tx,id,items),items,context.settings,state),
+    online_available:await onlineAvailable(tx,id)};
 }
 export async function consumeIpLimit(tx,id,hash,purpose) {
   // Committed in its own transaction before validation/Turnstile. Failed attempts
@@ -52,20 +55,23 @@ export async function findReplay(tx,id,input,requestHash) {
   return {order_number:existing.order_number,total_paise:Number(existing.total_paise),
     receipt_url:`/orders/${input.receipt_token}`,replayed:true};
 }
-export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source) {
+export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source,env={},fetcher=fetch) {
   const context = await checkoutContext(tx,id,true);
   const replay = await findReplay(tx,id,input,requestHash);
   if (replay) return replay;
   const quote = quoteCart(context.snapshot.products ?? [],await inventoryFor(tx,id,input.items,true),
     input.items,context.settings,input.address.state);
   if (quote.issues.length) throw commerceError(quote.issues.map((i) => i.message).join(" "),{cart:"Update your cart before placing the order."},409);
-  if (!context.settings.cod_enabled) throw commerceError("Cash on Delivery is not available at this store.",undefined,409);
+  const online=input.payment_method==="online";
+  if (online && !await onlineAvailable(tx,id)) throw commerceError("Online payment is not available at this store.",undefined,409);
+  if (!online && !context.settings.cod_enabled) throw commerceError("Cash on Delivery is not available at this store.",undefined,409);
   if (!context.settings.store_state) throw commerceError("This store has not completed its checkout setup.",undefined,503);
-  if (quote.total_paise > context.settings.cod_max_paise) throw commerceError("This order exceeds the store's Cash on Delivery limit. Reduce your cart total.",undefined,400);
+  if (!online && quote.total_paise > context.settings.cod_max_paise) throw commerceError("This order exceeds the store's Cash on Delivery limit. Reduce your cart total.",undefined,400);
+  await checkShipping(tx,id,input,quote.total_paise,env,fetcher);
   const [count] = await tx`SELECT count(*)::integer AS count FROM public.orders o
     WHERE o.store_id = ${id} AND o.shipping_address->>'phone' = ${input.contact.phone} AND o.payment_method = 'cod'
       AND o.created_at > now() - interval '24 hours'`;
-  if (Number(count?.count ?? 0) >= 3) throw commerceError("You can place up to 3 Cash on Delivery orders per 24 hours at this store.",undefined,429);
+  if (!online && Number(count?.count ?? 0) >= 3) throw commerceError("You can place up to 3 Cash on Delivery orders per 24 hours at this store.",undefined,429);
   const [customer] = await tx`INSERT INTO public.customers (store_id,name,phone,email)
     VALUES (${id},${input.contact.name},${input.contact.phone},${input.contact.email || null})
     ON CONFLICT (store_id,phone) DO UPDATE SET name = EXCLUDED.name,
@@ -83,7 +89,7 @@ export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source) 
   await tx`INSERT INTO public.orders
     (id,store_id,customer_id,order_number,status,payment_method,subtotal_paise,tax_paise,shipping_paise,total_paise,
       shipping_address,source,idempotency_key,request_hash,confirmation_hash,supplier_snapshot)
-    VALUES (${orderId},${id},${customer.id},${order_number},'confirmed_cod','cod',${quote.subtotal_paise},
+    VALUES (${orderId},${id},${customer.id},${order_number},${online?"pending_payment":"confirmed_cod"},${online?"online":"cod"},${quote.subtotal_paise},
       ${quote.tax_paise},${quote.delivery_paise},${quote.total_paise},${tx.json(address)},${source},
       ${input.idempotency_key},${requestHash},${receiptHash},${tx.json({
         legal_name:context.snapshot.settings?.legal_name || context.store.name,
@@ -102,17 +108,20 @@ export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source) 
         AND (NOT track_inventory OR stock >= ${line.quantity}) RETURNING id`;
     if (!updated) throw commerceError("A product just sold out. Update your cart and try again.",undefined,409);
   }
+  if (online) await reservePayment(tx,id,orderId,env);
   await tx`INSERT INTO public.audit_log (store_id,actor_type,action,entity_type,entity_id,metadata)
     VALUES (${id},'system','order.created','order',${orderId},${tx.json({payment_method:input.payment_method || "cod",source})})`;
   return {order_number,total_paise:quote.total_paise,receipt_url:`/orders/${input.receipt_token}`,replayed:false};
 }
 export async function receiptOrder(tx,id,hash) {
-  const [order] = await tx`SELECT id,order_number,status,subtotal_paise,shipping_paise,total_paise,shipping_address,created_at
+  const [order] = await tx`SELECT id,order_number,status,payment_method,subtotal_paise,shipping_paise,total_paise,shipping_address,created_at
     FROM public.orders WHERE store_id = ${id} AND confirmation_hash = ${hash}`;
   if (!order) throw commerceError("Order not found.",undefined,404);
   const items = await tx`SELECT title,quantity,unit_price_paise,total_paise AS line_total_paise
     FROM public.order_items WHERE store_id = ${id} AND order_id = ${order.id} ORDER BY created_at,id`;
   const [invoice] = await tx`SELECT id,invoice_number,status FROM public.invoices WHERE store_id = ${id} AND order_id = ${order.id}`;
-  return {...order,invoice,subtotal_paise:Number(order.subtotal_paise),shipping_paise:Number(order.shipping_paise),
+  const attempt=order.payment_method==="online" && await runtimeAvailable(tx)
+    ? (await tx`SELECT state FROM public.payment_attempts WHERE store_id=${id} AND order_id=${order.id}`)[0] : null;
+  return {...order,invoice,payment_status:attempt?.state||null,subtotal_paise:Number(order.subtotal_paise),shipping_paise:Number(order.shipping_paise),
     total_paise:Number(order.total_paise),items:items.map((i) => ({...i,unit_price_paise:Number(i.unit_price_paise),line_total_paise:Number(i.line_total_paise)}))};
 }

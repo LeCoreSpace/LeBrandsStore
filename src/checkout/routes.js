@@ -8,12 +8,13 @@ import { verifyTurnstile } from "./turnstile.js";
 import { checkoutQuote, consumeIpLimit, findReplay, placeCodOrder, receiptOrder } from "./repository.js";
 import { renderInvoice } from "../ui/invoice.js";
 import { invoiceDetail } from "../dashboard/repository.js";
+import { checkoutPayment, verifyCheckout } from "../connections/payments.js";
 
 export const CHECKOUT_HEADERS = {...SECURITY_HEADERS,"cache-control":"no-store","referrer-policy":"no-referrer","x-robots-tag":"noindex, nofollow"};
 const json = (data,status = 200) => new Response(JSON.stringify(data),{
   status,headers:{...CHECKOUT_HEADERS,"content-type":"application/json; charset=utf-8"},
 });
-export const isCheckoutPath = (path) => ["/api/cart/validate","/api/checkout/order","/api/orders/track","/cart","/checkout","/track"].includes(path) || /^\/orders\/[0-9a-f]{64}(?:\/invoice)?$/.test(path);
+export const isCheckoutPath = (path) => ["/api/cart/validate","/api/checkout/order","/api/checkout/verify","/api/orders/track","/cart","/checkout","/track"].includes(path) || /^\/orders\/[0-9a-f]{64}(?:\/invoice)?$/.test(path);
 export async function handleCheckout(request,env,db,store,data,dependencies = {}) {
   const url = new URL(request.url), api = url.pathname.startsWith("/api/");
   try {
@@ -34,9 +35,9 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
         }
       }
       const csp = CHECKOUT_HEADERS["content-security-policy"]
-        .replace("script-src 'self' 'unsafe-inline'","script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com")
-        .replace("connect-src 'self'","connect-src 'self' https://challenges.cloudflare.com")
-        .replace("frame-src 'self'","frame-src 'self' https://challenges.cloudflare.com");
+        .replace("script-src 'self' 'unsafe-inline'","script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://checkout.razorpay.com")
+        .replace("connect-src 'self'","connect-src 'self' https://challenges.cloudflare.com https://api.razorpay.com https://lumberjack.razorpay.com")
+        .replace("frame-src 'self'","frame-src 'self' https://challenges.cloudflare.com https://api.razorpay.com https://checkout.razorpay.com");
       return new Response(request.method === "HEAD" ? null : renderAura(data,options),{
         headers:{...CHECKOUT_HEADERS,"content-security-policy":csp,"content-type":"text/html; charset=utf-8"},
       });
@@ -52,6 +53,9 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
     const hash = await ipHash(request,env.SESSION_SECRET);
     const purpose = url.pathname === "/api/orders/track" ? "track" : "checkout";
     if (!await db.withStore(store.store_id,(tx) => consumeIpLimit(tx,store.store_id,hash,purpose))) throw commerceError("Too many attempts. Please wait and try again.",undefined,429);
+    if (url.pathname==="/api/checkout/verify") {
+      return json(await db.withStore(store.store_id,tx=>verifyCheckout(tx,store.store_id,body,env,dependencies.fetcher)));
+    }
     if (purpose === "track") {
       const phone = indianPhone(body.phone);
       if (!phone || typeof body.order_number !== "string" || !/^[A-Z]{1,3}-[0-9]{4,18}$/.test(body.order_number)) throw commerceError("Enter your order number and mobile number.");
@@ -65,15 +69,18 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
     }
     const input = orderInput(body), requestHash = await sha256(JSON.stringify(input));
     const replay = await db.withStore(store.store_id,(tx) => findReplay(tx,store.store_id,input,requestHash));
-    if (replay) return json(replay);
+    if (replay) return json(input.payment_method==="online" ?
+      await db.withStore(store.store_id,tx=>checkoutPayment(tx,store.store_id,input,env,dependencies.fetcher)):replay);
     // Tests inject a verification dependency; there is no URL/env production bypass.
     await (dependencies.verifyTurnstile ?? verifyTurnstile)(request,env,body);
     const receiptHash = await sha256(`${store.store_id}:${input.receipt_token}`);
-    return json(await db.withStore(store.store_id,(tx) =>
-      placeCodOrder(tx,store.store_id,input,requestHash,receiptHash,orderSource(body,request))),201);
+    const placed=await db.withStore(store.store_id,(tx) =>
+      placeCodOrder(tx,store.store_id,input,requestHash,receiptHash,orderSource(body,request),env,dependencies.fetcher));
+    return json(input.payment_method==="online" ?
+      await db.withStore(store.store_id,tx=>checkoutPayment(tx,store.store_id,input,env,dependencies.fetcher)):placed,201);
   } catch (error) {
     console.error("Checkout request failed",{code:/^[0-9A-Z]{5}$/.test(error?.code ?? "")?error.code:error.status?"REQUEST_REJECTED":"CHECKOUT_SERVICE_ERROR"});
     return json({error:error.status?error.message:"Checkout is temporarily unavailable. Please try again.",
-      ...(error.errors?{errors:error.errors}:{})},error.status ?? 503);
+      ...(error.errors?{errors:error.errors}:{}),...(error.restart_checkout===true?{restart_checkout:true}:{})},error.status ?? 503);
   }
 }

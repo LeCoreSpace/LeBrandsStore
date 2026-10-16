@@ -116,7 +116,7 @@ async function invoiceMutation(fn) {
     throw error;
   }
 }
-export async function changeOrderStatus(tx,id,orderId,actorId,body) {
+export async function changeOrderStatus(tx,id,orderId,actorId,body,{managedShipment=false}={}) {
   const [order] = await tx`SELECT * FROM public.orders WHERE store_id = ${id} AND id = ${orderId} FOR UPDATE`;
   if (!order) throw missing();
   const input = transitionInput(order,body);
@@ -133,7 +133,7 @@ export async function changeOrderStatus(tx,id,orderId,actorId,body) {
   }
   await tx`UPDATE public.orders SET status = ${input.status} WHERE store_id = ${id} AND id = ${orderId}`;
   if (input.status === "shipped") {
-    await tx`INSERT INTO public.shipments(store_id,order_id,status,courier,tracking_number,tracking_url,shipped_at)
+    if (!managedShipment) await tx`INSERT INTO public.shipments(store_id,order_id,status,courier,tracking_number,tracking_url,shipped_at)
       VALUES (${id},${orderId},'shipped',${input.courier},${input.tracking_number},${input.tracking_url},now())`;
     await issueInvoice(tx,id,orderId,actorId);
   }

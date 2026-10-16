@@ -7,6 +7,7 @@ export function indianPhone(value) {
 }
 export function orderInput(body) {
   const contact = body.contact ?? {}, address = body.address ?? {}, errors = {};
+  if (body.payment_method!==undefined && !["cod","online"].includes(body.payment_method)) errors.payment_method="Choose an available payment method.";
   const name = text(contact.name,120), phone = indianPhone(contact.phone), email = text(contact.email ?? "",254);
   if (!name || name.length < 2) errors.name = "Enter your full name.";
   if (!phone) errors.phone = "Enter a valid Indian 10-digit mobile number.";
@@ -24,6 +25,7 @@ export function orderInput(body) {
     !/^[0-9a-f]{64}$/.test(body.receipt_token ?? "")) errors._general = "Reload checkout and try again.";
   if (Object.keys(errors).length) throw commerceError("Check the highlighted fields.",errors);
   return {items:cartItems(body.items,false),contact:{name,phone,email},address:clean,
+    ...(body.payment_method==="online"?{payment_method:"online"}:{}),
     idempotency_key:body.idempotency_key.toLowerCase(),receipt_token:body.receipt_token};
 }
 export function orderSource(body, request) {

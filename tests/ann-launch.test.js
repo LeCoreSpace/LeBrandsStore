@@ -113,10 +113,13 @@ test("launch setup persists independently, keeps tenant/owner isolation and neve
 
 test("custom domains require real DNS and SSL evidence, explicit activation and cannot escape their tenant", async () => {
   const pg = await setupAnnFixtureDatabase(), db = annFixtureAdapter(pg);
-  let hostStatus = "pending", ssl = "pending", cname = false, creates = 0;
+  let hostStatus = "pending", ssl = "pending", cname = false, creates = 0,platformReady=true;
   const remote = async (url, options) => {
     if (url.startsWith("https://api.razorpay.com/")) return json({ entity: "collection", items: [] });
     if (url.startsWith("https://cloudflare-dns.com/")) return json({ Answer: cname ? [{ name: "www.brand.com", type: 5, data: "brands.lebrands.store." }] : [] });
+    if (url.endsWith("/custom_hostnames/fallback_origin")) return json({success:true,result:{origin:"store-origin.lebrands.store",status:platformReady?"active":"pending"}});
+    if (url.includes("/dns_records?")) return json({success:true,result:[{name:"brands.lebrands.store",proxied:true,content:"store-origin.lebrands.store"}]});
+    if (url.endsWith("/workers/routes")) return json({success:true,result:[{pattern:"*/*",script:"lebrands-store"}]});
     if (options.method === "POST") creates++;
     return json({ success: true, result: { id: "e".repeat(32), hostname: "www.brand.com", status: hostStatus,
       ssl: { status: ssl, validation_records: [{ txt_name: "_acme-challenge.www.brand.com", txt_value: "public-dns-proof" }] } } });
@@ -135,7 +138,9 @@ test("custom domains require real DNS and SSL evidence, explicit activation and 
     hostStatus = "active"; ssl = "active";
     await assert.rejects(save(state, "domain-activate", { id: domainId }), { status: 400 });
     cname = true;
-    await assert.rejects(save(state, "domain-activate", { id: domainId }, { ...cfg, CUSTOM_DOMAINS_ROUTING_READY: "false" }), { status: 503 });
+    platformReady=false;
+    await assert.rejects(save(state, "domain-activate", { id: domainId }), { status: 503 });
+    platformReady=true;
     state = await save(state, "domain-check", { id: domainId });
     assert.equal(state.domain.status, "pending"); assert.equal(state.domain.cname_verified, true);
     state = await save(state, "razorpay-connect", { credentials: creds });

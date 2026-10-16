@@ -59,3 +59,15 @@ config is for local preview only.
 **Why:** The user explicitly requires one production configuration.
 
 **How to apply:** Keep preview adapters out of production entrypoints and commands.
+
+The user explicitly expanded the connection stage to working Razorpay checkout,
+automatic Shiprocket shipping and Cloudflare custom-domain activation. OAuth is
+to follow only once the provider/partner integration is in place.
+
+**Why:** The user requested operational integrations rather than stopping at
+credential verification, while explicitly deferring OAuth.
+
+**How to apply:** Do not reinstate older phase exclusions for these three
+integrations. Distinguish implemented runtimes from account approval, merchant
+activation, live credentials, DNS propagation and a real-money production test.
+Continue handing migrations and infrastructure changes to the user explicitly.

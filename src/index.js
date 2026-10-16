@@ -15,6 +15,8 @@ import {handleEmailWebhook} from "./email/webhook.js";
 import { serveStorefront } from "./store/live.js";
 import { CRAWLER_FILES, serveCrawlerFile } from "./crawler-files.js";
 import { processAiMessage } from "./ai/worker.js";
+import { scheduleCommerce } from "./connections/jobs.js";
+import { razorpayWebhook } from "./connections/payments.js";
 
 const ROOT_DOMAIN = ".lebrands.store";
 const STORE_NAME_PATTERN = /^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])$/;
@@ -81,11 +83,17 @@ export default {
       }catch{message.retry({delaySeconds:Math.min(900,10*2**Math.min(message.attempts||1,6))});}
     }
   },
-  async scheduled(event,env,ctx){ctx.waitUntil(schedulePendingEmails(env));},
+  async scheduled(event,env,ctx){ctx.waitUntil(schedulePendingEmails(env));ctx.waitUntil(scheduleCommerce(env));},
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const hostname = url.hostname;
     if(hostname==="app.lebrands.store"&&url.pathname==="/webhooks/resend")return handleEmailWebhook(request,env);
+    const paymentWebhook=hostname==="app.lebrands.store" && url.pathname.match(/^\/webhooks\/razorpay\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/);
+    if(paymentWebhook){
+      const webhookDb=createDb(env);
+      try{return await razorpayWebhook(request,env,webhookDb,paymentWebhook[1]);}
+      finally{ctx.waitUntil(webhookDb.close());}
+    }
     if (hostname === "media.lebrands.store") return serveMedia(request, env);
     if (url.pathname.startsWith("/assets/")) {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });

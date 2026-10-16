@@ -35,6 +35,8 @@ function fakeDatabase() {
       state.queries.push(q);
       const own = (id) => id === tenant;
       if (q.startsWith("SELECT role")) return [{role:"owner"}];
+      if (q.includes("to_regclass('public.payment_attempts')")) return [{ready:false}];
+      if (q.includes("FROM public.integrations")) return [];
       if (q.includes("FROM public.stores")) return own(values[0])?[state.stores[tenant]]:[];
       if (q.includes("FROM public.store_publications")) return own(values[0])?[{snapshot:state.publications[tenant]}]:[];
       if (q.includes("FROM public.store_setup")) return [{settings:data.settings}];
@@ -65,9 +67,9 @@ function fakeDatabase() {
       }
       if (q.startsWith("UPDATE public.checkout_settings")) return [{number:state.next[tenant]++}];
       if (q.startsWith("INSERT INTO public.orders")) {
-        state.orders.push({id:values[0],store_id:values[1],customer_id:values[2],order_number:values[3],status:"confirmed_cod",payment_method:"cod",
-          subtotal_paise:values[4],tax_paise:values[5],shipping_paise:values[6],total_paise:values[7],
-          shipping_address:JSON.parse(values[8].json),source:values[9],idempotency_key:values[10],request_hash:values[11],confirmation_hash:values[12]});
+        state.orders.push({id:values[0],store_id:values[1],customer_id:values[2],order_number:values[3],status:values[4],payment_method:values[5],
+          subtotal_paise:values[6],tax_paise:values[7],shipping_paise:values[8],total_paise:values[9],
+          shipping_address:JSON.parse(values[10].json),source:values[11],idempotency_key:values[12],request_hash:values[13],confirmation_hash:values[14]});
         return [];
       }
       if (q.startsWith("INSERT INTO public.order_items")) {

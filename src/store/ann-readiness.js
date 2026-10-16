@@ -6,6 +6,7 @@ import { DEFAULT_CHECKOUT_SETTINGS, checkoutSettings, inferStoreState } from "..
 import { protectSupplier } from "../gstin/service.js";
 import { audit } from "../dashboard/repository.js";
 import { draftFingerprint } from "./ann-application.js";
+import { onlineAvailable } from "../connections/payments.js";
 
 export const ANN_BUSINESS_FIELDS = [
   "brand_name","tagline","description","legal_name","trade_name","address","gstin","business_state",
@@ -28,6 +29,7 @@ async function snapshot(tx, id) {
 }
 export async function prepareAnnReadiness(tx,id,userId) {
   const s = await snapshot(tx,id);
+  const online=await onlineAvailable(tx,id);
   const [member] = await tx`SELECT role FROM public.store_members WHERE store_id = ${id} AND user_id = ${userId}`;
   const logos = await tx`SELECT id,alt_text,object_key FROM public.media WHERE store_id = ${id}
     AND upload_type = 'logo' ORDER BY created_at DESC LIMIT 100`;
@@ -50,7 +52,7 @@ export async function prepareAnnReadiness(tx,id,userId) {
     checklist:[...publishChecklist(data),
       {label:"Delivery and Cash on Delivery settings explicitly saved",complete:s.checkoutAvailable&&s.checkoutSaved},
       {label:"Checkout origin state configured",complete:!!s.checkout.store_state},
-      {label:"Cash on Delivery enabled for the currently supported checkout",complete:s.checkout.cod_enabled===true},
+      {label:"Cash on Delivery or verified online checkout enabled",complete:s.checkout.cod_enabled===true||online},
       ...(data.store.approval_enabled ? [
         {label:"Verified GST registration and supplier details confirmed",complete:data.gstinVerification?.state==="verified"&&data.gstinVerification?.confirmed===true},
         {label:"Platform approval is current",complete:!!data.store.approved_at&&!data.store.approval_revoked_at},

@@ -65,7 +65,9 @@ export async function verifyShiprocket(credentials, fetcher = fetch) {
   }, fetcher);
   if (!Array.isArray(pickup.data?.shipping_address)) fail("Shiprocket did not return pickup locations. Check your API user's permissions.", 502);
   return { credentials: { email, password }, metadata: { checked_at: new Date().toISOString(),
-    credentials_verified: true, pickup_count: pickup.data.shipping_address.length, runtime_ready: false } };
+    credentials_verified: true, pickup_count: pickup.data.shipping_address.length,
+    pickup_locations:pickup.data.shipping_address.filter(p=>p.pickup_location && /^[1-9][0-9]{5}$/.test(String(p.pin_code)))
+      .map(p=>({name:String(p.pickup_location),pincode:String(p.pin_code)})) } };
 }
 export function domainHostname(value) {
   if (typeof value !== "string") fail("Enter a domain such as www.yourbrand.com, without https:// or a page path.");

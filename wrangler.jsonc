@@ -7,7 +7,9 @@
 	],
 	"workers_dev": false,
 	"vars": {
-		"TURNSTILE_SITE_KEY": "0x4AAAAAAFPIugBBD4F7Xgfb"
+"TURNSTILE_SITE_KEY": "0x4AAAAAAFPIugBBD4F7Xgfb",
+"CUSTOM_DOMAIN_CNAME_TARGET": "brands.lebrands.store",
+"CLOUDFLARE_WORKER_NAME": "lebrands-store"
 	},
 	"assets": {
 		"directory": "./src/public",
@@ -50,6 +52,10 @@
 		}
 	],
 	"routes": [
+		{
+			"pattern": "*/*",
+			"zone_name": "lebrands.store"
+		},
 		{
 			"pattern": "lebrands.store/*",
 			"zone_name": "lebrands.store"

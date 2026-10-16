@@ -184,7 +184,7 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
       ${mode === "free_above" ? field("co-free", "Free above (INR)", co.free_above, { attr: 'data-rd-co="free_above"', mode: "decimal", locked: !canEdit }) : ""}
       <label class="ann-check"><input type="checkbox" data-rd-key="co-cod" data-rd-co="cod_enabled"${co.cod_enabled ? " checked" : ""}${dis(!canEdit)}><span>Accept cash on delivery</span></label>
       ${co.cod_enabled ? field("co-codmax", "Largest COD order (INR, above zero)", co.cod_max, { attr: 'data-rd-co="cod_max"', mode: "decimal", locked: !canEdit }) : ""}
-      <p class="ann-note">This checkout supports Cash on Delivery. Verify optional provider accounts in <a href="${root}/build/ann?launch=1">Store connections</a>. Account verification does not enable online checkout.</p>
+      <p class="ann-note">Use Cash on Delivery, or connect and activate Razorpay in <a href="${root}/build/ann?launch=1">Store connections</a>. You can also configure automatic Shiprocket shipping there. Account verification and activation are separate steps.</p>
        ${field("co-state", "Store state for tax", co.store_state, { attr: 'data-rd-co="store_state"', state:true, locked: !canEdit })}
       <label class="ann-check"><input type="checkbox" data-rd-key="ack-co" data-rd-ack="co"${ackCo ? " checked" : ""}${dis(!canEdit || !cd)}><span>I understand these shipping and COD changes go live for customers as soon as I save.</span></label>
       ${msg("checkout")}

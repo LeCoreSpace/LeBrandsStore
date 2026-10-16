@@ -11,6 +11,8 @@ import { DEFAULT_SETTINGS, loadDraft } from "./store/repository.js";
 import { APP_ORIGIN } from "./auth/security.js";
 import { STYLE_IDS, styleSettings } from "./public/aura-styles.js";
 import { TAXONOMY } from "./public/aura-taxonomy-data.js";
+import { renderAura } from "./public/aura.js";
+import { defaultPageLayouts } from "./public/aura-layout.js";
 
 const storeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ownerId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -43,7 +45,7 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
     for (const file of ["0001_init.sql","0002_rls.sql","0003_accounts.sql","0004_password_pepper.sql","0005_store_wizard.sql","0006_cod_checkout.sql","0007_brand_dashboard.sql","0008_invoice_lockdown.sql","0009_required_gstin.sql","0010_store_pages.sql"]) {
       await pg.exec(await preparePageMigration(file, await readFile(new URL(`../db/migrations/${file}`, import.meta.url), "utf8")));
     }
-    for (const file of ["0012_aura_skeleton_sections.sql","0015_aura_starter_library.sql","0016_ann_foundation.sql","0017_ann_launch_setup.sql"]) {
+    for (const file of ["0012_aura_skeleton_sections.sql","0015_aura_starter_library.sql","0016_ann_foundation.sql","0017_ann_launch_setup.sql","0018_commerce_runtime.sql"]) {
       await pg.exec(await preparePageMigration(file, await readFile(new URL(`../db/staged/${file}`, import.meta.url), "utf8")));
     }
     await pg.exec(`
@@ -108,7 +110,13 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     const user = { id: readonly ? editorId : ownerId, name: "Example member", email: "member@example.invalid" };
     const hash = (readonly ? "b" : "a").repeat(64);
     let response;
-    if (url.pathname === prefix && ["GET", "HEAD"].includes(req.method)) {
+    if (url.pathname===prefix && url.searchParams.get("checkout")==="1" && ["GET","HEAD"].includes(req.method)) {
+      const sample={...fixtureData,products:[{id:sampleProductId,title:"Sample cotton shirt",slug:"sample-cotton-shirt",price_paise:129909,stock:7,
+        status:"active",description:"Fictional preview product only.",images:[],gst_rate:12}]};
+      sample.layouts=defaultPageLayouts(sample);
+      response=new Response(req.method==="HEAD"?null:renderAura(sample,{commerce:true,page:"checkout",siteKey:"isolated-preview-key"}),
+        {headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
+    } else if (url.pathname === prefix && ["GET", "HEAD"].includes(req.method)) {
       const options = await db.withMemberStore(storeId, hash, async tx => ({
         reference: await annReference(tx),
         sessionResponse: await annSessionResponse(tx, storeId, await loadAnnSession(tx, storeId)),

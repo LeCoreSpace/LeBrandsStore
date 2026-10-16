@@ -36,6 +36,38 @@ let turnstileWidget = null;
 let turnstileToken = "";
 let checkoutAttempt = null;
 let allowReplayWithoutToken = false;
+let razorpayLoad = null;
+const methodAvailable = (v, m) => m === "online" ? v?.online_available === true : v?.cod_available === true;
+function selectedMethod(v = validated) {
+  const r = document.querySelector('#checkout-form [name="payment_method"]:checked');
+  return r?.value === "online" && v?.online_available === true ? "online" : "cod";
+}
+const submitLabel = () => selectedMethod() === "online" ? 'Pay online <span aria-hidden="true">→</span>' : 'Place order <span aria-hidden="true">→</span>';
+function syncPayment() {
+  const online = document.querySelector('#checkout-form [data-pay="online"]');
+  if (!online || !validated) return;
+  const can = validated.online_available === true;
+  online.hidden = !can;
+  const cod = document.querySelector('#checkout-form [name="payment_method"][value="cod"]');
+  const onl = online.querySelector("input");
+  if (!can) { if (cod) cod.checked = true; if (onl) onl.checked = false; }
+  else if (validated.cod_available !== true && onl && !onl.checked && cod?.checked) { onl.checked = true; cod.checked = false; }
+  document.querySelectorAll("#checkout-form [data-pay]").forEach((l) => l.classList.toggle("is-selected", !!l.querySelector("input")?.checked));
+  const btn = document.querySelector("#checkout-form [type='submit']");
+  if (btn && !busy) btn.innerHTML = submitLabel();
+}
+function loadRazorpay() {
+  if (window.Razorpay) return Promise.resolve();
+  if (razorpayLoad) return razorpayLoad;
+  razorpayLoad = new Promise((resolve, reject) => {
+    const el = document.createElement("script");
+    el.src = "https://checkout.razorpay.com/v1/checkout.js"; el.async = true;
+    el.onload = () => window.Razorpay ? resolve() : (razorpayLoad = null, reject(new Error("Online payment could not load. Please try again.")));
+    el.onerror = () => { razorpayLoad = null; el.remove(); reject(new Error("Online payment could not load. Check your connection and try again.")); };
+    document.head.append(el);
+  });
+  return razorpayLoad;
+}
 let validationSequence = 0;
 
 function readCart() {
@@ -75,6 +107,7 @@ async function api(path, payload) {
     const error = new Error(fieldMessages.join(" ") || result.error || result.message || `We couldn’t complete that request (${response.status}).`);
     error.fields = result.errors || {};
     error.status = response.status;
+    error.restartCheckout = result.restart_checkout === true;
     throw error;
   }
   return result;
@@ -123,7 +156,7 @@ function showValidationError(text) {
 function updatePlaceOrderAvailability() {
   const button = document.querySelector("#checkout-form [type='submit']");
   if (!button || readOnly) return;
-  button.disabled = busy || !validated || !cart.length || Boolean(validated.issues?.length) || validated.cod_available !== true;
+  button.disabled = busy || !validated || !cart.length || Boolean(validated.issues?.length) || !methodAvailable(validated, selectedMethod());
 }
 function productImage(url, title) {
   const safe = /^https:\/\/media\.lebrands\.store\/stores\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:png|jpe?g|svg|webp)$/i.test(String(url || ""));
@@ -142,9 +175,10 @@ function summaryMarkup(result, { checkout = false } = {}) {
   if (!result) return `<div class="commerce-summary"><h2>${checkout?"Order summary":"Your total"}</h2><div class="commerce-loading" role="status">Rechecking current prices…</div></div>`;
   if (!result.items?.length) return `<div class="commerce-summary"><h2>${checkout?"Order summary":"Your total"}</h2>${(result.issues||[]).map((entry)=>`<p class="commerce-error">${esc(entry.message)}</p>`).join("")}<p class="commerce-muted">Add a product to see your total.</p></div>`;
   const issues = result.issues || [];
-  const unavailable = issues.length > 0 || result.cod_available === false;
+  const method = selectedMethod(result);
+  const unavailable = issues.length > 0 || (checkout ? !methodAvailable(result, method) : (result.cod_available === false && result.online_available !== true));
   const codMessage = !result.settings?.cod_enabled ? "This store is not accepting Cash on Delivery right now." : result.total_paise > Number(result.settings?.cod_max_paise) ? `Cash on Delivery is available up to ${money(result.settings.cod_max_paise)}.` : "Cash on Delivery is not available for this order. Please contact the store.";
-  return `<div class="commerce-summary"><h2>${checkout?"Order summary":"Your total"}</h2>${checkout?`<div class="checkout-summary-lines">${result.items.map((item)=>`<div class="checkout-summary-item"><span>${esc(item.title)}<small>Qty ${Number(item.quantity)||0}</small></span><strong>${money(item.line_total_paise)}</strong></div>`).join("")}</div>`:""}<div class="commerce-total-row"><span>Subtotal</span><strong>${money(result.subtotal_paise)}</strong></div><div class="commerce-total-row"><span>Delivery</span><strong>${Number(result.delivery_paise)===0?"Free":money(result.delivery_paise)}</strong></div>${Number(result.tax_paise)>0?`<div class="commerce-total-row"><span>Included taxes</span><strong>${money(result.tax_paise)}</strong></div>`:""}<div class="commerce-total-row grand"><span>Total</span><strong>${money(result.total_paise)}</strong></div>${issues.map((entry)=>`<p class="commerce-error">${esc(entry.message)}</p>`).join("")}${checkout&&!result.cod_available?`<p class="commerce-error">${esc(codMessage)}</p>`:""}${checkout?"":`<a class="commerce-button" href="/checkout" ${unavailable?'aria-disabled="true"':''}>Continue to checkout <span aria-hidden="true">→</span></a>`}</div>`;
+  return `<div class="commerce-summary"><h2>${checkout?"Order summary":"Your total"}</h2>${checkout?`<div class="checkout-summary-lines">${result.items.map((item)=>`<div class="checkout-summary-item"><span>${esc(item.title)}<small>Qty ${Number(item.quantity)||0}</small></span><strong>${money(item.line_total_paise)}</strong></div>`).join("")}</div>`:""}<div class="commerce-total-row"><span>Subtotal</span><strong>${money(result.subtotal_paise)}</strong></div><div class="commerce-total-row"><span>Delivery</span><strong>${Number(result.delivery_paise)===0?"Free":money(result.delivery_paise)}</strong></div>${Number(result.tax_paise)>0?`<div class="commerce-total-row"><span>Included taxes</span><strong>${money(result.tax_paise)}</strong></div>`:""}<div class="commerce-total-row grand"><span>Total</span><strong>${money(result.total_paise)}</strong></div>${issues.map((entry)=>`<p class="commerce-error">${esc(entry.message)}</p>`).join("")}${checkout&&!methodAvailable(result,method)?`<p class="commerce-error">${esc(codMessage)}</p>`:""}${checkout?"":`<a class="commerce-button" href="/checkout" ${unavailable?'aria-disabled="true"':''}>Continue to checkout <span aria-hidden="true">→</span></a>`}</div>`;
 }
 function renderCommerce() {
   const items = validated?.items || [];
@@ -158,11 +192,13 @@ function renderCommerce() {
   if (cartSummary) cartSummary.innerHTML = summaryMarkup(validated);
   const checkoutSummary = document.querySelector("[data-checkout-summary]");
   if (checkoutSummary) checkoutSummary.innerHTML = summaryMarkup(validated, { checkout: true });
+  syncPayment();
   const codNotice = document.querySelector("[data-cod-notice]");
   if (codNotice && validated) {
-    codNotice.textContent = validated.cod_available ? "" : (!validated.settings?.cod_enabled ? "This store is not accepting Cash on Delivery right now." : validated.total_paise > Number(validated.settings?.cod_max_paise) ? `Cash on Delivery is available up to ${money(validated.settings.cod_max_paise)}.` : "Cash on Delivery is not available for this order.");
-    codNotice.hidden = validated.cod_available;
-    codNotice.classList.toggle("commerce-error", !validated.cod_available);
+    const okMethod = methodAvailable(validated, selectedMethod());
+    codNotice.textContent = okMethod ? "" : (!validated.settings?.cod_enabled ? "This store is not accepting Cash on Delivery right now." : validated.total_paise > Number(validated.settings?.cod_max_paise) ? `Cash on Delivery is available up to ${money(validated.settings.cod_max_paise)}.` : "Cash on Delivery is not available for this order.");
+    codNotice.hidden = okMethod;
+    codNotice.classList.toggle("commerce-error", !okMethod);
   }
   const drawerLines = document.querySelector("[data-drawer-lines]");
   if (drawerLines) drawerLines.innerHTML = linesMarkup(items, true);
@@ -250,7 +286,7 @@ function validateCheckout(form, values) {
   if (!cart.length) errors.push("Your bag is empty.");
   if (!validated) errors.push("We’re still checking your bag. Try again in a moment.");
   if (validated?.issues?.length) errors.push("Resolve the availability issues in your bag before placing the order.");
-  if (validated?.cod_available === false) errors.push("Cash on Delivery is not available for this order.");
+  if (validated && !methodAvailable(validated, selectedMethod(validated))) errors.push(selectedMethod(validated) === "online" ? "Online payment is not available for this order." : "Cash on Delivery is not available for this order.");
   return errors;
 }
 function randomHex(bytes) {
@@ -297,7 +333,7 @@ async function placeOrder(event) {
   if (button) { button.disabled = true; button.textContent = "Preparing secure order…"; }
   let key;
   try {
-    const canonical = JSON.stringify({ items: cart.map(({product_id,quantity})=>({product_id,quantity})), contact: values.contact, address: values.address });
+    const canonical = JSON.stringify({ items: cart.map(({product_id,quantity})=>({product_id,quantity})), payment_method: selectedMethod(), contact: values.contact, address: values.address });
     const fingerprintValue = await fingerprint(canonical);
     if (!checkoutAttempt || checkoutAttempt.fingerprint !== fingerprintValue) {
       let previous = null;
@@ -311,7 +347,7 @@ async function placeOrder(event) {
           showCheckoutError(!siteKey ? "Secure order verification is not configured. Please contact the store." : "Complete the security check before placing your order.");
           busy = false;
           updatePlaceOrderAvailability();
-          if (button) button.innerHTML = 'Place order <span aria-hidden="true">→</span>';
+          if (button) button.innerHTML = submitLabel();
           return;
         }
         checkoutAttempt = { fingerprint: fingerprintValue, idempotencyKey: makeUuid(), receiptToken: randomHex(32) };
@@ -329,7 +365,7 @@ async function placeOrder(event) {
         showCheckoutError(!siteKey ? "Secure order verification is not configured. Please contact the store." : "Complete the security check before placing your order.");
         busy = false;
         updatePlaceOrderAvailability();
-        if (button) button.innerHTML = 'Place order <span aria-hidden="true">→</span>';
+        if (button) button.innerHTML = submitLabel();
         return;
       }
     }
@@ -338,10 +374,11 @@ async function placeOrder(event) {
     showCheckoutError(error.message);
     busy = false;
     updatePlaceOrderAvailability();
-    if (button) button.innerHTML = 'Place order <span aria-hidden="true">→</span>';
+    if (button) button.innerHTML = submitLabel();
     return;
   }
   if (button) { button.disabled = true; button.textContent = "Placing order…"; }
+  const method = selectedMethod();
   try {
     const result = await api("/api/checkout/order", {
       items: cart.map(({product_id,quantity})=>({product_id,quantity})),
@@ -350,11 +387,20 @@ async function placeOrder(event) {
       idempotency_key: key.idempotencyKey,
       receipt_token: key.receiptToken,
       turnstile_token: turnstileToken || "",
+      payment_method: method,
       source: sourceInfo(),
     });
     if (!result.receipt_url || !result.order_number) throw new Error("Your order response was incomplete. Please try again using the same details.");
     const receiptUrl = new URL(result.receipt_url, location.origin);
     if (receiptUrl.origin !== location.origin) throw new Error("The receipt link was not a valid store link. Your order was placed. Keep your order number for tracking.");
+    if (method === "online" || result.payment) {
+      if (!result.payment) { if(result.paid===true) finishPaid(receiptUrl.href); else location.assign(receiptUrl.href); return; }
+      allowReplayWithoutToken = true;
+      if (window.turnstile && turnstileWidget !== null) { try { window.turnstile.reset(turnstileWidget); } catch {} }
+      turnstileToken = "";
+      await payOnline(result, values, key);
+      return;
+    }
     try { localStorage.removeItem(storageKey); } catch {}
     try { sessionStorage.removeItem(attemptStorageKey); } catch {}
     cart = [];
@@ -369,14 +415,58 @@ async function placeOrder(event) {
     // stable fingerprint/key/token so the server can replay before checking
     // Turnstile. Explicit client/server rejections still require fresh proof.
     allowReplayWithoutToken = !error.status || error.status >= 500;
+    if (error.restartCheckout) {
+      checkoutAttempt=null;allowReplayWithoutToken=false;
+      try { sessionStorage.removeItem(attemptStorageKey); } catch {}
+    }
     if (window.turnstile && turnstileWidget !== null) {
       try { window.turnstile.reset(turnstileWidget); turnstileToken = ""; } catch {}
     }
   } finally {
     busy = false;
-    if (button) button.innerHTML = 'Place order <span aria-hidden="true">→</span>';
+    if (button) button.innerHTML = submitLabel();
     updatePlaceOrderAvailability();
   }
+}
+function finishPaid(receiptUrl) {
+  try { localStorage.removeItem(storageKey); } catch {}
+  try { sessionStorage.removeItem(attemptStorageKey); } catch {}
+  cart = []; validated = null; checkoutAttempt = null; allowReplayWithoutToken = false;
+  updateCount();
+  location.assign(receiptUrl);
+}
+async function payOnline(order, values, key) {
+  const pay = order.payment || {};
+  if (!pay.key_id || !pay.order_id || !Number.isInteger(Number(pay.amount)) || pay.currency !== "INR" || !/^\/api\/checkout\/verify$/.test(String(pay.verification_url || ""))) throw new Error("Online payment details were incomplete. Your bag is kept. Please try again.");
+  await loadRazorpay();
+  await new Promise((resolve) => {
+    let settled = false, verifying = false;
+    const done = () => { if (!settled) { settled = true; resolve(); } };
+    const options = {
+      key: pay.key_id, amount: Number(pay.amount), currency: "INR", name: pay.name || "", order_id: pay.order_id,
+      prefill: { contact: `+91${values.contact.phone}`, name: values.contact.name, ...(values.contact.email ? { email: values.contact.email } : {}) },
+      handler: async (resp) => {
+        verifying = true;
+        showCheckoutError("Verifying your payment…");
+        try {
+          const out = await api(pay.verification_url, { receipt_token: key.receiptToken, razorpay_order_id: resp.razorpay_order_id, razorpay_payment_id: resp.razorpay_payment_id, razorpay_signature: resp.razorpay_signature });
+          const url = new URL(out.receipt_url || order.receipt_url, location.origin);
+          if (url.origin !== location.origin) throw new Error("The receipt link was not a valid store link.");
+          if (out.paid === true && out.pending !== true) finishPaid(url.href); else location.assign(url.href);
+        } catch (error) {
+          verifying = false;
+          showCheckoutError(`${error.message || "We could not verify your payment."} Your bag is kept. If money was deducted, keep order number ${order.order_number} and check it on the track page.`);
+        }
+        done();
+      },
+       modal: { ondismiss: () => { if (verifying) return; showCheckoutError("No payment is confirmed yet. Your bag is kept. If money was deducted, check your order before paying again."); done(); } },
+    };
+    try {
+      const rzp = new window.Razorpay(options);
+      rzp.on("payment.failed", (e) => { showCheckoutError(`Payment failed${e?.error?.description ? `: ${String(e.error.description).slice(0, 160)}` : ""}. You can try again.`); });
+      rzp.open();
+    } catch { showCheckoutError("Online payment could not open. Your bag is kept. Please try again."); done(); }
+  });
 }
 function initTurnstile() {
   if (page !== "checkout") return;
@@ -502,6 +592,7 @@ function bind() {
     }
   });
   document.querySelector("#checkout-form")?.addEventListener("submit", placeOrder);
+  document.querySelector("#checkout-form")?.addEventListener("change", (e) => { if (e.target.name === "payment_method") { clearCheckoutError(); renderCommerce(); } });
   document.querySelector('#checkout-form [name="state"]')?.addEventListener("change", () => validateCart());
   document.querySelector("#track-form")?.addEventListener("submit", trackOrder);
   wireMerchantSettings();

@@ -1,113 +1,191 @@
-# Ann launch setup operations
+# Ann: domains, payments and shipping
 
-## Install this stage
+## Database and release
 
-Review and apply only this staged migration, after the Ann foundation:
+The store owner can keep the included address, COD and manual fulfilment. All
+connections are optional and only owners can change them. Mandatory business,
+GST, policy, stock and platform approval checks remain unchanged.
+
+Apply these migrations yourself, in this order. The launch migration requires
+the previously deployed Ann foundation. Already-applied migrations are skipped.
 
 ```sh
 node db/migrate.js --staged-launch
+node db/migrate.js --staged-commerce
 pnpm run db:test-isolation
-pnpm run deploy
 ```
 
-`--staged-launch` requires `0016_ann_foundation.sql` already applied. It creates
-one tenant-isolated table for versioned launch preferences and public DNS
-evidence. Existing `integrations` and `domains` tables store provider credentials
-and hostname bindings. Do not manually create the table or edit old migrations.
-The production deploy command continues to use the root `wrangler.jsonc`.
+Then publish the Worker using the **root** production configuration only.
+Nothing here executes migrations or a production deployment automatically.
+The existing five-minute scheduled trigger must stay enabled: it recovers
+payments and shipping/refund jobs even if the browser closes.
 
-No live database migration, provider connection or production deployment is
-performed by implementing or testing this stage.
+## Credentials and future OAuth
 
-## Credentials and verification
+Merchant API credentials are entered in Ann's secure connection fields, never
+in conversation. They are encrypted with AES-GCM using a tenant/provider-bound
+key. Set a stable `INTEGRATION_ENCRYPTION_KEY` Worker secret before first use;
+otherwise the existing stable `SESSION_SECRET` is used. Do not rotate either
+without re-encrypting credentials, including outstanding order/job snapshots.
 
-Owner-only, same-origin authenticated forms:
+Snapshots are necessary to settle orders already started with old credentials
+after account disconnection or reconnection. They are never returned to the
+browser. Disconnect stops new orders/jobs using that account, not recovery of
+existing obligations. Retain old provider credentials until those orders settle.
 
-- Razorpay: key ID, key secret, webhook secret (at least 16 characters).
-  A read-only `GET /v1/orders?count=1` validates API access. Returned order data
-  is discarded; a test key never becomes a live key. A supplied webhook secret
-  is encrypted but cannot be called verified without receiving a signed event.
-- Shiprocket: separate API-user email/password, not the merchant's main login.
-  Login creates a token; a read-only pickup lookup checks permissions. No real
-  shipment/order is created and the transient token is not saved or returned.
-- Failed checks do not overwrite previously saved credentials. Disconnect is
-  separately confirmed, wipes ciphertext and restores the COD/manual preference.
-- Credentials are stored using AES-256-GCM, random nonces and tenant/provider
-  authenticated data. An HKDF-derived key is purpose-separated from
-  `INTEGRATION_ENCRYPTION_KEY`, or the existing `SESSION_SECRET` when a dedicated
-  key is not configured. Never change that key without a credential re-encryption
-  plan: rotation otherwise requires owners to reconnect. Use the platform's
-  secure secret configuration, never source code or chat, to configure it.
+Partner OAuth is deliberately not enabled. The runtime credential adapter
+accepts a provider access token independently of checkout/fulfilment. Partner
+approval, OAuth consent/callback, token refresh/revocation and account mapping
+remain a later explicit integration, not a pretend OAuth button.
 
-Verification does not activate online checkout or automatic fulfilment.
-`runtime_ready` is deliberately server-owned and false for both providers.
-Saved preferences are intentions, not live checkout settings. The working
-customer checkout remains COD with existing manual fulfilment.
+## Razorpay activation
 
-## Cloudflare for SaaS prerequisites
+1. Complete merchant KYC, payment activation and website approval in Razorpay.
+2. In Ann, connect the merchant's **live** API key/secret and a strong webhook
+   secret. Test keys can be verified but cannot activate live-store checkout.
+3. Register the webhook URL displayed by Ann in the merchant's Razorpay account.
+   Use that same webhook secret. Subscribe to `payment.captured`, `order.paid`,
+   `payment.authorized`, `payment.failed`, `refund.processed`.
+4. Send a signed provider test event, then reload Ann. Ann marks the webhook
+   verified only after valid HMAC verification. Verification does not prove KYC.
+5. Confirm KYC and approval of the checkout address, then explicitly turn on
+   online payments. COD remains available if enabled in checkout settings.
 
-Configure these on the **production Worker**, using secure secret handling for
-the token:
+Checkout prices and paise totals come from the server's published catalogue,
+not browser amounts. A pending order reserves actual tracked stock. Gateway
+order IDs are recovered by the local order's receipt on retries. Card/UPI entry
+is hosted by Razorpay's official Checkout SDK, not our forms.
 
-- `CLOUDFLARE_API_TOKEN`: least-privilege token with the zone's SSL/Custom Hostname
-  write permissions. A secret available in the development shell is not
-  automatically a production Worker binding.
-- `CLOUDFLARE_ZONE_ID`: the 32-character ID of the actual SaaS zone, not account ID.
-- `CUSTOM_DOMAIN_CNAME_TARGET`: the platform-managed fallback-origin hostname
-  under `lebrands.store`, for example `brands.lebrands.store`. Provision and test
-  this origin and its Worker routing before exposing activation.
-- `CUSTOM_DOMAINS_ROUTING_READY=true`: operator-controlled activation gate, only
-  after Cloudflare for SaaS, fallback origin and custom-host Worker routing have
-  been tested end to end. It is not a merchant checkbox.
+A signed browser callback is verified using the **server-stored** gateway order
+ID, then the payment is fetched/captured server-side. Signed captured webhooks
+and background reconciliation can also settle the order. Both paths verify
+store, gateway order, payment ID, currency and exact amount; they share the same
+locked, idempotent transition. Failed events cannot downgrade captured payments.
 
-The implementation never changes zone configuration, buys domains, modifies
-merchant DNS, or activates billing/plans automatically. Until configuration is
-present, Ann explains that custom-domain provisioning is unavailable and keeps
-the included address working.
+The checkout window is 20 minutes. Recovery checks the provider before releasing
+a pending reservation, and keeps stock reserved on uncertain provider responses.
+Late captured payments after expiry/cancellation queue a refund rather than
+shipping released inventory. Duplicate callbacks/events never deduct stock twice.
 
-### Domain lifecycle
+Cancelling/returning an online captured order queues a full refund. Unknown refund
+responses are reconciled first, not blindly retried. Existing partial refunds need
+operator reconciliation. Provider processing and bank settlement are not instant.
+Pending, cancelled and refunded receipts never claim a confirmed payment.
 
-Add a public custom **subdomain** such as `www.brand.com`; apex domains are not
-supported by this CNAME-only stage. The hostname is globally unique in the
-existing domain registry. Provision a Cloudflare Custom Hostname with TXT
-certificate validation. Ann returns only public CNAME/TXT records, and the owner
-adds them at their DNS provider. The CNAME should be DNS-only, not flattened or
-proxied by a second provider.
+## Shiprocket activation
 
-Check status fetches the matching hostname's actual Cloudflare state and public
-CNAME response from Cloudflare DNS-over-HTTPS. Activation freshly repeats those
-checks and requires hostname **and** SSL active plus a CNAME pointing to the
-configured target and the platform activation gate. If Razorpay is connected,
-the owner must separately confirm approval of that hostname in Razorpay. This
-is a merchant attestation, not an automated KYC/domain-approval claim.
+1. Create a merchant API user in Shiprocket, complete KYC and add/fund the wallet.
+2. Connect that API user's email/password in Ann.
+3. Refresh pickup locations, choose the real pickup location, and enter the
+   **actual packed parcel** weight/dimensions and maximum number of items that
+   fit it. This is a merchant-specified standard parcel, not invented per-SKU
+   measurements. Carts exceeding its declared limit cannot use automatic
+   shipping. Use manual fulfilment for mixed/oversized packages.
+4. Set a maximum estimated courier charge and choose whether to request pickup
+   automatically. Save settings, then separately consent to automatic charges
+   and turn on shipping.
 
-Status checking an already active domain fails closed if DNS/SSL is no longer
-verified: its local binding stops serving this store and the address preference
-returns to the included address. Checks are owner-triggered in this stage, not
-an automatic domain-monitoring scheduler.
+Before checkout commits, Shiprocket serviceability is checked for delivery PIN,
+parcel, COD/prepaid and the charge ceiling. At booking, rates are checked again
+and the cheapest eligible courier within that ceiling is selected. Customer
+delivery charges remain the explicit free/flat/threshold checkout rules; they
+are not a claim that Shiprocket fees equal the customer's shipping charge.
+Final carrier reweighing/fees can differ from estimates.
 
-Remove disables only the local store binding. It does not delete the merchant's
-domain, remote Cloudflare hostname or DNS records. Re-adding that same hostname
-for the same store reuses its stored Cloudflare ID. If the remote create
-succeeded but the database transaction could not commit, operator reconciliation
-is required before retrying; do not adopt an unowned remote hostname.
+Committed COD orders and captured online orders create a durable tenant-scoped
+outbox job. The scheduler creates the carrier order, assigns AWB, optionally
+requests pickup, and polls tracking. Login is refreshed on token expiry.
+Booking is **not** shipment/delivery confirmation. Actual dispatch scans invoke
+the existing protected invoice path; delivered scans update delivery. A delivery
+scan is not COD remittance proof; collection stays explicitly reconciled.
 
-## Next execution stage, not represented as complete
+Store connections lists recent jobs and actionable errors. Ordinary Retry
+reconciles existing remote IDs before doing anything. For an uncertain mutation,
+the owner must first check the provider and explicitly confirm that no matching
+order/AWB/pickup/refund exists before authorizing another attempt. Do not tick
+this merely to clear an error. Carrier cancellations are requested and their
+actual status checked; an RTO request is not a completed cancellation.
 
-- Razorpay: server-priced orders, pending-payment lifecycle and expiry,
-  idempotent capture webhook processing, signature/amount/currency/store checks,
-  stock reservation/release, payment retries, payment-aware cancellation/refunds,
-  CSP/checkout UI, and an actual test/live end-to-end payment.
-- Shiprocket: stored pickup choice, package weights/dimensions, pincode/COD
-  serviceability, explicit shipping-rate rules, idempotent order push, AWB and
-  tracking sync, cancellation/RTO handling, token refresh and recovery.
+RTO/returns remain controlled through existing merchant order actions, which
+retain invoice/credit-note privilege and explicit restock rules. Do not infer a
+restock or bank/COD payout from an ambiguous carrier scan.
 
-Do not set a metadata field or client flag to pretend these execution paths are
-implemented. Keep existing invoice financial-privilege and tenant boundaries.
+## Cloudflare platform setup
 
-## Provider references
+The account owner must enable Cloudflare for SaaS and accept its plan/hostname
+charges separately. This implementation never buys a plan or domain.
 
-- https://razorpay.com/docs/api/orders/fetch-all/
+The operator script uses the existing shell Cloudflare credentials, without
+printing their values. First run the read-only check:
+
+```sh
+node scripts/configure-custom-domains.mjs
+```
+
+It checks the active `lebrands.store` zone and conflicts, then prints its plan.
+The following command **changes shared infrastructure**: it creates only missing
+originless/proxied DNS records, a `*/*` Worker route and the SaaS fallback origin.
+The route sends all custom-hostname traffic entering this SaaS zone to
+`lebrands-store`; more-specific routes retain priority. Run only after reviewing
+the printed plan and confirming Cloudflare for SaaS billing:
+
+```sh
+node scripts/configure-custom-domains.mjs --apply
+```
+
+It refuses to overwrite conflicting records, a different catch-all Worker, or a
+different fallback origin. Partially successful setup is safe to rerun.
+If the read-only check reports `403` for DNS records, grant DNS Read for this
+zone. Applying the setup also needs DNS Edit and Worker Routes Edit. Do not
+interpret a successful Worker deployment as proof that its token has DNS access.
+
+Production Worker bindings:
+
+- `CLOUDFLARE_API_TOKEN`: Worker secret with this zone's custom hostname read/write,
+  DNS read and Worker route read permissions. The operator setup token additionally
+  needs DNS/Worker route write and zone read. A shell secret is **not**
+  automatically a deployed Worker secret.
+- `CLOUDFLARE_ZONE_ID`: actual zone ID printed by the check, not account ID.
+- `CUSTOM_DOMAIN_CNAME_TARGET=brands.lebrands.store`
+- `CLOUDFLARE_WORKER_NAME=lebrands-store`
+
+The operator creates fallback `store-origin.lebrands.store` (proxied AAAA `100::`)
+and customer CNAME target `brands.lebrands.store`. The root Wrangler production
+configuration now includes the `*/*` route for this zone; subsequent deployments
+must retain it. Deployment applies that shared route, so review conflicts first.
+The old `CUSTOM_DOMAINS_ROUTING_READY` flag is no longer proof of readiness:
+activation freshly reads actual fallback, DNS and Worker route configuration.
+
+### Merchant domain lifecycle
+
+In Ann, add a **subdomain**, such as `www.brand.com`. Apex/root domains are not
+supported in this CNAME-only flow. Ann provisions a Cloudflare custom hostname
+and displays public CNAME/TXT ownership/certificate records. Add those at the
+merchant's DNS provider, then Check status.
+
+Activation requires: matching owned hostname, active Cloudflare hostname and SSL,
+public CNAME pointing to the target, actual active fallback/proxied target/Worker
+route, and merchant attestation that Razorpay approves the new address when
+connected. It never treats a checkbox as automatic KYC/SSL proof.
+
+Checks are owner-triggered, not continuous DNS monitoring. Failed checks disable
+an active local binding. Remove disables only our binding, not remote DNS or the
+merchant's domain. Re-add of an owned hostname reuses its Cloudflare ID. If remote
+creation succeeded but DB commit failed, operator reconciliation is required;
+never adopt another tenant's remote hostname.
+
+## Verification boundary
+
+Automated tests use the real staged DDL and isolated PostgreSQL plus simulated
+provider HTTP responses. Browser checks use isolated sample data and mocked SDK/
+provider responses. No real charges, shipments, external DNS changes, or live
+database migrations are performed by these tests. A merchant live payment,
+refund, funded shipping booking and DNS propagation still require the connected
+provider accounts and production configuration above.
+
+## References
+
+- https://razorpay.com/docs/api/orders/
 - https://razorpay.com/docs/webhooks/validate-test/
-- https://apidocs.shiprocket.in/
-- https://developers.cloudflare.com/api/resources/custom_hostnames/methods/create/
+- https://apidocs.shiprocket.in/llms.txt
+- https://developers.cloudflare.com/cloudflare-for-platforms/cloudflare-for-saas/start/advanced-settings/worker-as-origin/

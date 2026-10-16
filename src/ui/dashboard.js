@@ -21,6 +21,7 @@ export function orderActionForm(storeId,orderId,transitions) {
   const next=transitions[0];
   return `<div class="lb-order-form" data-order-form data-order-id="${orderId}">
     <label>Next action<select data-next-order-action>${transitions.map(s=>`<option value="${s}">${esc(statusLabel(s))}</option>`).join("")}</select></label>
+    ${transitions.some(s=>["cancelled","returned","rto"].includes(s)) ? `<p class="lb-muted">Cancelling or returning a captured Razorpay order queues its full refund. Connected carrier bookings are also queued for cancellation. Provider processing is not immediate. Check Store connections for any operation that needs attention.</p>`:""}
     ${transitions.includes("shipped") ? `<div data-action-fields="shipping" ${next==="shipped" ? "" : "hidden"}><label>Courier name<input name="courier"></label><label>Tracking number<input name="tracking_number"></label><label>Tracking URL<input name="tracking_url" type="url" placeholder="https://…"></label></div>` : ""}
     ${transitions.some(s=>["cancelled","returned","rto"].includes(s)) ? `<label class="lb-check-input" data-action-fields="restock" ${["cancelled","returned","rto"].includes(next) ? "" : "hidden"}><input name="restock" type="checkbox" ${next==="cancelled" ? "checked disabled" : ""}>Restock goods (automatic on cancellation)</label>` : ""}
     <p data-shipping-error hidden role="alert"><span></span> <a href="/stores/${storeId}/settings">Open Settings</a></p></div>`;

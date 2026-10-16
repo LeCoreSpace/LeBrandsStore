@@ -203,3 +203,4 @@
   .ann-stage{height:auto}
   .ann-stage .ann-canvas{flex:0 0 65dvh;min-height:420px}
 }
+.ann-launch-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:0 10px}.ann-field select{border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 10px;font:400 14px var(--sans);width:100%}.ann-launch-diag{margin:8px 0;padding-left:18px;font-size:12px}.ann-launch-jobs{list-style:none;margin:6px 0;padding:0;display:grid;gap:8px}.ann-launch-jobs li{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;border:1px solid var(--line);padding:8px 10px;font-size:12px}.ann-launch-jobs small{color:var(--muted)}
