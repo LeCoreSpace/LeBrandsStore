@@ -42,8 +42,8 @@ export async function verifyGSTIN(tx,env,id,{gstin,state_code},{lookup=lookupGST
  try{result=await lookup(env,gstin);state=result.registration.status==="Active"&&result.registration.taxpayer_type==="Regular"?"verified":"blocked";}
  catch(error){state="unverified";errorCode=["NOT_FOUND","TIMEOUT","MALFORMED","HTTP_ERROR","RATE_LIMIT","UNAVAILABLE","CONFIGURATION","UNCONFIGURED","NETWORK_ERROR"].includes(error.code)?error.code:"PROVIDER_ERROR";}
  const[row]=await tx`INSERT INTO public.store_gstin_verifications(store_id,gstin,state,normalized,raw_response,verified_at,error_code)
- VALUES(${id},${gstin},${state},${result?JSON.stringify(result.registration):null}::jsonb,
- ${result?JSON.stringify(result.raw_response):null}::jsonb,${state==="verified"?new Date(now).toISOString():null},${errorCode}) RETURNING *`;
+ VALUES(${id},${gstin},${state},${result?JSON.stringify(result.registration):null}::text::jsonb,
+ ${result?JSON.stringify(result.raw_response):null}::text::jsonb,${state==="verified"?new Date(now).toISOString():null},${errorCode}) RETURNING *`;
  return publicResult(row,state==="unverified"?60:0);
 }
 const failureMessages={

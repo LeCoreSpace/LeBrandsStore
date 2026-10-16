@@ -27,3 +27,17 @@ repeated prepared queries. Raw-parameter PGlite adapters hid the difference.
 **How to apply:** Keep native driver JSON helpers for native objects, or use
 an explicit text boundary for pre-serialized JSON. Persistence regression tests
 must exercise driver-equivalent parameter serialization, not just SQL casts.
+
+JSON property comparisons alone are not sufficient to reject scalar JSON in
+PostgreSQL CHECK constraints: missing properties evaluate to NULL, and CHECK
+accepts NULL. Require the expected JSON type and explicit false-on-NULL checks
+when adding structured-data constraints.
+
+**Why:** Double-encoded provider evidence could pass a loose database check,
+then crash address matching and roll back an otherwise successful GST lookup.
+A failed request can therefore leave no committed successful record even when
+the provider returned a verified registration.
+
+**How to apply:** Reproduce provider persistence with the real driver serializer
+and include the complete verify, cached-read and address-confirmation path.
+Do not infer provider failure merely from the absence of a committed result.
