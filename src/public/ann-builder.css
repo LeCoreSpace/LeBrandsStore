@@ -167,6 +167,9 @@
 .ann-design-thumb img{display:block;width:100%;height:100%;object-fit:cover}
 .ann-design-thumb[aria-selected=true]{border-color:var(--ink)}
 .ann-design-thumb:focus-visible,.ann-design .ann-btn:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.ann-review-step{border:1px solid var(--line);border-radius:14px;padding:12px}
+.ann-review-step>summary{cursor:pointer;font-size:14px;font-weight:600;line-height:1.5}
+.ann-review-step[open]>summary{margin-bottom:12px}
 
 /* Inline choices under the active question; bottom is a chat composer only */
 .ann-inline{margin:-2px 0 0 38px;display:grid;gap:10px;animation:annIn .2s ease both}

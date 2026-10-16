@@ -22,6 +22,28 @@ and at least three sample products.
 in starter previews, rather than empty catalogue sections. Keep examples
 separate from actual merchant inventory and financial settings.
 
+Ann should start with sample products, including for FunStyle and stores with
+saved designs. Using the merchant's own products with the design must be an
+explicit choice, not an automatic consequence of loading a saved design.
+
+**Why:** The user requested default product imagery for FunStyle and explicit
+consent to use their own products as part of the design experience.
+
+**How to apply:** Reset the preview selection, not merchant inventory or saved
+content. Keep sample exploration separate from adopting a real-catalogue draft,
+with an explicit product-source confirmation. Never import samples as sellable
+inventory merely to reset a preview.
+
+The entire Ann conversation should feel engaging, friendly, inspirational and
+motivational without overwhelming non-technical merchants.
+
+**Why:** The user explicitly said non-technical persons will use the builder.
+
+**How to apply:** Ask one small question at a time, explain unfamiliar terms in
+everyday language, make optional work genuinely skippable, and reveal business
+and opening checks when the merchant is ready. Encourage progress without fake
+claims, pressure, excessive praise or implying that a finished chat opens a store.
+
 An explicit unsaved starter proposal should display its complete demonstration
 catalogue even when the merchant already has real products.
 

@@ -89,3 +89,10 @@ test("Ann keeps Enter-send, multiline and IME protections", () => {
   assert.match(source, /e\.key === "Enter" && !e\.shiftKey && !e\.isComposing/);
   assert.match(source, /t\.form\?\.requestSubmit\(\)/);
 });
+
+test("Ann can skip catalogue planning entirely and continue with sample products", () => {
+  const h = harness("info");
+  assert.match(h.timeline(), /data-continue>Continue with samples/);
+  assert.match(h.timeline(), /data-go="collections"/);
+  assert.match(h.composer(), /placeholder="Use the options above" disabled/);
+});

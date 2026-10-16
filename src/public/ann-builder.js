@@ -44,9 +44,11 @@ let autosavePaused = false, saveProblem = "", logMarkup = "";
 const attrState = new Map(); let attrToken = 0;
 const clearedNote = boot.sessionResponse?.cleared_fields || [];
 
-const previewModeKey = `ann-preview-mode:${storeId}`;
 let previewMode = "showcase";
-try { if (sessionStorage.getItem(previewModeKey) === "store") previewMode = "store"; } catch {}
+// Each visit begins with samples, including previously adopted designs.
+// A remembered tab preference is not consent to use the merchant's catalogue.
+let ownProductsConfirmed = false;
+let pendingCatalogueAction = null;
 let previewSource = { store: boot.store, settings: boot.settings, products: boot.products, collections: boot.collections, layouts: boot.layouts, policies: boot.policies, reviews: boot.reviews, aura_skeleton_enabled: boot.aura_skeleton_enabled, aura_starter_enabled: boot.aura_starter_enabled };
 let base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" });
 const applicationUI = attachAnnApplication({ api, root, readOnly,
@@ -69,10 +71,11 @@ designUI = attachAnnDesign({ api, root, readOnly, mount: canvas, say,
   getStyle: () => config().theme.style_preset,
   applyPlan: plan => { answers = structuredClone(plan); },
   onDraft: draft => { previewSource = draft; },
-  onActivated: () => { saved = structuredClone(answers); touched = false; autosavePaused = false; saveProblem = ""; conflict = false; setPreviewMode("store", previewSource); page = previewSource.products?.some(p => p.status !== "archived") ? "product" : "home"; draw("keep"); renderPreview(false); say(readOnly ? "Viewing the saved design. Only an owner or admin can edit it." : "Your design is saved to draft. You can edit its text and photos. Your live site is unchanged."); },
+  onActivated: ({ useOwnProducts = false } = {}) => { if (useOwnProducts) ownProductsConfirmed = true; saved = structuredClone(answers); touched = false; autosavePaused = false; saveProblem = ""; conflict = false; setPreviewMode(ownProductsConfirmed ? "store" : "showcase", previewSource); page = previewMode === "showcase" || previewSource.products?.some(p => p.status !== "archived") ? "product" : "home"; draw("keep"); renderPreview(false); say(previewMode === "showcase" ? "Welcome back. Your saved design is safe. Explore with sample products, then choose your own whenever you are ready." : "Your design is saved to draft. Make it yours with your words and photos. Your live site is unchanged."); },
   onChange: () => { schedule(); drawFoot(); },
-  openCanvas: () => { setPreviewMode("store"); page = "home"; app.dataset.view = "canvas"; syncSwitch(); renderPreview(false); setTimeout(fit, 0); },
-  backToDesign: plan => { answers = { ...answers, ...structuredClone(plan) }; setPreviewMode("store"); draw("keep"); renderPreview(false); },
+  onCatalogueConfirmed: () => { ownProductsConfirmed = true; setPreviewMode("store"); const next = pendingCatalogueAction; pendingCatalogueAction = null; next?.(); draw("keep"); renderPreview(false); say("You are now previewing your own products. Your catalogue and live site have not changed."); },
+  openCanvas: () => { requestOwnProducts(() => { page = "home"; app.dataset.view = "canvas"; syncSwitch(); renderPreview(false); setTimeout(fit, 0); }); },
+  backToDesign: plan => { requestOwnProducts(() => { answers = { ...answers, ...structuredClone(plan) }; draw("keep"); renderPreview(false); }); },
 });
 
 const designDirty = () => Boolean(designUI?.hasUnsavedChanges());
@@ -93,14 +96,25 @@ let activeBagKey = "";
 const posKey = () => JSON.stringify([previewMode, config().theme.style_preset, page, productId || "", collectionId || "", canvas.dataset.device]);
 function setPreviewMode(mode, source) {
   rememberScroll();
+  if (mode === "store" && !ownProductsConfirmed) mode = "showcase";
   const changed = previewMode !== mode || Boolean(source);
   previewMode = mode;
   if (source) previewSource = source;
-  try { sessionStorage.setItem(previewModeKey, mode); } catch {}
   base = stylePreviewData(previewSource, { showcase: mode === "showcase" });
   if (changed) {
     productId = undefined; collectionId = undefined;
   }
+}
+function requestOwnProducts(after) {
+  if (!ownProductsConfirmed) {
+    pendingCatalogueAction = after || null;
+    designUI?.requestCatalogue();
+    say("Ready to see your own products? Confirm the choice above the preview. You can stay with samples instead.");
+    return false;
+  }
+  setPreviewMode("store");
+  after?.();
+  return true;
 }
 function rememberScroll() {
   const d = frame.contentDocument;
@@ -243,38 +257,38 @@ function def(p) {
   const txt = (key, lab, q, max, ph, area) => ({ kind: "text", key, label: lab, q, max, ph, area, reply: a[key] || "" });
   const setKey = key => v => { answers[key] = v; };
   switch (k) {
-    case "category": return sel("Category", `Hello${a.store_name ? `, ${a.store_name}` : ""}. I am Ann, and we will plan this store together. The preview beside our chat changes as you answer, and nothing is published. First, what do you sell?`,
+    case "category": return sel("Category", `Hello${a.store_name ? `, ${a.store_name}` : ""}. I am Ann. Let's bring your store to life, one small choice at a time. We will start with sample products, so you do not need everything ready. Nothing goes live here. What do you sell?`,
       (ref?.categories || []).map(c => ({ v: c.category_id, t: c.name })), a.category_id, v => {
         const r = changeCategory(answers, Number(v)); answers = r.answers;
         const bits = []; if (r.cleared.subcategory) bits.push("the subcategory");
         if (r.cleared.attributes) bits.push(`${r.cleared.attributes} product detail choice${r.cleared.attributes === 1 ? "" : "s"}`);
         notice = bits.length ? `Changing category cleared ${bits.join(" and ")} because they belonged to the old category. Your product names and descriptions are kept.` : "";
       });
-    case "subcategory": return sel("Subcategory", `Which kind of ${catName(a.category_id) || "product"} do you make?`, subsFor(a.category_id).map(s => ({ v: s.subcategory_id, t: s.name })), a.subcategory_id, v => {
+    case "subcategory": return sel("Subcategory", `Nice start. Which kind of ${catName(a.category_id) || "product"} fits best?`, subsFor(a.category_id).map(s => ({ v: s.subcategory_id, t: s.name })), a.subcategory_id, v => {
       const r = changeSubcategory(answers, Number(v)); answers = r.answers;
       notice = r.cleared.attributes ? `Changing subcategory cleared ${r.cleared.attributes} product detail choice${r.cleared.attributes === 1 ? "" : "s"}. Your product names and descriptions are kept.` : "";
     });
-    case "style": return sel("Style", `Here are ${AURA_STYLES.length} looks. Each uses the same images, with copy written for that style. Pick one and the whole store on the right will switch.`,
+    case "style": return sel("Style", `Now the fun part, choosing a look. Here are ${AURA_STYLES.length} styles shown with the same sample products, so you can compare them fairly. Pick the one that feels closest to you. You can switch any time.`,
       AURA_STYLES.map(s => ({ v: s.id, t: s.name, sub: s.description, c: s.settings.accent_color })), t.style_preset, v => {
         const s = styleSettings(v); setPreviewMode("showcase");
         for (const key of ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"]) if (s[key] !== undefined) answers[key] = s[key];
       }, { stack: true });
-    case "bg": return sel("Background", "Which background suits your products best?", ANN_PALETTES.map(v => ({ v, t: PALETTE_NAMES[v] || label(v) })), t.color_preset, setKey("color_preset"));
-    case "accent": return { ...sel("Accent colour", "Choose an accent colour for buttons and highlights, or pick your own.", uniqueAccents(), t.accent_color, setKey("accent_color")), kind: "accent", reply: t.accent_color, color: t.accent_color };
-    case "button": return sel("Buttons", "How should buttons look?", ["square", "rounded", "pill"].map(v => ({ v, t: label(v) })), t.button_style, setKey("button_style"));
-    case "font": return sel("Type", "Which type feels like your brand?", ANN_FONTS.map(v => ({ v, t: FONT_NAMES[v] || label(v) })), t.font_preset, setKey("font_preset"));
+    case "bg": return sel("Background", "Which background would you like behind your products? Pick whichever feels right, you can change it later.", ANN_PALETTES.map(v => ({ v, t: PALETTE_NAMES[v] || label(v) })), t.color_preset, setKey("color_preset"));
+    case "accent": return { ...sel("Accent colour", "Next, an accent colour for buttons and highlights. Choose one you like, or pick your own.", uniqueAccents(), t.accent_color, setKey("accent_color")), kind: "accent", reply: t.accent_color, color: t.accent_color };
+    case "button": return sel("Buttons", "How would you like your buttons to look?", ["square", "rounded", "pill"].map(v => ({ v, t: label(v) })), t.button_style, setKey("button_style"));
+    case "font": return sel("Type", "Which lettering feels most like your brand?", ANN_FONTS.map(v => ({ v, t: FONT_NAMES[v] || label(v) })), t.font_preset, setKey("font_preset"));
     case "collections": { const items = (a.collections || []).map((c, i) => [c, i]);
-      return { kind: "list", list: "col", label: "Collection", q: "Now let us group your range. Name a collection, for example by occasion or by product type. You can add up to ten.", ph: "For example, Everyday linen", max: 100, items, reply: items.map(([c]) => c.name).join(", "), full: items.length >= 10 }; }
+      return { kind: "list", list: "col", label: "Collection", q: "Let's group your favourites. What would you call your first collection? Think of it as a shelf of related products. You can skip this for now.", ph: "For example, Summer favourites", max: 100, items, reply: items.map(([c]) => c.name).join(", "), full: items.length >= 10 }; }
     case "ideas": {
-      if (p.id === "ideas:none") return { kind: "info", label: "Products", q: "Product ideas live inside collections. Add a collection first, then I will ask about products for each one.", reply: "" };
+      if (p.id === "ideas:none") return { kind: "info", label: "Products", q: "Product ideas sit inside collections, so a collection comes first. Add one whenever you are ready and I will pick this up from there.", reply: "" };
       const col = (a.collections || []).find(c => c.key === p.col);
       const items = (a.product_ideas || []).map((x, i) => [x, i]).filter(([x]) => x.collection_key === p.col);
-      return { kind: "list", list: "idea", label: "Product idea", q: `What would you sell in ${col?.name || "this collection"}? Name a product idea. These are planning notes with no price or stock, up to five here.`, ph: "For example, Relaxed linen shirt", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50 };
+      return { kind: "list", list: "idea", label: "Product idea", q: `What might you sell in ${col?.name || "this collection"}? A name is enough for now. These are ideas, not products for sale. You can skip this and keep exploring with samples.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50 };
     }
-    case "store_name": return txt("store_name", "Store name", "What is your store called?", 120, "Your store name");
-    case "tagline": return txt("tagline", "Tagline", "Add a short tagline, or skip this one.", 160, "A line that sums you up");
-    case "description": return txt("description", "About your brand", "Tell me about your brand in your own words. This feeds your About page and home story.", 1200, "Who you are and what you make", true);
-    case "sections": return { kind: "sections", label: "Optional sections", q: "Last choice. Which extra sections would you like on each page? Tap to switch them on or off and watch the page change.", reply: sectionsReply() };
+    case "store_name": return txt("store_name", "Store name", "Now a little about you. What is your store called?", 120, "Type your store name");
+    case "tagline": return txt("tagline", "Tagline", "Would you like a short tagline? It is optional, so skip it if nothing comes to mind yet.", 160, "A few words about what you offer");
+    case "description": return txt("description", "About your brand", "Tell me about your brand in your own words, as if chatting to a customer. It shapes your About page and home story. Optional, and you can polish it later.", 1200, "Why you started and what you love making", true);
+    case "sections": return { kind: "sections", label: "Optional sections", q: "Last choice, and it is optional. Would you like any extra sections on your pages? Tap to switch them on or off and watch the preview change.", reply: sectionsReply() };
     default: return { kind: "review", label: "Review", q: "", reply: "" };
   }
 }
@@ -343,7 +357,7 @@ function inlineControls(p, d) {
     const btn = editing ? `<button type="button" class="ann-btn alt" data-cancel-edit>${editing.follow ? "Skip note" : "Cancel"}</button>` : d.kind === "list" ? `<button type="button" class="ann-btn alt" data-continue>${d.items.length ? "Continue" : "Skip for now"}</button>` : `<button type="button" class="ann-btn alt" data-continue>${d.reply ? "Keep and continue" : "Skip"}</button>`;
     body = `<div class="ann-comp-row">${btn}${editing ? "" : tail}${p.step === "products" && !answers.subcategory_id ? `<button type="button" class="ann-link" data-go="category">Choose a subcategory for product questions</button>` : ""}</div>`;
   } else if (d.kind === "info") {
-    body = `<div class="ann-comp-row"><button type="button" class="ann-btn" data-go="collections">Add a collection</button></div>`;
+    body = `<div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>Continue with samples</button><button type="button" class="ann-btn alt" data-go="collections">Add a collection</button></div>`;
   } else return "";
   return `<div class="ann-inline" role="group" aria-label="${esc(name)} options">${body}</div>`;
 }
@@ -392,7 +406,7 @@ function drawComposer(force) {
 function drawSteps() {
   const answered = annAnsweredStages(answers, ref || {});
   const doneN = answered.size, total = UI_STEPS.filter(([k]) => k !== "review").length;
-  const state = isDirty() ? "Unsaved changes" : designUI?.active() ? "Design saved to draft" : session ? `Saved, revision ${revision}` : "Nothing saved yet";
+  const state = isDirty() ? "Unsaved changes" : designUI?.active() ? "Design saved to draft" : session ? "Plan saved" : "Nothing saved yet";
   $("#ann-steps").innerHTML = `<div class="ann-rail">${UI_STEPS.map(([k, n], i) => { const st = k === step ? "current" : answered.has(k) ? "done" : "todo";
     return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === step ? "step" : "false"}"><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
     <div class="ann-meter" role="progressbar" aria-label="Planning progress" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${doneN}"><i style="transform:scaleX(${doneN / total})"></i></div>
@@ -549,11 +563,12 @@ function reviewStep() {
     ["style", "Style", styleName(t.style_preset)], ["palette", "Colour", `${PALETTE_NAMES[t.color_preset] || t.color_preset}, accent ${t.accent_color}, ${t.button_style} buttons`],
     ["fonts", "Type", FONT_NAMES[t.font_preset] || t.font_preset], ["collections", "Collections", (a.collections || []).map(c => c.name).join(", ") || "None planned"],
     ["products", "Product ideas", `${(a.product_ideas || []).length} planned`], ["story", "Story", a.store_name || "Not set"]];
-  return bubble(`<p>${session || !dirty ? "Here is your plan." : "Here is your plan. Save it so you can come back to it."} Preview choices alone do not change the store. Use the confirmed draft and setup actions below to save changes. Publishing is always separate.</p>`) +
+  return bubble(`<p>Your store is taking shape. ${session || !dirty ? "Here is your plan so far." : "Save your plan so you can pick up where you left off."} Keep exploring with samples, or make it yours when you are ready. Nothing is live yet.</p>`) +
     bubble(`<dl class="ann-summary">${rows.map(([k, n, v]) => `<div><dt>${n}</dt><dd>${esc(v)}</dd><button type="button" class="ann-link" data-go="${k}">Change</button></div>`).join("")}</dl>
-      <p class="ann-note">${dirty ? "You have unsaved changes." : designUI?.active() ? "Design saved to draft." : session ? `Saved, revision ${revision}.` : "Not saved yet."}</p>`, "ann-card") +
-    bubble(`<h2>Make the store yours</h2><p>Apply your confirmed page and catalogue choices, then complete the business, shipping and policy checks below. Store address confirmation, verified supplier selection and final publishing stay in the existing setup and editor.</p>`, "ann-card") +
-    `<section class="ann-card" id="ann-application-slot"></section><section class="ann-card" id="ann-readiness-slot"></section>`;
+      <p class="ann-note">${dirty ? "You have unsaved changes." : designUI?.active() ? "Design saved to draft." : session ? "Your plan is saved." : "Not saved yet."}</p>`, "ann-card") +
+    bubble(`<h2>Your next step, at your pace</h2><p>There is no need to finish everything now. Open either step below when you are ready. Your products, business details and the checks for opening your store stay separate, so you can review each before saving.</p>`, "ann-card") +
+    `<details class="ann-review-step"><summary>Make it yours: business details and products</summary><section class="ann-card" id="ann-application-slot"></section></details>
+    <details class="ann-review-step"><summary>When you are ready: getting your store ready to open</summary><section class="ann-card" id="ann-readiness-slot"></section></details>`;
 }
 
 
@@ -563,7 +578,7 @@ document.addEventListener("click", e => {
   const d = t.dataset;
   if (d.go) return go(d.go);
   if (d.viewSwitch) { app.dataset.view = d.viewSwitch; syncSwitch(); if (d.viewSwitch === "canvas") setTimeout(fit, 0); return; }
-  if (["showcase", "store"].includes(d.previewMode)) { setPreviewMode(d.previewMode); return renderPreview(false); }
+  if (["showcase", "store"].includes(d.previewMode)) { if (d.previewMode === "store" && !requestOwnProducts()) return; setPreviewMode(d.previewMode); return renderPreview(false); }
   if (d.device) { rememberScroll(); canvas.dataset.device = d.device; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b === t))); renderPreview(false); fit(); return; }
   if (d.page) { page = d.page; collectionId = undefined; policyKind = undefined; return renderPreview(); }
   if (d.viewPage) { page = d.viewPage; return renderPreview(); }
@@ -699,7 +714,7 @@ async function doSave(nextStep, forceRevision) {
     const cleared = body.cleared_fields || [];
     notice = cleared.length ? "Some choices no longer matched and were cleared: " + cleared.map(c => c === "subcategory_id" ? "subcategory" : "product details").join(", ") + "." : "";
     conflict = false; autosavePaused = false; saveProblem = ""; touched = Object.keys(dirtyPatch()).length > 0;
-    lastSavedAt = `Saved, revision ${revision}.`; say("Plan saved. Your live store is unchanged.");
+    lastSavedAt = "Your plan is saved."; say("Plan saved. You can come back whenever you are ready. Your live store is unchanged.");
     return true;
   } catch (e) { saveProblem = e.message || "Your plan could not be saved. Check your connection and try again."; autosavePaused = true; say(saveProblem); return false; }
   finally { saving = false; draw(); renderPreview(false); }

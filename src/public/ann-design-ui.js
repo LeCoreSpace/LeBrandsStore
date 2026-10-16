@@ -29,6 +29,7 @@ export function attachAnnDesign(o) {
   let design = null, model = null, baseline = "", planDirty = false;
   let busy = "", error = "", conflict = false, ack = false, editMode = true, selected = null, uploadAlt = "", uploadNote = "";
   let lastKey = "";
+  let catalogueAck = false, cataloguePrompt = false;
 
   const active = () => Boolean(model);
   const mediaIds = m => Object.fromEntries(DESIGN_MEDIA_KEYS.map(k => [k, m?.[k]?.media_id || null]));
@@ -71,7 +72,7 @@ export function attachAnnDesign(o) {
 
   /** Create the selected showcase as the draft design. Explicit acknowledgement required. */
   async function use() {
-    if (readOnly || busy || !ack || !loaded) return;
+    if (readOnly || busy || !ack || !catalogueAck || !loaded) return;
     busy = "use"; error = ""; conflict = false; paint(); say("Creating your design in the draft");
     try {
       const { res, body } = await call("POST", { expected_draft: expected, confirm: true, answers: structuredClone(o.getAnswers()) });
@@ -79,7 +80,7 @@ export function attachAnnDesign(o) {
       if (!res.ok) throw new Error(body.error || "The design could not be created. Nothing was changed.");
       ingest(body, { hydrate: true }); ack = false; selected = null;
       say("Design created in your draft. Your live site is unchanged.");
-      o.onActivated?.({ restored: false });
+      o.onActivated?.({ restored: false, useOwnProducts: true });
     } catch (e) { error = e.message; say(error); }
     finally { busy = ""; paint(); o.onChange?.(); }
   }
@@ -209,17 +210,27 @@ export function attachAnnDesign(o) {
     if (loadError) return `<div class="ann-design-card"><p class="ann-callout" role="alert">${esc(loadError)}</p><button type="button" class="ann-btn alt sm" data-design-act="retry">Try again</button></div>`;
     const browsing = mode() === "showcase" || !sameStyle();
     const a = o.getAnswers();
-    const use = browsing || !active() ? `<div class="ann-design-card">
+    const catalogueChoice = cataloguePrompt ? `<div class="ann-design-card" role="group" aria-label="Choose products for your preview">
+      <p class="ann-design-title">Ready to see your own products?</p>
+      <p class="ann-note">Samples help you explore the look first. Your own products use the names, photos and prices already in your catalogue. Switching this preview does not change them or publish anything.</p>
+      <label class="ann-check"><input type="checkbox" data-design-catalogue-ack ${catalogueAck ? "checked" : ""}> Use my own products in this design preview.</label>
+      <div class="ann-actions"><button type="button" class="ann-btn" data-design-act="catalogue" ${!catalogueAck ? "disabled" : ""}>Preview my products</button><button type="button" class="ann-btn alt" data-design-act="samples">Keep exploring with samples</button></div></div>` : "";
+    const use = active() && sameStyle() ? `<div class="ann-design-card">
+      <p class="ann-design-title">Your saved ${esc(styleName(model.style))} design</p>
+      <p class="ann-note">Explore with sample products here. Your saved words, photos and real products are safe. Ready to personalise it?</p>
+      <div class="ann-actions"><button type="button" class="ann-btn alt" data-design-act="mine">Edit my saved design</button></div></div>` : browsing || !active() ? `<div class="ann-design-card">
       <p class="ann-design-title">${active() ? `Switch to the ${esc(styleName(browsingStyle()))} design` : `Use the ${esc(styleName(browsingStyle()))} design`}</p>
       <p class="ann-note">${active() ? "This builds the selected style as your draft design and keeps the words and photos only if you choose them again." : "Start your store with this exact look. You can then change its words and photos right on the page."}</p>
       <label class="ann-check"><input type="checkbox" data-design-ack ${ack ? "checked" : ""} ${readOnly ? "disabled" : ""}> I understand this replaces my existing draft design. My live site is not changed.</label>
-      <div class="ann-actions"><button type="button" class="ann-btn" data-design-act="use" ${readOnly || !ack || busy ? "disabled" : ""}>${busy === "use" ? "Creating" : "Use this design"}</button>
+      <label class="ann-check"><input type="checkbox" data-design-catalogue-ack ${catalogueAck ? "checked" : ""} ${readOnly ? "disabled" : ""}> Use my own catalogue products in the saved design. Sample products are for preview only.</label>
+      <div class="ann-actions"><button type="button" class="ann-btn" data-design-act="use" ${readOnly || !ack || !catalogueAck || busy ? "disabled" : ""}>${busy === "use" ? "Creating" : "Use this design"}</button>
       ${active() && !sameStyle() ? `<button type="button" class="ann-btn alt" data-design-act="back">Back to my design</button>` : ""}
       ${active() && sameStyle() ? `<button type="button" class="ann-btn alt" data-design-act="mine">View my design</button>` : ""}</div>
       ${readOnly ? `<p class="ann-note">Only an owner or admin can create a design.</p>` : ""}</div>` : "";
     const err = error ? `<div class="ann-callout" role="alert"><p>${esc(error)}</p>${conflict ? `<button type="button" class="ann-btn alt sm" data-design-act="reload">Reload the latest draft</button>` : ""}</div>` : "";
-    if (browsing || !active()) return use + err;
-    return `<div class="ann-design-card">
+    if (cataloguePrompt) return catalogueChoice + err;
+    if (browsing || !active()) return catalogueChoice + use + err;
+    return catalogueChoice + `<div class="ann-design-card">
       <div class="ann-design-head"><div><p class="ann-design-title">Your design: ${esc(styleName(model.style))}</p><p class="ann-note" data-design-state></p></div>
       <div class="ann-actions">
         <button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>Edit on page</button>
@@ -270,6 +281,8 @@ export function attachAnnDesign(o) {
     const t = e.target.closest("[data-design-act],[data-design-pick]"); if (!t) return;
     if (t.dataset.designPick) { const m = images.find(i => i.id === t.dataset.designPick); if (m && selected) setMedia(selected.key, m); return; }
     const act = t.dataset.designAct;
+    if (act === "catalogue") { if (!catalogueAck) return; cataloguePrompt = false; o.onCatalogueConfirmed?.(); paint(true); return; }
+    if (act === "samples") { cataloguePrompt = false; catalogueAck = false; paint(true); return; }
     if (act === "retry") return void load();
     if (act === "use") return void use();
     if (act === "save") return void save();
@@ -290,6 +303,7 @@ export function attachAnnDesign(o) {
   el.addEventListener("change", e => {
     const t = e.target;
     if (t.dataset?.designAck !== undefined) { ack = t.checked; paint(true); }
+    else if (t.dataset?.designCatalogueAck !== undefined) { catalogueAck = t.checked; paint(true); }
     else if (t.dataset?.designFile !== undefined) { const f = t.files?.[0]; t.value = ""; if (f) upload(f); }
   });
 
@@ -298,6 +312,7 @@ export function attachAnnDesign(o) {
 
   return {
     active, editing, hasUnsavedChanges: () => dirty() || busy === "save" || busy === "use",
+    requestCatalogue() { cataloguePrompt = true; catalogueAck = false; paint(true); el.scrollIntoView({ block: "nearest", behavior: "smooth" }); },
     save, publish, bindPreview, refresh: () => paint(), reload,
     /** Called by Ann when the plan answers change while a design is active. */
     planChanged() { if (active()) { planDirty = true; paintDynamic(); } },
