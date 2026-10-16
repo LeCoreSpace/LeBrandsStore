@@ -24,6 +24,7 @@
 - [COD, returns and native components](cod-returns-native-components.md) — every-plan COD/RTO centre and built-in Aura commerce components; loyalty points later.
 - [AI store builder limits](ai-store-builder-limits.md) — one completed draft build per store, bounded approval-stage image regeneration and recorded costs.
 - [Aura starter content](aura-starter-content.md) — prefilled library, Ann design adoption and editing; preserve demo/real catalogue and publication boundaries.
+- [Ann-only onboarding](ann-onboarding-direction.md) — replace the builder chooser; verify business first, guide catalogue setup and preserve the exact saved design in the editor.
 - [AI copy boundary](ai-copy-boundary.md) — constrain model output to copy fields; never relax server-owned controls to fix repeated generation failures.
 - [Email queue recovery](email-queue-recovery.md) — private jobs must be recoverable after queue failure without exposing links or recipients.
 - [Database revision precision](database-revision-precision.md) — preserve timestamp microseconds across JavaScript optimistic-concurrency boundaries.
