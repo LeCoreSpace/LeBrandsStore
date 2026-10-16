@@ -34,3 +34,12 @@ recolour.
 
 **How to apply:** Never apply operational branding tokens to storefront presets,
 storefront CSS, or brand-selected preview colours.
+
+The theme editor's left panel should be a professional, distinct LeBrands
+workspace. Use Shopify only as a usability reference, not an exact visual copy.
+
+**Why:** The user explicitly requested a complete left-panel makeover and said
+"dont copy the exact shopify style."
+
+**How to apply:** Keep the editing tools organised and concise, while preserving
+the exact merchant design and existing on-canvas editing interactions.

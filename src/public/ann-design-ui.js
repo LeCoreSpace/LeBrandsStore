@@ -336,8 +336,8 @@ export function attachAnnDesign(o) {
         ${o.themeEditor?"":'<button type="button" class="ann-btn alt sm" data-design-act="theme">Open theme editor</button>'}
         <button type="button" class="ann-btn alt sm" data-design-act="save" data-design-save>Save draft</button>
         <button type="button" class="ann-btn sm" data-design-act="publish" data-design-publish>Review and publish</button></div></div>
-      ${readOnly ? `<p class="ann-note">You can look around. Only an owner or admin can edit this design.</p>` : editMode ? (selected ? (o.contextual ? ctxPanel() : panel()) : `<p class="ann-note">Select any text or photo on the page to change it. Changes show instantly and are saved when you choose Save draft.</p>`) : ""}
-      <p class="ann-note">${model.catalogue_mode==="sample"?"This draft preview uses sample products and illustrative prices. Add your real products and explicitly choose them before publishing.":"Product names, prices and photos come from your catalogue."} <a href="${root}/products">Edit products</a></p></div>${err}`;
+      ${readOnly ? `<p class="ann-note">You can look around. Only an owner or admin can edit this design.</p>` : editMode ? (selected ? (o.contextual ? ctxPanel() : panel()) : `<p class="ann-note${o.themeEditor?" ae-design-hint":""}">${o.themeEditor?"Click any text or photo on the page to edit it.":"Select any text or photo on the page to change it. Changes show instantly and are saved when you choose Save draft."}</p>`) : ""}
+      <p class="ann-note">${model.catalogue_mode==="sample"?(o.themeEditor?"Sample products shown. Choose your own before publishing.":"This draft preview uses sample products and illustrative prices. Add your real products and explicitly choose them before publishing."):"Products come from your catalogue."} <a href="${root}/products">Edit products</a></p></div>${err}`;
   }
   function ctxPanel() {
     const s = selected, sid = sectionOfSelected(), st = sid ? o.sectionState?.(sid) : null;

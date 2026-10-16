@@ -40,7 +40,12 @@ test("editor restores a saved Ann plan without writes, then preserves the adopte
     assert.equal(pending.settings.ann_design.catalogue_mode, "sample");
     const shell = renderEditor({ ...pending, role: "owner" }, user);
     assert.match(shell, /\/assets\/ann-theme-editor\.js/);
-    assert.match(shell, /Your saved Ann plan is previewed here/);
+    assert.match(shell, /Your saved Ann plan is shown here/);
+    for(const name of ["sections","content","style"]){
+      assert.match(shell,new RegExp(`role="tab" id="ae-tab-${name}" data-ae-tab="${name}"`));
+    }
+    assert.match(shell,/data-tab="sections"/,"Section navigation is the default workspace");
+    assert.ok(shell.indexOf('id="ae-tools"')<shell.indexOf('class="ae-pages"'),"Page navigation stays inside the sidebar");
     assert.match(shell, /id="ae-save" disabled>Save draft/);
     assert.match(shell, /id="ae-publish" disabled>Review and publish/);
     assert.match(shell,/id="ae-undo"[^>]*disabled>Undo/);
