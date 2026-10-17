@@ -1,14 +1,19 @@
 /**
- * Collapsible design workspace for Ann. It drives the SAME attachAnnDesign
- * controller used by the standalone theme editor, so there is one draft.
- * Pure helpers (sectionMeta, nextSections) are exported for unit tests.
+ * Shared design workspace for Ann. Both the Ann builder drawer and the standalone
+ * theme editor sidebar render THIS component (tabs: Sections, Content, Style, Menus)
+ * and drive the same attachAnnDesign controller, so there is one draft.
+ * Pure helpers (sectionMeta, nextSections, applyMenuAction) are exported for tests.
  */
 import { designSections } from "./ann-section-layout.js";
 import { ANN_EXTRA_SECTIONS, ANN_SECTION_LABELS, ANN_PALETTES, ANN_FONTS } from "./ann-config.js";
 import { DESIGN_COPY_LIMITS, DESIGN_MEDIA_KEYS } from "./ann-design-model.js";
+import { MAX_MENU_ITEMS, MAX_MENU_CHILDREN, defaultDesignMenus } from "./ann-menu-model.js";
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const FIELD_LABELS = { kicker: "Intro line", title: "Main headline", description: "Introduction", button: "Main button text", statement: "Brand statement", products: "Products heading", collections: "Collections heading", about: "About page heading", story0: "Story paragraph 1", story1: "Story paragraph 2", story2: "Story paragraph 3", footer: "Footer text", hero: "Main photo", lifestyle: "Lifestyle photo", collection0: "First collection photo", collection1: "Second collection photo" };
+export const WORKSPACE_TABS = [["sections", "Sections"], ["content", "Content"], ["style", "Style"], ["menus", "Menus"]];
+export const MAX_MENU_LINKS = 60;
+const PAGE_LABEL = p => p[0].toUpperCase() + p.slice(1);
 
 /** Section metadata for one page: Map id -> {label, required, hidden, index, count}. */
 export function sectionMeta(baseHtml, sectionsCfg = {}, page = "home") {
@@ -36,44 +41,190 @@ export function nextSections(baseHtml, sectionsCfg, page, id, act) {
   return all;
 }
 
+const linkCount = list => (list || []).reduce((n, l) => n + 1 + (l.children?.length || 0), 0);
+export const menuLinkTotal = menus => linkCount(menus?.header) + linkCount(menus?.footer);
+/**
+ * Pure menu edit. act: add | addchild | up | down | remove, on menus[which] at index i
+ * (and child index j). Returns a new menus value, or null when the action is not allowed.
+ */
+export function applyMenuAction(menus, which, act, i, j) {
+  if (!["header", "footer"].includes(which)) return null;
+  const next = structuredClone(menus || { header: [], footer: [] });
+  const list = next[which] ||= [];
+  const hasJ = j !== undefined && j !== null && j !== "";
+  if (menuLinkTotal(next) >= MAX_MENU_LINKS && (act === "add" || act === "addchild")) return null;
+  if (act === "add") { if (list.length >= MAX_MENU_ITEMS) return null; list.push({ label: "New link", url: "/" }); return next; }
+  const parent = list[i]; if (!parent) return null;
+  if (act === "addchild") { const kids = parent.children ||= []; if (kids.length >= MAX_MENU_CHILDREN) return null; kids.push({ label: "New link", url: "/" }); return next; }
+  const arr = hasJ ? parent.children : list, k = hasJ ? Number(j) : Number(i);
+  if (!arr || !arr[k]) return null;
+  if (act === "remove") { arr.splice(k, 1); if (hasJ && !arr.length) delete parent.children; return next; }
+  const t = k + (act === "up" ? -1 : 1);
+  if (act === "up" || act === "down") { if (t < 0 || t >= arr.length) return null; [arr[k], arr[t]] = [arr[t], arr[k]]; return next; }
+  return null;
+}
+/** Set label or url on one menu link (pure). */
+export function setMenuField(menus, which, i, j, field, value) {
+  const next = structuredClone(menus || { header: [], footer: [] });
+  const hasJ = j !== undefined && j !== null && j !== "";
+  const item = hasJ ? next[which]?.[i]?.children?.[j] : next[which]?.[i];
+  if (!item || !["label", "url"].includes(field)) return next;
+  item[field] = value; return next;
+}
+/** Existing destinations offered by the link picker. */
+export function menuDestinations(data = {}) {
+  const pick = (list, fn) => (list || []).filter(x => x && x.status !== "archived").map(fn).filter(Boolean);
+  const groups = [
+    ["Pages", [["Home", "/"], ["Cart", "/cart"], ["About", "/pages/about"], ["Contact", "/pages/contact"]]],
+    ["Collections", pick(data.collections, c => { const k = c.slug || c.id; return k ? [c.name || c.title || String(k), `/collections/${encodeURIComponent(k)}`] : null; })],
+    ["Products", pick(data.products, p => p.id ? [p.name || p.title || String(p.id), `/products/${encodeURIComponent(p.id)}`] : null)],
+    ["Policies", pick(data.policies, p => { const k = p.kind || p.type || p.slug; return k ? [p.title || PAGE_LABEL(String(k).replace(/[-_]/g, " ")), `/policies/${encodeURIComponent(k)}`] : null; })],
+  ];
+  return groups.filter(g => g[1].length);
+}
+
+const ICON = path => `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;
+const I_UP = ICON("M7 11V3M3.5 6.5 7 3l3.5 3.5"), I_DOWN = ICON("M7 3v8M3.5 7.5 7 11l3.5-3.5"), I_DEL = ICON("M4 4l6 6M10 4l-6 6"), I_ADD = ICON("M3 7h8M7 3v8");
+const focusKey = el => el?.dataset ? el.tagName + "|" + Object.entries(el.dataset).map(([k, v]) => `${k}=${v}`).join("|") : "";
+
+/**
+ * options: mount, variant ("drawer" | "sidebar"), readOnly, controller(), canEdit(), getPage(), setPage(p), pages,
+ * getPlan(), setPlan(k,v), setExtra(type,on), sectionInfo(), onSectionAction(id,act), getData(), onOwn(), getNote(),
+ * onToggle(open). The sidebar variant is always open and exposes slot() for the design card.
+ */
 export function attachAnnWorkspace(o) {
-  const { mount, readOnly } = o;
-  let tab = "sections", open = false;
-  mount.hidden = true;
-  const tabs = [["sections", "Sections"], ["content", "Content"], ["style", "Style"]];
-  function body() {
-    const c = o.controller(), ready = Boolean(c?.active() && o.canEdit());
-    if (!ready) return `<p class="ann-note">Adopt your style at the Style step to edit your store here. Showcase styles are never edited.</p>`;
-    const page = o.getPage(), plan = o.getPlan();
-    if (tab === "content") return `<div class="ann-ws-list"><h3>Text</h3>${Object.keys(DESIGN_COPY_LIMITS).map(k => `<button type="button" data-ws-edit="copy" data-key="${k}"${readOnly ? " disabled" : ""}>${esc(FIELD_LABELS[k] || k)}</button>`).join("")}<h3>Photos</h3>${DESIGN_MEDIA_KEYS.map(k => `<button type="button" data-ws-edit="image" data-key="${k}"${readOnly ? " disabled" : ""}>${esc(FIELD_LABELS[k] || k)}</button>`).join("")}</div>`;
-    if (tab === "style") return `<div class="ann-ws-list"><label class="ann-field">Background<select data-ws-plan="color_preset"${readOnly ? " disabled" : ""}>${ANN_PALETTES.map(v => `<option${plan.color_preset === v ? " selected" : ""}>${esc(v)}</option>`).join("")}</select></label><label class="ann-field">Font style<select data-ws-plan="font_preset"${readOnly ? " disabled" : ""}>${ANN_FONTS.map(v => `<option${plan.font_preset === v ? " selected" : ""}>${esc(v)}</option>`).join("")}</select></label><label class="ann-field">Button and highlight colour<input type="color" data-ws-plan="accent_color" value="${esc(plan.accent_color || "#661329")}"${readOnly ? " disabled" : ""}></label></div>`;
-    const { meta } = o.sectionInfo(), extras = ANN_EXTRA_SECTIONS[page] || [];
-    return `<div class="ann-ws-list"><h3>${esc(page)} page</h3>${[...meta].map(([id, x]) => { const lock = readOnly || x.required, n = esc(x.label); return `<div class="ann-ws-sec${x.hidden ? " off" : ""}"><button type="button" data-ws-edit="section" data-key="${esc(id)}"${readOnly ? " disabled" : ""}>${n}${x.hidden ? " (removed)" : x.required ? " (protected)" : ""}</button><span><button type="button" data-ws-sec="${esc(id)}" data-act="up" aria-label="Move ${n} up"${lock || x.index <= 0 ? " disabled" : ""}>Up</button><button type="button" data-ws-sec="${esc(id)}" data-act="down" aria-label="Move ${n} down"${lock || x.index >= x.count - 1 ? " disabled" : ""}>Down</button><button type="button" data-ws-sec="${esc(id)}" data-act="toggle"${lock ? " disabled" : ""}>${x.hidden ? "Restore" : "Remove"}</button></span></div>`; }).join("") || '<p class="ann-note">This page has a fixed shopping layout.</p>'}${extras.length ? `<fieldset class="ann-ws-opt"><legend>Optional sections</legend>${extras.map(t => `<label class="ann-check"><input type="checkbox" data-ws-extra="${t}"${plan.section_options?.[page]?.includes(t) ? " checked" : ""}${readOnly ? " disabled" : ""}> ${esc(ANN_SECTION_LABELS[t] || t)}</label>`).join("")}</fieldset>` : ""}</div>`;
+  const { mount, readOnly } = o, sidebar = o.variant === "sidebar";
+  const pages = o.pages || ["home", "collection", "product", "cart", "checkout", "about", "contact"];
+  let tab = "sections", open = sidebar, draftMenus = null, draftBase = "", menuError = "", menuNote = "",seenMenuRevision=null;
+  mount.classList.add("aw", sidebar ? "aw-sidebar" : "aw-drawer");
+  mount.dataset.tab = tab;
+  mount.hidden = !open;
+  mount.innerHTML = `${sidebar ? "" : `<div class="aw-head"><strong>Design workspace</strong><button type="button" class="aw-close" data-ws-close>Close</button></div>`}
+<div class="aw-side-head"><p class="aw-kicker">Design workspace</p><p class="aw-lede" data-ws-note></p></div>
+<div class="aw-pages"><label class="aw-label">Editing page<select data-ws-page>${pages.map(p => `<option value="${p}">${esc(PAGE_LABEL(p))}</option>`).join("")}</select></label>${o.onOwn ? `<button type="button" class="aw-own" data-ws-own>Use my own products</button>` : ""}</div>
+<div class="aw-slot" data-ws-slot></div>
+<div class="aw-tablist" role="tablist" aria-label="Design panels">${WORKSPACE_TABS.map(([k, t]) => `<button type="button" role="tab" id="aw-tab-${k}" data-ws-tab="${k}" aria-controls="aw-panel" aria-selected="${k === tab}" tabindex="${k === tab ? 0 : -1}">${t}</button>`).join("")}</div>
+<div class="aw-panel" id="aw-panel" role="tabpanel" aria-labelledby="aw-tab-sections" data-ws-panel></div>`;
+  const q = s => mount.querySelector(s), panel = q("[data-ws-panel]");
+  const ready = () => { const c = o.controller(); return Boolean(c?.active() && o.canEdit()); };
+  const off = () => readOnly ? " disabled" : "";
+
+  function modelMenus() {
+    let m = null; try { m = o.controller()?.getMenus?.(); } catch { m = null; }
+    return m && typeof m === "object" ? m : defaultDesignMenus();
   }
-  function paint() {
-    mount.hidden = !open;
-    if (!open) return;
-    mount.innerHTML = `<div class="ann-ws-head"><strong>Design workspace</strong><button type="button" class="ann-btn alt sm" data-ws-close>Close</button></div><div class="ann-ws-tabs" role="tablist">${tabs.map(([k, t]) => `<button type="button" role="tab" aria-selected="${k === tab}" data-ws-tab="${k}">${t}</button>`).join("")}</div>${body()}`;
+  function currentMenus() {
+    const revision=o.controller()?.getMenuRevision?.()??null;
+    if(revision!==seenMenuRevision){draftMenus=null;menuError="";menuNote="";seenMenuRevision=revision;}
+    // A local invalid draft survives ordinary refreshes; undo or load changing the model discards it.
+    if (draftMenus && JSON.stringify(modelMenus()) !== draftBase) { draftMenus = null; menuError = ""; o.controller()?.setMenuDraftError?.(""); }
+    return draftMenus || modelMenus();
   }
-  mount.addEventListener("click", e => {
-    const b = e.target.closest("button"); if (!b || b.disabled) return;
+  function tryMenus(next, opts) {
     const c = o.controller();
-    if (b.dataset.wsTab) { tab = b.dataset.wsTab; paint(); }
-    else if ("wsClose" in b.dataset) api.close();
-    else if (b.dataset.wsEdit) c?.selectContent(b.dataset.wsEdit, b.dataset.key);
-    else if (b.dataset.wsSec && !readOnly) o.onSectionAction(b.dataset.wsSec, b.dataset.act);
+    try {
+      const r = opts ? c.setMenus(next, opts) : c.setMenus(next);
+      if (r && r.ok === false) throw new Error(r.error || r.errors?.[0]?.message || r.errors?.[0] || "These links could not be saved.");
+      draftMenus = null; menuError = ""; return true;
+    } catch (e) {
+      draftBase = JSON.stringify(modelMenus()); draftMenus = next; menuError = String(e?.message || e || "These links could not be used.");
+      try { c.setMenuDraftError?.(menuError); } catch { /* gate is optional */ }
+      return false;
+    }
+  }
+  function commitMenus(next) {
+    menuNote = tryMenus(next) ? "Menu updated. Save draft to keep it." : "";
+    paintPanel();
+  }
+
+  function sectionsPanel() {
+    const page = o.getPage(), plan = o.getPlan(), { meta } = o.sectionInfo(), extras = ANN_EXTRA_SECTIONS[page] || [];
+    const rows = [...meta].map(([id, x]) => { const lock = readOnly || x.required, n = esc(x.label), k = esc(id);
+      return `<div class="aw-sec${x.hidden ? " is-off" : ""}"><button type="button" class="aw-sec-name" data-ws-edit="section" data-key="${k}"${off()}>${n}${x.hidden ? "<small>Removed</small>" : x.required ? "<small>Protected</small>" : ""}</button><span class="aw-acts"><button type="button" data-ws-sec="${k}" data-act="up" title="Move up" aria-label="Move ${n} up"${lock || x.index <= 0 ? " disabled" : ""}>${I_UP}</button><button type="button" data-ws-sec="${k}" data-act="down" title="Move down" aria-label="Move ${n} down"${lock || x.index >= x.count - 1 ? " disabled" : ""}>${I_DOWN}</button><button type="button" data-ws-sec="${k}" data-act="toggle" title="${x.hidden ? "Restore section" : "Remove section"}" aria-label="${x.hidden ? "Restore" : "Remove"} ${n}"${lock ? " disabled" : ""}>${x.hidden ? I_ADD : I_DEL}</button></span></div>`; }).join("");
+    return `<div class="aw-ph"><h3>${esc(PAGE_LABEL(page))} page</h3><span>${meta.size} sections</span></div>${rows ? `<div class="aw-list">${rows}</div>` : '<p class="aw-muted">This page has a fixed shopping layout.</p>'}${extras.length ? `<fieldset class="aw-opt"><legend>Optional sections</legend>${extras.map(t => `<label><input type="checkbox" data-ws-extra="${esc(t)}"${plan.section_options?.[page]?.includes(t) ? " checked" : ""}${off()}> ${esc(ANN_SECTION_LABELS[t] || t)}</label>`).join("")}</fieldset>` : ""}`;
+  }
+  const contentPanel = () => `<div class="aw-gh">Text</div><div class="aw-list">${Object.keys(DESIGN_COPY_LIMITS).map(k => `<button type="button" class="aw-row" data-ws-edit="copy" data-key="${k}"${off()}>${esc(FIELD_LABELS[k] || k)}</button>`).join("")}</div><div class="aw-gh">Photos</div><div class="aw-list">${DESIGN_MEDIA_KEYS.map(k => `<button type="button" class="aw-row" data-ws-edit="image" data-key="${k}"${off()}>${esc(FIELD_LABELS[k] || k)}</button>`).join("")}</div>`;
+  const stylePanel = () => { const plan = o.getPlan(); return `<div class="aw-ph"><h3>Colours and fonts</h3></div><label class="aw-field">Background<select data-ws-plan="color_preset"${off()}>${ANN_PALETTES.map(v => `<option${plan.color_preset === v ? " selected" : ""}>${esc(v)}</option>`).join("")}</select></label><label class="aw-field">Font style<select data-ws-plan="font_preset"${off()}>${ANN_FONTS.map(v => `<option${plan.font_preset === v ? " selected" : ""}>${esc(v)}</option>`).join("")}</select></label><label class="aw-field">Button and highlight colour<input type="color" data-ws-plan="accent_color" value="${esc(plan.accent_color || "#661329")}"${off()}></label>`; };
+
+  function menuRow(which, item, i, j, count, dests) {
+    const child = j !== "", a = `data-m="${which}" data-i="${i}" data-j="${j}"`, n = esc(item.label || "link"), pos = child ? `${i + 1}.${Number(j) + 1}` : String(i + 1);
+    const known = dests.some(g => g[1].some(d => d[1] === item.url));
+    const btn = (act, label, icon, dis) => `<button type="button" ${a} data-m-act="${act}" title="${label}" aria-label="${label} ${n}"${readOnly || dis ? " disabled" : ""}>${icon}</button>`;
+    return `<li class="aw-link${child ? " is-child" : ""}"><div class="aw-link-top"><span class="aw-link-n">${pos}</span><input type="text" ${a} data-f="label" value="${esc(item.label)}" maxlength="60" aria-label="Link text ${pos}" placeholder="Link text"${off()}><span class="aw-acts">${btn("up", "Move up", I_UP, Number(child ? j : i) <= 0)}${btn("down", "Move down", I_DOWN, Number(child ? j : i) >= count - 1)}${btn("remove", "Remove", I_DEL, false)}</span></div>
+<div class="aw-link-url"><select ${a} data-f="pick" aria-label="Choose destination for ${n}"${off()}><option value="__custom"${known ? "" : " selected"}>Custom address</option>${dests.map(([g, list]) => `<optgroup label="${g}">${list.map(([t, u]) => `<option value="${esc(u)}"${u === item.url ? " selected" : ""}>${esc(t)}</option>`).join("")}</optgroup>`).join("")}</select><input type="text" ${a} data-f="url" value="${esc(item.url)}" maxlength="500" aria-label="Link address ${pos}" placeholder="/pages/about or https://"${off()}></div></li>`;
+  }
+  function menusPanel() {
+    const m = currentMenus(), dests = menuDestinations(o.getData?.() || {}), total = menuLinkTotal(m), full = total >= MAX_MENU_LINKS;
+    const block = which => { const list = m[which] || [];
+      return `<section class="aw-menu" aria-label="${PAGE_LABEL(which)} menu"><div class="aw-ph"><h3>${PAGE_LABEL(which)} menu</h3><span>${list.length} of ${MAX_MENU_ITEMS}</span></div>${list.length ? `<ul class="aw-links">${list.map((it, i) => menuRow(which, it, i, "", list.length, dests) + (it.children?.length ? `<li class="aw-kids"><ul class="aw-links">${it.children.map((c, j) => menuRow(which, c, i, String(j), it.children.length, dests)).join("")}</ul></li>` : "") + `<li class="aw-addkid"><button type="button" class="aw-mini" data-m="${which}" data-i="${i}" data-j="" data-m-act="addchild"${readOnly || full || (it.children?.length || 0) >= MAX_MENU_CHILDREN ? " disabled" : ""}>Add sub link to ${esc(it.label || "link")}</button></li>`).join("")}</ul>` : `<p class="aw-muted">No links. This menu stays empty in your store.</p>`}<button type="button" class="aw-add" data-m="${which}" data-i="" data-j="" data-m-act="add"${readOnly || full || list.length >= MAX_MENU_ITEMS ? " disabled" : ""}>Add ${which} link</button></section>`; };
+    return `<p class="aw-muted">Choose a page, product, collection or policy, or type your own address. Safe local paths, https, mailto and tel links only. ${total} of ${MAX_MENU_LINKS} links used.</p>${menuError ? `<p class="aw-error" role="alert">${esc(menuError)} Your edit is kept here so you can fix it.</p>` : menuNote ? `<p class="aw-ok" role="status">${esc(menuNote)}</p>` : ""}${block("header")}${block("footer")}`;
+  }
+
+  function paintChrome() {
+    const sel = q("[data-ws-page]"); if (sel && sel.value !== o.getPage()) sel.value = o.getPage();
+    const own = q("[data-ws-own]"); if (own) own.disabled = readOnly || !o.controller()?.active();
+    const note = o.getNote?.() || ""; q("[data-ws-note]").textContent = note; q("[data-ws-note]").hidden = !note;
+    mount.querySelectorAll("[data-ws-tab]").forEach(b => { const on = b.dataset.wsTab === tab; b.setAttribute("aria-selected", String(on)); b.tabIndex = on ? 0 : -1; });
+    panel.setAttribute("aria-labelledby", `aw-tab-${tab}`); mount.dataset.tab = tab;
+  }
+  function paintPanel() {
+    if (!open) return;
+    paintChrome();
+    const act = document.activeElement, inside = act && panel.contains(act), key = inside ? focusKey(act) : "", sel = inside && "selectionStart" in act ? [act.selectionStart, act.selectionEnd] : null, top = panel.scrollTop;
+    let html;
+    if (!ready()) html = `<p class="aw-muted">Adopt your style at the Style step to edit your store here. Showcase styles are never edited.</p>`;
+    else html = tab === "content" ? contentPanel() : tab === "style" ? stylePanel() : tab === "menus" ? menusPanel() : sectionsPanel();
+    panel.innerHTML = html; panel.scrollTop = top;
+    if (key) { const el = [...panel.querySelectorAll("button,input,select")].find(e => focusKey(e) === key); if (el) { el.focus({ preventScroll: true }); if (sel) try { el.setSelectionRange(...sel); } catch { /* not text */ } } }
+  }
+  function setTab(t, focus) { tab = t; paintPanel(); if (focus) q(`[data-ws-tab="${t}"]`)?.focus(); }
+
+  mount.addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b || b.disabled || !mount.contains(b)) return;
+    const c = o.controller(), d = b.dataset;
+    if (d.wsTab) setTab(d.wsTab);
+    else if ("wsClose" in d) api.close();
+    else if ("wsOwn" in d) o.onOwn?.();
+    else if (d.wsEdit) c?.selectContent(d.wsEdit, d.key);
+    else if (d.wsSec && !readOnly) o.onSectionAction(d.wsSec, d.act);
+    else if (d.mAct && !readOnly && c) { const next = applyMenuAction(currentMenus(), d.m, d.mAct, d.i === "" ? undefined : Number(d.i), d.j); if (next) commitMenus(next); }
+  });
+  mount.addEventListener("keydown", e => {
+    const t = e.target.closest?.("[data-ws-tab]");
+    if (!t || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(e.key)) return;
+    e.preventDefault();
+    const ids = WORKSPACE_TABS.map(x => x[0]), i = ids.indexOf(t.dataset.wsTab), n = ids.length;
+    setTab(ids[e.key === "Home" ? 0 : e.key === "End" ? n - 1 : (i + (e.key === "ArrowRight" ? 1 : n - 1)) % n], true);
+  });
+  // Typing only updates a local draft; the shared controller is updated on change (blur or Enter) so focus is never lost.
+  mount.addEventListener("input", e => {
+    const n = e.target; if (readOnly || n.dataset.f === undefined || n.dataset.f === "pick" || !o.controller()?.setMenus) return;
+    const had = Boolean(menuError);
+    const ok = tryMenus(setMenuField(currentMenus(), n.dataset.m, Number(n.dataset.i), n.dataset.j, n.dataset.f, n.value), { typing: true });
+    if (ok) menuNote = "";
+    if (had !== !ok || !ok) paintPanel();
   });
   mount.addEventListener("change", e => {
-    const n = e.target; if (readOnly) return;
+    const n = e.target;
+    if (n.dataset.wsPage !== undefined) { o.setPage(n.value); return; }
+    if (readOnly) return;
     if (n.dataset.wsPlan) o.setPlan(n.dataset.wsPlan, n.value);
     if (n.dataset.wsExtra) o.setExtra(n.dataset.wsExtra, n.checked);
+    if (n.dataset.f === "pick" && o.controller()?.setMenus) {
+      const m = n.dataset.m, i = Number(n.dataset.i), j = n.dataset.j;
+      const next = n.dataset.f === "pick" ? (n.value === "__custom" ? currentMenus() : setMenuField(currentMenus(), m, i, j, "url", n.value)) : setMenuField(currentMenus(), m, i, j, n.dataset.f, n.value);
+      commitMenus(next);
+    }
   });
   const api = {
     isOpen: () => open,
-    open() { open = true; paint(); o.onToggle?.(true); },
-    close() { open = false; paint(); o.onToggle?.(false); },
+    slot: () => q("[data-ws-slot]"),
+    open() { open = true; mount.hidden = false; paintPanel(); o.onToggle?.(true); },
+    close() { if (sidebar) return; open = false; mount.hidden = true; o.onToggle?.(false); },
     toggle() { open ? api.close() : api.open(); },
-    refresh() { if (open) paint(); },
+    refresh() { if (open) paintPanel(); },
+    setTab,
   };
+  if (sidebar) paintPanel();
   return api;
 }

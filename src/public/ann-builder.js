@@ -12,7 +12,7 @@ import { attachAnnOnboarding } from "./ann-onboarding-ui.js";
 import { attachAnnReplyFields } from "./ann-reply-fields.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { attachStoreEssentials, connectionHref } from "./store-essentials.js";
-import { openAnnBrowserPreview } from "./ann-browser-preview.js";
+import { openAnnBrowserPreview,browserPreviewLocation } from "./ann-browser-preview.js";
 import { attachAnnBranding } from "./ann-branding-ui.js";
 import { prefilledSection } from "./aura-starters.js";
 import { initialAnswers, diffAnswers, changeCategory, changeSubcategory, nextKey, planProblems, projectAnnPreview, currentExtras, annAnsweredStages } from "./ann-projection.js";
@@ -155,7 +155,8 @@ function sectionAction(id, act) {
   const next = nextSections(baseHtml(), designUI.previewDesign()?.sections || {}, page, id, act);
   if (next) { designUI.setSections(next); workspaceUI?.refresh(); }
 }
-workspaceUI = attachAnnWorkspace({ mount: $("#ann-tools"), readOnly, controller: () => designUI,
+workspaceUI = attachAnnWorkspace({ mount: $("#ann-tools"), variant: "drawer", pages: PAGES, readOnly,
+  setPage: p => { page = p; renderPreview(); }, getData: () => previewSource, onOwn: () => { requestOwnProducts(); }, controller: () => designUI,
   canEdit: () => previewMode === "store" && Boolean(designUI?.previewDesign()),
   getPage: () => page, getPlan: () => ({ ...config().theme, section_options: { ...extrasNow, ...answers.section_options } }),
   sectionInfo, onSectionAction: sectionAction,
@@ -252,7 +253,7 @@ function paintStage() {
 }
 function fit() {
   const width = canvas.dataset.device === "mobile" ? 390 : 1280;
-  const tools = canvas.dataset.tools === "open" && (window.innerWidth || 1280) >= 700 ? 296 : 0, cw = Math.max(240, (canvas.clientWidth || 800) - tools);
+  const tools = canvas.dataset.tools === "open" && (window.innerWidth || 1280) >= 700 ? 340 : 0, cw = Math.max(240, (canvas.clientWidth || 800) - tools);
   const availW = Math.max(240, cw - 24), availH = Math.max(320, (canvas.clientHeight || 700) - 24);
   const scale = Math.min(1, availW / width);
   Object.assign(frame.style, { width: `${width}px`, minWidth: `${width}px`, height: `${availH / scale}px`, transform: `scale(${scale})`, transformOrigin: "top left", left: `${Math.max(0, (cw - width * scale) / 2)}px` });
@@ -265,13 +266,12 @@ frame.addEventListener("load", () => {
   doc.addEventListener("click", e => {
     const link = e.target.closest("a"); if (!link) return;
     e.preventDefault();
-    const path = new URL(link.getAttribute("href") || "/", location.origin).pathname;
-    if (path.startsWith("/products/")) { page = "product"; productId = decodeURIComponent(path.split("/")[2]); }
-    else if (path.startsWith("/collections/")) { page = "collection"; const slug = decodeURIComponent(path.split("/")[2]); collectionId = current.collections?.find(c => c.slug === slug || c.id === slug)?.id; }
-    else if (path.startsWith("/policies/")) { page = "policy"; policyKind = path.split("/")[2]; }
-    else if (path === "/pages/about") page = "about"; else if (path === "/pages/contact") page = "contact";
-    else if (path === "/cart") page = "cart"; else if (path === "/checkout") page = "checkout"; else if (path === "/") page = "home"; else return;
-    renderPreview();
+    const href=link.getAttribute("href")||"/";
+    if(href.startsWith("#")){try{doc.getElementById(decodeURIComponent(href.slice(1)))?.scrollIntoView();}catch{}return;}
+    const route=browserPreviewLocation(href,current,location.origin);
+    if(!route){say("This destination opens on your published store. The private preview stays here.");return;}
+    ({page,productId,collectionId,policyKind}=route);
+    renderPreview();workspaceUI?.refresh();
   });
   attachAuraSearch(doc, current);
   attachAuraCatalog(doc, current, { page, collectionId });

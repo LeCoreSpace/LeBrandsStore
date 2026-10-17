@@ -11,6 +11,7 @@ import { showcaseProfile, renderNicheSections, NICHE_SECTION_CSS, profileGuidanc
 import { styleSettings, STYLE_IDS } from "./aura-styles.js";
 import { CONVERSION_COPY, CONVERSION_NEUTRAL, CONVERSION_KIND, CONVERSION_CSS, CONVERSION_TABBAR, isConversionStyle, conversionTopper, buildConversion } from "./aura-conversion-styles.js";
 import { contrastColor } from "./validation.js";
+import {validateDesignMenus,renderDesignMenu,DESIGN_MENU_CSS} from "./ann-menu-model.js";
 
 export const SHOWCASE_STYLES = STYLE_IDS;
 export const SHOWCASE_PAGES = Object.freeze(["home", "collection", "product", "cart", "checkout", "about", "contact"]);
@@ -175,7 +176,7 @@ function context(data, settings, options) {
       if(collections[i])collections[i].image=design.media[`collection${i}`];
     }
   }
-  return { style, media, def, products, collections, brand, copy, world: pack.topic,
+  return { style, settings:{...settings,ann_design:design?.style===style?design:undefined}, media, def, products, collections, brand, copy, world: pack.topic,
     profile: showcaseProfile({ ...data, showcase_niche: data.showcase_niche || pack }, style), options, page: options.page || "home" };
 }
 const pImg = (p, i = 0) => p?.images?.[i]?.url ? img(p.images[i]) : "";
@@ -193,7 +194,8 @@ const card = (p, i, extra = "") => `<a class="sc-card rv${LIVE ? " au-card" : ""
 const NAV = [["Home", "/"], ["Shop", "/collections/all"], ["About", "/pages/about"], ["Contact", "/pages/contact"]];
 
 function header(x) {
-  const links = NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("");
+  const menus=x.settings?.ann_design?.menus;
+  const links = menus?renderDesignMenu(validateDesignMenus(menus).header):NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("");
   const topper = conversionTopper(x, Boolean(LIVE), esc) ?? (LIVE ? (x.copy.kicker ? ({
     architectural: `<div class="sc-ticker" aria-hidden="true"><div>${Array(8).fill(`<span>${esc(x.copy.kicker)}</span>`).join("")}</div></div>`,
     boutique: `<div class="sc-announce">${esc(x.copy.kicker)}</div>`, vintage: `<div class="sc-announce">${esc(x.copy.kicker)}</div>`,
@@ -209,7 +211,9 @@ function header(x) {
   <nav id="au-menu" class="sc-menu" hidden aria-label="Menu"><button type="button" data-menu-close>Close</button>${links}</nav>`;
 }
 function footer(x) {
-  return `<footer class="sc-ft"><div class="sc-ft-in"><a class="sc-brand" href="/">${esc(x.brand)}</a><nav aria-label="Footer">${NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("")}${LIVE ? (x.policies || []).filter(p => /^[a-z0-9-]+$/.test(String(p.kind || ""))).map(p => `<a href="/policies/${p.kind}">${esc(p.title || p.kind)}</a>`).join("") : ""}</nav>${LIVE ? `<p${dc("footer")}>${esc(x.copy.footer || x.brand)}</p>` : `<p>Style demonstration. The ${esc(x.world)} products, photographs and prices are illustrative samples, not a real range. Nothing here is saved, ordered or published.</p>`}</div></footer>${x.style === "boutique" || CONVERSION_TABBAR.includes(x.style) ? `<nav class="sc-tabbar" aria-label="Quick"><a href="/">Home</a><a href="/collections/all">Shop</a><button type="button" data-cart-open>Bag <span data-cart-count>0</span></button></nav>` : ""}`;
+  const menus=x.settings?.ann_design?.menus;
+  const links=menus?renderDesignMenu(validateDesignMenus(menus).footer,{footer:true}):NAV.map(([l,h])=>`<a href="${h}">${l}</a>`).join("")+(LIVE?(x.policies||[]).filter(p=>/^[a-z0-9-]+$/.test(String(p.kind||""))).map(p=>`<a href="/policies/${p.kind}">${esc(p.title||p.kind)}</a>`).join(""):"");
+  return `<footer class="sc-ft"><div class="sc-ft-in"><a class="sc-brand" href="/">${esc(x.brand)}</a><nav aria-label="Footer">${links}</nav>${LIVE ? `<p${dc("footer")}>${esc(x.copy.footer || x.brand)}</p>` : `<p>Style demonstration. The ${esc(x.world)} products, photographs and prices are illustrative samples, not a real range. Nothing here is saved, ordered or published.</p>`}</div></footer>${x.style === "boutique" || CONVERSION_TABBAR.includes(x.style) ? `<nav class="sc-tabbar" aria-label="Quick"><a href="/">Home</a><a href="/collections/all">Shop</a><button type="button" data-cart-open>Bag <span data-cart-count>0</span></button></nav>` : ""}`;
 }
 const cta = (label, href = "/collections/all", cls = "", attr = "") => `<a class="sc-btn ${cls}"${attr} href="${href}">${esc(label)}</a>`;
 const CONV = buildConversion({ esc, rupees, img, pImg, pHref, cHref, cImg, rv, dc, num, cta, card, live: () => LIVE });
@@ -467,7 +471,7 @@ const BASE_CSS = `
 .mn-rooms>div,.vt-plates>div{grid-template-columns:1fr}.mn-hero{padding-top:3rem}.mn-pop{display:none}.sc-minimal .sc-prod{gap:2rem}.vt-seal{right:0}
 .au-sticky-buy{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:25;background:#fff;border-top:1px solid var(--line);padding:.7rem 1rem;gap:1rem;align-items:center;justify-content:space-between}.au-sticky-buy button{padding:.8rem 1.2rem;background:var(--acc);color:#fff;border:0;font-weight:600}.sc-boutique .au-sticky-buy{bottom:4.2rem}.commerce-line{grid-template-columns:70px 1fr auto}.commerce-line img{width:70px;height:70px}}
 `;
-const CSS = BASE_CSS + CONVERSION_CSS;
+const CSS = BASE_CSS + CONVERSION_CSS + DESIGN_MENU_CSS;
 
 /* ---- saved design (real catalogue, no demo content) ---- */
 const liveMedia = o => o && typeof o === "object" && okUrl(o.url) ? { url: o.url, alt: String(o.alt || "").replace(/^illustrative\s+/i, "").replace(/^./, c => c.toUpperCase()), width: Number(o.width) || 1024, height: Number(o.height) || 1024 } : null;

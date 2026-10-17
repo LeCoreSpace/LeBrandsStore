@@ -1,4 +1,5 @@
 import { renderCommerceBody } from "./commerce-view.js";
+import {validateDesignMenus,renderDesignMenu} from "./ann-menu-model.js";
 import { formatPhone } from "./commerce-rules.js";
 import { sanitizeRichText } from "./aura-layout.js";
 import { normalisePageSize } from "./catalog-page.js";
@@ -97,7 +98,8 @@ export const SECTION_RENDERERS = {
     if (off(s)) return "";
     const defaults = [{ label: "Collection", url: "/collections/all" }, { label: "About", url: "/pages/about" }, { label: "Contact", url: "/pages/contact" }];
     const list = Array.isArray(s.settings?.links) && s.settings.links.length ? s.settings.links : defaults;
-    const links = list.filter((l) => l?.label && link(l.url)).map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`).join("");
+    const menus=c.settings?.ann_design?.menus;
+    const links = menus?renderDesignMenu(validateDesignMenus(menus).header):list.filter((l) => l?.label && link(l.url)).map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`).join("");
     const logo = c.logoUrl ? `<img src="${esc(c.logoUrl)}" alt="${esc(c.brand)}" height="36">` : `<span class="au-wordmark">${esc(c.brand)}</span>`;
     const bag = `<button type="button" class="au-bag au-icon-button" data-cart-open aria-label="${c.options.readOnly || !c.options.commerce ? "Bag preview, shopping disabled" : "Open bag"}" ${c.options.readOnly || !c.options.commerce ? 'disabled aria-disabled="true"' : ""}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l1 13H4L5 8ZM8 8V6a4 4 0 0 1 8 0v2"/></svg><span data-cart-count aria-label="Items in bag">0</span></button>`;
     const search = `<button type="button" class="au-icon-button" data-search-open aria-label="Search products" aria-haspopup="dialog" aria-controls="au-search-${esc(s.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>`;
@@ -190,7 +192,9 @@ export const SECTION_RENDERERS = {
     const mine = custom(s.settings?.links);
     const social = custom(s.settings?.social_links);
     const line = str(s.settings?.brand_line);
-    return `<footer class="aura-footer au-footer"><div><a class="au-wordmark" href="/">${esc(c.brand)}</a>${line ? `<p>${esc(line)}</p>` : ""}</div><nav aria-label="Store links and policies">${mine || '<a href="/collections/all">Collection</a><a href="/pages/about">About</a><a href="/pages/contact">Contact</a>'}<a href="/track">Track order</a>${POLICIES.map((k) => `<a href="/policies/${k}">${policyTitle(k)}</a>`).join("")}</nav>${social ? `<nav class="au-social" aria-label="Social">${social}</nav>` : ""}</footer>`;
+    const menus=c.settings?.ann_design?.menus;
+    const links=menus?renderDesignMenu(validateDesignMenus(menus).footer,{footer:true}):(mine||'<a href="/collections/all">Collection</a><a href="/pages/about">About</a><a href="/pages/contact">Contact</a>')+'<a href="/track">Track order</a>'+POLICIES.map(k=>`<a href="/policies/${k}">${policyTitle(k)}</a>`).join("");
+    return `<footer class="aura-footer au-footer"><div><a class="au-wordmark" href="/">${esc(c.brand)}</a>${line ? `<p>${esc(line)}</p>` : ""}</div><nav aria-label="Store links and policies">${links}</nav>${social ? `<nav class="au-social" aria-label="Social">${social}</nav>` : ""}</footer>`;
   },
   "product-grid"(s, c) {
     const k = activeCollection(c);

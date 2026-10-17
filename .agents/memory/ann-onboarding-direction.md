@@ -206,3 +206,16 @@ were missing in Ann.
 
 **How to apply:** Preserve close/reopen controls, the shared theme-editor draft
 and read-only restrictions. Do not hide the entry point under More.
+
+Ann and the standalone theme editor must use the same Design workspace UI.
+Menus belongs beside Sections, Content and Style, covering header and footer
+navigation. These edits belong to the merchant, never to a shared style preset.
+
+**Why:** The user explicitly asked to see the theme editor's workspace in Ann
+and proposed a separate workspace tab for the menu editor.
+
+**How to apply:** Keep the two editing surfaces consistent, preserve the
+standalone editor, and treat navigation as merchant-owned content when changing
+visual styles. Keep draft edits separate from publishing.
+Design workspace and contextual editor inputs stay local to those controls;
+chat-only typing applies to Ann's conversational questions, not design tools.

@@ -39,9 +39,10 @@ test("shared showcase data removes saved merchant design while editable sample d
   assert.match(renderStylePreview(designPreviewData(source,design),styleSettings("boutique"),{page:"home"}),/Merchant copy only/);
   assert.deepEqual(source,original);
 });
-test("Ann composer relocation excludes the local contextual inline editor",()=>{
+test("Ann composer relocation excludes local design editors and the shared workspace",()=>{
   const source=readFileSync("src/public/ann-reply-fields.js","utf8");
-  assert.match(source,/n\.closest\("#ann-composer, \.ann-ctx"\)/);
+  const exclusions=source.match(/n\.closest\("(#ann-composer[^"]+)"\)/)?.[1].split(/,\s*/);
+  for(const selector of ["#ann-composer",".ann-ctx",".aw","#ann-design"])assert.ok(exclusions?.includes(selector),selector);
 });
 
 test("reselecting or keeping the adopted style resumes editing, and browser preview is outside More",()=>{

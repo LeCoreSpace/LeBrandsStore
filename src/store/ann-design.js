@@ -14,6 +14,7 @@ import { stylePreviewData } from "../public/style-preview.js";
 import { projectAnnPreview } from "../public/ann-projection.js";
 import { prefilledSection } from "../public/aura-starters.js";
 import { validDesignSections } from "../public/ann-section-layout.js";
+import {validateDesignMenus} from "../public/ann-menu-model.js";
 
 const plain = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const conflict = () => { throw Object.assign(new Error("Your store draft changed in another window. Reload the saved design before trying again. Your unsaved edits are kept."), { status: 409 }); };
@@ -21,7 +22,8 @@ const keys = (value, allowed) => {
   if (!plain(value) || Object.keys(value).some(key => !allowed.includes(key))) throw badInput("Use the design editor's supported fields.");
 };
 export function validateDesignRequest(body, creating = false) {
-  keys(body, ["expected_draft", "confirm", "answers","catalogue_mode", ...(creating ? [] : ["copy", "media","sections"])]);
+  keys(body, ["expected_draft", "confirm", "answers","catalogue_mode", ...(creating ? [] : ["copy", "media","sections","menus"])]);
+  if(body.menus!==undefined&&body.menus!==null)body.menus=validateDesignMenus(body.menus);
   if(body.catalogue_mode!==undefined&&!["sample","own"].includes(body.catalogue_mode))throw badInput("Choose sample or own catalogue for the draft preview.");
   if(body.sections!==undefined&&!validDesignSections(body.sections))throw badInput("Choose valid page sections. Product purchase and contact forms must remain available.");
   if (body.confirm !== true || !/^[a-f0-9]{64}$/.test(body.expected_draft || "")) throw badInput("Load the current draft and confirm your design changes.");
@@ -109,10 +111,13 @@ export async function saveAnnDesign(tx, storeId, userId, raw, creating = false) 
   let design;
   if (creating) {
     design = seedAnnDesign(data, plan, body.catalogue_mode || "sample");
+    if(previous?.menus)design.menus=structuredClone(previous.menus);
   } else design = { ...structuredClone(previous), plan,
     copy: { ...previous.copy, ...body.copy }, media: { ...previous.media } };
   for(const [key,value] of Object.entries(design.copy))if(value===null)delete design.copy[key];
   if(body.sections)design.sections=structuredClone(body.sections);
+  if(body.menus===null)delete design.menus;
+  else if(body.menus!==undefined)design.menus=structuredClone(body.menus);
   if(body.catalogue_mode)design.catalogue_mode=body.catalogue_mode;
   if (body.media) {
     for (const [key, id] of Object.entries(body.media)) {

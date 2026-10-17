@@ -1,9 +1,9 @@
 import {attachAnnDesign} from "./ann-design-ui.js";
 import {designPreviewData,renderStylePreview} from "./style-preview.js";
-import {designSections} from "./ann-section-layout.js";
+
 import {openAnnBrowserPreview,browserPreviewLocation} from "./ann-browser-preview.js";
-import {annPreviewConfiguration,ANN_EXTRA_SECTIONS,ANN_SECTION_LABELS} from "./ann-config.js";
-import {DESIGN_COPY_LIMITS,DESIGN_MEDIA_KEYS} from "./ann-design-model.js";
+import {annPreviewConfiguration,ANN_SECTION_LABELS} from "./ann-config.js";
+import {attachAnnWorkspace,sectionMeta,nextSections} from "./ann-design-workspace.js";
 import {attachAuraSearch,attachAuraCatalog} from "./aura-ui.js";
 import {attachStyleInteractions} from "./style-preview-interactions.js";
 const $=s=>document.querySelector(s),esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -12,13 +12,17 @@ const initialDesign=structuredClone(source.settings.ann_design);
 const initialVisualSettings=Object.fromEntries(["theme","brand_name","category","subcategory","style_preset","color_preset","accent_color","font_preset","button_style"].filter(k=>k in source.settings).map(k=>[k,source.settings[k]]));
 const storeId=source.store.store_id,root=source.ann_root||`/stores/${storeId}`,api=source.ann_api_root||`/api/stores/${storeId}/ann`,frame=$("#ae-frame");
 const readOnly=!["owner","admin"].includes(source.role),bag=new Map();
-$("#ae-own").disabled=readOnly;
-const FIELD_LABELS={kicker:"Intro line",title:"Main headline",description:"Introduction",button:"Main button text",statement:"Brand statement",products:"Products heading",collections:"Collections heading",about:"About page heading",story0:"Story paragraph 1",story1:"Story paragraph 2",story2:"Story paragraph 3",footer:"Footer text",hero:"Main photo",lifestyle:"Lifestyle photo",collection0:"First collection photo",collection1:"Second collection photo"};
 const say=text=>{$("#ae-status").textContent=text;};
-let controller;
-let addedSection=null,previewScroll=0,tab="sections";
-function setTab(t,focus){tab=t;$("#ae-tools").dataset.tab=t;$("#ae-content").setAttribute("aria-labelledby",t==="style"?"ae-tab-style":"ae-tab-content");document.querySelectorAll("[data-ae-tab]").forEach(b=>{const on=b.dataset.aeTab===t;b.setAttribute("aria-selected",on);b.tabIndex=on?0:-1;if(on&&focus)b.focus();});}
-const sectionMeta=new Map();
+let controller,workspace;
+
+let addedSection=null,previewScroll=0;
+let wsCache={key:"",value:{meta:new Map(),map:new Map()}};
+function baseHtml(){const s=snapshot(),b=structuredClone(s.data);b.settings.ann_design.sections={};return renderStylePreview(b,s.theme,{...s.route,designEdit:true});}
+function sectionInfo(){
+  const d=snapshot().data.settings.ann_design,key=JSON.stringify([page,productId,collectionId,d?.style,d?.sections,plan.section_options,plan.style_preset]);
+  if(wsCache.key!==key)wsCache={key,value:sectionMeta(baseHtml(),d?.sections||{},page)};
+  return wsCache.value;
+}
 function syncActions(){
   $("#ae-undo").disabled=!controller?.canUndo();
   $("#ae-save").disabled=!controller?.canSave();
@@ -29,89 +33,44 @@ const snapshot=()=>{
   const data=designPreviewData(source,design),theme=annPreviewConfiguration(plan,source.settings).theme;
   return {data,theme,route:{page,productId,collectionId,policyKind},bag};
 };
-function controls() {
-  const ready=controller?.active()===true;
+function controls(){
   syncActions();
-  $("#ae-content").hidden=!ready;
-  $("#ae-sections").hidden=!ready;
-  $("#ae-page-select").value=page;
-  document.querySelectorAll("[data-ae-page]").forEach(b=>{if(b.dataset.aePage===page)b.setAttribute("aria-current","page");else b.removeAttribute("aria-current");});
-  $("#ae-own").disabled=readOnly||!ready;
-  for(const field of $("#ae-content").querySelectorAll("button,input,select"))field.disabled=readOnly||!ready;
-  for(const field of $("#ae-content").querySelectorAll("[data-ae-plan]")){
-    const key=field.dataset.aePlan;
-    field.value=plan[key]||source.settings[key]||({color_preset:"white",font_preset:"modern",accent_color:"#661329"}[key]);
-  }
-  const s=snapshot(),design=s.data.settings.ann_design,base=structuredClone(s.data);base.settings.ann_design.sections={};
-  const items=designSections(renderStylePreview(base,s.theme,{...s.route,designEdit:true}),page).sections;
-  const cfg=design.sections?.[page]||{},order=[...(cfg.order||[]),...items.map(i=>i.id)].filter((id,i,a)=>a.indexOf(id)===i),map=new Map(items.map(i=>[i.id,i]));
-  sectionMeta.clear();const vis=order.filter(id=>map.has(id));vis.forEach((id,i)=>sectionMeta.set(id,{label:map.get(id).label,required:Boolean(map.get(id).required),hidden:Boolean(cfg.hidden?.includes(id)),index:i,count:vis.length}));
-  const act=document.activeElement,box=$("#ae-sections");let restore="";
-  if(act&&box.contains(act)){const d=act.dataset;restore=d.aeSection?`[data-ae-section="${CSS.escape(d.aeSection)}"]${d.move?`[data-move="${d.move}"]`:"[data-toggle]"}`:d.aeEdit?`[data-ae-edit="section"][data-key="${CSS.escape(d.key)}"]`:d.aeExtra?`[data-ae-extra="${CSS.escape(d.aeExtra)}"]`:"";}
-  const vis2=order.filter(id=>map.has(id)),extras=ANN_EXTRA_SECTIONS[page]||[];
-  box.innerHTML=`<div class="ae-ph"><h3>${esc(page[0].toUpperCase()+page.slice(1))} page</h3><span>${vis2.length} sections</span></div>${vis2.length?`<div class="ae-list">${vis2.map(id=>{
-    const x=map.get(id),hidden=cfg.hidden?.includes(id),lock=readOnly||x.required,n=esc(x.label);
-    const icon=path=>`<svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${path}"/></svg>`;
-    return `<div class="ae-section${hidden?" is-off":""}"><button type="button" class="ae-sec-name" data-ae-edit="section" data-key="${id}"${readOnly?" disabled":""}>${n}${hidden?"<small>Removed</small>":x.required?"<small>Protected</small>":""}</button><span class="ae-acts"><button type="button" data-ae-section="${id}" data-move="-1" title="Move up" aria-label="Move ${n} up"${lock?" disabled":""}>${icon("M7 11V3M3.5 6.5 7 3l3.5 3.5")}</button><button type="button" data-ae-section="${id}" data-move="1" title="Move down" aria-label="Move ${n} down"${lock?" disabled":""}>${icon("M7 3v8M3.5 7.5 7 11l3.5-3.5")}</button><button type="button" data-ae-section="${id}" data-toggle title="${hidden?"Restore section":"Remove section"}" aria-label="${hidden?"Restore":"Remove"} ${n}"${lock?" disabled":""}>${icon(hidden?"M3 7h8M7 3v8":"M4 4l6 6M10 4l-6 6")}</button></span></div>`;
-  }).join("")}</div>`:'<p class="ae-muted">This page has a fixed shopping layout.</p>'}
-  ${extras.length?`<fieldset class="ae-opt"><legend>Optional sections</legend>${extras.map(type=>`<label><input type="checkbox" data-ae-extra="${type}"${plan.section_options?.[page]?.includes(type)?" checked":""}${readOnly?" disabled":""}> ${esc(ANN_SECTION_LABELS[type]||type)}</label>`).join("")}</fieldset>`:""}`;
-  if(restore)box.querySelector(restore)?.focus({preventScroll:true});
-  if(!ready)for(const field of $("#ae-sections").querySelectorAll("button,input"))field.disabled=true;
+  workspace?.refresh();
 }
 function fit(){const area=frame.parentElement,w=device==="mobile"?390:1280,scale=Math.min(1,(area.clientWidth-24)/w);Object.assign(frame.style,{position:"absolute",width:`${w}px`,maxWidth:"none",height:`${Math.max(450,(area.clientHeight-24)/scale)}px`,transform:`scale(${scale})`,transformOrigin:"top left",left:`${Math.max(12,(area.clientWidth-w*scale)/2)}px`});area.style.position="relative";area.style.overflow="hidden";}
 function render() {clearTimeout(timer);previewScroll=frame.contentDocument?.scrollingElement?.scrollTop||0;const s=snapshot();frame.classList.toggle("is-mobile",device==="mobile");frame.srcdoc=renderStylePreview(s.data,s.theme,{...s.route,designEdit:controller?.editing()});controls();fit();}
 function schedule(){clearTimeout(timer);timer=setTimeout(render,160);}
-controller=attachAnnDesign({api,root,readOnly,themeEditor:true,mount:$("#ae-design-mount"),say,
-  getPreviewMode:()=>"store",contextual:true,sectionState:id=>sectionMeta.get(id)||null,onSectionAction:(id,act)=>sectionAction(id,act),getStyle:()=>plan.style_preset||initialDesign.style,getAnswers:()=>plan,getBrand:()=>source.settings.brand_name||source.store.name,
+workspace=attachAnnWorkspace({mount:$("#ae-tools"),variant:"sidebar",readOnly,controller:()=>controller,canEdit:()=>true,
+  getPage:()=>page,setPage:p=>{page=p;render();},getData:()=>source,getNote:()=>source.ann_design_pending?"Your saved Ann plan is shown here. Save it as a draft to start editing. Your live site stays unchanged.":"",
+  getPlan:()=>({color_preset:plan.color_preset||source.settings.color_preset||"white",font_preset:plan.font_preset||source.settings.font_preset||"modern",accent_color:plan.accent_color||source.settings.accent_color||"#661329",section_options:plan.section_options||{}}),
+  setPlan:(k,v)=>{plan[k]=v;controller.planChanged();render();},setExtra,sectionInfo,onSectionAction:sectionAction,onOwn:()=>{if(!readOnly)controller.requestCatalogue();}});
+controller=attachAnnDesign({api,root,readOnly,themeEditor:true,mount:workspace.slot(),say,
+  getPreviewMode:()=>"store",contextual:true,sectionState:id=>sectionInfo().meta.get(id)||null,onSectionAction:(id,act)=>sectionAction(id,act),getStyle:()=>plan.style_preset||initialDesign.style,getAnswers:()=>plan,getBrand:()=>source.settings.brand_name||source.store.name,
   applyPlan:p=>{plan=structuredClone(p);},onDraft:d=>{source=d.settings?.ann_design?d:{...d,settings:{...d.settings,...initialVisualSettings}};},onChange:schedule,onActivated:schedule,onCatalogueConfirmed:()=>{say("Your own products are selected. Save draft to keep this choice.");render();},
   getPreview:()=>frame,});
-$("#ae-content").innerHTML=`<div data-pane="content"><div class="ae-gh">Text</div><div class="ae-list">${Object.keys(DESIGN_COPY_LIMITS).map(k=>`<button type="button" class="ae-row" data-ae-edit="copy" data-key="${k}"${readOnly?" disabled":""}>${esc(FIELD_LABELS[k]||k)}</button>`).join("")}</div><div class="ae-gh">Photos</div><div class="ae-list">${DESIGN_MEDIA_KEYS.map(k=>`<button type="button" class="ae-row" data-ae-edit="image" data-key="${k}"${readOnly?" disabled":""}>${esc(FIELD_LABELS[k]||k)}</button>`).join("")}</div></div>
-<div data-pane="style"><div class="ae-ph"><h3>Colours and fonts</h3></div><label class="ae-field">Background<select data-ae-plan="color_preset"${readOnly?" disabled":""}>${["white","ivory","stone","midnight"].map(v=>`<option${plan.color_preset===v?" selected":""}>${v}</option>`).join("")}</select></label><label class="ae-field">Font style<select data-ae-plan="font_preset"${readOnly?" disabled":""}>${["modern","serif","classic"].map(v=>`<option${plan.font_preset===v?" selected":""}>${v}</option>`).join("")}</select></label><label class="ae-field">Button and highlight colour<input type="color" data-ae-plan="accent_color" value="${esc(plan.accent_color||source.settings.accent_color||"#661329")}"${readOnly?" disabled":""}></label></div>`;
 function sectionAction(id,act){
-  if(readOnly||!id)return;
-  const s=snapshot(),model=s.data.settings.ann_design,base=structuredClone(s.data);base.settings.ann_design.sections={};
-  const items=designSections(renderStylePreview(base,s.theme,s.route),page).sections,map=new Map(items.map(x=>[x.id,x]));
-  const all=structuredClone(model.sections||{}),cfg=all[page]||={order:[],hidden:[]};
-  cfg.order=[...(cfg.order||[]),...items.map(x=>x.id)].filter((x,i,a)=>a.indexOf(x)===i&&map.has(x));
-  cfg.hidden||=[];
-  if(map.get(id)?.required)return;
-  if(act==="toggle")cfg.hidden=cfg.hidden.includes(id)?cfg.hidden.filter(x=>x!==id):[...cfg.hidden,id];
-  else {const i=cfg.order.indexOf(id),j=i+(act==="up"?-1:1);if(i>=0&&j>=0&&j<cfg.order.length&&!map.get(cfg.order[j])?.required)[cfg.order[i],cfg.order[j]]=[cfg.order[j],cfg.order[i]];}
-  controller.setSections(all);
+  if(readOnly||!id||!controller?.active())return;
+  const next=nextSections(baseHtml(),controller.previewDesign()?.sections||{},page,id,act);
+  if(next){controller.setSections(next);workspace.refresh();}
+}
+function setExtra(type,on){
+  plan.section_options||={};const values=new Set(plan.section_options[page]||[]);
+  on?values.add(type):values.delete(type);plan.section_options[page]=[...values];
+  if(on){addedSection=type;const sections=structuredClone(controller.previewDesign()?.sections||{});if(sections[page]?.hidden){sections[page].hidden=sections[page].hidden.filter(id=>id!==`slot-${type}-0`);controller.setSections(sections);}}
+  say(`${ANN_SECTION_LABELS[type]||type} ${on?"added to":"removed from"} this page. Save draft to keep this change.`);
+  controller.planChanged();render();
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b||b.disabled)return;
-  if(b.dataset.aeTab)setTab(b.dataset.aeTab);
-  if(b.dataset.aePage){page=b.dataset.aePage;render();}
   if(b.dataset.aeDevice){device=b.dataset.aeDevice;render();}
   if(b.id==="ae-browser"){const s=snapshot();openAnnBrowserPreview({data:s.data,theme:s.theme,...s.route,bag,device,storeName:source.settings.brand_name||source.store.name});}
-  if(b.id==="ae-own"&&!readOnly)controller.requestCatalogue();
   if(b.id==="ae-save"){const pending=controller.save();syncActions();void pending.finally(syncActions);}
   if(b.id==="ae-publish"){void controller.publish();syncActions();}
   if(b.id==="ae-undo"){controller.undo();syncActions();}
-  if(b.dataset.aeEdit)controller.selectContent(b.dataset.aeEdit,b.dataset.key);
-  if(b.dataset.aeSection&&!readOnly)sectionAction(b.dataset.aeSection,b.hasAttribute("data-toggle")?"toggle":Number(b.dataset.move)<0?"up":"down");
 });
-document.addEventListener("keydown",e=>{const t=e.target.closest?.("[data-ae-tab]");if(!t||!["ArrowLeft","ArrowRight","Home","End"].includes(e.key))return;e.preventDefault();const ids=["sections","content","style"],i=ids.indexOf(t.dataset.aeTab);setTab(ids[e.key==="Home"?0:e.key==="End"?2:(i+(e.key==="ArrowRight"?1:2))%3],true);});
 document.addEventListener("input",()=>queueMicrotask(syncActions));
 document.addEventListener("click",()=>queueMicrotask(syncActions));
-document.addEventListener("change",e=>{
-  if(e.target.id==="ae-page-select"){page=e.target.value;render();return;}
-  if(readOnly)return;const n=e.target;
-  if(n.dataset.aeExtra){
-    plan.section_options||={};const values=new Set(plan.section_options[page]||[]);
-    n.checked?values.add(n.dataset.aeExtra):values.delete(n.dataset.aeExtra);
-    plan.section_options[page]=[...values];
-    if(n.checked){
-      addedSection=n.dataset.aeExtra;
-      const sections=structuredClone(controller.previewDesign()?.sections||{});
-      if(sections[page]?.hidden){sections[page].hidden=sections[page].hidden.filter(id=>id!==`slot-${n.dataset.aeExtra}-0`);controller.setSections(sections);}
-    }
-    say(`${ANN_SECTION_LABELS[n.dataset.aeExtra]||n.dataset.aeExtra} ${n.checked?"added to":"removed from"} this page. Save draft to keep this change.`);
-    controller.planChanged();render();
-  }
-  if(n.dataset.aePlan){plan[n.dataset.aePlan]=n.value;controller.planChanged();render();}
-});
+document.addEventListener("change",()=>queueMicrotask(syncActions));
 frame.addEventListener("load",()=>{
   const doc=frame.contentDocument;if(!doc)return;controller.bindPreview(doc);controller.refresh();
   if(addedSection){

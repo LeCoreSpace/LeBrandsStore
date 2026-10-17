@@ -21,6 +21,7 @@ export function renderAnnBuilder(data = {}, user = null, options = {}) {
     reference: options.reference || null,
   };
   const body = `<link rel="stylesheet" href="/assets/ann-builder.css">
+<link rel="stylesheet" href="/assets/ann-workspace.css">
 ${accountHeader(user)}
 <main class="ann" id="ann-app" data-view="chat">
   <header class="ann-top">

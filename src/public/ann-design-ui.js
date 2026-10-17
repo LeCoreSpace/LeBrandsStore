@@ -5,6 +5,7 @@
  * Edits update a validated model (plain text and owned media ids), never raw HTML.
  */
 import { DESIGN_MEDIA_KEYS, isDesignCopyKey, isDesignMediaKey, getDesignCopyLimit } from "./ann-design-model.js";
+import {validateDesignMenus,defaultDesignMenus} from "./ann-menu-model.js";
 import { designNeutralCopy } from "./aura-showcase.js";
 import { AURA_STYLES } from "./aura-styles.js";
 
@@ -37,21 +38,21 @@ export function attachAnnDesign(o) {
   mount.parentNode.insertBefore(el, mount);
 
   let loaded = false, loadError = "", expected = "", images = [], videos = [], publishUrl = `${root}/setup?step=4`;
-  let design = null, model = null, baseline = "", planDirty = false;
-  let busy = "", error = "", conflict = false, ack = false, editMode = true, selected = null, uploadAlt = "", uploadNote = "";
+  let design = null, model = null, baseline = "", planDirty = false,menuSource={};
+  let busy = "", error = "", conflict = false, ack = false, editMode = true, selected = null, uploadAlt = "", uploadNote = "",menuDraftError="";
   let lastKey = "";
   let catalogueAck = false, cataloguePrompt = false, consentOpen = false;
-  let undoStack=[],historyState=null,historyGroup="",historyTime=0,savedPlan="";
+  let undoStack=[],historyState=null,historyGroup="",historyTime=0,savedPlan="",menuRevision=0;
 
   const active = () => Boolean(model);
   const mediaIds = m => Object.fromEntries([...new Set([...DESIGN_MEDIA_KEYS, ...Object.keys(m || {}), ...Object.keys(design?.media || {})])].filter(k => isDesignMediaKey(k)).map(k => [k, m?.[k]?.media_id || null]));
-  const snapshot = () => model ? JSON.stringify({ c: model.copy, m: mediaIds(model.media),s:model.sections,catalogue:model.catalogue_mode }) : "";
-  const dirty = () => active() && (snapshot() !== baseline || planDirty);
+  const snapshot = () => model ? JSON.stringify({ c: model.copy, m: mediaIds(model.media),s:model.sections,catalogue:model.catalogue_mode,menus:model.menus }) : "";
+  const dirty = () => active() && (snapshot() !== baseline || planDirty || Boolean(menuDraftError));
   const mode = () => o.getPreviewMode();
   const browsingStyle = () => o.getStyle?.() || o.getAnswers().style_preset || "editorial";
   const sameStyle = () => active() && browsingStyle() === model.style;
   const editing = () => active() && !readOnly && editMode && mode() === "store" && sameStyle();
-  const captureHistory=()=>model?structuredClone({copy:model.copy,media:model.media,sections:model.sections,catalogue_mode:model.catalogue_mode,plan:planPayload()}):null;
+  const captureHistory=()=>model?structuredClone({copy:model.copy,media:model.media,sections:model.sections,catalogue_mode:model.catalogue_mode,menus:model.menus,plan:planPayload()}):null;
   function remember(group=""){
     if(!o.themeEditor||readOnly||!model)return;
     const next=captureHistory();
@@ -68,9 +69,10 @@ export function attachAnnDesign(o) {
     const previous=undoStack.pop();
     model.copy=structuredClone(previous.copy);model.media=structuredClone(previous.media);
     model.sections=structuredClone(previous.sections);model.catalogue_mode=previous.catalogue_mode;
+    model.menus=structuredClone(previous.menus??null);
     model.plan=structuredClone(previous.plan);o.applyPlan?.(structuredClone(previous.plan));
     planDirty=JSON.stringify(planPayload())!==savedPlan;
-    historyState=captureHistory();historyGroup="";selected=null;error="";
+    historyState=captureHistory();historyGroup="";selected=null;error="";menuDraftError="";menuRevision++;
     paint(true);markSelected();say("Last edit undone. Save draft to keep this version.");o.onChange?.();
   }
 
@@ -79,16 +81,17 @@ export function attachAnnDesign(o) {
     const body = await res.json().catch(() => ({}));
     return { res, body };
   }
-  function ingest(body, { hydrate }) {
+  function ingest(body, { hydrate,preserveMenuDraft=false }) {
+    if(!preserveMenuDraft){menuDraftError="";menuRevision++;}
     expected = body.expected_draft || expected;
     if (Array.isArray(body.images)) images = body.images;
     if (Array.isArray(body.videos)) videos = body.videos;
     if (body.publish_url) publishUrl = body.publish_url;
-    if (body.draft) o.onDraft?.(body.draft);
+    if (body.draft) {menuSource=body.draft;o.onDraft?.(body.draft);}
     const d = body.design;
     if (d && d.version === 1) {
       design = d;
-      model = { style: d.style, media_pack: d.media_pack,catalogue_mode:d.catalogue_mode||"own",sections:structuredClone(d.sections||{}), plan: d.plan || {}, copy: { ...d.copy }, media: structuredClone(d.media || {}) };
+      model = { style: d.style, media_pack: d.media_pack,catalogue_mode:d.catalogue_mode||"own",sections:structuredClone(d.sections||{}),menus:d.menus==null?null:validateDesignMenus(d.menus), plan: d.plan || {}, copy: { ...d.copy }, media: structuredClone(d.media || {}) };
       baseline = snapshot(); planDirty = false;
       if (hydrate) o.applyPlan?.(d.plan || {});
       savedPlan=JSON.stringify({...d.plan,style_preset:d.style});
@@ -133,6 +136,7 @@ export function attachAnnDesign(o) {
   }
   /** Persist copy, media and plan edits. True only after the API returns OK. */
   async function save() {
+    if(menuDraftError){say(menuDraftError);return false;}
     if (readOnly || !active()) return true;
     if (busy) return false;
     if (!dirty() && !error) return true;
@@ -144,14 +148,14 @@ export function attachAnnDesign(o) {
     for(const key of Object.keys(design?.copy||{}))
       if(key.startsWith("section.")&&!Object.hasOwn(live.copy,key))live.copy[key]=null;
     try {
-      const { res, body } = await call("PATCH", { expected_draft: expected, confirm: true, copy: live.copy, media: mediaIds(live.media),sections:model.sections,catalogue_mode:model.catalogue_mode, answers: sentPlan });
+      const { res, body } = await call("PATCH", { expected_draft: expected, confirm: true, copy: live.copy, media: mediaIds(live.media),sections:model.sections,menus:structuredClone(model.menus),catalogue_mode:model.catalogue_mode, answers: sentPlan });
       if (res.status === 409) { conflict = true; throw new Error("Another window changed this draft. Your edits are kept here and nothing was overwritten."); }
       if (!res.ok) throw new Error(body.error || "Your design could not be saved. Your edits are kept.");
       const changed = snapshot() !== sent;
-      const latestCopy = { ...model.copy }, latestMedia = structuredClone(model.media), latestSections=structuredClone(model.sections),latestCatalogue=model.catalogue_mode;
+      const latestCopy = { ...model.copy }, latestMedia = structuredClone(model.media), latestSections=structuredClone(model.sections),latestCatalogue=model.catalogue_mode,latestMenus=structuredClone(model.menus);
       const newerPlan = JSON.stringify(planPayload()) !== JSON.stringify(sentPlan);
-      ingest(body, { hydrate: false });
-      if (changed) { model.copy = latestCopy; model.media = latestMedia;model.sections=latestSections;model.catalogue_mode=latestCatalogue; }
+      ingest(body, { hydrate: false,preserveMenuDraft:true });
+      if (changed) { model.copy = latestCopy; model.media = latestMedia;model.sections=latestSections;model.catalogue_mode=latestCatalogue;model.menus=latestMenus; }
       planDirty = newerPlan;
       say(changed || newerPlan ? "Draft saved. Your newer edits still need saving." : "Draft saved. Your live site is unchanged.");
       return true;
@@ -397,8 +401,8 @@ export function attachAnnDesign(o) {
   function paintDynamic() {
     const save = el.querySelector("[data-design-save]"), st = el.querySelector("[data-design-state]"), pub = el.querySelector("[data-design-publish]");
     const d = dirty();
-    if (save) { save.disabled = readOnly || Boolean(busy) || (!d && !error) || (conflict); save.textContent = busy === "save" ? "Saving" : error && !conflict ? "Retry save" : "Save draft"; }
-    if (pub) pub.disabled = readOnly || Boolean(busy) || conflict;
+    if (save) { save.disabled = readOnly || Boolean(busy) || Boolean(menuDraftError) || (!d && !error) || (conflict); save.textContent = busy === "save" ? "Saving" : error && !conflict ? "Retry save" : "Save draft"; }
+    if (pub) pub.disabled = readOnly || Boolean(busy) || conflict || Boolean(menuDraftError);
     if (st) st.textContent = busy === "save" ? "Saving your draft design" : d ? "Unsaved changes. The page already shows them." : "Saved to your draft. Your live site is unchanged.";
     const input = el.querySelector("[data-design-input]");
     const c = el.querySelector("[data-design-count]");
@@ -454,8 +458,8 @@ export function attachAnnDesign(o) {
 
   return {
     active, editing, hasUnsavedChanges: () => dirty() || busy === "save" || busy === "use",
-    canSave:()=>!readOnly&&active()&&!busy&&!conflict&&(dirty()||Boolean(error)),
-    canPublish:()=>!readOnly&&active()&&!busy&&!conflict,
+    canSave:()=>!readOnly&&active()&&!busy&&!conflict&&!menuDraftError&&(dirty()||Boolean(error)),
+    canPublish:()=>!readOnly&&active()&&!busy&&!conflict&&!menuDraftError,
     canUndo,undo,
     isSavedStyle: style => active() && model.style === style,
     resumeEditing() {
@@ -473,9 +477,13 @@ export function attachAnnDesign(o) {
     /** The design to preview, or null when the page should show the showcase instead. */
     previewDesign() {
       if (!active() || !sameStyle()) return null;
-      return { version: 1, style: model.style, media_pack: model.media_pack,catalogue_mode:model.catalogue_mode,sections:structuredClone(model.sections), plan: planPayload(), copy: { ...model.copy }, media: { ...model.media } };
+      return { version: 1, style: model.style, media_pack: model.media_pack,catalogue_mode:model.catalogue_mode,sections:structuredClone(model.sections),...(model.menus===null?{}:{menus:structuredClone(model.menus)}), plan: planPayload(), copy: { ...model.copy }, media: { ...model.media } };
     },
     setSections(value){if(readOnly||!model)return;model.sections=structuredClone(value);planDirty=true;remember();paintDynamic();o.onChange?.();},
+    getMenus(){return structuredClone(model?.menus??defaultDesignMenus(menuSource));},
+    getMenuRevision:()=>menuRevision,
+    setMenus(value,{typing=false}={}){if(readOnly||!model||conflict)return;const next=value===null?null:validateDesignMenus(value);menuDraftError="";if(JSON.stringify(next)===JSON.stringify(model.menus)){o.onChange?.();return;}model.menus=next;remember(typing?"copy:menus":"menus");paintDynamic();o.onChange?.();},
+    setMenuDraftError(message){if(readOnly||!model)return;const next=String(message||"").slice(0,500);if(next===menuDraftError)return;menuDraftError=next;paintDynamic();o.onChange?.();},
     selectContent(kind,key){if(readOnly||!model)return;if(kind==="copy"&&isDesignCopyKey(key)||(kind==="image"||kind==="video")&&isDesignMediaKey(key)||kind==="section"&&o.contextual&&typeof key==="string"&&key)select(kind,key);},
     isActive: active,
   };

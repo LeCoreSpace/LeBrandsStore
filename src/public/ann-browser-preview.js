@@ -2,28 +2,8 @@ import { renderStylePreview } from "./style-preview.js";
 import { attachStyleInteractions } from "./style-preview-interactions.js";
 import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
 import { safeImage } from "./aura-sections.js";
-
-/** Only recognised, same-origin storefront links can change this private preview. */
-export function browserPreviewLocation(href, data, origin) {
-  try {
-    const url=new URL(href,origin);
-    if(url.origin!==new URL(origin).origin || !["http:","https:"].includes(url.protocol)) return null;
-    const path=url.pathname;
-    if(["/collections","/collections/","/collections/all"].includes(path)) return {page:"collection",collectionId:undefined};
-    if(path.startsWith("/products/")) {
-      const id=decodeURIComponent(path.split("/")[2]);
-      return data.products.some(p=>p.id===id)?{page:"product",productId:id}:null;
-    }
-    if(path.startsWith("/collections/")) {
-      const slug=decodeURIComponent(path.split("/")[2]);
-      const collection=data.collections?.find(c=>c.id===slug || c.slug===slug);
-      return collection?{page:"collection",collectionId:collection.id}:null;
-    }
-    if(path.startsWith("/policies/")) return {page:"policy",policyKind:path.split("/")[2]};
-    const page={"/":"home","/cart":"cart","/checkout":"checkout","/pages/about":"about","/pages/contact":"contact"}[path];
-    return page?{page}:null;
-  } catch {return null;}
-}
+import {browserPreviewLocation} from "./ann-preview-navigation.js";
+export {browserPreviewLocation};
 
 /** The child stays script-free. Trusted code in Ann binds its preview-only controls. */
 export function openAnnBrowserPreview(snapshot,{openWindow=()=>window.open("about:blank","_blank")}={}) {

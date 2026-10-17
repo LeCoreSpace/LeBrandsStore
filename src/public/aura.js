@@ -58,6 +58,7 @@ const PRESETS = ["ivory", "stone", "midnight", "white"];
 const PRESET_ALIAS = { porcelain: "ivory", sand: "ivory", ink: "midnight" };
 const policyName = policyTitle;
 import { renderSavedDesign } from "./aura-design.js";
+import {DESIGN_MENU_CSS} from "./ann-menu-model.js";
 export function renderAura(data = {}, options = {}) {
   const settings = data.settings || {};
   const store = data.store || {};
@@ -137,7 +138,7 @@ export function renderAura(data = {}, options = {}) {
       ${canonicalUrl ? `<link rel="canonical" href="${esc(canonicalUrl)}"><meta property="og:url" content="${esc(canonicalUrl)}">` : ""}
       <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
       ${designed ? `<style>${designed.css}</style>` : '<link rel="stylesheet" href="/assets/aura.css">'}
-      <style>:root{--accent:${accent};--accent-ink:${accentInk};--accent-label:${accentLabel};--display:${font.display};--body:${font.body};--radius:${radius}}</style>
+      <style>:root{--accent:${accent};--accent-ink:${accentInk};--accent-label:${accentLabel};--display:${font.display};--body:${font.body};--radius:${radius}}${DESIGN_MENU_CSS}</style>
       ${options.commerce ? `<link rel="stylesheet" href="/assets/commerce.css">` : ""}
       ${!designed && STYLE_IDS.includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-styles.css">' : ""}
       ${!designed && ["minimal", "vintage"].includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-extra-styles.css">' : ""}
