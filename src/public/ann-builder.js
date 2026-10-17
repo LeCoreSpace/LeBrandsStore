@@ -10,7 +10,7 @@ import { attachAnnApplication } from "./ann-application-ui.js";
 import { attachAnnOnboarding } from "./ann-onboarding-ui.js";
 import { attachAnnReplyFields } from "./ann-reply-fields.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
-import { attachAnnLaunch } from "./ann-launch-ui.js";
+import { attachStoreEssentials, connectionHref } from "./store-essentials.js";
 import { openAnnBrowserPreview } from "./ann-browser-preview.js";
 import { attachAnnBranding } from "./ann-branding-ui.js";
 import { prefilledSection } from "./aura-starters.js";
@@ -31,8 +31,7 @@ const UI_STEPS = [
   ["fonts", "Fonts", "Choose how your store's text looks"], ["category", "Category", "Choose your product category"],
   ["collections", "Collections", "Group related products"], ["products", "Products", "Add products and confirm your catalogue"],
   ["story", "Brand story", "Choose optional story sections"],
-  ["payments", "Payments", "Choose how customers pay"], ["shipping", "Delivery", "Choose how orders reach customers"],
-  ["domain", "Own domain", "Connect your own domain"], ["review", "Review", "Review your store and opening checks"],
+  ["review", "Review", "Review your store and opening checks"],
 ].filter(([k]) => ANN_STEPS.includes(k));
 const PAGES = ["home", "collection", "product", "cart", "checkout", "about", "contact"];
 const STEP_PAGE = { business: "home", selling: "home", collections: "collection", products: "product", story: "home", style: "home", palette: "home", fonts: "home", category: "home" };
@@ -45,8 +44,9 @@ let revision = session?.revision ?? 0;
 let saved = structuredClone(session?.answers || {});
 let answers = structuredClone(saved);
 if (!session) answers = { ...initialAnswers(boot.settings, boot.store, ref || {}), ...answers };
-const launchStep = new Map([["1","domain"],["2","payments"],["3","shipping"]]).get(new URL(location.href).searchParams.get("launch"));
-let step = new URL(location.href).searchParams.get("logo") === "1" ? "story" : launchStep ||
+const launchStep = new Map([["1","domain"],["2","payments"],["3","delivery"]]).get(new URL(location.href).searchParams.get("launch"));
+if (launchStep) location.replace(connectionHref(boot.store.store_id, launchStep));
+let step = new URL(location.href).searchParams.get("logo") === "1" ? "story" :
   (UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "business");
 let touched = false, saving = false, conflict = false, notice = "", page = "product", productId, collectionId, policyKind;
 let queue = Promise.resolve(), lastSavedAt = session ? "Saved plan restored." : "";
@@ -81,12 +81,7 @@ const brandingUI=attachAnnBranding({api,readOnly,initial:boot.settings,
   onSaved:()=>{readinessUI.onStoreChanged();drawKeep();},
   onContinue:()=>advance(),
 });
-const launchUI = attachAnnLaunch({api,readOnly,onStep:n=>go(({2:"review",3:"shipping",4:"domain"})[n]),onSaved:()=>say("Your choices are saved. Payments and automatic shipping only start when you explicitly activate them."),onDone:()=>{
-  const review=$("#ann-readiness-slot");const panel=review?.closest("details");
-  if(panel)panel.open=true;
-  review?.scrollIntoView({block:"start"});
-  say("Your preferences are ready. Let us review the checks for opening your store.");
-}});
+const essentialsUI = attachStoreEssentials({api,storeId:boot.store.store_id});
 // Onboarding controllers: brand and address write the REAL draft; gstin verifies explicitly.
 let obDone = { brand: false, gst: false, address: false };
 function refreshAnnDraft(draft){if(!draft)return;previewSource=structuredClone(draft);boot.settings={...draft.settings};boot.store={...boot.store,...draft.store};base=stylePreviewData(previewSource,{showcase:previewMode==="showcase"});renderPreview(false);}
@@ -296,7 +291,7 @@ function prompts() {
   list.push({ id: "collections", step: "collections" });
   const cols = answers.collections || [];
   if (cols.length) for (const c of cols) list.push({ id: `ideas:${c.key}`, step: "products", col: c.key }); else list.push({ id: "ideas:none", step: "products" });
-  list.push({ id: "catalogue", step: "products" }, { id: "sections", step: "story" }, { id: "payments", step: "payments" }, { id: "shipping", step: "shipping" }, { id: "domain", step: "domain" }, { id: "review", step: "review" });
+  list.push({ id: "catalogue", step: "products" }, { id: "sections", step: "story" }, { id: "review", step: "review" });
   return list.filter(p => UI_STEPS.some(s => s[0] === p.step));
 }
 function curIdx(ps = prompts()) {
@@ -347,15 +342,12 @@ function def(p) {
     }
     case "store_name": return { kind: "onboard", mode: "brand", label: "Store name", q: "Hi, I'm Ann! Let's bring your store to life. What's your brand name?", max: 40, ph: "Type your brand name", reply: brandUI.summary() };
     case "gstin": return { kind: "onboard", mode: "gstin", label: "GST details", q: "Type your GSTIN to find your registered name and address. These go on your invoices and cannot change after confirmation.", reply: gstUI.summary() };
-    case "included_address": return { kind: "onboard", mode: "address", label: "Store address", q: "Here's your store's web address. Keep it, or type a new name below. Your own domain comes later.", reply: addressUI.summary() };
+    case "included_address": return { kind: "onboard", mode: "address", label: "Store address", q: "Here's your store's web address. Keep it, or type a new name below. You can connect your own domain later in Settings.", reply: addressUI.summary() };
     case "catalogue": return { kind: "catalogue", label: "Create products", q: "Ready to create draft products? Check each price, HSN, GST rate and stock. You can also do this later.", reply: "" };
     case "logo": return {kind:"logo",label:"Brand logo",q:`Add a logo for ${a.store_name || boot.store.name || "your brand"}. No logo yet? We'll use your brand name.`,reply:brandingUI.reply()};
     case "tagline": return txt("tagline", "Tagline", "Describe your brand in a few words, like Everyday comfort, made yours. Or skip for now.", 160, "A few words about your brand");
     case "description": return txt("description", "About your brand", "What's your brand's story? A couple of lines about what makes it special is plenty.", 1200, "Why you started and what makes your products special", true);
     case "sections": return { kind: "sections", label: "Optional sections", q: "Make it yours! Tap to add or remove sections, like your story or FAQs.", reply: sectionsReply() };
-    case "domain": return {kind:"launch",launchStep:1,label:"Store address",q:"Have your own domain, like www.yourbrand.com? Connect it now or keep your included address.",reply:launchUI.summary(1)};
-    case "payments": return {kind:"launch",launchStep:2,label:"Payments",q:"How should customers pay? Pick Cash on Delivery, Razorpay online payments, or both.",reply:launchUI.summary(2)};
-    case "shipping": return {kind:"launch",launchStep:3,label:"Delivery",q:"How will you deliver? Add tracking yourself, connect Shiprocket, or use both.",reply:launchUI.summary(3)};
     default: return { kind: "review", label: "Review", q: "", reply: "" };
   }
 }
@@ -419,8 +411,6 @@ function inlineControls(p, d) {
     body = `<div id="ann-ob-${d.mode}-slot"></div>`;
   } else if (d.kind === "catalogue") {
     body = `<div id="ann-application-slot"></div><div class="ann-comp-row"><button type="button" class="ann-btn alt" data-continue>Continue without creating products</button></div>`;
-  } else if (d.kind === "launch") {
-    body='<div id="ann-launch-slot"></div>';
   } else if (d.kind === "logo") {
     body=`<div id="ann-branding-slot">${brandingUI.html()}</div>`;
   } else if (d.kind === "choice" || d.kind === "accent") {
@@ -430,7 +420,7 @@ function inlineControls(p, d) {
   } else if (d.kind === "sections") {
     name = "Optional sections";
     body = `${Object.entries(ANN_EXTRA_SECTIONS).map(([pg, l]) => `<div class="ann-sec-row"><span>${label(pg)} page</span><div class="ann-chips">${l.map(s => `<button type="button" class="ann-chip sm" data-toggle-section="${pg}:${s}" aria-pressed="${shown(pg).includes(s)}"${dis}><strong>${esc(label(s))}</strong></button>`).join("")}</div></div>`).join("")}
-      <div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>${readOnly ? "Continue" : "Continue to payments"}</button>${tail}</div>`;
+      <div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>${readOnly ? "Continue" : "Review my store"}</button>${tail}</div>`;
   } else if (d.kind === "text" || d.kind === "list") {
     const have = new Set((answers.product_ideas || []).map(x => x.name.trim().toLowerCase()));
     const pills = !editing && d.list === "idea" && d.sugg?.length ? `<div class="ann-chips ann-product-suggestions" role="group" aria-label="Product name suggestions">${d.sugg.filter(x => !have.has(x.name.trim().toLowerCase())).slice(0, 8).map(x => `<button type="button" class="ann-chip sm" data-suggest="${esc(x.name)}"${d.full ? " disabled" : dis}><strong>${esc(x.name)}</strong>${x.hsn_code ? `<span>HSN ${esc(x.hsn_code)}</span>` : ""}</button>`).join("")}</div><details class="ann-hsn-help"><summary>About HSN suggestions</summary><p class="ann-note">These are suggested 4-digit headings, not verified tax codes. Confirm your product's exact HSN and GST rate before saving.</p></details>` : "";
@@ -517,7 +507,7 @@ function draw(mode = "keep") {
   const y = log.scrollTop;
   const markup = timeline() + (detail && DETAIL_STEPS.includes(step) ? detailHtml() : "");
   if (markup !== logMarkup) { log.innerHTML = markup; logMarkup = markup; }
-  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); launchUI.mount(({domain:1,payments:2,shipping:3})[step], { customDomainOnly: step === "domain" }); brandingUI.mount(); Object.values(obUIs).forEach(u => u.mount());
+  drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); essentialsUI.mount(); brandingUI.mount(); Object.values(obUIs).forEach(u => u.mount());
   if (mode === "active") scrollActive(); else log.scrollTop = y;
 }
 const drawKeep = () => draw("keep");
@@ -663,10 +653,9 @@ function reviewStep() {
   return bubble(`<p>Your store is taking shape. ${session || !dirty ? "Here is your plan so far." : "Save your plan so you can pick up where you left off."} Keep exploring with samples, or make it yours when you are ready. Nothing is live yet.</p>`) +
     bubble(`<dl class="ann-summary">${rows.map(([k, n, v]) => `<div><dt>${n}</dt><dd>${esc(v)}</dd><button type="button" class="ann-link" data-go="${k}">Change</button></div>`).join("")}</dl>
       <p class="ann-note">${dirty ? "You have unsaved changes." : designUI?.active() ? "Design saved to draft." : session ? "Your plan is saved." : "Not saved yet."}</p>`, "ann-card") +
-    bubble(`<h2>Your next step, at your pace</h2><p>You can revisit Store address, Payments and Delivery using the steps above. Ready to go further? Review your products, business details and opening checks below. Nothing goes live until you review and publish.</p><div class="ann-actions"><button type="button" class="ann-btn alt sm" data-go="domain">Store address</button><button type="button" class="ann-btn alt sm" data-go="payments">Payments</button><button type="button" class="ann-btn alt sm" data-go="shipping">Delivery</button></div>`, "ann-card") +
+    bubble(`<div id="ann-essentials-slot"></div>`, "ann-card") +
     `<p class="ann-note">Real draft products are created in the catalogue step. <button type="button" class="ann-link" data-go-prompt="catalogue">Open the catalogue step</button></p>
-    <details class="ann-review-step"><summary>When you are ready: getting your store ready to open</summary><section class="ann-card" id="ann-readiness-slot"></section></details>
-    <details class="ann-review-step" id="ann-launch-panel" open><summary>Your address, payments and delivery</summary><section class="ann-card" id="ann-launch-slot"></section></details>`;
+    <details class="ann-review-step"><summary>When you are ready: getting your store ready to open</summary><section class="ann-card" id="ann-readiness-slot"></section></details>`;
 }
 
 
@@ -832,7 +821,7 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || launchUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || Object.values(obUIs).some(u => u.hasUnsavedChanges()) || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || Object.values(obUIs).some(u => u.hasUnsavedChanges()) || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
 const replyFields=attachAnnReplyFields({onChange:()=>drawComposer(true)});

@@ -8,6 +8,9 @@ import { loadDraft } from "../store/repository.js";
 import { commerceError } from "../public/commerce-rules.js";
 import { dateFilters, csv } from "../public/dashboard-rules.js";
 import {emailHistory} from "../email/worker.js";
+import {loadAnnSession, annReference} from "../store/ann-repository.js";
+import {onlineAvailable} from "../connections/payments.js";
+import {CONNECTION_KINDS} from "../public/store-essentials.js";
 import { dashboardAccess, overview, listOrders, orderDetail, listCustomers, customerDetail, listInvoices,
   invoiceDetail, changeOrderStatus, collectPayment, archiveProduct, adjustStock, exportRows, audit } from "./repository.js";
 
@@ -28,6 +31,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
     if (!match || !UUID.test(match[1])) throw commerceError("Store not found.",undefined,404);
     if (!user || user.must_change_password) throw commerceError("Sign in to manage your store.",undefined,401);
     const [,id,section = "overview",child,action] = match;
+    const connectionKind=Object.hasOwn(CONNECTION_KINDS,url.searchParams.get("connection") || "") ? url.searchParams.get("connection") : null;
     if (child && !UUID.test(child) && !(["products", "collections"].includes(section) && child === "new") &&
       !(section === "exports" && ["orders","products","customers"].includes(child))) throw commerceError("Record not found.",undefined,404);
     const read = ["GET","HEAD"].includes(request.method);
@@ -35,7 +39,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
       (section === "products" && child && ["stock","archive"].includes(action)) || (section === "exports" && child && !action));
     if ((!read && !mutation) || (read && (action || section === "exports"))) throw commerceError("Method not allowed.",undefined,405);
     const filters = dateFilters(url.searchParams);
-    if(section==="settings"&&read || mutation&&section==="orders"&&action==="status"){
+    if(section==="settings"&&read&&!connectionKind || mutation&&section==="orders"&&action==="status"){
       const shipping=!read&&(await readJson(request.clone())).status==="shipped";
       if(section==="settings"||shipping){
         const verification=await db.withMemberStore(id,tokenHash,async tx=>{
@@ -57,11 +61,23 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
       }
       const draft = await loadDraft(tx,id,{includeArchived:section === "products"});
       const data = {store:draft.store,draft,role,filters};
-      if (section === "settings") {
-        const [saved] = await tx`SELECT settings FROM public.checkout_settings WHERE store_id = ${id}`;
+      if (section === "settings" || section === "overview") {
+        const [checkoutSchema]=await tx`SELECT to_regclass('public.checkout_settings') IS NOT NULL AS enabled`;
+        const [saved] = checkoutSchema?.enabled ? await tx`SELECT settings FROM public.checkout_settings WHERE store_id = ${id}` : [];
         data.checkoutSettings = saved?.settings || {};
+        data.checkoutSaved=!!saved;
       }
-      if (section === "overview") data.overview = await overview(tx,id,filters.period);
+      if (section === "settings" && connectionKind) data.connectionKind=connectionKind;
+      if (section === "overview") {
+        data.overview = await overview(tx,id,filters.period);
+        const [schema]=await tx`SELECT to_regclass('public.ann_builder_sessions') IS NOT NULL AS ready`;
+        data.annProgressAvailable=schema?.ready===true;
+        if(data.annProgressAvailable) {
+          data.annSession=await loadAnnSession(tx,id);
+          data.annReference=await annReference(tx);
+        }
+        data.onlineAvailable=await onlineAvailable(tx,id);
+      }
       else if (section === "orders") {
         if (child) {data.order = await orderDetail(tx,id,child);data.order.email_history=await emailHistory(tx,id,child);}
         else data.orders = await listOrders(tx,id,filters);

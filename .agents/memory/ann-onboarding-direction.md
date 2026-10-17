@@ -39,14 +39,29 @@ Explain that connecting a custom domain comes later. Continue through style,
 fonts and colours, product category/subcategory, niche-specific products with HSN
 and custom additions, and relevant attributes for up to five initial products in
 a collection. Explain that more products and collections can be added later.
-Do not repeat brand and included-address questions later. Finish with payments,
-delivery, custom-domain connection and review.
+Do not repeat brand and included-address questions later. Finish with review and
+a short store-essentials summary, not payment, delivery or custom-domain
+integration questions. Connection management belongs in the corresponding
+Settings screens, with direct links from Ann and no loop back into Ann.
 
 **Why:** The user described this sequence to replace the previous onboarding.
 
 **How to apply:** Keep questions conversational and understandable to
 non-technical merchants. Preserve the existing verified-registration and
 historical-invoice boundaries.
+
+Ann explains the included LeBrands address, available COD and manual tracking,
+and shows actual enabled/connected status. Never imply an available capability
+or a saved preference is activated. Partner services and custom domains are
+optional.
+
+**Why:** The user accepted moving connection setup out of Ann to simplify the
+conversation and centralise ongoing management.
+
+**How to apply:** Preserve explicit provider activation and combined COD/online
+payment and manual/partner shipping choices. Today must distinguish saved Ann
+build progress from required opening checks, without counting optional partner
+connections as unfinished work. Collapse onboarding reminders for live stores.
 
 All merchant-typed answers in Ann must use the single chat text box at the
 bottom, not separate text inputs inside the conversation.

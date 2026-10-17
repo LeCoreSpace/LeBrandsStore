@@ -1,6 +1,8 @@
 import { escapeHtml, layout } from "./layout.js";
 import { LE_BRANDS_LOGO, LE_BRANDS_MARK } from "./brand.js";
 import { validateProduct } from "../public/validation.js";
+import { setupProgressCard } from "./store-setup-progress.js";
+import { CONNECTION_KINDS, connectionHref } from "../public/store-essentials.js";
 import { CURRENT_GST_RATES, INDIAN_STATES, registeredBusinessState, registeredSupplierErrors, defaultInvoicePrefix, formatPhone } from "../public/commerce-rules.js";
 import { statusLabel, stateName, indianDate, allowedTransitions, timelineSentence, accountIdentity } from "../public/dashboard-rules.js";
 import { paymentState, fulfilmentState } from "../public/dashboard-view-model.js";
@@ -40,12 +42,13 @@ export function documentPage(view, data, user, body) {
     "product-new": "Add product", product: "Edit product", collections: "Collections", "collection-new": "Add collection", collection: "Edit collection", customers: "Customers",
     customer: "Customer details", invoices: "Invoices", settings: "Settings", "ai-builder":"Legacy build", builder:"Build your store",
   })[view] || "Overview";
+  const connectionKind = data.connectionKind;
   return layout({
     title: `${title} | ${store.name || "Your store"} | LeBrands.Store`,
     description: `${title} workspace for ${store.name || "your store"}.`,
     canonical: `https://app.lebrands.store/stores/${encodeURIComponent(storeId)}/${view === "overview" ? "" : view === "builder" ? "build" : view}`,
     noindex: true,
-    extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>',
+    extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>' + (connectionKind ? '<link rel="stylesheet" href="/assets/ann-builder.css"><script type="module" src="/assets/settings-connections.js"></script>' : ""),
     body: `<div class="lb-app" data-store-id="${esc(storeId)}" data-role="${esc(data.role || "editor")}">
       ${header(data, user, view)}
        <main class="lb-main"><div class="lb-content">${store.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline; your data is unchanged. ${esc(store.approval_revocation_note || "")}${store.status === "awaiting_approval" ? " Your renewed approval request is awaiting review." : ""}</p>` : store.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is offline until a LeBrands reviewer approves it.</p>' : ""}${body}</div></main></div></div>
@@ -101,15 +104,6 @@ function overview(data) {
   const top = list(o.top_products), sources = list(o.sources), needs = list(o.needing_action);
   const catalogProducts = list(data.draft?.products || data.products);
   const period = Number(data.filters?.period) === 7 ? 7 : 30;
-  const checks = [
-    ["Products", catalogProducts.length ? "Catalogue is ready" : "Add your first product", catalogProducts.length ? "Done" : "Add product", catalogProducts.length > 0],
-    ["Payments", "Review COD and optional provider setup in Ann", "Store connections", false],
-    ["Shipping", "Review manual delivery and optional provider setup in Ann", "Store connections", false],
-    ["Domain", "Keep your included address or set up a custom domain in Ann", "Store connections", false],
-    ["Policies", "Review store policies in setup", "Review policies", false],
-  ];
-  const setupDone = checks.filter(item => item[3]).length;
-  const setup = `<div class="lb-setup-progress"><span>${setupDone} of ${checks.length} steps complete</span><div role="progressbar" aria-label="Store setup progress" aria-valuemin="0" aria-valuemax="${checks.length}" aria-valuenow="${setupDone}"><i style="width:${setupDone / checks.length * 100}%"></i></div></div><div class="lb-checklist">${checks.map(([label, text, action, done]) => `<div class="lb-check-row"><span class="lb-check-dot ${done ? "" : "is-pending"}" aria-hidden="true"></span><div><strong>${esc(label)}</strong><small>${esc(text)}</small></div>${action === "Add product" ? `<a href="/stores/${storeId}/products/new">${action}</a>` : action === "Review policies" ? `<a href="/stores/${storeId}/setup">${action}</a>` : action === "Store connections" ? `<a href="/stores/${storeId}/build/ann?launch=1">Open</a>` : `<span class="lb-coming" ${action === "Not configured" ? 'aria-disabled="true"' : ""}>${esc(action)}</span>`}</div>`).join("")}</div>`;
   const soldTop = top.filter(p => Number(p.quantity || 0) > 0);
   const sourced = sources.filter(s => Number(s.orders || 0) > 0);
   const rankRows = soldTop.length ? soldTop.slice(0, 5).map((p, i) => `<div class="lb-rank-row"><span class="lb-rank">${String(i + 1).padStart(2, "0")}</span><strong>${esc(p.title || "Untitled product")}</strong><span>${Number(p.quantity || 0)} sold</span><b>${money(p.revenue_paise)}</b></div>`).join("") : `<div class="lb-inline-empty">${top.length ? "No product sales in this period." : catalogProducts.length ? "Product sales will appear after orders are placed." : `Add a product before sales can be ranked. <a href="/stores/${storeId}/products/new">Add a product</a>.`}</div>`;
@@ -127,7 +121,7 @@ function overview(data) {
   ];
   return `${pageHeading("", "Home", "", buttonLink(`/stores/${storeId}/orders`, "View orders"))}
     ${actionError(data)}
-    <section class="lb-card lb-setup-card"><div class="lb-card-heading lb-card-heading-toggle"><span><h2>Set up your store</h2><small>${setupDone} of ${checks.length} complete</small></span><button type="button" data-setup-toggle aria-expanded="true">Collapse</button></div><div data-setup-content>${setup}</div></section>
+    ${setupProgressCard(data)}
     <div class="lb-home-toolbar">${periodControl}<small class="lb-data-note" data-summary-scope>Last ${period} days. Sales exclude cancelled, refunded and returned orders.</small></div>
     <div class="lb-metric-grid">${metrics.map(([label, value, note], i) => `<article class="lb-metric"><div class="lb-metric-label">${esc(label)}</div><strong data-home-metric="${i}">${value}</strong><small data-home-metric-note="${i}">${esc(note)}</small></article>`).join("")}</div>
     <section class="lb-card lb-chart-card"><div class="lb-card-heading"><div><h2>Sales over time</h2><small data-chart-caption>Loading sales…</small></div></div><div class="lb-chart" data-sales-chart aria-label="Sales over time chart"><div class="lb-chart-skeleton" aria-hidden="true"></div></div><div class="lb-chart-table" data-chart-table></div><p class="lb-chart-scope" data-chart-scope>Sales exclude cancelled, returned and refunded orders.</p></section>
@@ -317,7 +311,7 @@ function settingsPage(data) {
   return `${pageHeading("", "Settings", "",`<button class="lb-button" type="submit" form="lb-business-form" ${["owner","admin"].includes(data.role)?"":"disabled"}>Save business details</button>`)}${actionError(data)}
     <div class="lb-settings-layout"><nav class="lb-settings-index" aria-label="Settings sections">
       <a href="#store-details">Store details</a><a href="#business-gst">Business &amp; GST</a><a href="#policies">Policies</a>
-      <a href="${`/stores/${id}/settings/checkout`}">Checkout</a><a href="/stores/${id}/build/ann?launch=1">Store connections</a><span>Users <small>Unavailable</small></span>
+      <a href="${`/stores/${id}/settings/checkout`}">Checkout</a><a href="/stores/${id}/settings?connection=domain">Store connections</a><span>Users <small>Unavailable</small></span>
     </nav><div class="lb-settings-panels">
       <div id="store-details">${card("Store details", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Store address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status === "awaiting_approval" ? "Awaiting approval" : store.status || "Setup in progress")}</dd></div><div><dt>Store setup</dt><dd><a class="lb-inline-link" href="/stores/${id}/setup">Open store setup</a></dd></div></dl>`)}</div>
       <div id="business-gst">${card("Business & GST", taxForm)}</div>
@@ -325,7 +319,7 @@ function settingsPage(data) {
       <div id="checkout">${card("Checkout", `<p>Checkout and delivery settings are available in the existing checkout settings screen.</p><div class="lb-export-buttons"><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/settings/checkout">Open checkout settings</a></div><small>${esc(checkoutSettings.store_state ? `Registered state: ${stateName(checkoutSettings.store_state)}` : "Checkout configuration is not included in this dashboard view.")}</small>`)}</div>
       <div id="exports">${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}</div>
       ${card("Store availability", ownerActions)}
-      <section id="store-connections" class="lb-card"><div class="lb-card-heading"><h2>Store connections</h2></div><p>Choose your store address and verify optional payment and delivery accounts in Ann. Verifying an account does not activate online checkout or automatic shipping.</p><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/build/ann?launch=1">Open store connections</a><p>User management is not available in this settings screen.</p></section>
+      <section id="store-connections" class="lb-card"><div class="lb-card-heading"><h2>Store connections</h2></div><p>Manage optional domains, online payments and shipping partners in Settings. Verifying an account does not activate online checkout or automatic shipping.</p><div class="lb-export-buttons"><a href="${connectionHref(id,"domain")}">Store address & domains</a><a href="${connectionHref(id,"payments")}">Payment connections</a><a href="${connectionHref(id,"delivery")}">Delivery connections</a></div><p>User management is available under People & access.</p></section>
     </div></div>`;
 }
 
@@ -339,6 +333,18 @@ function normalizeView(view) {
   if (["customer-detail", "customer"].includes(v)) return "customer";
   if (["orders", "products", "customers", "invoices", "settings"].includes(v)) return v;
   return "overview";
+}
+
+function connectionSettingsPage(data) {
+  const kind=data.connectionKind, root=`/stores/${encodeURIComponent(data.store?.store_id || "")}`;
+  const names={domain:"Store address & domains",payments:"Payment connections",delivery:"Delivery connections"};
+  if(!Object.hasOwn(CONNECTION_KINDS,kind))return settingsPage(data);
+  return `${pageHeading("Settings",names[kind],"Manage connections here. Your Ann design and live storefront stay unchanged until you explicitly save or activate a service.")}
+    <nav class="lb-export-buttons" aria-label="Store connection settings">${Object.keys(CONNECTION_KINDS).map(k=>`<a class="lb-button lb-button-outline lb-button-small" href="${connectionHref(data.store.store_id,k)}"${k===kind?' aria-current="page"':""}>${names[k]}</a>`).join("")}</nav>
+    <section class="lb-card lb-connection-settings" data-connection-kind="${kind}">
+    <p>${kind==="domain"?`Included address: <strong>${esc(data.store?.subdomain ? `${data.store.subdomain}.lebrands.store` : "Not assigned")}</strong>. A custom domain is optional.`:kind==="payments"?'Cash on Delivery and online payments can be used together. Save COD availability in checkout settings.':'Manual tracking remains available in Order desk, with or without a shipping partner.'}</p>
+    <div id="ann-launch-slot" aria-live="polite"></div></section>
+    <div class="lb-export-buttons"><a href="${root}/settings/checkout">Checkout & COD settings</a><a href="${root}/orders">Order desk</a><a href="${root}/build/ann">Return to Ann</a><a href="${root}/settings">All settings</a></div>`;
 }
 
 
@@ -413,7 +419,7 @@ export function renderDashboard(view, data = {}, user = {}) {
     case "customers": body = customersPage(data); break;
     case "customer": body = customerDetail(data); break;
     case "invoices": body = invoicesPage(data); break;
-    case "settings": body = settingsPage(data); break;
+    case "settings": body = data.connectionKind ? connectionSettingsPage(data) : settingsPage(data); break;
     default: body = overview(data);
   }
   return documentPage(current, data, user, body.replace(/>\+91(\d{5})(\d{5})</g,">+91 $1 $2<"));

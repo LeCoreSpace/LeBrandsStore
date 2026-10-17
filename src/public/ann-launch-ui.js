@@ -2,7 +2,7 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const HOST = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.){2,}[a-z]{2,63}$/;
 const when = v => { if (!v) return ""; const d = new Date(v); return isNaN(d) ? "" : d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }); };
 
-export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
+export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settingsMode = false }) {
   let state = null, loading = false, loadError = "", busy = "", stale = false;
   const msgs = {}, open = { 1: true, 2: false, 3: false };
   let prefs = null, prefsDirty = false;
@@ -93,7 +93,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
     if(n===1 && !state?.domain) status="Included address ready";
     return `<details class="ann-review-step ann-launch-step" data-step="${n}"${open[n] ? " open" : ""}><summary>${n}. ${esc(title)} <span class="ann-launch-st">${esc(status)}</span></summary>${body}</details>`;
   }
-  const saveRow = next => `${msg("choose")}<div class="ann-actions ann-launch-actions"><button type="button" class="ann-btn alt sm" data-ln-a="choose"${dis(!prefsDirty)}>${busy === "choose" ? "Saving" : "Save choices"}</button><button type="button" class="ann-btn sm" data-ln-a="next" data-next="${next}"${dis()}>${prefsDirty?"Save and continue":next===2?(customOnly?"Continue to review":"Continue to payments"):next===3?"Continue to delivery":"Review my store"}</button></div><p class="ann-note">Choices saved here do not activate services.</p>`;
+  const saveRow = next => `${msg("choose")}<div class="ann-actions ann-launch-actions"><button type="button" class="ann-btn alt sm" data-ln-a="choose"${dis(!prefsDirty)}>${busy === "choose" ? "Saving" : "Save choices"}</button>${settingsMode ? "" : `<button type="button" class="ann-btn sm" data-ln-a="next" data-next="${next}"${dis()}>${prefsDirty?"Save and continue":next===2?(customOnly?"Continue to review":"Continue to payments"):next===3?"Continue to delivery":"Review my store"}</button>`}</div><p class="ann-note">Choices saved here do not activate services.</p>`;
   function advance(next) {
     const move=()=>{
       if(focusedStep&&onStep){skipped.delete(focusedStep);onStep(next);return;}
@@ -115,7 +115,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep }) {
   }
 
   function html() {
-    const head = focusedStep?`<button type="button" class="ann-link" data-ln-a="skip"${busy?" disabled":""}>Set up later</button>`:`<h2>Launch setup</h2><p class="ann-note">Start now, or come back later.</p>`;
+    const head = settingsMode ? "" : focusedStep?`<button type="button" class="ann-link" data-ln-a="skip"${busy?" disabled":""}>Set up later</button>`:`<h2>Launch setup</h2><p class="ann-note">Start now, or come back later.</p>`;
     if (loading && !state) return `${head}<div class="ann-skel" aria-busy="true"><i></i><i></i><i></i></div>`;
     if (!state) return `${head}${loadError ? `<p class="ann-error" role="alert">${esc(loadError)}</p>` : ""}<button type="button" class="ann-btn" data-ln-a="load">${loadError ? "Try again" : "Load launch setup"}</button>`;
     const s = state, p = s.providers || {}, d = s.domain, plat = s.platform || {};

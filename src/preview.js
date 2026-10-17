@@ -279,6 +279,7 @@ export default {
       const data = aura ? auraDashboardFixture() : localDashboardFixture();
       if (aura && view === "collection") data.collection_id = original.searchParams.get("id") || data.collections[0].id;
       filterDashboardFixture(data,dateFilters(original.searchParams));
+      if(view==="settings"&&["domain","payments","delivery"].includes(previewUrl.searchParams.get("connection")))data.connectionKind=previewUrl.searchParams.get("connection");
       let body = renderDashboard(view,data,{name:"Demo owner"}).replace("<body>",'<body><p role="status" style="position:fixed;bottom:0;left:0;right:0;z-index:150;padding:7px;margin:0;text-align:center;font:12px system-ui;background:#fff4ce;color:#514111">Read-only local preview with synthetic sample data. No account or database is attached.</p>')
         .replace('class="lb-app"','class="lb-app" data-preview="true"');
       body=body.replace(/href="(\/stores\/[^"#]*)(#[^"]*)?"/g,(_,path,hash="")=>`href="${dashboardPreviewLink(path,aura)}${hash}"`)

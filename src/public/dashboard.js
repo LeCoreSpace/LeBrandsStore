@@ -1,3 +1,4 @@
+import "./settings-connections.js";
 import { validateProduct, productGSTWarning } from "/assets/validation.js";
 import { statusLabel, stateName, indianDate, allowedTransitions } from "/assets/dashboard-rules.js";
 import { registeredSupplierErrors, validInvoicePrefix, INDIAN_STATES } from "/assets/commerce-rules.js";

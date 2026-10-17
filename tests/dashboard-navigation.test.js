@@ -28,8 +28,9 @@ test("live routes map to real pages and planned items have no href", () => {
   assert.equal(byLabel["People & access"].href, `${r}/team`);
   assert.equal(byLabel["Dispatch preferences"].href, `${r}/settings/checkout`);
   assert.equal(byLabel["Pages & policies"].href, `${r}/settings#policies`);
-  assert.equal(byLabel["Payment connections"].href, `${r}/build/ann?launch=2`);
-  assert.equal(byLabel["Delivery connections"].href, `${r}/build/ann?launch=3`);
+  assert.equal(byLabel["Payment connections"].href, `${r}/settings?connection=payments`);
+  assert.equal(byLabel["Delivery connections"].href, `${r}/settings?connection=delivery`);
+  assert.equal(byLabel["Store address & domains"].href, `${r}/settings?connection=domain`);
   assert.equal(byLabel["Refunds"].hint, "In orders");
   assert.equal(byLabel["Stock & SKUs"].hint, "In products");
   for (const i of all.filter(i => i.kind === "planned")) assert.equal(i.href, null);
@@ -51,13 +52,15 @@ test("current matching works on child views and opens the owning group", () => {
   assert.match(html, /data-nav-group="orders" data-current>[^]*?aria-expanded="true"/);
   assert.match(html, /data-nav-group="catalogue">[^]*?aria-expanded="false"/);
 });
-test("connection menu links open their Ann step without changing saved progress or accepting unknown steps", async () => {
+test("legacy Ann connection links redirect to Settings without changing saved progress", async () => {
   const source=await readFile("src/public/ann-builder.js","utf8");
   const entry=source.match(/const launchStep =[\s\S]*?let step =[\s\S]*?;\n/)[0];
-  for(const [query,expected] of [["?launch=1","domain"],["?launch=2","payments"],["?launch=3","shipping"],["?launch=__proto__","review"],["?launch=unknown","review"],["?logo=1&launch=2","story"],["","review"]]){
+  for(const [query,expected] of [["?launch=1","domain"],["?launch=2","payments"],["?launch=3","delivery"],["?launch=__proto__",null],["?launch=unknown",null],["?logo=1&launch=2","payments"],["",null]]){
     const session={current_step:"review"};
-    const actual=vm.runInNewContext(`${entry}\nstep;`,{URL,location:{href:`https://example.invalid/build/ann${query}`},session,UI_STEPS:[["review"]]});
-    assert.equal(actual,expected,query);
+    let redirected=null;
+    const actual=vm.runInNewContext(`${entry}\nstep;`,{URL,location:{href:`https://example.invalid/build/ann${query}`,replace:href=>{redirected=href;}},session,UI_STEPS:[["review"]],boot:{store:{store_id:ID}},connectionHref:(id,kind)=>`/stores/${id}/settings?connection=${kind}`});
+    assert.equal(redirected,expected?`/stores/${ID}/settings?connection=${expected}`:null,query);
+    assert.equal(actual,query.includes("logo=1")?"story":"review");
     assert.equal(session.current_step,"review");
   }
 });

@@ -43,9 +43,9 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
         planned("Customer insights"), planned("Shopping journey")] },
       { key: "settings", label: "Settings", icon: "settings", views: ["settings"], items: [
         live("Business & invoice identity", `${settings}#business-gst`),
-        live("Store address & domains", `${settings}#store-details`),
-        live("Payment connections", `${root}/build/ann?launch=2`, [], { hint: "In Ann setup" }),
-        live("Delivery connections", `${root}/build/ann?launch=3`, [], { hint: "In Ann setup" }),
+        live("Store address & domains", `${settings}?connection=domain`),
+        live("Payment connections", `${settings}?connection=payments`),
+        live("Delivery connections", `${settings}?connection=delivery`),
         live("Email & messaging connections", `${root}/team`, [], { hint: "Order emails" }),
         planned("Marketing connections"),
         live("Dispatch preferences", `${settings}/checkout`),

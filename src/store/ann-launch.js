@@ -26,6 +26,8 @@ export async function prepareAnnLaunch(tx, id, userId, env = {}) {
   const execution_available=await runtimeAvailable(tx);
   const [member] = await tx`SELECT role FROM public.store_members WHERE store_id=${id} AND user_id=${userId}`;
   const [store] = await tx`SELECT subdomain FROM public.stores WHERE store_id=${id}`;
+  const [checkoutSchema] = await tx`SELECT to_regclass('public.checkout_settings') IS NOT NULL AS enabled`;
+  const [checkout] = checkoutSchema?.enabled ? await tx`SELECT settings FROM public.checkout_settings WHERE store_id=${id}` : [];
   const providers = {};
   for (const provider of ["razorpay", "shiprocket"]) {
     const row = state.providers.find(r => r.provider === provider), meta = row ? parse(row.metadata) : {};
@@ -39,7 +41,7 @@ export async function prepareAnnLaunch(tx, id, userId, env = {}) {
   const jobs=execution_available?await tx`SELECT j.id,o.order_number,j.kind,j.status,j.last_error,j.updated_at FROM public.commerce_jobs j
     JOIN public.orders o ON o.store_id=j.store_id AND o.id=j.order_id WHERE j.store_id=${id} ORDER BY j.updated_at DESC LIMIT 20`:[];
   return { revision: state.revision,execution_available,jobs, can_edit: member?.role === "owner", included_address: store?.subdomain ? `${store.subdomain}.lebrands.store` : null,
-    preferences: state.preferences, providers, optional: true,
+    preferences: state.preferences, providers, optional: true, cod_enabled: parse(checkout?.settings)?.cod_enabled === true,
     domain: state.domain ? { id: state.domain.id, hostname: state.domain.hostname, status: state.domain.status,
       primary: state.domain.is_primary, ...state.evidence } : null,
     platform: { domains_available: cloudflareAvailable(env),

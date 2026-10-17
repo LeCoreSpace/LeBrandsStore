@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { attachAnnLaunch } from "../src/public/ann-launch-ui.js";
 
 const flush=async()=>{await new Promise(setImmediate);await new Promise(r=>setTimeout(r,2));};
-async function harness(readOnly=false,onStep) {
+async function harness(readOnly=false,onStep,settingsMode=false) {
   const previous={document:globalThis.document,fetch:globalThis.fetch};
   const events=new Map(),requests=[];
   const slot={innerHTML:"",scrollTop:0,contains:t=>Boolean(t),querySelector:()=>null,querySelectorAll:()=>[]};
@@ -22,7 +22,7 @@ async function harness(readOnly=false,onStep) {
     }
     return Response.json(state);
   };
-  const ui=attachAnnLaunch({api:"/isolated/api",readOnly,onStep,onSaved:()=>saved++,onDone:()=>done++});
+  const ui=attachAnnLaunch({api:"/isolated/api",readOnly,onStep,settingsMode,onSaved:()=>saved++,onDone:()=>done++});
   ui.mount();await flush();
   const click=async dataset=>{
     const target={dataset,disabled:false,closest(){return this;}};
@@ -148,17 +148,17 @@ test("read-only members can skip optional conversation setup without changing pr
     assert.deepEqual(transitions,[2]);assert.equal(h.requests.length,0);
   }finally{await h.close();}
 });
-test("Ann exposes address, payments and delivery as conversation stages and uses plain-language questions",async()=>{
+test("Ann replaces partner steps with an essentials summary while keeping plain-language build questions",async()=>{
   const js=await readFile("src/public/ann-builder.js","utf8");
   for(const [id,label,n] of [["domain","Own domain",1],["payments","Payments",2],["shipping","Delivery",3]]) {
-    assert.ok(js.includes(`["${id}", "${label}"`),`${label} must appear in the progress steps`);
-    assert.ok(js.includes(`case "${id}": return {kind:"launch",launchStep:${n}`),`${label} must use the working launch controls`);
+    assert.ok(!js.includes(`["${id}", "${label}"`),`${label} must not appear in the progress steps`);
+    assert.ok(!js.includes(`case "${id}": return {kind:"launch",launchStep:${n}`),`${label} now belongs in Settings`);
   }
   assert.ok(js.includes("What category of products do you sell?"));
   assert.ok(!js.includes("Nothing goes live here. What do you sell?"));
   assert.ok(js.includes("Let's group your products. Name your first collection"));
-  assert.ok(js.includes("Pick Cash on Delivery, Razorpay online payments, or both."));
-  assert.ok(js.includes("Add tracking yourself, connect Shiprocket, or use both."));
+  assert.ok(js.includes('id="ann-essentials-slot"'));
+  assert.ok(!js.includes('id="ann-launch-slot"'),"Ann must not mount provider forms");
   assert.ok(!js.includes('${x.hsn_note}'),"do not repeat long HSN explanations inside each suggestion");
   assert.ok(js.includes('["business", "Business"'));
   assert.ok(js.includes('["selling", "Store address"'));
@@ -166,4 +166,23 @@ test("Ann exposes address, payments and delivery as conversation stages and uses
   assert.match(js,/if \(p\.id === "review"\) \{\s*if \(active\)/,"editing earlier questions must not mount a second launch widget in an inactive review");
   const css=await readFile("src/public/ann-builder.css","utf8");
   assert.match(css,/\.ann-rail\{display:flex;flex-wrap:wrap/);
+});
+test("dedicated Settings preserves provider forms and combined choices without wizard navigation",async()=>{
+  const h=await harness(false,undefined,true);
+  try {
+    h.ui.mount(2);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="skip"|data-ln-a="next"|data-step="[13]"/);
+    await h.click({pref:"payments",v:"razorpay"});
+    assert.match(h.slot.innerHTML,/data-ln="rz.key_id"/);
+    assert.match(h.slot.innerHTML,/data-v="cod" aria-pressed="true"/);
+    await h.click({lnA:"choose"});
+    assert.equal(h.requests[0].preferences.payments,"both");
+    assert.equal(h.requests[0].action,"choose");
+    h.ui.mount(3);
+    await h.click({pref:"delivery",v:"shiprocket"});
+    assert.match(h.slot.innerHTML,/data-ln="sr.email"/);
+    assert.match(h.slot.innerHTML,/data-v="manual" aria-pressed="true"/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-step="[12]"/);
+    assert.ok(h.requests.every(r=>r.action==="choose"),"saving preferences must not activate providers");
+  }finally{await h.close();}
 });
