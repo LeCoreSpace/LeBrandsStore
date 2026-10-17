@@ -5,7 +5,7 @@ import {catalogueFrameHeaders} from "./catalogue-frame-headers.js";
 import { UUID } from "../public/validation.js";
 import { readJson } from "../store/input.js";
 import {refreshVerification} from "../gstin/service.js";
-import { loadDraft } from "../store/repository.js";
+import { loadDraft,loadStoreContext } from "../store/repository.js";
 import { commerceError } from "../public/commerce-rules.js";
 import { dateFilters, csv } from "../public/dashboard-rules.js";
 import {emailHistory} from "../email/worker.js";
@@ -77,8 +77,12 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
         await audit(tx,id,user.id,"data.exported","store",id,{kind:child,row_count:exported.rows.length,filters:dateFilters(body)});
         return exported;
       }
-      const draft = await loadDraft(tx,id,{includeArchived:section === "products",includeDesign:!["overview","orders","customers","invoices"].includes(section)});
-      const data = {store:draft.store,draft,role,filters};
+      // Preserve the existing API response contract. Operational HTML pages
+      // need store identity and GST warnings, not the entire editable catalogue.
+      const operational=!api&&["orders","customers","invoices"].includes(section);
+      const draft = operational?null:await loadDraft(tx,id,{includeArchived:section === "products",includeDesign:!["overview","orders","customers","invoices"].includes(section),includeClassifications:api||section!=="overview"});
+      const context=operational?await loadStoreContext(tx,id):{store:draft.store,draft};
+      const data = {...context,role,filters};
       if (section === "settings" || section === "overview") {
         const [checkoutSchema]=await tx`SELECT to_regclass('public.checkout_settings') IS NOT NULL AS enabled`;
         const [saved] = checkoutSchema?.enabled ? await tx`SELECT settings FROM public.checkout_settings WHERE store_id = ${id}` : [];

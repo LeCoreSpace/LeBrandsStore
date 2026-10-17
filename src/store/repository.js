@@ -29,7 +29,7 @@ const mediaRecord = (m) => ({
   ...(m.upload_type==="image"&&m.renditions?.length?{sources:m.renditions}:{}),
   ...(m.ai_generated?{ai_generated:true,approval_status:m.approval_status,source_media_id:m.source_media_id}:{}),
 });
-export async function loadDraft(tx, storeId, { includeArchived = false, includeDesign = true } = {}) {
+async function loadStoreHeader(tx,storeId){
   // to_jsonb is compatible both before and after the staged approval migration.
   const [store] = await tx`SELECT store_id, name, subdomain, status, subdomain_changed_at,
     to_jsonb(s) ? 'approved_at' AS approval_enabled,
@@ -39,6 +39,17 @@ export async function loadDraft(tx, storeId, { includeArchived = false, includeD
     to_jsonb(s)->>'approval_revocation_note' AS approval_revocation_note
     FROM public.stores s WHERE store_id = ${storeId}`;
   if (!store) throw missing();
+  return store;
+}
+// Read-model only: never return a partial draft that an edit form could save.
+export async function loadStoreContext(tx,storeId){
+  const store=await loadStoreHeader(tx,storeId);
+  const [setup]=await tx`SELECT settings FROM public.store_setup WHERE store_id=${storeId}`;
+  const settings={...DEFAULT_SETTINGS,brand_name:store.name,subdomain:store.subdomain,...setup?.settings};
+  return {store,gstinVerification:store.approval_enabled?await verificationState(tx,storeId,settings):undefined};
+}
+export async function loadDraft(tx, storeId, { includeArchived = false, includeDesign = true, includeClassifications = true } = {}) {
+  const store=await loadStoreHeader(tx,storeId);
   // fetch_types:false leaves native PG arrays as strings. JSON has a built-in
   // parser, so keep the Worker driver configuration and cross this boundary explicitly.
   const [setup] = await tx`SELECT *, to_json(completed) AS completed FROM public.store_setup WHERE store_id = ${storeId}`;
@@ -64,7 +75,7 @@ export async function loadDraft(tx, storeId, { includeArchived = false, includeD
     tx`SELECT slug, title, content, reviewed_at FROM public.policy_pages
       WHERE store_id = ${storeId} ORDER BY slug`,
     tx`SELECT * FROM public.product_options WHERE store_id=${storeId} ORDER BY sort_order,id`,
-    loadClassifications(tx,storeId),catalogueFormsEnabled(tx),
+    includeClassifications?loadClassifications(tx,storeId):Promise.resolve(new Map()),catalogueFormsEnabled(tx),
   ]);
   const data = {
     store,

@@ -6,13 +6,17 @@
 		"nodejs_compat"
 	],
 	"workers_dev": false,
+"build": {
+"command": "node scripts/build-browser-assets.mjs",
+"watch_dir": ["src/public", "src/browser-assets.js", "scripts/build-browser-assets.mjs"]
+},
 	"vars": {
 "TURNSTILE_SITE_KEY": "0x4AAAAAAFPIugBBD4F7Xgfb",
 "CUSTOM_DOMAIN_CNAME_TARGET": "brands.lebrands.store",
 "CLOUDFLARE_WORKER_NAME": "lebrands-store"
 	},
 	"assets": {
-		"directory": "./src/public",
+"directory": "./generated-artifacts/public",
 		"binding": "ASSETS",
 		"run_worker_first": true
 	},

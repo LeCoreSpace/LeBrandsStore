@@ -36,7 +36,7 @@ export function orderActionForm(storeId,orderId,transitions) {
 export function documentPage(view, data, user, body) {
   const store = obj(data.store);
   const storeId = String(store.store_id || "");
-  const gst=data.draft?.gstinVerification;
+  const gst=data.gstinVerification??data.draft?.gstinVerification;
   if(gst&&(gst.state!=="verified"||!gst.confirmed||!gst.verified_at||Date.now()-new Date(gst.verified_at).getTime()>30*86400000)){
     body=`<aside class="lb-card" role="alert"><strong>GSTIN needs attention</strong><p>Check your registration and registered supplier details before publishing or issuing new invoices.</p><a href="/stores/${esc(storeId)}/settings">Open Settings</a></aside>${body}`;
   }
@@ -56,7 +56,7 @@ export function documentPage(view, data, user, body) {
       ${header(data, user, view)}
        <main class="lb-main"><div class="lb-content">${store.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline; your data is unchanged. ${esc(store.approval_revocation_note || "")}${store.status === "awaiting_approval" ? " Your renewed approval request is awaiting review." : ""}</p>` : store.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is offline until a LeBrands reviewer approves it.</p>' : ""}${body}</div></main></div></div>
       <div class="lb-toast" role="status" aria-live="polite" data-toast hidden></div>
-      <script type="application/json" id="dashboard-data">${safeJson({ store, role: data.role, draft: data.draft, aura_skeleton_enabled: data.aura_skeleton_enabled === true, collection_id: data.collection_id || "", filters: data.filters, checkoutSettings: data.checkoutSettings })}</script>
+      <script type="application/json" id="dashboard-data">${safeJson({ store, role: data.role, draft: ["overview","orders","order","customers","customer","invoices","inventory"].includes(view)?undefined:data.draft, aura_skeleton_enabled: data.aura_skeleton_enabled === true, collection_id: data.collection_id || "", filters: data.filters, checkoutSettings: data.checkoutSettings })}</script>
     </div>`,
   });
 }
