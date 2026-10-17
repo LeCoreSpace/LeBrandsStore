@@ -10,10 +10,12 @@ An India-specific vendor URL can return globally extracted USD pricing even when
 
 ## Presentation
 
-The Compare page must use a side-by-side table against the main differentiators, not paragraphs or platform cards. Remove the quiz and use tabular calculator results rather than cost cards.
-Use the user's supplied differentiator list as the matrix's row set, excluding the monthly-cost-at-fixed-sales row, rather than expanding it into additional feature rows.
+The Compare page must use a side-by-side table against the main differentiators, not paragraphs or platform cards. Remove the quiz and the entire cost calculator, not merely its monthly-cost comparison row.
+Use the user's supplied differentiators as the foundation, with concise rows for missing product features. Explicitly include Ann's English, Hindi, Tamil, Marathi and Telugu conversation support, without implying storefront translation.
+Use the same font, sizing and heading treatment as Pricing, including in dark mode.
 
 **Why:** The user said no one would read the paragraphs, supplied a differentiator list, and explicitly requested removal of the quiz and cards.
 They supplied the list again and specifically requested using those differentiators without monthly cost.
+The user later explicitly requested removal of the calculator, an audit of missing features including the five Ann languages, and typography matching Pricing, including headers.
 
-**How to apply:** Keep this rule scoped to Compare, not the separate Pricing page's plan cards. Put necessary assumptions and sources in compact expandable notes.
+**How to apply:** Keep this rule scoped to Compare, not the separate Pricing page's plan cards. Reuse shared Pricing presentation rather than divergent heading rules. Put necessary assumptions and sources in compact expandable notes; distinguish implemented, draft-only, planned and unverified capabilities.

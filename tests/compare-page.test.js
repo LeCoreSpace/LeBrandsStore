@@ -9,6 +9,7 @@ import { estimateCosts } from "../src/public/compare-engine.js";
 import { DEFAULTS, parseInputs, resultsHtml, esc } from "../src/public/compare.js";
 import { COMPARE_FAQ, compareMain } from "../src/ui/compare.js";
 import { renderCompare, renderHome, renderPricing } from "../src/ui/marketing.js";
+import { ANN_LANGUAGES } from "../src/public/ann-language.js";
 
 const cost = (inputs = {}) => Object.fromEntries(estimateCosts({ ...DEFAULTS, ...inputs }).map(r => [r.id, r]));
 
@@ -84,10 +85,11 @@ test("differentiators are complete, grouped, concise rows with five platform col
   const html = compareMain();
   const groups = [...new Set(COMPARISON_ROWS.map(r => r.section))];
   assert.deepEqual(COMPARISON_ROWS.map(r => r.label), [
-    "How easy to build", "Who builds it", "Hiring needed", "Theme options",
-    "How much you can customise", "Commission on sales", "Paid extras",
+    "How easy to build", "Who builds it", "Guided conversation languages", "Hiring needed", "Theme options",
+    "How much you can customise", "Catalogue and buying options", "Product and collection SEO",
+    "Free offer and domains", "Commission on sales", "Paid extras",
     "COD and RTO tools", "You own customer data", "Payment and courier accounts",
-    "Built-in discovery", "Who runs marketing", "Built for India",
+    "Built-in discovery", "Who runs marketing", "Built for India", "GST documents",
   ]);
   assert.equal(groups.length, 6);
   assert.equal((html.match(/scope="rowgroup"/g) || []).length, 6);
@@ -127,20 +129,46 @@ test("quiz, recommendation storage and all comparison cards are removed", async 
   assert.doesNotMatch(client, /localStorage|recommend|QUIZ_|quizHtml/);
 });
 
-test("server-rendered page contains five sources, usable default estimates and dated methodology", () => {
+test("server-rendered page contains five sources and dated methodology without the calculator", () => {
   const html = compareMain();
   for (const p of PLATFORMS) {
     assert.ok(html.includes(p.name));
     assert.ok(html.includes(p.sourceUrl.replaceAll("&", "&amp;")));
     assert.equal(p.checkedOn, "2026-10-17");
   }
-  assert.match(html, /data-results><div class="c-scroll"/);
-  assert.match(html, /Annual subscription upfront/);
+  assert.doesNotMatch(html, /calculator|data-calc|data-results|Recalculate|Monthly total|Annual subscription upfront|<form/i);
+  assert.doesNotMatch(renderCompare(), /src="\/assets\/compare\.js"|transparent cost estimates/);
+  assert.doesNotMatch(renderPricing(), /using your own sales numbers/);
   assert.match(html, /not an independent review/);
   assert.match(html, /not enabled/);
   assert.doesNotMatch(html, /300,000|Free LeBrands.Space|keep 100%|—/);
 });
 
+test("visible differentiators include all five Ann languages and the missing catalogue features", () => {
+  const html = compareMain();
+  const names = { en: "English", hi: "Hindi", ta: "Tamil", mr: "Marathi", te: "Telugu" };
+  const row = COMPARISON_ROWS.find(r => r.label === "Guided conversation languages");
+  for (const language of ANN_LANGUAGES) assert.ok(row.cells.lebrands.includes(names[language]));
+  assert.match(row.cells.lebrands, /not storefront translation/);
+  for (const feature of ["auto SKUs", "collections, tags, vendor", "SEO title, description and editable URL", "GST invoices and credit notes", "100 products and 1,000 SKUs", "sections, menus, undo and saved versions"]) {
+    assert.ok(html.includes(feature), feature);
+  }
+  assert.match(html, /variant checkout not live/);
+  assert.match(html, /Timer and quotas not enabled/);
+  assert.match(html, /not confirmed, not that it is unavailable/);
+});
+
+test("Compare reuses Pricing typography and headings instead of independent heading rules", async () => {
+  const html = renderCompare();
+  assert.match(html, /class="m-pricing-document m-compare-document"/);
+  assert.match(html, /<main class="m-pr-main"/);
+  assert.match(html, /class="m-pr-hero"/);
+  assert.match(html, /class="m-pr-lede"/);
+  assert.match(html, /class="m-pr-head"><h2/);
+  assert.match(html, /class="m-pr-close"/);
+  const css = await readFile("src/public/compare.css", "utf8");
+  assert.doesNotMatch(css, /\.c-hero\s+h1|\.c-h2|\.c-close\s+h2|font-family\s*:/);
+});
 test("Compare sits next to Pricing and FAQ schema uses the visible answers", () => {
   for (const html of [renderHome(), renderPricing(), renderCompare()]) assert.match(html, /href="\/pricing">Pricing<\/a>\s*<a href="\/compare">Compare/);
   const html = renderCompare();
@@ -173,7 +201,5 @@ test("every public comparison asset is allowlisted and dependencies are served a
     } } });
     assert.equal(res.status, 200);
   }
-  const client = await readFile("src/public/compare.js", "utf8");
-  assert.match(client, /form\.querySelector\("\[data-results\]"\)/);
-  assert.match(client, /form\.addEventListener\("input", run\)/);
+  assert.doesNotMatch(renderCompare(), /<script[^>]+src="\/assets\/compare\.js"/);
 });

@@ -1,16 +1,14 @@
 import { PLATFORMS, COMPARISON_ROWS } from "../public/compare-data.js";
-import { DEFAULTS, esc, resultsHtml } from "../public/compare.js";
-import { estimateCosts } from "../public/compare-engine.js";
+import { esc } from "../public/compare.js";
 
 
 export const COMPARE_FAQ = [
   { q: "Are the prices verified?", a: "Each platform is marked verified or not verified with the date it was checked against its official source. Unknown values are shown as quote only, never as zero." },
   { q: "Are LeBrands.Store plans live?", a: "No. The plans are proposed and automated billing is not enabled. The proposed Free plan is 30 live days on your included address, without a custom domain. The timer is not shipped yet." },
-  { q: "What does the calculator leave out?", a: "GST and other taxes, shipping, advertising, apps and themes, domain renewals and payment-method surcharges. It estimates subscription, platform fee and gateway fee only." },
-  { q: "How are gateway and per-order fees treated?", a: "Gateway percent applies to the prepaid share. ShopDeck is charged on the delivered share. Dukaan orders are sales divided by average order value." },
+  { q: "Which languages does Ann support?", a: "Ann's guided conversations support English, Hindi, Tamil, Marathi and Telugu. This does not translate your storefront, product content or partner dashboards." },
+  { q: "Are product variants ready for checkout?", a: "Buying options, variant SKUs and quantities can be prepared in the shared product form in Ann and the dashboard. Variant checkout is not enabled yet, so products with buying options cannot currently be published." },
+  { q: "Which costs are separate?", a: "Payment gateway charges, shipping, advertising, applicable taxes and partner services are separate. Check each provider's current terms and plan limits." },
 ];
-
-const field = (name, label, value, hint, extra = "") => `<div class="c-field"><label for="f-${name}">${label}</label><input id="f-${name}" name="${name}" type="text" inputmode="decimal" autocomplete="off" value="${esc(value)}" ${extra}>${hint ? `<small>${hint}</small>` : ""}</div>`;
 
 function diffTable() {
   const ids = ["lebrands", "shopify", "zoho", "shopdeck", "dukaan"];
@@ -32,59 +30,28 @@ function sources() {
 }
 
 export function compareMain() {
-  return `<main class="c-main" id="top-compare">
-  <section class="c-hero" aria-labelledby="compare-title"><div class="c-wrap">
+  return `<main class="m-pr-main" id="top-compare">
+  <section class="m-pr-hero" aria-labelledby="compare-title"><div class="m-pr-wrap">
+    <p class="m-kicker">Compare platforms</p>
     <h1 id="compare-title">Compare five store builders for India</h1>
-    <p class="c-lede">LeBrands.Store plans are proposed. Competitor prices are a dated snapshot from official sources.</p>
+    <p class="m-pr-lede">LeBrands.Store plans are proposed. Competitor prices are a dated snapshot from official sources.</p>
   </div></section>
 
-  <section class="c-sec" id="differentiators" aria-labelledby="diff-title"><div class="c-wrap">
-    <h2 id="diff-title" class="c-h2">Main differentiators</h2>
+  <section class="c-sec" id="differentiators" aria-labelledby="diff-title"><div class="m-pr-wrap">
+    <header class="m-pr-head"><h2 id="diff-title">Main differentiators</h2></header>
     ${diffTable()}
   </div></section>
 
-  <section class="c-sec c-alt" id="calculator" aria-labelledby="calc-title"><div class="c-wrap">
-    <h2 id="calc-title" class="c-h2">Cost calculator</h2>
-    <form class="c-calc" data-calc novalidate aria-describedby="calc-errors">
-      <fieldset><legend>Your store</legend><div class="c-grid">
-        ${field("sales", "Monthly sales (\u20B9)", DEFAULTS.sales, "")}
-        ${field("aov", "Average order value (\u20B9)", DEFAULTS.aov, "")}
-        ${field("prepaid", "Prepaid share (%)", DEFAULTS.prepaid, "")}
-        ${field("gateway", "Gateway fee (%)", DEFAULTS.gateway, "")}
-        ${field("delivered", "Delivered share (%)", DEFAULTS.delivered, "")}
-      </div></fieldset>
-      <fieldset class="c-bill"><legend>Billing</legend>
-        <label><input type="radio" name="billing" value="annual" checked> Annual</label>
-        <label><input type="radio" name="billing" value="monthly"> Monthly</label>
-      </fieldset>
-      <details class="c-note"><summary>Optional: custom Shopify or Zoho quote</summary>
-        <p class="c-muted">Fill both fields of a platform to replace its published price.</p>
-        <div class="c-grid">
-          ${field("shopifyMonthly", "Shopify monthly (\u20B9)", "", "")}
-          ${field("shopifyRate", "Shopify transaction rate (%)", "", "")}
-          ${field("zohoMonthly", "Zoho Commerce monthly (\u20B9)", "", "")}
-          ${field("zohoRate", "Zoho Commerce transaction rate (%)", "", "")}
-        </div>
-      </details>
-      <div class="c-actions"><button class="m-pr-btn" type="submit">Recalculate</button><button class="c-link" type="reset" data-calc-reset>Reset to defaults</button></div>
-      <p class="c-sr" role="status" aria-live="polite" data-status></p>
-      <div id="calc-errors" class="c-errors" role="alert" data-errors hidden></div>
-      <div class="c-results" data-results>${resultsHtml(estimateCosts({ ...DEFAULTS, quotes: {} }), DEFAULTS)}</div>
-      <noscript><p class="c-muted">Estimates for the displayed defaults. Enable JavaScript to recalculate.</p></noscript>
-      <p class="c-foot">Estimates only. Fees only, no tax, shipping, ads or apps.</p>
-    </form>
-  </div></section>
-
-  <section class="c-sec" id="method" aria-labelledby="faq-title"><div class="c-wrap">
-    <h2 id="faq-title" class="c-h2">FAQ and sources</h2>
+  <section class="c-sec" id="method" aria-labelledby="faq-title"><div class="m-pr-wrap">
+    <header class="m-pr-head"><h2 id="faq-title">FAQ and sources</h2></header>
     <div class="m-faq-list">${COMPARE_FAQ.map((f) => `<details class="m-faq-item"><summary>${esc(f.q)}</summary><p>${esc(f.a)}</p></details>`).join("")}</div>
     <details class="m-faq-item c-method"><summary>Methodology and sources</summary>
       ${sources()}
-      <p>Published by LeBrands.Store, so this is our guide, not an independent review. Annual totals are divided by 12 with the upfront commitment shown separately. Check each vendor's current terms. LeBrands.Store is not affiliated with the others. <a href="/contact">Spotted an error? Tell us.</a></p>
+      <p>Published by LeBrands.Store, so this is our guide, not an independent review. Not verified means a comparable feature was not confirmed, not that it is unavailable. Check each vendor's current terms, limits and add-ons. LeBrands.Store is not affiliated with the others. <a href="/contact">Spotted an error? Tell us.</a></p>
     </details>
   </div></section>
 
-  <section class="c-sec c-close" aria-labelledby="cc-title"><div class="c-wrap c-close-in">
+  <section class="m-pr-close" aria-labelledby="cc-title"><div class="m-pr-wrap m-pr-close-in">
     <h2 id="cc-title">See the proposed plans.</h2>
     <div class="c-actions"><a class="m-pr-btn" href="/pricing">LeBrands.Store pricing</a><a class="m-pr-btn c-rose" href="https://app.lebrands.store/signup">Open your store</a></div>
   </div></section>

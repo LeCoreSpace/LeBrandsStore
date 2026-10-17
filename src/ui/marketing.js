@@ -336,7 +336,7 @@ export function renderPricing() {
   const body = `<div class="m-pricing-page">
   ${nav({ pricing: true })}
   ${pricingMain()}
-  <p class="m-pr-wrap m-pr-disclose">Weighing other platforms? <a href="/compare">Compare LeBrands.Store with four alternatives</a> using your own sales numbers.</p>
+   <p class="m-pr-wrap m-pr-disclose">Weighing other platforms? <a href="/compare">Compare LeBrands.Store with four alternatives</a> on the main differentiators.</p>
   ${footer({ pricing: true })}
 </div>`;
   return shell({
@@ -353,7 +353,6 @@ const jsonLd = (o) => JSON.stringify(o).replace(/</g, "\\u003c");
 export function renderCompare() {
   const faqSchema = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: COMPARE_FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) };
   const head = `<link rel="stylesheet" href="/assets/compare.css">
-  <script type="module" src="/assets/compare.js"></script>
   <script type="application/ld+json">${jsonLd(faqSchema)}</script>`;
   const body = `<div class="m-pricing-page">
   ${nav({ pricing: true })}
@@ -362,7 +361,7 @@ export function renderCompare() {
 </div>`;
   return shell({
     title: "Compare LeBrands.Store, Shopify, Zoho Commerce, ShopDeck and Dukaan",
-    description: "Compare five platforms for Indian D2C brands side by side: store setup, design, fees, languages and integrations, with transparent cost estimates.",
+    description: "Compare five platforms for Indian D2C brands side by side: Ann's five conversation languages, store design, catalogue tools, GST, SEO, fees and integrations.",
     canonical: "https://lebrands.store/compare",
     pageClass: "m-pricing-document m-compare-document",
     head,

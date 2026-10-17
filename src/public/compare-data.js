@@ -30,7 +30,12 @@ export const PLATFORMS = [
     caution: "App, theme and POS add-ons can cost extra. Confirm which payment and international features are available for your business.",
     statusNote: "Indian subscription prices checked on the regional page. Promotional introductory offers are excluded from recurring estimates.",
     sourceUrl: "https://www.shopify.com/in/pricing?country=IN", checkedOn: CHECKED_ON, pricingVerified: true,
-    additionalSources: [{ label: "Manual payment fee treatment", url: "https://help.shopify.com/en/manual/payments/manual-payments" }],
+    additionalSources: [
+      { label: "Manual payment fee treatment", url: "https://help.shopify.com/en/manual/payments/manual-payments" },
+      { label: "Variants", url: "https://help.shopify.com/en/manual/products/variants" },
+      { label: "Collection search listings", url: "https://help.shopify.com/en/manual/products/collections/collection-settings" },
+      { label: "GST invoice app listing", url: "https://apps.shopify.com/indian-gst-invoice" },
+    ],
     plans: [
       { name: "Basic", monthly: 1994, annual: 17988, rate: 2, feeScope: "prepaid" },
       { name: "Grow", monthly: 7447, annual: 67188, rate: 1, feeScope: "prepaid" },
@@ -48,7 +53,11 @@ export const PLATFORMS = [
     caution: "Standard lists 500 products. Multi-currency checkout starts on Professional; verify any specific Zoho connection you need.",
     statusNote: "Standard and higher plans are compared here. The ₹99/month micro-store offer, billed annually, has different limits and is not treated as equivalent.",
     sourceUrl: "https://www.zoho.com/commerce/pricing.html", checkedOn: CHECKED_ON, pricingVerified: true,
-    additionalSources: [{ label: "Official INR pricing data", url: "https://www.zohowebstatic.com/sites/zweb/json/pricing/commerce-pricing-val.json" }],
+    additionalSources: [
+      { label: "Official INR pricing data", url: "https://www.zohowebstatic.com/sites/zweb/json/pricing/commerce-pricing-val.json" },
+      { label: "Catalogue, variants and SEO", url: "https://www.zoho.com/commerce/academy/best-ways-to-manage-an-online-store.html" },
+      { label: "Separate GST invoicing product", url: "https://www.zoho.com/in/invoice/gst-compliant" },
+    ],
     plans: [
       { name: "Standard", monthly: 999, annual: 7188, rate: 0, feeScope: "none" },
       { name: "Professional", monthly: 2999, annual: 21588, rate: 0, feeScope: "none" },
@@ -89,8 +98,8 @@ export const PLATFORMS = [
 ];
 
 // The supplied differentiator list, excluding the monthly-sales cost scenario.
-// Keep current product facts and planned features distinct. Calculator prices
-// remain independently sourced in PLATFORMS, not copied from the brief.
+// Keep current product facts and planned features distinct. Unconfirmed
+// competitor capabilities are not treated as unavailable.
 const cells = (...values) => Object.fromEntries(PLATFORMS.map((p, i) => [p.id, values[i]]));
 export const COMPARISON_ROWS = [
   { section: "Build your store", label: "How easy to build", cells: cells(
@@ -101,6 +110,12 @@ export const COMPARISON_ROWS = [
     "Basic store in minutes from a phone") },
   { section: "Build your store", label: "Who builds it", cells: cells(
     "You, guided by Ann", "You or a hired agency", "You", "The platform's team", "You") },
+  { section: "Build your store", label: "Guided conversation languages", cells: cells(
+    "Ann: English, Hindi, Tamil, Marathi and Telugu. Conversation only, not storefront translation.",
+    "Comparable guided languages not verified",
+    "Comparable guided languages not verified",
+    "Comparable guided languages not verified",
+    "Comparable guided languages not verified") },
   { section: "Build your store", label: "Hiring needed", cells: cells(
     "No", "Optional; depends on the work", "No", "No; setup team included", "No") },
   { section: "Build your store", label: "Theme options", cells: cells(
@@ -110,11 +125,29 @@ export const COMPARISON_ROWS = [
     "Multiple customisable themes advertised",
     "7 free themes; 14+ on Growth (check current plan)") },
   { section: "Build your store", label: "How much you can customise", cells: cells(
-    "Edit text, images and supported video; add or remove sections; inline theme editor",
+    "Inline text, image and supported video edits in Ann and the theme editor; sections, menus, undo and saved versions",
     "Extensive theme editing, code access and apps",
     "Drag-and-drop editing within templates",
     "Customisation advertised; confirm editing access",
     "Theme editor on Growth and above") },
+  { section: "Build your store", label: "Catalogue and buying options", cells: cells(
+    "Shared Ann/dashboard forms: collections, tags, vendor, auto SKUs. Up to 3 options and 200 variants per product as drafts; variant checkout not live.",
+    "Products and variants; check current plan limits",
+    "Products, variants and variant inventory",
+    "Variant editing and limits not verified",
+    "Variant editing and limits not verified") },
+  { section: "Build your store", label: "Product and collection SEO", cells: cells(
+    "SEO title, description and editable URL in both forms",
+    "Editable search listings and URL handles",
+    "Product SEO fields; confirm collection controls",
+    "Editing scope not verified",
+    "Editing scope not verified") },
+  { section: "Understand the cost", label: "Free offer and domains", cells: cells(
+    "Proposed: 30 live days, 100 products and 1,000 SKUs. Included address only; paid plan for custom domain. Timer and quotas not enabled.",
+    "Check current trial and domain terms",
+    "Check current trial and domain terms",
+    "Check current onboarding and domain terms",
+    "Free tier listed; check current limits and domain terms") },
   { section: "Understand the cost", label: "Commission on sales", cells: cells(
     "0%; gateway charges separate",
     "2% / 1% / 0.6% on online payments; 0% on COD",
@@ -159,4 +192,10 @@ export const COMPARISON_ROWS = [
     "INR; Chennai-based company",
     "INR; focused on tier-2 and tier-3 sellers",
     "INR; Hindi support") },
+  { section: "India and support", label: "GST documents", cells: cells(
+    "GSTIN verification, GST invoices and credit notes; publication checks apply",
+    "GST invoice apps available; app charges and scope vary",
+    "Zoho Invoice/Books available separately; confirm Commerce integration",
+    "Invoice and credit-note scope not verified",
+    "Invoice and credit-note scope not verified") },
 ];
