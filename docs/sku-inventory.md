@@ -14,6 +14,14 @@ Catalogue → **Stock & SKUs** opens `/stores/:storeId/inventory`.
 
 The existing product forms, checkout, other dashboard menus and plan limits are unchanged. No database migration is needed.
 
+## Today stock warnings
+
+Today shows separate sold-out and low-stock SKU counts, followed by up to five affected rows with product, SKU, variant selections and remaining quantity. Sold-out rows appear first. Product totals are not counted as additional SKUs. Archived products and untracked base products are excluded; active and draft inventory match the Stock & SKUs page.
+
+Count links open the corresponding availability filter, and individual warnings also search for the selected SKU. Warnings use current stock, not the selected sales period. They refresh on page load, on returning to the tab/window, every minute while visible, or with the Refresh button. Failed refreshes retain the last information with an explicit stale-data notice rather than reporting healthy stock.
+
+The authenticated read-only endpoint is `GET /api/stores/:storeId/inventory/alerts`. It changes no catalogue, publication, stock, order or financial data.
+
 ## Write contract and safety
 
 `GET /api/stores/:storeId/inventory` returns the current page, store-wide summary and opaque revision strings. `POST /api/stores/:storeId/inventory/bulk` accepts:

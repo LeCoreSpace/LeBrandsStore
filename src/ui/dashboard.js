@@ -10,6 +10,7 @@ import { dashboardIcon } from "./dashboard-icons.js";
 import { renderSidebarNav, storeStatus } from "./dashboard-navigation.js";
 import { richToText } from "../public/content-form.js";
 import { renderInventory } from "./inventory.js";
+import {renderTodayStock} from "../public/today-stock.js";
 import { catalogueEnabled, renderCatalogueOrganisation, renderCatalogueOptions, renderSearchPreview } from "./catalogue-forms.js";
 
 const esc = escapeHtml;
@@ -130,7 +131,9 @@ function overview(data) {
     <h2 class="lb-section-heading">Things to do</h2>
     <div class="lb-overview-grid"><div class="lb-overview-main">
       <div class="lb-split">${card("Top products", `<div class="lb-rank-list">${rankRows}</div>`)}${card("Orders by source", `<div class="lb-source-list">${sourceRows}</div>`)}</div>
-    </div><aside>${card("Orders and payments", `<div class="lb-action-list" data-today-tasks>${actionRows}</div><div class="lb-today-invoices" data-today-invoices><p>Invoices issued today</p><span>Loading invoice records</span></div>`, "lb-attention-card")}</aside></div>`;
+    </div><aside>${card("Orders and payments", `<div class="lb-action-list" data-today-tasks>${actionRows}</div><div class="lb-today-invoices" data-today-invoices><p>Invoices issued today</p><span>Loading invoice records</span></div>`, "lb-attention-card")}
+      <section class="lb-card lb-attention-card" data-today-stock><div class="lb-card-heading"><h2>Stock warnings</h2><button type="button" class="lb-button lb-button-small lb-button-outline" data-stock-refresh>Refresh</button></div><div data-stock-content>${renderTodayStock(data.stockAlerts,`/stores/${storeId}`)}</div><p class="lb-muted" role="status" data-stock-status hidden></p></section>
+    </aside></div>`;
 }
 
 function orderTable(rows, storeId, selectable = false) {

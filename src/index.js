@@ -98,7 +98,7 @@ export default {
     if (url.pathname.startsWith("/assets/")) {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
       const filename = url.pathname.slice("/assets/".length);
-      const inventoryAsset=["inventory.js","inventory.css"].includes(filename);
+      const inventoryAsset=["inventory.js","inventory.css","today-stock.js"].includes(filename);
       const settingsAsset = ["settings-connections.js","store-essentials.js","catalogue-classification-ui.js","catalogue-classification-model.js","catalogue-custom-values.js"].includes(filename);
       const showcaseAsset = ["ann-reply-fields.js","ann-section-layout.js","ann-section-content.js","ann-onboarding-ui.js","ann-theme-editor.js","ann-branding-ui.js","ann-browser-preview.js","aura-showcase-interactions.js","aura-showcase-profiles.js","aura-showcase-sections.js","aura-showcase-rich-css.js","aura-conversion-styles.js","ann-design-model.js","ann-design-ui.js","ann-design-workspace.js","aura-design.js"].includes(filename);
       const starterAsset = isStarterImage(url.pathname) || isShowcaseImage(url.pathname) || showcaseAsset || ["catalogue-modal.js","ann-language.js","ann-language-regional.js","ann-preview-navigation.js","ann-menu-model.js","ann-workspace.css","catalogue-reference.js","catalogue-form.js","catalogue-model.js","aura-taxonomy.js","aura-taxonomy-data.js","aura-starters.js","aura-starter-data.js","aura-starter-assets.js"].includes(filename);

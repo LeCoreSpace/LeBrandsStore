@@ -1,3 +1,5 @@
+import {mountTodayStock} from "./today-stock.js";
+mountTodayStock();
 import "./settings-connections.js";
 import { validateProduct, productGSTWarning } from "/assets/validation.js";
 import { statusLabel, stateName, indianDate, allowedTransitions } from "/assets/dashboard-rules.js";

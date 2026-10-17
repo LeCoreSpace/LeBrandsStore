@@ -41,9 +41,10 @@ export async function inventoryPreview(req,res,previewOrigin){
       const hash=await sha256(JSON.stringify(input)),receiptHash=await sha256(`${f.id}:${input.receipt_token}`);
       await f.db.withStore(f.id,tx=>placeCodOrder(tx,f.id,input,hash,receiptHash,"direct"));
       response=Response.json({changed_sku:"SKU-S-BLACK",quantity_sold:1});
-    }else if(path==="/"||path==="/api/inventory"||path==="/api/inventory/bulk"){
+    }else if(["/","/inventory","/today","/api/inventory","/api/inventory/bulk","/api/inventory/alerts","/api/orders","/api/invoices"].includes(path)){
       const api=path.startsWith("/api/");
-      const target=`${origin}/${api?"api/":""}stores/${f.id}/inventory${path.endsWith("/bulk")?"/bulk":""}${browser.search}`;
+      const suffix=api?path.slice(4):path==="/today"?"":"/inventory";
+      const target=`${origin}/${api?"api/":""}stores/${f.id}${suffix}${browser.search}`;
       const headers=new Headers(req.headers);
       if(headers.has("origin"))headers.set("origin",origin);
       const init={method:req.method,headers};
@@ -56,7 +57,8 @@ export async function inventoryPreview(req,res,previewOrigin){
     let body=await response.text();
     if(response.headers.get("content-type")?.includes("text/html")){
       body=body.replace('class="lb-app"',`class="lb-app" data-api-root="${prefix}/api" data-store-root="${prefix}"`)
-        .replace(new RegExp(`href="/stores/${f.id}/inventory"`,"g"),`href="${prefix}/"`);
+        .replaceAll(`href="/stores/${f.id}/inventory`,`href="${prefix}/`)
+        .replaceAll(`href="/stores/${f.id}"`,`href="${prefix}/today"`);
     }
     res.end(req.method==="HEAD"?undefined:body);
   }catch(error){

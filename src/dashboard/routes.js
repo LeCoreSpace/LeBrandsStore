@@ -12,14 +12,14 @@ import {emailHistory} from "../email/worker.js";
 import {loadAnnSession, annReference} from "../store/ann-repository.js";
 import {onlineAvailable} from "../connections/payments.js";
 import {CONNECTION_KINDS} from "../public/store-essentials.js";
-import {listInventory,bulkInventory,inventoryFilters,inventoryCanEdit} from "./inventory.js";
+import {listInventory,bulkInventory,inventoryFilters,inventoryCanEdit,inventoryAlerts} from "./inventory.js";
 import { dashboardAccess, overview, listOrders, orderDetail, listCustomers, customerDetail, listInvoices,
   invoiceDetail, changeOrderStatus, collectPayment, archiveProduct, adjustStock, exportRows, audit } from "./repository.js";
 
 export function isDashboardPath(path,method = "GET") {
   if (/^\/(?:api\/)?stores\/new(?:\/|$)/.test(path)) return false;
   if (/^\/(?:api\/)?stores\/[^/]+$/.test(path)) return true;
-  if(/^\/stores\/[^/]+\/inventory$/.test(path)||/^\/api\/stores\/[^/]+\/inventory(?:\/bulk)?$/.test(path))return true;
+  if(/^\/stores\/[^/]+\/inventory$/.test(path)||/^\/api\/stores\/[^/]+\/inventory(?:\/(?:bulk|alerts))?$/.test(path))return true;
   if (/^\/(?:api\/)?stores\/[^/]+\/(?:orders|customers|invoices)(?:\/[^/]+(?:\/(?:status|payment))?)?$/.test(path)) return true;
   if (/^\/stores\/[^/]+\/(?:(?:products|collections)(?:\/[^/]+)?|settings)$/.test(path)) return true;
   if (/^\/api\/stores\/[^/]+\/products(?:\/[^/]+)?$/.test(path) && ["GET","HEAD"].includes(method)) return true;
@@ -37,12 +37,12 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
     const connectionKind=Object.hasOwn(CONNECTION_KINDS,url.searchParams.get("connection") || "") ? url.searchParams.get("connection") : null;
     if (child && !UUID.test(child) && !(["products", "collections"].includes(section) && child === "new") &&
       !(section === "exports" && ["orders","products","customers"].includes(child)) &&
-      !(section==="inventory"&&child==="bulk"&&!action)) throw commerceError("Record not found.",undefined,404);
+      !(section==="inventory"&&["bulk","alerts"].includes(child)&&!action)) throw commerceError("Record not found.",undefined,404);
     const read = ["GET","HEAD"].includes(request.method);
     const mutation = request.method === "POST" && api && ((section === "orders" && child && ["status","payment"].includes(action)) ||
       (section === "products" && child && ["stock","archive"].includes(action)) || (section === "exports" && child && !action) ||
       (section==="inventory"&&child==="bulk"&&!action));
-    if(section==="inventory"&&((read&&child)||(!read&&(!api||child!=="bulk"))))throw commerceError("Method not allowed.",undefined,405);
+    if(section==="inventory"&&((read&&child&&child!=="alerts")||(!read&&(!api||child!=="bulk"))))throw commerceError("Method not allowed.",undefined,405);
     if(section==="inventory"&&mutation&&request.headers.get("origin")!==url.origin)throw commerceError("Open inventory in your store dashboard before saving.",undefined,403);
     if ((!read && !mutation) || (read && (action || section === "exports"))) throw commerceError("Method not allowed.",undefined,405);
     const filters = section==="inventory"?null:dateFilters(url.searchParams);
@@ -59,6 +59,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
     const result = await db.withMemberStore(id,tokenHash,async (tx) => {
       const role = await dashboardAccess(tx,id,user.id,!read && section === "orders",section === "exports");
       if(section==="inventory"){
+        if(read&&child==="alerts")return inventoryAlerts(tx,id);
         if(mutation){
           if(!inventoryCanEdit(role))throw commerceError("You do not have permission to update inventory.",undefined,403);
           return bulkInventory(tx,id,user.id,await readJson(request));
@@ -86,6 +87,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
       }
       if (section === "settings" && connectionKind) data.connectionKind=connectionKind;
       if (section === "overview") {
+        data.stockAlerts=await inventoryAlerts(tx,id);
         data.overview = await overview(tx,id,filters.period);
         const [schema]=await tx`SELECT to_regclass('public.ann_builder_sessions') IS NOT NULL AS ready`;
         data.annProgressAvailable=schema?.ready===true;

@@ -58,6 +58,15 @@ function inventoryRow(row,storeId){
     stock:row.stock==null?null:Number(row.stock),price_paise:Number(row.price_paise),
     product_url:`/stores/${storeId}/products/${row.product_id}`,option_values:row.option_values||[]};
 }
+export async function inventoryAlerts(tx,storeId){
+  const [summary]=await tx.unsafe(`${inventoryCTE} SELECT
+    count(*) FILTER(WHERE track_inventory)::integer AS tracked_skus,
+    count(*) FILTER(WHERE stock BETWEEN 1 AND ${LOW_STOCK_THRESHOLD})::integer AS low_stock_skus,
+    count(*) FILTER(WHERE stock=0)::integer AS out_of_stock_skus FROM inventory`,[storeId]);
+  const rows=await tx.unsafe(`${inventoryCTE} SELECT * FROM inventory WHERE stock BETWEEN 0 AND ${LOW_STOCK_THRESHOLD}
+    ORDER BY stock,lower(title),product_id,sort_order,product_option_id LIMIT 5`,[storeId]);
+  return{summary,rows:rows.map(row=>inventoryRow(row,storeId)),low_stock_threshold:LOW_STOCK_THRESHOLD};
+}
 export async function listInventory(tx,storeId,filters,role){
   const where=`WHERE ($2='' OR position(lower($2) in lower(title))>0 OR position(lower($2) in lower(sku))>0 OR position(lower($2) in lower(option_values::text))>0)
     AND ($3='all' OR status=$3)

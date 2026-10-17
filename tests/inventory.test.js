@@ -5,6 +5,7 @@ import {createSkuCheckoutFixture} from "../src/sku-checkout-fixture-data.js";
 import {inventoryInput,inventoryFilters,listInventory,bulkInventory,inventoryCanEdit} from "../src/dashboard/inventory.js";
 import {isDashboardPath,handleDashboard} from "../src/dashboard/routes.js";
 import {renderDashboard} from "../src/ui/dashboard.js";
+import {renderTodayStock} from "../src/public/today-stock.js";
 const user={id:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"},origin="https://accounts.lebrands.store";
 const single="11111111-1111-4111-8111-111111111111",untracked="22222222-2222-4222-8222-222222222222";
 const stamp="2026-10-17 14:30:01.123456+00";
@@ -70,6 +71,23 @@ test("inventory real-schema listing, atomic updates, stock-only publication, rac
       const saved=await api("POST","/bulk",{reason:"Editor stock count",items:[edit(row,row.stock)]},editor,hash);
       assert.equal(saved.status,200);assert.equal((await saved.json()).updated,0);
     });
+    await t.test("Today alerts count each SKU, prioritise sold-out variants, and link to filtered inventory",async()=>{
+      const response=await api("GET","/alerts");
+      assert.equal(response.status,200);const alerts=await response.json();
+      assert.deepEqual(alerts.summary,{tracked_skus:5,low_stock_skus:4,out_of_stock_skus:1});
+      assert.equal(alerts.rows.length,5);assert.equal(alerts.rows[0].sku,"SKU-M-BLACK");assert.equal(alerts.rows[0].stock,0);
+      assert.ok(!alerts.rows.some(r=>!r.product_option_id&&r.product_id===product.id),"parent total is never another SKU");
+      assert.ok(!alerts.rows.some(r=>r.product_id===untracked));
+      const html=renderTodayStock(alerts,`/stores/${id}`);
+      assert.match(html,/1 sold-out SKU/);assert.match(html,/4 low-stock SKUs/);
+      assert.match(html,/Size: M/);assert.match(html,/Colour: Black/);
+      assert.match(html,/availability=out&amp;search=SKU-M-BLACK/);
+      assert.equal((await api("POST","/alerts",{})).status,405);
+      assert.equal((await api("GET","/alerts",null,null)).status,401);
+      assert.equal((await api("GET","/alerts",null,{id:"eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"})).status,403);
+      const page=renderDashboard("overview",{store:f.data.store,role:"owner",overview:{},stockAlerts:alerts},user);
+      assert.match(page,/data-today-stock/);assert.match(page,/Stock warnings/);
+    });
     await t.test("bulk saves different variants and a base SKU together, updates totals, and only publishes stock",async()=>{
       const before=(await pg.query("SELECT snapshot FROM store_publications WHERE store_id=$1",[id])).rows[0].snapshot;
       await pg.query("UPDATE products SET title='Unpublished product name',price_paise=99999 WHERE id=$1",[product.id]);
@@ -86,6 +104,10 @@ test("inventory real-schema listing, atomic updates, stock-only publication, rac
       const audit=(await pg.query("SELECT metadata FROM audit_log WHERE action='inventory.bulk_adjusted'")).rows;
       assert.equal(audit.length,1);assert.equal(audit[0].metadata.reason,"Received a shipment");assert.equal(audit[0].metadata.items.length,3);
       assert.notEqual(body.rows.find(r=>r.product_option_id===black.product_option_id).revision,black.revision);
+      const refreshed=await(await api("GET","/alerts")).json();
+      assert.equal(refreshed.summary.out_of_stock_skus,2);
+      assert.equal(refreshed.summary.low_stock_skus,1);
+      assert.ok(!refreshed.rows.some(r=>r.product_option_id===black.product_option_id),"restocked variants leave low-stock warnings");
       const stale=await api("POST","/bulk",{reason:"Retry old request",items:[edit(black,8)]});assert.equal(stale.status,409);
     });
     await t.test("any stale row rejects the entire batch and cannot overwrite a checkout/restock ABA change",async()=>{
@@ -153,6 +175,8 @@ test("inventory real-schema listing, atomic updates, stock-only publication, rac
       const base=page.rows.find(r=>r.product_id===single);
       await pg.query("UPDATE products SET status='archived' WHERE id=$1",[single]);
       assert.equal((await listing("search=SIMPLE-SKU")).total,0);
+      const alerts=await(await api("GET","/alerts")).json();
+      assert.ok(!alerts.rows.some(r=>r.product_id===single));
       await assert.rejects(save([edit(base,3)]),e=>e.status===404);
     });
     await t.test("large listings paginate in SQL with stable unique SKU rows",async()=>{
@@ -167,4 +191,13 @@ test("inventory real-schema listing, atomic updates, stock-only publication, rac
       assert.equal(new Set([...first.rows,...last.rows].map(r=>r.key)).size,51);
     });
   }finally{await pg.close();}
+});
+test("Today stock warning empty, unavailable, long and unsafe text states are truthful and escaped",()=>{
+  assert.match(renderTodayStock(null,"/stores/example"),/unavailable/);
+  const data={summary:{tracked_skus:0,low_stock_skus:0,out_of_stock_skus:0},rows:[],low_stock_threshold:5};
+  assert.match(renderTodayStock(data,"/stores/example"),/No tracked SKUs yet/);
+  assert.match(renderTodayStock({...data,summary:{...data.summary,tracked_skus:2}},"/stores/example"),/No stock warnings/);
+  const html=renderTodayStock({...data,rows:[{title:'<img src=x onerror="bad()">',sku:'quote"sku',stock:0,option_values:[{name:"Size",value:"<script>bad</script>"}]}]},"/stores/example");
+  assert.ok(!html.includes("<img"));assert.ok(!html.includes("<script>"));
+  assert.match(html,/&lt;img/);assert.match(html,/quote%22sku/);
 });
