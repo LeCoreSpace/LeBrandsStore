@@ -220,7 +220,8 @@ export async function annPreviewFixture(req, res, previewOrigin) {
           answers: { ...options.sessionResponse.session.answers, ...theme },
         };
       }
-      let html = renderAnnBuilder({ ...options.draft, role: readonly ? "editor" : "owner" }, user, options);
+       options.catalogueRoot=`${prefix}/catalogue`;
+       let html = renderAnnBuilder({ ...options.draft, role: readonly ? "editor" : "owner" }, user, options);
       if (url.searchParams.get("device") === "mobile") {
         html = html.replace('id="ann-canvas" data-device="desktop"', 'id="ann-canvas" data-device="mobile"')
           .replace('data-device="desktop" aria-pressed="true"', 'data-device="desktop" aria-pressed="false"')

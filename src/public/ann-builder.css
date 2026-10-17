@@ -18,6 +18,19 @@
 .ann-language select{min-height:38px;max-width:145px;border:1px solid var(--line);border-radius:8px;padding:6px 30px 6px 10px;background:#fff;color:var(--ink);font:600 14px system-ui,sans-serif}
 .ann-language select:focus-visible{outline:2px solid var(--a);outline-offset:2px}
 .ann-log :is([lang=hi],[lang=ta],[lang=mr],[lang=te]){font-family:system-ui,sans-serif;line-height:1.7}
+.ann-catalogue-tools{padding:12px;margin-bottom:14px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.ann-catalogue-record{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:13px}
+.ann-catalogue-record>span{min-width:0;overflow-wrap:anywhere}
+.ann-catalogue-modal{width:min(1160px,calc(100vw - 40px));height:min(900px,calc(100dvh - 40px));max-width:none;max-height:none;padding:0;border:1px solid #d8d2cf;border-radius:16px;background:#fff;box-shadow:0 24px 80px #1c10183d;color:#2c2227;overflow:hidden}
+.ann-catalogue-modal[open]{display:flex;flex-direction:column}
+.ann-catalogue-modal::backdrop{background:#20161e80;backdrop-filter:blur(3px)}
+.ann-catalogue-modal-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 22px;border-bottom:1px solid #e7e1dd}
+.ann-catalogue-modal-head h2{margin:0;font:600 20px system-ui,sans-serif}
+.ann-catalogue-modal-head p{margin:5px 0 0;font:13px system-ui,sans-serif;color:#6e6268}
+.ann-catalogue-modal iframe{flex:1;width:100%;min-height:0;border:0;background:#fff}
+.ann-catalogue-modal [data-modal-status]{margin:0;padding:8px 22px;font:13px system-ui,sans-serif;color:#6e6268}
+.ann-catalogue-modal [data-modal-status]:empty{display:none}
+@media(max-width:600px){.ann-catalogue-modal{width:100vw;height:100dvh;border:0;border-radius:0;max-height:100dvh}.ann-catalogue-modal-head{padding:12px 14px}.ann-catalogue-modal-head h2{font-size:18px}}
 .ann-grid{display:grid;grid-template-columns:minmax(360px,440px) minmax(0,1fr);gap:20px;align-items:start}
 .ann-chat,.ann-stage{border:1px solid var(--line);background:#fff;min-width:0;display:flex;flex-direction:column;height:calc(100dvh - 190px);min-height:560px}
 .ann-steps{padding:8px 8px 6px;border-bottom:1px solid var(--line)}.ann-rail{display:flex;flex-wrap:wrap;gap:2px;overflow-x:visible}

@@ -8,6 +8,7 @@ import { textToRich, cleanRows } from "/assets/content-form.js";
 import "/assets/dashboard-navigation.js";
 import * as catalogueModel from "/assets/catalogue-model.js";
 import { initCatalogueForm, readCataloguePayload, initSearchPreview, readSearchFields } from "/assets/catalogue-form.js";
+import {attachCatalogueEmbed} from "/assets/catalogue-modal.js";
 
 const root = document.querySelector(".lb-app");
 const storeId = root?.dataset.storeId || "";
@@ -15,6 +16,7 @@ const role = root?.dataset.role || "editor";
 observeGSTINForms(root,storeId,{readOnly:!["owner","admin"].includes(role)});
 const api = root?.dataset.apiRoot || `/api/stores/${encodeURIComponent(storeId)}`;
 const storeRoot = root?.dataset.storeRoot || `/stores/${encodeURIComponent(storeId)}`;
+let catalogueEmbed=null;
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]);
 const moneyToPaise = value => {
   const text = String(value || "").trim();
@@ -274,6 +276,7 @@ document.querySelectorAll("[data-product-form]").forEach(form => {
 document.querySelectorAll("[data-product-form]").forEach(form => { initSearchPreview(form); initCatalogueForm(form, { model: catalogueModel, notify, confirm: message => window.confirm(message) }); });
 function isNewForm(form) { return form.dataset.new === "true"; }
 function updateSaveForUploads(form) {
+  catalogueEmbed?.saving(pendingUploads>0);
   const submit = form?.querySelector('button[type="submit"]');
   if (!submit) return;
   submit.disabled = pendingUploads > 0 || submit.dataset.busy === "true";
@@ -303,11 +306,14 @@ document.querySelector("[data-product-form]")?.addEventListener("submit", async 
   const parallelSave=button===secondarySave?document.querySelector("[data-product-save]"):secondarySave;
   busy(button, true, "Saving…");
   if(parallelSave)busy(parallelSave,true,"Saving…");
+  catalogueEmbed?.saving(true);
   try {
     await request(target, { method: isNew ? "POST" : "PATCH", body: JSON.stringify(payload) });
     notify("Product saved.");
+    if(catalogueEmbed){catalogueEmbed.saved();return;}
     window.location.href = `${storeRoot}/products`;
   } catch (error) { handleError(error, button);if(parallelSave)busy(parallelSave,false);updateSaveForUploads(form); }
+  finally{catalogueEmbed?.saving(false);}
 });
 
 document.querySelector("[data-image-upload]")?.addEventListener("change", async event => {
@@ -357,17 +363,20 @@ document.querySelector("[data-archive]")?.addEventListener("click", async event 
   try {
     await postJson(`${api}/products/${encodeURIComponent(form.dataset.productId)}/archive`, {});
     notify("Product archived.");
+    if(catalogueEmbed){catalogueEmbed.saved();return;}
     window.location.href = `${storeRoot}/products`;
   } catch (error) { handleError(error, button); }
 });
 document.querySelector("[data-stock-adjust]")?.addEventListener("click", async event => {
   const button = event.currentTarget, form = document.querySelector("[data-product-form]");
+  if(catalogueEmbed?.hasUnsavedChanges()){notify("Save your product changes before adjusting stock.",true);return;}
   const delta = Number(form.elements.stock_delta.value), reason = form.elements.stock_reason.value.trim();
   if (!Number.isInteger(delta) || delta === 0 || !reason) { notify("Enter a non-zero whole quantity and a reason.", true); return; }
   busy(button, true, "Updating…");
   try {
     await postJson(`${api}/products/${encodeURIComponent(form.dataset.productId)}/stock`, { delta, reason });
     notify("Stock adjusted.");
+    if(catalogueEmbed){catalogueEmbed.saved();return;}
     window.location.reload();
   } catch (error) { handleError(error, button); }
 });
@@ -435,6 +444,7 @@ void draftData;
 
 // ---------- collections ----------
 const collectionForm = document.querySelector("[data-collection-form]");
+let coverUploading=false;
 if (collectionForm) {
   const coverBox = collectionForm.querySelector("[data-cover]");
   let cover = null;
@@ -449,12 +459,14 @@ if (collectionForm) {
   const setCover = media => { cover = media; coverBox.querySelector("[data-cover-alt]").value = media?.alt || ""; paintCover(); };
   coverBox.querySelector("[data-cover-upload]").addEventListener("change", async event => {
     const file = event.target.files?.[0]; if (!file) return;
+    if(coverUploading)return;
+    coverUploading=true;catalogueEmbed?.saving(true);
     try {
       const body = new FormData(); body.append("file", file); body.append("type", "image"); body.append("alt", file.name.replace(/\.[^.]+$/, ""));
       const result = await request(api + "/media", { method: "POST", body });
       if (!result.media?.id) throw new Error("The upload did not return usable media.");
       setCover(result.media); notify("Cover uploaded.");
-    } catch (error) { notify(error.message, true); } finally { event.target.value = ""; }
+    } catch (error) { notify(error.message, true); } finally { event.target.value = "";coverUploading=false;catalogueEmbed?.saving(false); }
   });
   coverBox.querySelector("[data-cover-clear]").addEventListener("click", () => setCover(null));
   coverBox.querySelector("[data-cover-library]").addEventListener("click", async () => {
@@ -500,6 +512,7 @@ if (collectionForm) {
   const formError = message => { const node = collectionForm.querySelector("[data-form-error]"); node.textContent = message; node.hidden = !message; if (message) notify(message, true); };
   collectionForm.addEventListener("submit", async event => {
     event.preventDefault();
+    if(coverUploading){notify("Wait for the collection cover upload to finish before saving.",true);return;}
     const { body, errors } = collectionBody();
     if (!body.title) errors.push("Enter a collection title.");
     if (body.slug && (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(body.slug) || body.slug === "all")) errors.push("Use lowercase letters, numbers and hyphens for the web address. \"all\" is reserved.");
@@ -509,16 +522,19 @@ if (collectionForm) {
     const isNew = collectionForm.dataset.new === "true";
     const buttons = [...document.querySelectorAll('button[form="lb-collection-form"]')];
     buttons.forEach(b => busy(b, true, "Saving..."));
+    catalogueEmbed?.saving(true);
     try {
       await request(isNew ? api + "/collections" : api + "/collections/" + encodeURIComponent(collectionForm.dataset.collectionId), { method: isNew ? "POST" : "PATCH", body: JSON.stringify(body) });
       notify("Collection saved as a draft.");
+      if(catalogueEmbed){catalogueEmbed.saved();return;}
       window.location.href = storeRoot + "/collections";
     } catch (error) { buttons.forEach(b => busy(b, false)); formError(error.message || "Collection could not be saved."); }
+    finally{catalogueEmbed?.saving(false);}
   });
   collectionForm.querySelector("[data-collection-delete]")?.addEventListener("click", async event => {
     if (!window.confirm("Delete this collection? Products stay in your catalogue. Draft only until you publish.")) return;
     busy(event.currentTarget, true, "Deleting...");
-    try { await request(api + "/collections/" + encodeURIComponent(collectionForm.dataset.collectionId), { method: "DELETE" }); window.location.href = storeRoot + "/collections"; }
+    try { await request(api + "/collections/" + encodeURIComponent(collectionForm.dataset.collectionId), { method: "DELETE" }); if(catalogueEmbed){catalogueEmbed.saved();return;} window.location.href = storeRoot + "/collections"; }
     catch (error) { busy(event.currentTarget, false); formError(error.message || "Collection could not be deleted."); }
   });
 }
@@ -796,3 +812,7 @@ if(todayInvoices){
     })
     .catch(()=>{todayInvoices.innerHTML="<p>Invoices issued today</p><span>Invoice activity is unavailable right now.</span>";});
 }
+
+// Attach after the shared forms finish their initial render so untouched forms
+// do not become dirty just because SEO or variant controls were initialized.
+catalogueEmbed=attachCatalogueEmbed({root,storeRoot});

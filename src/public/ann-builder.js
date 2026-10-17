@@ -11,6 +11,7 @@ import { attachAnnApplication } from "./ann-application-ui.js";
 import { attachAnnOnboarding } from "./ann-onboarding-ui.js";
 import { attachAnnReplyFields } from "./ann-reply-fields.js";
 import {attachAnnLanguage} from "./ann-language.js";
+import {attachAnnCatalogue} from "./catalogue-modal.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { attachStoreEssentials, connectionHref } from "./store-essentials.js";
 import { openAnnBrowserPreview,browserPreviewLocation } from "./ann-browser-preview.js";
@@ -66,6 +67,15 @@ let ownProductsConfirmed = false;
 let pendingCatalogueAction = null;
 let previewSource = { store: boot.store, settings: boot.settings, products: boot.products, collections: boot.collections, layouts: boot.layouts, policies: boot.policies, reviews: boot.reviews, aura_skeleton_enabled: boot.aura_skeleton_enabled, aura_starter_enabled: boot.aura_starter_enabled };
 let base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" });
+const catalogueUI=attachAnnCatalogue({
+  root:boot.catalogueRoot||root,readOnly,getDraft:()=>previewSource,
+  onSaved:async kind=>{
+    refreshAnnDraft(await designUI.refreshCatalogue());
+    readinessUI.onStoreChanged();drawKeep();workspaceUI?.refresh();
+    say(`${kind==="products"?"Product":"Collection"} saved to your store draft. Your design and live store are unchanged.`);
+  },
+  onError:message=>say(message),
+});
 const applicationUI = attachAnnApplication({ api, root, readOnly,
   context: () => ({ answers, revision, dirty: isDirty() }),
   mode: "catalogueOnly",
@@ -374,7 +384,7 @@ function def(p) {
     case "collections": { const items = (a.collections || []).map((c, i) => [c, i]);
       return { kind: "list", list: "col", label: "Collection", q: "Let's group your products. Name your first collection, like New arrivals. You can add more later.", ph: "For example, Everyday essentials", max: 100, items, reply: items.map(([c]) => c.name).join(", "), full: items.length >= 10 }; }
     case "ideas": {
-      if (p.id === "ideas:none") return { kind: "info", label: "Products", q: "Add a collection to start your products, or explore with samples for now.", reply: "" };
+      if (p.id === "ideas:none") return { kind: "info", label: "Products", q: previewSource.collections?.length ? "Ready to create draft products? Check each price, HSN, GST rate and stock. You can also do this later." : "Add a collection to start your products, or explore with samples for now.", reply: "" };
       const col = (a.collections || []).find(c => c.key === p.col);
       const items = (a.product_ideas || []).map((x, i) => [x, i]).filter(([x]) => x.collection_key === p.col);
       return { kind: "list", list: "idea", label: "Product idea", q: `What goes in ${col?.name || "this collection"}? Pick up to five products, or type your own.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50, sugg: suggestions() };
@@ -443,7 +453,8 @@ function composerKeyFor(p, d) {
 }
 /* Inline controls: rendered in the timeline directly under the active Ann question. */
 function inlineControls(p, d) {
-  const detailLink = DETAIL_STEPS.includes(p.step) && d.kind !== "info" ? `<button type="button" class="ann-link" data-toggle-detail aria-expanded="${detail}">${detail ? "Close detailed editor" : "Open detailed editor"}</button>` : "";
+  const planning=["collections","products"].includes(p.step);
+  const detailLink = DETAIL_STEPS.includes(p.step) && d.kind !== "info" ? `<button type="button" class="ann-link" data-toggle-detail aria-expanded="${detail}">${planning ? detail ? "Close planning notes" : "Edit planning notes" : detail ? "Close detailed editor" : "Open detailed editor"}</button>` : "";
   const tail=detailLink+(p.step==="products"&&p.id!=="catalogue"&&answers.product_ideas?.length?`<div class="ann-comp-row"><button type="button" class="ann-btn" data-go-prompt="catalogue"${dis}>Set prices and save products</button><p class="ann-note">Ready with your first product? Confirm its price, tax and stock next. You can add more products and details later.</p></div>`:"");
   let body = "", name = d.label;
   if (d.kind === "onboard") {
@@ -468,7 +479,7 @@ function inlineControls(p, d) {
   } else if (d.kind === "info") {
     body = `<div class="ann-comp-row"><button type="button" class="ann-btn" data-continue>Continue with samples</button><button type="button" class="ann-btn alt" data-go="collections">Add a collection</button></div>`;
   } else return "";
-  return `<div class="ann-inline" role="group" aria-label="${esc(name)} options">${body}</div>`;
+  return `<div class="ann-inline" role="group" aria-label="${esc(name)} options">${["collections","products"].includes(p.step)?catalogueUI.html(p.step):""}${body}</div>`;
 }
 
 /* ---------- composer: always-available message box at the bottom ---------- */
@@ -515,6 +526,8 @@ function drawComposer(force) {
 /* ---------- panel drawing ---------- */
 function drawSteps() {
   const answered = new Set(annAnsweredStages(answers, ref || {}));
+  if(previewSource.collections?.length)answered.add("collections");
+  if(previewSource.products?.some(product=>product.status!=="archived"))answered.add("products");
   if (obDone.brand) answered.add("business"); if (obDone.address) answered.add("selling");
   if (setupStepsLocked) { answered.add("business"); answered.add("selling"); }
   const doneN = answered.size, total = UI_STEPS.filter(([k]) => !["domain","payments","shipping","review"].includes(k)).length;

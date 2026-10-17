@@ -474,6 +474,21 @@ export function attachAnnDesign(o) {
     /** Called by Ann when the plan answers change while a design is active. */
     planChanged() { if (active()) { planDirty = true;remember(); paintDynamic(); } },
     receive(result) { ingest(result || {}, { hydrate: true }); paint(true); },
+    async refreshCatalogue(){
+      const {res,body}=await call("GET");
+      if(!res.ok)throw new Error(body.error||"The current catalogue could not be loaded.");
+      // Rebase only against the identical saved design. Do not hydrate, change
+      // local copy/sections, reset Undo or accept another window's design edits.
+      const stable=value=>JSON.stringify(value??null,(_key,item)=>item&&typeof item==="object"&&!Array.isArray(item)?Object.fromEntries(Object.keys(item).sort().map(key=>[key,item[key]])):item);
+      if(stable(body.design)!==stable(design)){
+        conflict=true;error="The catalogue was saved, but another window changed the design. Your unsaved edits are kept. Reload the saved design before saving again.";
+      }else expected=body.expected_draft||expected;
+      if(Array.isArray(body.images))images=body.images;
+      if(Array.isArray(body.videos))videos=body.videos;
+      if(body.draft){menuSource=body.draft;o.onDraft?.(body.draft);}
+      paint();o.onChange?.();
+      return body.draft;
+    },
     /** The design to preview, or null when the page should show the showcase instead. */
     previewDesign() {
       if (!active() || !sameStyle()) return null;

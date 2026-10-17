@@ -1,6 +1,7 @@
 import { renderDashboard } from "../ui/dashboard.js";
 import { renderInvoice } from "../ui/invoice.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
+import {catalogueFrameHeaders} from "./catalogue-frame-headers.js";
 import { UUID } from "../public/validation.js";
 import { readJson } from "../store/input.js";
 import {refreshVerification} from "../gstin/service.js";
@@ -103,7 +104,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
     if (api) return json(result);
     const view = section === "collections" && child ? child === "new" ? "collection-new" : "collection" : section === "products" && child ? child === "new" ? "product-new" : "product" : section === "orders" && child ? "order" : section === "customers" && child ? "customer" : section;
     return new Response(request.method === "HEAD" ? null : result.invoice ? renderInvoice(result.invoice,`/stores/${id}/orders`) : renderDashboard(view,result,user),
-      {headers:{...headers,"content-type":"text/html; charset=utf-8"}});
+      {headers:{...catalogueFrameHeaders(request,view,headers),"content-type":"text/html; charset=utf-8"}});
   } catch (error) {
     console.error("Dashboard request failed",{code:/^[A-Z0-9]{5}$/.test(error.code || "") ? error.code : error.status ? "REQUEST_REJECTED" : "DASHBOARD_UNAVAILABLE"});
     const status = error.status || 503;

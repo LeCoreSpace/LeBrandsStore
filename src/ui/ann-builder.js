@@ -17,6 +17,7 @@ export function renderAnnBuilder(data = {}, user = null, options = {}) {
     aura_skeleton_enabled: data.aura_skeleton_enabled === true, aura_starter_enabled: data.aura_starter_enabled === true,
     role: data.role || "", canWrite,
     apiRoot: typeof options.apiRoot === "string" && /^\/[A-Za-z0-9_\/.%-]*$/.test(options.apiRoot) ? options.apiRoot.replace(/\/+$/, "") : `/api/stores/${id}/ann`,
+    catalogueRoot: typeof options.catalogueRoot === "string" && /^\/[A-Za-z0-9_\/.%-]*$/.test(options.catalogueRoot) ? options.catalogueRoot.replace(/\/+$/, "") : `/stores/${id}`,
     sessionResponse: options.sessionResponse || { session: null, preview: null, cleared_fields: [] },
     reference: options.reference || null,
   };

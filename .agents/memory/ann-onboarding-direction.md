@@ -183,9 +183,12 @@ Every product-creation capability added to Ann must also be available in
 Dashboard → Products → Add product and Edit product. Both entry points must
 operate on the same catalogue records with consistent validation, limits,
 variant/SKU behavior and media associations, not separate copies.
+Collection and product forms should open as modals within Ann and reuse the
+dashboard forms. Their inputs stay inside the form, not Ann's chat composer.
 
 **Why:** The user explicitly requires product-adding features in Ann to also
-appear in the dashboard Add product form.
+appear in the dashboard Add product form, and reported that the collection and
+product steps were not opening the requested modals.
 
 **How to apply:** Treat parity across Ann and dashboard product creation/editing
 as part of each feature's completion criteria. Preserve the distinction between
