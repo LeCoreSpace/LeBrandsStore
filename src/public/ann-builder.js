@@ -45,8 +45,9 @@ let revision = session?.revision ?? 0;
 let saved = structuredClone(session?.answers || {});
 let answers = structuredClone(saved);
 if (!session) answers = { ...initialAnswers(boot.settings, boot.store, ref || {}), ...answers };
-let step = new URL(location.href).searchParams.get("logo") === "1" ? "story" : new URL(location.href).searchParams.get("launch") === "1" ? "domain" :
-  UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "business";
+const launchStep = new Map([["1","domain"],["2","payments"],["3","shipping"]]).get(new URL(location.href).searchParams.get("launch"));
+let step = new URL(location.href).searchParams.get("logo") === "1" ? "story" : launchStep ||
+  (UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "business");
 let touched = false, saving = false, conflict = false, notice = "", page = "product", productId, collectionId, policyKind;
 let queue = Promise.resolve(), lastSavedAt = session ? "Saved plan restored." : "";
 const notes = [];

@@ -281,7 +281,7 @@ export default {
       filterDashboardFixture(data,dateFilters(original.searchParams));
       let body = renderDashboard(view,data,{name:"Demo owner"}).replace("<body>",'<body><p role="status" style="position:fixed;bottom:0;left:0;right:0;z-index:150;padding:7px;margin:0;text-align:center;font:12px system-ui;background:#fff4ce;color:#514111">Read-only local preview with synthetic sample data. No account or database is attached.</p>')
         .replace('class="lb-app"','class="lb-app" data-preview="true"');
-      body=body.replace(/href="(\/stores\/[^"]*)"/g,(_,path)=>`href="${dashboardPreviewLink(path,aura)}"`)
+      body=body.replace(/href="(\/stores\/[^"#]*)(#[^"]*)?"/g,(_,path,hash="")=>`href="${dashboardPreviewLink(path,aura)}${hash}"`)
         .replace(/action="(\/stores\/[^"]*)"/g,(_,path)=>`action="${dashboardPreviewLink(path,aura)}"`)
         // Read-only filters/navigation remain usable; mutation forms and actions
         // are blocked server-side even if a disabled control is forced open.

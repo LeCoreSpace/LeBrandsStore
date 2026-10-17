@@ -4,6 +4,7 @@ import { registeredSupplierErrors, validInvoicePrefix, INDIAN_STATES } from "/as
 import { matchesOrderTab, loadedSalesSummary, paymentState } from "/assets/dashboard-view-model.js";
 import {observeGSTINForms} from "/assets/gstin-ui.js";
 import { textToRich, cleanRows } from "/assets/content-form.js";
+import "/assets/dashboard-navigation.js";
 
 const root = document.querySelector(".lb-app");
 const storeId = root?.dataset.storeId || "";

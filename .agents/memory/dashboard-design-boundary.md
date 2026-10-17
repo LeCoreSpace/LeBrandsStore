@@ -11,6 +11,10 @@ not reproduce Shopify's sidebar. Do not use “Growth” as a navigation label;
 use “Brand reach” for the proposed marketing group. Products and Collections
 remain separately visible as previously requested.
 
+Renaming or regrouping the sidebar must preserve already implemented pages,
+workflows and permissions. Do not replace working destinations with mock
+screens or mark functioning contextual operations as wholly unimplemented.
+
 **Why:** After sharing a Shopify screenshot, the user emphasised that neither
 the UI nor naming convention should reflect it, explicitly requested replacing
 Growth, and accepted the proposal separating dashboard operations from store

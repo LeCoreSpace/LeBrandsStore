@@ -5,6 +5,7 @@ import { CURRENT_GST_RATES, INDIAN_STATES, registeredBusinessState, registeredSu
 import { statusLabel, stateName, indianDate, allowedTransitions, timelineSentence, accountIdentity } from "../public/dashboard-rules.js";
 import { paymentState, fulfilmentState } from "../public/dashboard-view-model.js";
 import { dashboardIcon } from "./dashboard-icons.js";
+import { renderSidebarNav, storeStatus } from "./dashboard-navigation.js";
 import { richToText } from "../public/content-form.js";
 
 const esc = escapeHtml;
@@ -60,29 +61,15 @@ function header(data, user, view) {
   const store = obj(data.store);
   const id = encodeURIComponent(store.store_id || "");
   const root = `/stores/${id}`;
-  const items = [
-    ["overview", "Home", root, "home"],
-    ["orders", "Orders", `${root}/orders`, "orders"],
-    ["products", "Products", `${root}/products`, "products"],
-    ["customers", "Customers", `${root}/customers`, "customers"],
-    ["invoices", "Invoices", `${root}/invoices`, "invoices"],
-    ["collections", "Collections", `${root}/collections`, "products"],
-  ];
-  const active = view.startsWith("collection") ? "collections" : view === "order" ? "orders" : view.startsWith("product") || view === "product" ? "products" : view === "customer" ? "customers" : view;
+  const status = storeStatus(store);
   const storeUrl = store.subdomain ? `https://${encodeURIComponent(store.subdomain)}.lebrands.store/` : "#";
   return `<div class="lb-shell">
     <button type="button" class="lb-drawer-shade" data-drawer-close aria-label="Close navigation"></button>
     <aside class="lb-sidebar" data-sidebar>
       <div class="lb-sidebar-top"><a class="lb-wordmark" href="${root}" aria-label="LeBrands home"><span class="lb-mark">${LE_BRANDS_MARK}</span><span class="lb-logo">${LE_BRANDS_LOGO}</span></a><button type="button" class="lb-icon-button lb-sidebar-collapse" data-sidebar-collapse aria-label="Collapse sidebar" title="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div>
-      <div class="lb-store-switch"><span class="lb-store-avatar">${esc(String(store.name || "S").trim().slice(0,1).toUpperCase())}</span><span class="lb-store-switch-copy"><strong>${esc(store.name || "Your store")}</strong><small>Store workspace</small></span><a href="${esc(storeUrl)}" class="lb-view-store" ${store.subdomain ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'} aria-label="View store" title="View store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
-      <nav class="lb-nav" data-nav aria-label="Store navigation"><span class="lb-nav-caption">Workspace</span>
-        ${items.map(([key,label,href,icon]) => `<a href="${href}" class="lb-nav-link" ${key === active ? 'aria-current="page"' : ""} title="${esc(label)}">${dashboardIcon(icon)}<span>${esc(label)}</span>${key === "orders" ? `<b class="lb-count" data-open-order-count hidden title="Loading open orders"></b>` : ""}</a>`).join("")}
-        <span class="lb-nav-caption lb-nav-caption-spaced">Manage</span>
-        <span class="lb-nav-link is-disabled" aria-disabled="true" title="Analytics not enabled"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3"/></svg><span>Analytics</span><small>Not enabled</small></span>
-        <a href="${root}/setup" class="lb-nav-link" title="Online store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9h18l-1.5-6h-15L3 9Zm2 0v12h14V9M9 21v-7h6v7"/></svg><span>Online store</span></a>
-        <div class="lb-online-links"><a href="${root}/editor">Theme editor</a><a href="${root}/build/ann">Build with Ann</a><a href="${root}/team">Team and order emails</a><a href="${root}/settings#policies">Pages and policies</a>${store.subdomain ? `<a href="${esc(storeUrl)}" target="_blank" rel="noopener">Preview store</a>` : '<span>Preview unavailable</span>'}</div>
-      </nav>
-      <div class="lb-sidebar-bottom"><a href="${root}/settings" class="lb-nav-link ${active === "settings" ? "is-current" : ""}" ${active === "settings" ? 'aria-current="page"' : ""} title="Settings">${dashboardIcon("settings")}<span>Settings</span></a></div>
+      <div class="lb-store-switch"><span class="lb-store-avatar">${esc(String(store.name || "S").trim().slice(0,1).toUpperCase())}</span><span class="lb-store-switch-copy"><strong>${esc(store.name || "Your store")}</strong><small class="lbn-status" data-tone="${status.tone}">${esc(status.label)}</small></span><a href="${esc(storeUrl)}" class="lb-view-store" ${store.subdomain ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'} aria-label="View store" title="View store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
+      ${renderSidebarNav({ storeId: store.store_id || "", view, role: data.role, subdomain: store.subdomain })}
+      <div class="lb-sidebar-bottom"><button type="button" class="lbn-help" data-sidebar-help title="Help & support">${dashboardIcon("help")}<span class="lbn-label">Help &amp; support</span></button></div>
     </aside>
     <div class="lb-workspace">
       <header class="lb-header">
@@ -335,10 +322,10 @@ function settingsPage(data) {
       <div id="store-details">${card("Store details", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Store address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status === "awaiting_approval" ? "Awaiting approval" : store.status || "Setup in progress")}</dd></div><div><dt>Store setup</dt><dd><a class="lb-inline-link" href="/stores/${id}/setup">Open store setup</a></dd></div></dl>`)}</div>
       <div id="business-gst">${card("Business & GST", taxForm)}</div>
       <div id="policies">${card("Policies", `${policyMarkup}<p class="lb-settings-note">Review, publish and unpublish controls are managed in store setup.</p><div class="lb-export-buttons"><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/setup">Review policies and publishing</a></div>`)}</div>
-      ${card("Checkout", `<p>Checkout and delivery settings are available in the existing checkout settings screen.</p><div class="lb-export-buttons"><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/settings/checkout">Open checkout settings</a></div><small>${esc(checkoutSettings.store_state ? `Registered state: ${stateName(checkoutSettings.store_state)}` : "Checkout configuration is not included in this dashboard view.")}</small>`)}
-      ${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}
+      <div id="checkout">${card("Checkout", `<p>Checkout and delivery settings are available in the existing checkout settings screen.</p><div class="lb-export-buttons"><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/settings/checkout">Open checkout settings</a></div><small>${esc(checkoutSettings.store_state ? `Registered state: ${stateName(checkoutSettings.store_state)}` : "Checkout configuration is not included in this dashboard view.")}</small>`)}</div>
+      <div id="exports">${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}</div>
       ${card("Store availability", ownerActions)}
-      <section class="lb-card"><div class="lb-card-heading"><h2>Store connections</h2></div><p>Choose your store address and verify optional payment and delivery accounts in Ann. Verifying an account does not activate online checkout or automatic shipping.</p><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/build/ann?launch=1">Open store connections</a><p>User management is not available in this settings screen.</p></section>
+      <section id="store-connections" class="lb-card"><div class="lb-card-heading"><h2>Store connections</h2></div><p>Choose your store address and verify optional payment and delivery accounts in Ann. Verifying an account does not activate online checkout or automatic shipping.</p><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/build/ann?launch=1">Open store connections</a><p>User management is not available in this settings screen.</p></section>
     </div></div>`;
 }
 
