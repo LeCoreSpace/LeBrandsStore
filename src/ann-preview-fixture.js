@@ -13,6 +13,7 @@ import { preparePageMigration } from "../db/page-schema-migration.js";
 import { DEFAULT_SETTINGS, loadDraft } from "./store/repository.js";
 import { APP_ORIGIN } from "./auth/security.js";
 import { STYLE_IDS, styleSettings } from "./public/aura-styles.js";
+import { initialAnswers } from "./public/ann-projection.js";
 import { TAXONOMY } from "./public/aura-taxonomy-data.js";
 import { renderAura } from "./public/aura.js";
 import { defaultPageLayouts } from "./public/aura-layout.js";
@@ -224,7 +225,38 @@ export async function annPreviewFixture(req, res, previewOrigin) {
         };
       }
        options.catalogueRoot=`${prefix}/catalogue`;
+      const captureStage = {
+        category: "category",
+        products: "products", collections: "collections",
+      }[url.searchParams.get("stage")];
+      if (typeof captureStage === "string") {
+        // Response-only starting stage in the verified synthetic fixture.
+        // Do not race native navigation against the initial onboarding GET.
+        options.sessionResponse.session = {
+          ...options.sessionResponse.session,
+          current_step: captureStage,
+          revision: options.sessionResponse.session?.revision ?? 0,
+          answers: options.sessionResponse.session?.answers ||
+            initialAnswers(options.draft.settings, options.draft.store, options.reference),
+        };
+      }
        let html = renderAnnBuilder({ ...options.draft, role: readonly ? "editor" : "owner" }, user, options);
+      if (typeof captureStage === "string") {
+        html = html.replace("</body>", `<script>
+          (() => {
+            const log = document.getElementById("ann-log");
+            const position = () => {
+              const question = log?.querySelector("#ann-active");
+              if (!question) return false;
+              requestAnimationFrame(() => question.scrollIntoView({block:"start",behavior:"instant"}));
+              return true;
+            };
+            const observer = new MutationObserver(() => { if (position()) observer.disconnect(); });
+            observer.observe(log, {childList:true});
+            if (position()) observer.disconnect();
+          })();
+        </script></body>`);
+      }
       if (url.searchParams.get("page") === "home") {
         // Capture the real Home control after the client has mounted it.
         // This affects only the isolated development page, never stored data.

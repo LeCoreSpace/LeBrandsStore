@@ -35,6 +35,27 @@ function harness(kind = "choice", readOnly = false) {
     composer: force => { context.force = !!force; vm.runInContext("drawComposer(force)", context); return box.innerHTML; } };
 }
 
+test("taxonomy selections keep exact IDs, full labels and selected/disabled semantics", () => {
+  const h = harness("choice");
+  h.definition.reply = "Fashion & Apparel";
+  h.definition.opts.push({ v: 31, t: "School, Office & Art Supplies & Musical instruments" });
+  const html = vm.runInContext("inlineControls(cur(), def(cur()))", h.context);
+  assert.match(html, /ann-taxonomy" role="group" aria-label="Category"/);
+  assert.match(html, /class="ann-chip ann-tax-opt" data-pick="1" aria-pressed="true"/);
+  assert.match(html, /data-pick="31" aria-pressed="false"/);
+  assert.ok(html.includes("School, Office &amp; Art Supplies &amp; Musical instruments"));
+  assert.match(html, /ann-tax-check" aria-hidden="true"/);
+  assert.match(html, /data-continue/);
+  h.prompt.id = "subcategory";
+  assert.match(vm.runInContext("inlineControls(cur(), def(cur()))", h.context), /ann-taxonomy/);
+  h.prompt.id = "style";
+  assert.doesNotMatch(vm.runInContext("inlineControls(cur(), def(cur()))", h.context), /ann-taxonomy|ann-tax-opt|ann-tax-check/);
+  const ro = harness("choice", true);
+  const readonlyHtml = vm.runInContext("inlineControls(cur(), def(cur()))", ro.context);
+  assert.match(readonlyHtml, /data-pick="1" aria-pressed="true" disabled/);
+  assert.match(readonlyHtml, /data-continue>Continue</);
+});
+
 test("Ann choices follow their question in the scrolling transcript, never in the footer composer", () => {
   const h = harness();
   const html = h.timeline();

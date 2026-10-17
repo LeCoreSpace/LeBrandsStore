@@ -465,7 +465,8 @@ function inlineControls(p, d) {
   } else if (d.kind === "logo") {
     body=`<div id="ann-branding-slot">${brandingUI.html()}</div>`;
   } else if (d.kind === "choice" || d.kind === "accent") {
-    body = `<div class="ann-chips${d.stack ? " stack" : ""}">${d.opts.map(o => `<button type="button" class="ann-chip" data-pick="${esc(o.v)}" aria-pressed="${String(o.v).toLowerCase() === d.cur}"${o.c || d.kind === "accent" ? ` style="--c:${esc(o.c || o.v)}"` : ""}${dis}>${o.c || d.kind === "accent" ? `<i class="ann-sw" aria-hidden="true"></i>` : ""}<strong>${esc(o.t)}</strong>${o.sub ? `<span>${esc(o.sub)}</span>` : ""}</button>`).join("")}
+    const tax=["category","subcategory"].includes(p.id);
+    body = `<div class="ann-chips${d.stack ? " stack" : ""}${tax ? " ann-taxonomy" : ""}"${tax ? ` role="group" aria-label="${esc(name)}"` : ""}>${d.opts.map(o => `<button type="button" class="ann-chip${tax ? " ann-tax-opt" : ""}" data-pick="${esc(o.v)}" aria-pressed="${String(o.v).toLowerCase() === d.cur}"${o.c || d.kind === "accent" ? ` style="--c:${esc(o.c || o.v)}"` : ""}${dis}>${o.c || d.kind === "accent" ? `<i class="ann-sw" aria-hidden="true"></i>` : ""}<strong>${esc(o.t)}</strong>${tax ? `<i class="ann-tax-check" aria-hidden="true"></i>` : ""}${o.sub ? `<span>${esc(o.sub)}</span>` : ""}</button>`).join("")}
       ${d.kind === "accent" ? `<label class="ann-chip ann-color"><strong>Custom</strong><input type="color" data-accent-input value="${esc(d.color)}" aria-label="Custom accent colour"${dis}></label>` : ""}</div>
       <div class="ann-comp-row">${d.reply || readOnly ? `<button type="button" class="ann-btn alt" data-continue>${readOnly ? "Continue" : `Keep ${esc(d.reply)} and continue`}</button>` : ""}${d.kind === "choice" && !d.opts.length ? `<p class="ann-note">Nothing to choose here yet.</p>` : ""}</div>`;
   } else if (d.kind === "sections") {

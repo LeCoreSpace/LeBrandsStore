@@ -17,6 +17,16 @@ succeeded without changing the production conflict checks.
 to production persistence. Do not weaken optimistic concurrency or bypass
 tenant/CSRF checks to accommodate this development-only lifecycle.
 
+For stage-specific screenshots, set the starting stage in the isolated response
+rather than immediately clicking ahead during initial hydration.
+
+**Why:** Native Ann navigation can run before its asynchronous onboarding refresh
+and correctly send even a verified synthetic store back to GST confirmation.
+Delaying the click is unreliable for short screenshot capture windows.
+
+**How to apply:** Keep valid synthetic onboarding evidence and all production
+guards intact. Capture controls must not persist session changes or touch live data.
+
 After a frontend fix, verify the served module source and use a fresh browser
 context before treating repeated old behaviour as a failed fix. Restarting the
 server does not replace JavaScript already loaded in an open page.
