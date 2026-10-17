@@ -9,6 +9,7 @@ import { paymentState, fulfilmentState } from "../public/dashboard-view-model.js
 import { dashboardIcon } from "./dashboard-icons.js";
 import { renderSidebarNav, storeStatus } from "./dashboard-navigation.js";
 import { richToText } from "../public/content-form.js";
+import { renderInventory } from "./inventory.js";
 import { catalogueEnabled, renderCatalogueOrganisation, renderCatalogueOptions, renderSearchPreview } from "./catalogue-forms.js";
 
 const esc = escapeHtml;
@@ -39,7 +40,7 @@ export function documentPage(view, data, user, body) {
     body=`<aside class="lb-card" role="alert"><strong>GSTIN needs attention</strong><p>Check your registration and registered supplier details before publishing or issuing new invoices.</p><a href="/stores/${esc(storeId)}/settings">Open Settings</a></aside>${body}`;
   }
   const title = ({
-    overview: "Home", orders: "Orders", order: "Order details", products: "Products",
+    overview: "Home", orders: "Orders", order: "Order details", products: "Products", inventory: "Stock & SKUs",
     "product-new": "Add product", product: "Edit product", collections: "Collections", "collection-new": "Add collection", collection: "Edit collection", customers: "Customers",
     customer: "Customer details", invoices: "Invoices", settings: "Settings", "ai-builder":"Legacy build", builder:"Build your store",
   })[view] || "Overview";
@@ -49,7 +50,7 @@ export function documentPage(view, data, user, body) {
     description: `${title} workspace for ${store.name || "your store"}.`,
     canonical: `https://app.lebrands.store/stores/${encodeURIComponent(storeId)}/${view === "overview" ? "" : view === "builder" ? "build" : view}`,
     noindex: true,
-    extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>' + (connectionKind ? '<link rel="stylesheet" href="/assets/ann-builder.css"><script type="module" src="/assets/settings-connections.js"></script>' : ""),
+    extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>' + (view === "inventory" ? '<link rel="stylesheet" href="/assets/inventory.css"><script type="module" src="/assets/inventory.js"></script>' : "") + (connectionKind ? '<link rel="stylesheet" href="/assets/ann-builder.css"><script type="module" src="/assets/settings-connections.js"></script>' : ""),
     body: `<div class="lb-app" data-store-id="${esc(storeId)}" data-role="${esc(data.role || "editor")}">
       ${header(data, user, view)}
        <main class="lb-main"><div class="lb-content">${store.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline; your data is unchanged. ${esc(store.approval_revocation_note || "")}${store.status === "awaiting_approval" ? " Your renewed approval request is awaiting review." : ""}</p>` : store.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is offline until a LeBrands reviewer approves it.</p>' : ""}${body}</div></main></div></div>
@@ -334,6 +335,7 @@ function normalizeView(view) {
   if (["order-detail", "order"].includes(v)) return "order";
   if (["new-product", "new_product", "product-new", "products-new"].includes(v)) return "product-new";
   if (["edit-product", "product-edit", "product-editor", "product-detail", "product"].includes(v)) return "product";
+  if (["inventory","stock"].includes(v)) return "inventory";
   if (["collections", "collection-new", "collection"].includes(v)) return v;
   if (["customer-detail", "customer"].includes(v)) return "customer";
   if (["orders", "products", "customers", "invoices", "settings"].includes(v)) return v;
@@ -415,6 +417,7 @@ export function renderDashboard(view, data = {}, user = {}) {
   switch (current) {
     case "orders": body = ordersPage(data); break;
     case "order": body = orderDetail(data); break;
+    case "inventory": body = renderInventory(data); break;
     case "products": body = productsPage(data); break;
     case "product-new": body = productEditor(data, true); break;
     case "product": body = productEditor(data, false); break;

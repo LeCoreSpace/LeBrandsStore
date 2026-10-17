@@ -18,7 +18,7 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
       { key: "catalogue", label: "Catalogue", icon: "products", items: [
         live("Products", `${root}/products`, ["products", "product", "product-new"]),
         live("Collections", `${root}/collections`, ["collections", "collection", "collection-new"]),
-        context("Stock & SKUs", `${root}/products`, "In products"),
+        live("Stock & SKUs", `${root}/inventory`, ["inventory"]),
         planned("Vendors"), planned("Offers & codes"), planned("Media library")] },
       { key: "orders", label: "Order desk", icon: "orderDesk", items: [
         live("Order queue", `${root}/orders`, ["orders", "order"], { badge: true }),

@@ -126,6 +126,7 @@ export function annFixtureAdapter(pg) {
       const tx = async (strings, ...values) => (await trx.query(
         strings.reduce((sql, part, i) => sql + (i ? `$${i}` : "") + part, ""), values)).rows;
       tx.json = value => JSON.stringify(value);
+      tx.unsafe = async (query,values=[]) => (await trx.query(query,values)).rows;
       return fn(tx);
     });
   }};
