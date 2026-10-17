@@ -25,7 +25,7 @@ const labelOf = (kind, k) => {
 };
 const MAX_VIDEO = 10 * 1024 * 1024;
 const imageKeyOf = k => String(k).replace(/\.video(\d+)$/, ".image$1");
-const CTX_CSS = ".ann-ctx{position:fixed;z-index:50;box-sizing:border-box;max-height:calc(100dvh - 16px);overflow:auto;background:#fff;color:#252525;border:1px solid #9a9a9a;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.2);padding:12px;display:grid;gap:8px}.ann-ctx *{box-sizing:border-box;min-width:0}.ann-ctx input,.ann-ctx textarea,.ann-ctx video{max-width:100%;width:100%}.ann-ctx .ann-actions{flex-wrap:wrap}.ann-ctx.sheet{left:8px;right:8px;bottom:8px;top:auto;width:auto}.ann-ctx-head{display:flex;justify-content:space-between;align-items:center;gap:8px}.ann-ctx-list{display:flex;flex-wrap:wrap;gap:6px}";
+const CTX_CSS = ".ann-ctx{position:fixed;z-index:50;box-sizing:border-box;max-height:calc(100dvh - 16px);overflow:auto;background:#fffdfb;color:#2b2326;border:1px solid #d9cfd2;border-radius:14px;box-shadow:0 1px 2px rgba(43,35,38,.08),0 14px 34px rgba(43,35,38,.18);padding:0;display:grid;gap:0;font:13px/1.45 system-ui,sans-serif}.ann-ctx>*:not(.ann-ctx-head){margin:0;padding:12px 14px}.ann-ctx *{box-sizing:border-box;min-width:0}.ann-ctx input,.ann-ctx textarea,.ann-ctx video{max-width:100%;width:100%}.ann-ctx input[type=text],.ann-ctx textarea{border:1px solid #cfc4c8;border-radius:8px;padding:8px 10px;background:#fff;font:inherit}.ann-ctx input[type=text]:focus,.ann-ctx textarea:focus{outline:2px solid #6b1735;outline-offset:1px;border-color:#6b1735}.ann-ctx .ann-actions{flex-wrap:wrap;gap:6px}.ann-ctx .ann-design-edit{border-top:0;padding-top:12px}.ann-ctx.sheet{left:8px;right:8px;bottom:8px;top:auto;width:auto}.ann-ctx-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 10px 10px 14px;border-bottom:1px solid #eadfe2;background:#f7f1f3;border-radius:14px 14px 0 0}.ann-ctx-head strong{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#5c4a50}.ann-ctx-list{display:flex;flex-wrap:wrap;gap:6px}.ann-ctx .ann-btn.sm{min-height:32px;font-size:12px}";
 const STYLE_KEYS = ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"];
 const styleName = id => AURA_STYLES.find(s => s.id === id)?.name || id;
 const MAX_UPLOAD = 8 * 1024 * 1024;
@@ -50,7 +50,7 @@ export function attachAnnDesign(o) {
   const mode = () => o.getPreviewMode();
   const browsingStyle = () => o.getStyle?.() || o.getAnswers().style_preset || "editorial";
   const sameStyle = () => active() && browsingStyle() === model.style;
-  const editing = () => active() && !readOnly && editMode && (mode() === "store"||model.catalogue_mode==="sample") && sameStyle();
+  const editing = () => active() && !readOnly && editMode && mode() === "store" && sameStyle();
   const captureHistory=()=>model?structuredClone({copy:model.copy,media:model.media,sections:model.sections,catalogue_mode:model.catalogue_mode,plan:planPayload()}):null;
   function remember(group=""){
     if(!o.themeEditor||readOnly||!model)return;
@@ -306,7 +306,7 @@ export function attachAnnDesign(o) {
   function body() {
     if (!loaded && !loadError) return `<div class="ann-design-card" aria-busy="true"><div class="ann-skel" aria-hidden="true"><i></i><i></i></div></div>`;
     if (loadError) return `<div class="ann-design-card"><p class="ann-callout" role="alert">${esc(loadError)}</p><button type="button" class="ann-btn alt sm" data-design-act="retry">Try again</button></div>`;
-    const browsing = (mode() === "showcase"&&model?.catalogue_mode!=="sample") || !sameStyle();
+    const browsing = mode() === "showcase" || !sameStyle();
     const a = o.getAnswers();
     const catalogueChoice = cataloguePrompt ? `<div class="ann-design-card" role="group" aria-label="Choose products for your preview">
       <p class="ann-design-title">Ready to see your own products?</p>

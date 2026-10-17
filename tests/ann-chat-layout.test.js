@@ -26,6 +26,7 @@ function harness(kind = "choice", readOnly = false) {
     annBubble: (text, cls, attrs = "") => `<div class="${cls}"${attrs}><p>${escape(text)}</p></div>`,
     meBubble: html => html, listHtml: () => "<ul>Items</ul>", feedHtml: () => "",
     editQ: () => "New name?", reviewStep: () => "<p>Review plan</p>",
+    replyFields: { current: () => null },
   });
   vm.runInContext(composerCode + timelineCode, context);
   return { box, prompt, definition, context,
@@ -50,7 +51,7 @@ test("Ann section toggles and completion stay inline and do not accept accidenta
   const h = harness("sections");
   assert.match(h.timeline(), /data-toggle-section="home:reviews"/);
   assert.match(h.timeline(), /data-continue/);
-  assert.match(h.composer(), /placeholder="Use the options above" disabled/);
+  assert.match(h.composer(), /placeholder="Choose an option above to continue" disabled/);
   assert.doesNotMatch(h.composer(), /data-toggle-section/);
 });
 
@@ -94,5 +95,5 @@ test("Ann can skip catalogue planning entirely and continue with sample products
   const h = harness("info");
   assert.match(h.timeline(), /data-continue>Continue with samples/);
   assert.match(h.timeline(), /data-go="collections"/);
-  assert.match(h.composer(), /placeholder="Use the options above" disabled/);
+  assert.match(h.composer(), /placeholder="Choose an option above to continue" disabled/);
 });

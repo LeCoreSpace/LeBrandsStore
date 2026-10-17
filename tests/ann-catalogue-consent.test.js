@@ -234,7 +234,7 @@ test("every Ann visit resets old browser preferences to samples and automatic ca
     previewMode: "showcase", ownProductsConfirmed: false, pendingCatalogueAction: null,
     previewSource: { products: [{ id: "merchant-product" }] }, productId: "old", collectionId: "old",
     rememberScroll() {}, say() {}, base: null, asked: 0,
-    designUI: { requestCatalogue() { context.asked++; } },
+    designUI: { active: () => context.designActive, requestCatalogue() { context.asked++; } }, designActive: false,
     stylePreviewData: (data, options) => ({ ...data, ...options }),
   });
   vm.runInContext(code, context);
@@ -246,4 +246,9 @@ test("every Ann visit resets old browser preferences to samples and automatic ca
   vm.runInContext('ownProductsConfirmed = true; requestOwnProducts()', context);
   assert.equal(context.previewMode, "store");
   assert.equal(context.previewSource.products[0].id, "merchant-product");
+  // A saved sample-catalogue design is viewable as Your store without own-products consent.
+  context.ownProductsConfirmed = false; context.designActive = true; context.previewMode = "showcase";
+  vm.runInContext('setPreviewMode("store")', context);
+  assert.equal(context.previewMode, "store");
+  assert.equal(context.ownProductsConfirmed, false);
 });

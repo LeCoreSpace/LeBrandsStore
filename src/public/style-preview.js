@@ -21,7 +21,10 @@ export function stylePreviewData(source, { showcase = false } = {}) {
   }
   // The first complete pack is a clearly labelled menswear demonstration,
   // not an assertion that an unrelated merchant sells clothing.
-  const originalSettings = data.settings || {};
+  const originalSettings = { ...(data.settings || {}) };
+  // Shared showcases never inherit the merchant's saved copy, media or order.
+  // designPreviewData adds the merchant design back explicitly when intended.
+  if(showcase)delete originalSettings.ann_design;
   data.settings = { ...originalSettings, category: "fashion", subcategory: "mens-clothing" };
   data.aura_starter_enabled = true;
   data.aura_skeleton_enabled = true;

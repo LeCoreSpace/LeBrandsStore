@@ -3,6 +3,7 @@ import { ANN_STEPS, ANN_PALETTES, ANN_FONTS, ANN_EXTRA_SECTIONS, annPreviewConfi
 import { AURA_STYLES, styleSettings } from "./aura-styles.js";
 import { stylePreviewData, renderStylePreview, designPreviewData } from "./style-preview.js";
 import { attachAnnDesign } from "./ann-design-ui.js";
+import { attachAnnWorkspace, sectionMeta, nextSections } from "./ann-design-workspace.js";
 import { attachStyleInteractions } from "./style-preview-interactions.js";
 import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
 import { attachAuraMotion } from "./aura-motion.js";
@@ -117,19 +118,51 @@ $("#ann-open-browser")?.addEventListener("click",()=>{
 const app = $("#ann-app");
 const say = t => { statusEl.textContent = t; };
 const config = () => annPreviewConfiguration(answers, { ...boot.settings, ...(boot.sessionResponse?.preview?.theme || {}) });
-let designUI = null;
-designUI = attachAnnDesign({ api, root, readOnly, mount: canvas, say,
+let designUI = null, workspaceUI = null;
+designUI = attachAnnDesign({ api, root, readOnly, mount: canvas, say, contextual: true, getPreview: () => frame,
+  sectionState: id => sectionInfo().meta.get(id) || null, onSectionAction: (id, act) => sectionAction(id, act),
   getAnswers: () => answers, getPreviewMode: () => previewMode, getBrand: () => boot.settings?.brand_name || boot.store?.name,
   getStyle: () => config().theme.style_preset,
   applyPlan: plan => {const catalogue=Object.fromEntries(["collections","product_ideas"].filter(k=>Object.hasOwn(answers,k)).map(k=>[k,structuredClone(answers[k])]));answers={...structuredClone(plan),...catalogue};},
   onDraft: draft => { previewSource = draft; },
-  onActivated: ({ useOwnProducts = false } = {}) => { if (useOwnProducts) ownProductsConfirmed = true; saved = structuredClone(answers); touched = false; autosavePaused = false; saveProblem = ""; conflict = false; setPreviewMode(ownProductsConfirmed ? "store" : "showcase", previewSource); page = previewMode === "showcase" || previewSource.products?.some(p => p.status !== "archived") ? "product" : "home"; draw("keep"); renderPreview(false); say(previewMode === "showcase" ? "Welcome back. Your saved design is safe. Explore with sample products, then choose your own whenever you are ready." : "Your design is saved to draft. Make it yours with your words and photos. Your live site is unchanged."); },
+  onActivated: ({ useOwnProducts = false, restored = false } = {}) => { if (useOwnProducts) ownProductsConfirmed = true; saved = structuredClone(answers); touched = false; autosavePaused = false; saveProblem = ""; conflict = false;
+    // The saved merchant design is shown immediately. Sample catalogue is a separate choice: only real products need consent.
+    setPreviewMode("store", previewSource); page = ownProductsConfirmed && !previewSource.products?.some(p => p.status !== "archived") ? "home" : "product"; draw("keep"); renderPreview(false); workspaceUI?.refresh();
+    if (!restored && !readOnly) workspaceUI?.open();
+    say(ownProductsConfirmed ? "Your design is saved to draft. Select text or a photo to edit it. Your live site is unchanged." : restored ? "Welcome back. Your saved design is open for editing with sample products. Choose your own products whenever you are ready." : "Your style is adopted as your draft. Edit it here with sample products. Your live site is unchanged."); },
   onChange: () => { schedule(); drawFoot(); },
   onCatalogueConfirmed: () => { ownProductsConfirmed = true; setPreviewMode("store"); const next = pendingCatalogueAction; pendingCatalogueAction = null; next?.(); draw("keep"); renderPreview(false); say("You are now previewing your own products. Your catalogue and live site have not changed."); },
   openCanvas: () => { if(designUI?.hasUnsavedChanges()){say("Save your draft changes first, then open the theme editor so you see the same design.");return;}location.assign(`${root}/editor`); },
-  backToDesign: plan => { requestOwnProducts(() => { answers = { ...answers, ...structuredClone(plan) }; draw("keep"); renderPreview(false); }); },
+  backToDesign: plan => { answers = { ...answers, ...structuredClone(plan) }; setPreviewMode("store"); draw("keep"); renderPreview(false); },
 });
 
+let wsCache = { key: "", value: { meta: new Map(), map: new Map() } };
+function baseHtml() {
+  const d = current?.settings?.ann_design; if (!d) return "";
+  const b = structuredClone(current); b.settings.ann_design.sections = {};
+  return renderStylePreview(b, config().theme, { page, productId, collectionId, policyKind, designEdit: true });
+}
+function sectionInfo() {
+  const d = current?.settings?.ann_design, key = JSON.stringify([page, productId, collectionId, d?.style, d?.sections, answers.section_options, displayedKey]);
+  if (!d) return { meta: new Map(), map: new Map() };
+  if (wsCache.key !== key) wsCache = { key, value: sectionMeta(baseHtml(), d.sections || {}, page) };
+  return wsCache.value;
+}
+function sectionAction(id, act) {
+  if (readOnly || !designUI?.active()) return;
+  const next = nextSections(baseHtml(), designUI.previewDesign()?.sections || {}, page, id, act);
+  if (next) { designUI.setSections(next); workspaceUI?.refresh(); }
+}
+workspaceUI = attachAnnWorkspace({ mount: $("#ann-tools"), readOnly, controller: () => designUI,
+  canEdit: () => previewMode === "store" && Boolean(designUI?.previewDesign()),
+  getPage: () => page, getPlan: () => ({ ...config().theme, section_options: { ...extrasNow, ...answers.section_options } }),
+  sectionInfo, onSectionAction: sectionAction,
+  setPlan: (k, v) => edit(() => { answers[k] = v; }),
+  setExtra: (type, on) => { edit(() => { const o = { ...extrasNow, ...answers.section_options }, vals = new Set(o[page] || []); on ? vals.add(type) : vals.delete(type); answers.section_options = { ...o, [page]: [...vals] }; });
+    if (on) { const secs = structuredClone(designUI.previewDesign()?.sections || {}); if (secs[page]?.hidden) { secs[page].hidden = secs[page].hidden.filter(x => x !== `slot-${type}-0`); designUI.setSections(secs); } }
+    workspaceUI.refresh(); },
+  onToggle: on => { canvas.dataset.tools = on ? "open" : "closed"; document.querySelector("[data-ws-toggle]")?.setAttribute("aria-pressed", String(on)); fit(); },
+});
 const designDirty = () => Boolean(designUI?.hasUnsavedChanges());
 const dirtyPatch = () => diffAnswers(saved, answers);
 const isDirty = () => (touched && Object.keys(dirtyPatch()).length > 0) || designDirty();
@@ -148,7 +181,8 @@ let activeBagKey = "";
 const posKey = () => JSON.stringify([previewMode, config().theme.style_preset, page, productId || "", collectionId || "", canvas.dataset.device]);
 function setPreviewMode(mode, source) {
   rememberScroll();
-  if (mode === "store" && !ownProductsConfirmed) mode = "showcase";
+  // Viewing a saved design (sample or own catalogue) needs no consent. Only a design-less real catalogue preview does.
+  if (mode === "store" && !ownProductsConfirmed && !designUI?.active()) mode = "showcase";
   const changed = previewMode !== mode || Boolean(source);
   previewMode = mode;
   if (source) previewSource = source;
@@ -179,7 +213,8 @@ function renderPreview(remember = true) {
   designUI?.refresh();
   const projected = projectAnnPreview(base, cfg, { prefilled: prefilledSection, attributes: attrState.get(answers.subcategory_id)?.attrs || [] });
   const candidate=designUI?.previewDesign();
-  const dsg = previewMode === "store"||candidate?.catalogue_mode==="sample" ? candidate : null;
+  // The showcase never overlays the merchant design; only the Your store view does.
+  const dsg = previewMode === "store" ? candidate : null;
   current = dsg ? designPreviewData(previewSource, dsg) : projected.data;
   const pack = resolveShowcasePack(current);
   const bagKey = `${previewMode}:${current.style_demo ? pack.key : "real"}`;
@@ -195,7 +230,7 @@ function renderPreview(remember = true) {
   }
   if (!productId || !current.products.some(p => p.id === productId)) productId = current.products[0]?.id;
   displayedKey = posKey();
-  frame.title = `${previewMode === "showcase" ? "Style showcase" : "Your store"}, ${styleName(cfg.theme.style_preset)}, ${canvas.dataset.device} preview`;
+  frame.title = `${dsg ? "Your store design" : previewMode === "showcase" ? "Style showcase" : "Your store"}, ${styleName(cfg.theme.style_preset)}, ${canvas.dataset.device} preview`;
   const html = renderStylePreview(current, cfg.theme, { page, productId, collectionId, policyKind, designEdit: Boolean(dsg) && designUI.editing() });
   if (html !== frameMarkup) { frameMarkup = html; frameLoading = true; frame.srcdoc = html; }
   else if (!frameLoading) previewLoaded();
@@ -203,8 +238,8 @@ function renderPreview(remember = true) {
   $("#ann-preview-note").textContent = (previewMode === "showcase" ? `The same ${pack.topic} sample images and products are used across all ${AURA_STYLES.length} styles.${!pack.exact ? ` These are placeholder images${niche ? ` for your selected niche, ${niche}` : ""}; a matching image set is not available yet.` : ""} Sample products and prices are illustrative. Select Your store to see your existing catalogue. ` : base.style_demo ? "No real products yet. Sample images and illustrative prices fill this preview. " : "Your actual catalogue is shown alongside remaining planned ideas. ") +
     "Preview controls never create products, orders or publications. Use the confirmed actions in Review to save real draft changes." +
     (projected.unavailable.length ? ` Some optional sections cannot be previewed here: ${projected.unavailable.map(u => label(u.split(":")[1])).join(", ")}.` : "");
-  if (dsg) $("#ann-preview-note").textContent = "This is your draft design with your real products. Select text or a photo to change it. Nothing is published until you review and publish. Your live site is unchanged.";
-  paintStage();
+  if (dsg) $("#ann-preview-note").textContent = `This is your draft design with ${dsg.catalogue_mode==="sample" ? "sample products and illustrative prices" : "your real products"}. Select text or a photo to change it. Nothing is published until you review and publish. Your live site is unchanged.`;
+  paintStage(); workspaceUI?.refresh();
 }
 const schedule = (ms = 70) => { clearTimeout(timer); canvas.dataset.updating = "true"; const u = $("#ann-updated"); if (u) { u.hidden = false; u.dataset.state = "pending"; u.textContent = "Updating preview"; } timer = setTimeout(() => renderPreview(), ms); };
 function paintStage() {
@@ -215,9 +250,10 @@ function paintStage() {
 }
 function fit() {
   const width = canvas.dataset.device === "mobile" ? 390 : 1280;
-  const availW = Math.max(240, (canvas.clientWidth || 800) - 24), availH = Math.max(320, (canvas.clientHeight || 700) - 24);
+  const tools = canvas.dataset.tools === "open" && (window.innerWidth || 1280) >= 700 ? 296 : 0, cw = Math.max(240, (canvas.clientWidth || 800) - tools);
+  const availW = Math.max(240, cw - 24), availH = Math.max(320, (canvas.clientHeight || 700) - 24);
   const scale = Math.min(1, availW / width);
-  Object.assign(frame.style, { width: `${width}px`, minWidth: `${width}px`, height: `${availH / scale}px`, transform: `scale(${scale})`, transformOrigin: "top left", left: `${Math.max(0, ((canvas.clientWidth || 800) - width * scale) / 2)}px` });
+  Object.assign(frame.style, { width: `${width}px`, minWidth: `${width}px`, height: `${availH / scale}px`, transform: `scale(${scale})`, transformOrigin: "top left", left: `${Math.max(0, (cw - width * scale) / 2)}px` });
 }
 frame.addEventListener("load", () => {
   const doc = frame.contentDocument; if (!doc) return;
@@ -664,10 +700,11 @@ document.addEventListener("click", e => {
   const t = e.target.closest("button, a"); if (!t || t.tagName === "A") return;
   const d = t.dataset;
   if (d.go) return go(d.go);
+  if ("wsToggle" in d) { workspaceUI.toggle(); return; }
   if (d.viewSwitch) { app.dataset.view = d.viewSwitch; syncSwitch(); if (d.viewSwitch === "canvas") setTimeout(fit, 0); return; }
-  if (["showcase", "store"].includes(d.previewMode)) { if (d.previewMode === "store" && !requestOwnProducts()) return; setPreviewMode(d.previewMode); return renderPreview(false); }
+  if (["showcase", "store"].includes(d.previewMode)) { if (d.previewMode === "store" && !designUI?.active() && !requestOwnProducts()) return; setPreviewMode(d.previewMode); return renderPreview(false); }
   if (d.device) { rememberScroll(); canvas.dataset.device = d.device; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b === t))); renderPreview(false); fit(); return; }
-  if (d.page) { page = d.page; collectionId = undefined; policyKind = undefined; return renderPreview(); }
+  if (d.page) { page = d.page; collectionId = undefined; policyKind = undefined; renderPreview(); workspaceUI.refresh(); return; }
   if (d.viewPage) { page = d.viewPage; return renderPreview(); }
   if ("back" in d) { const ps = prompts(), i = curIdx(ps); if (i > 0) { editing = null; return void toPrompt(ps[i - 1].id); } return; }
   if ("continue" in d) { const p = cur(), df = def(p); if (!readOnly && ["choice", "accent"].includes(df.kind) && df.reply) { edit(() => df.pick(df.cur)); feed(p.id, `${df.label}: ${df.reply}`); } editing = null; return void advance(); }

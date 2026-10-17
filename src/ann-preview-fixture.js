@@ -17,6 +17,8 @@ import { TAXONOMY } from "./public/aura-taxonomy-data.js";
 import { renderAura } from "./public/aura.js";
 import { defaultPageLayouts } from "./public/aura-layout.js";
 import { stylePreviewData, renderStylePreview } from "./public/style-preview.js";
+import {mapGSTINResponse} from "./gstin/provider.js";
+import {handleGSTINRoutes} from "./gstin/routes.js";
 
 const storeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ownerId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -39,7 +41,7 @@ const fixtureMedia={
   async put(key,bytes,options){memoryMedia.set(key,{bytes:new Uint8Array(bytes),type:options.httpMetadata.contentType});},
   async delete(key){memoryMedia.delete(key);},
 };
-export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false}={}) {
+export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false,verifiedBusiness=false}={}) {
   const pg = new PGlite();
   try {
     await pg.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
@@ -70,10 +72,26 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
         VALUES($1,$2,$3,'image','image/webp',32,'image','Sample approved shirt photograph')`,
         [samplePhotoId,storeId,`stores/${storeId}/${samplePhotoId}.webp`]);
     }
+    if(verifiedBusiness){
+      // Development-only synthetic evidence, confirmed by the real handler.
+      // No provider lookup, credentials, live database or production bypass.
+      await pg.exec(await readFile(new URL("../db/staged/0011_gstin_approval.sql",import.meta.url),"utf8"));
+      const raw=JSON.parse(await readFile(new URL("../test/fixtures/gstin-active-sample.json",import.meta.url),"utf8"));
+      const registration=mapGSTINResponse(raw);
+      const record=(await pg.query(`INSERT INTO public.store_gstin_verifications
+        (store_id,gstin,state,normalized,raw_response,verified_at)
+        VALUES($1,$2,'verified',$3::jsonb,$4::jsonb,now()) RETURNING id`,
+        [storeId,registration.gstin,JSON.stringify(registration),JSON.stringify(raw)])).rows[0];
+      const response=await handleGSTINRoutes(new Request(`${APP_ORIGIN}/api/stores/${storeId}/gstin/confirm`,{
+        method:"POST",headers:{origin:APP_ORIGIN,"content-type":"application/json"},
+        body:JSON.stringify({verification_id:record.id,address_index:0,lock_invoice_address:true}),
+      }),{},annFixtureAdapter(pg),{id:ownerId},"a".repeat(64));
+      if(!response.ok)throw new Error("Synthetic GST invoice identity could not be confirmed.");
+    }
     return pg;
   } catch (error) { await pg.close(); throw error; }
 }
-const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true,sampleCatalogue:true}).catch(error => { database = null; throw error; });
+const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true,sampleCatalogue:true,verifiedBusiness:true}).catch(error => { database = null; throw error; });
 export function annFixtureAdapter(pg) {
   return { withMemberStore: async (id, hash, fn) => {
     if (id !== storeId || !["a".repeat(64), "b".repeat(64)].includes(hash))

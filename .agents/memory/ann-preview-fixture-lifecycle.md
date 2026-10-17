@@ -17,6 +17,17 @@ succeeded without changing the production conflict checks.
 to production persistence. Do not weaken optimistic concurrency or bypass
 tenant/CSRF checks to accommodate this development-only lifecycle.
 
+After a frontend fix, verify the served module source and use a fresh browser
+context before treating repeated old behaviour as a failed fix. Restarting the
+server does not replace JavaScript already loaded in an open page.
+
+**Why:** A continuing browser check reported the old hidden-inline-input
+behaviour after the fix; a fresh same-origin context loaded the current modules
+and confirmed that the input was visible and editable.
+
+**How to apply:** Prefer this focused diagnostic over repeated source changes
+or rerunning the full browser journey.
+
 Keep all fixture navigation, including API-provided review destinations, inside
 the isolated preview. Mocked data alone does not isolate links or redirects.
 

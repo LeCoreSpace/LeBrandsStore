@@ -21,6 +21,19 @@ test("GST migration is an explicit separate rollout after the required-GST secur
   assert.throws(()=>migrationSelection(["--staged-gstin","--staged-ann"]));
 });
 
+test("isolated browser fixture can confirm synthetic GST evidence without a provider request or guard bypass",async()=>{
+  const pg=await setupAnnFixtureDatabase({verifiedBusiness:true});
+  try{
+    const db=annFixtureAdapter(pg);
+    const response=await handleAnnRoutes(new Request(`https://app.lebrands.store/api/stores/${id}/ann/onboarding`),{},db,user,hash);
+    assert.equal(response.status,200);
+    const state=await response.json();
+    assert.equal(state.verification.state,"verified");
+    assert.equal(state.verification.confirmed,true);
+    assert.equal(state.settings.gstin_invoice_identity_locked,true);
+  }finally{await pg.close();}
+});
+
 test("Missing GST setup is explicit; real staged DDL enables confirmation and immutable invoice identity",async()=>{
   const pg=await setupAnnFixtureDatabase();
   try{

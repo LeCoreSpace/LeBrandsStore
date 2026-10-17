@@ -63,8 +63,10 @@ payment and manual/partner shipping choices. Today must distinguish saved Ann
 build progress from required opening checks, without counting optional partner
 connections as unfinished work. Collapse onboarding reminders for live stores.
 
-All merchant-typed answers in Ann must use the single chat text box at the
-bottom, not separate text inputs inside the conversation.
+All merchant-typed conversation answers in Ann must use the single chat text
+box at the bottom, not separate text inputs inside the conversation. Direct
+canvas content edits are an explicit exception and use the selected item's
+inline controls.
 
 **Why:** The user repeatedly requested a natural chat flow and explicitly said
 all user-typed input should come from that bottom text box.
@@ -72,6 +74,7 @@ all user-typed input should come from that bottom text box.
 **How to apply:** Keep selectable choices and explicit confirmations beside the
 question. When additional details are needed, clearly identify which question
 the bottom reply will answer rather than introducing another text-entry location.
+Do not relocate contextual design-editor fields into the chat composer.
 
 GSTIN verification and explicit confirmation of the registered invoice address
 are mandatory at the opening business stage, not deferrable until publication.
@@ -88,11 +91,17 @@ Do not mistake workspace secret availability for a deployed Worker binding.
 Ann and the theme editor must open the same saved design, including section
 arrangement, text, sample creatives, colours and typography. Keep sections
 individually editable, addable and removable. Preserve browser preview in both.
+Ann also supports contextual inline edits once the merchant adopts their style
+at step 3, with collapsible design tools on the preview side. Both surfaces edit
+the same merchant-owned draft; retain the standalone theme editor.
 
 **Why:** The user called the exact Ann-to-editor match very important.
 
 **How to apply:** Do not rebuild an approximation from a style name on editor
 handoff, flatten the design into an image, or discard its sample content.
+Keep the original Style showcase read-only, separate from the merchant's
+editable design even when that design still contains sample products. Viewing
+that saved sample design must not require consent to use the real catalogue.
 
 A saved Ann conversation is not permission to overwrite an existing design.
 If no design has been adopted, show the saved plan in the editor as a pending

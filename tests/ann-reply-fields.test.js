@@ -13,7 +13,7 @@ test("One composer preserves field identity, validation, editor normalization an
     const n={value,placeholder:"",inputMode:"decimal",tagName:"INPUT",type:"text",disabled:false,readOnly:false,isConnected:true,
       getAttributeNames:()=>Object.keys(attrs),getAttribute:k=>attrs[k]??null,setAttribute:(k,v)=>{attrs[k]=v;},
       matches:()=>n.disabled,checkValidity:()=>n.value!=="invalid",validationMessage:"Use a valid price.",
-      closest:q=>q==="#ann-composer"?null:q==="#ann-log"?{}:q==="label"?{cloneNode:()=>({textContent:name,querySelectorAll:()=>[]})}:q==="fieldset"?null:{id:"ann-application-slot"},
+      closest:q=>q==="#ann-composer, .ann-ctx"?null:q==="#ann-log"?{}:q==="label"?{cloneNode:()=>({textContent:name,querySelectorAll:()=>[]})}:q==="fieldset"?null:{id:"ann-application-slot"},
       after:b=>{n.nextElementSibling=b;},dispatchEvent:e=>{
         events.push({field:name,type:e.type,value:n.value});
         if(name==="price"&&e.type==="input"){
