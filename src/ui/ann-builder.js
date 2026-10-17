@@ -34,7 +34,7 @@ ${accountHeader(user)}
   </div>
   <div class="ann-grid">
     <section class="ann-chat" aria-label="Conversation with Ann">
-      <label class="ann-language" for="ann-language"><span>Ann’s language / भाषा</span><select id="ann-language" aria-label="Ann conversation language"><option value="en" lang="en">English</option><option value="hi" lang="hi">हिन्दी</option></select></label>
+      <label class="ann-language" for="ann-language"><span>Ann’s language / भाषा</span><select id="ann-language" aria-label="Ann conversation language"><option value="en" lang="en">English</option><option value="hi" lang="hi">हिन्दी</option><option value="ta" lang="ta">தமிழ்</option><option value="mr" lang="mr">मराठी</option><option value="te" lang="te">తెలుగు</option></select></label>
       <nav class="ann-steps" id="ann-steps" aria-label="Planning steps"></nav>
       <div class="ann-log" id="ann-log" tabindex="-1"><div class="ann-skel" aria-hidden="true"><i></i><i></i><i></i></div></div>
       <footer class="ann-foot" id="ann-foot"></footer>

@@ -1,5 +1,7 @@
-// Reviewed, deterministic conversation copy. Never send merchant content for translation.
-export const ANN_LANGUAGES=Object.freeze(["en","hi"]);
+import {ANN_REGIONAL_COPY,ANN_REGIONAL_TEMPLATES} from "./ann-language-regional.js";
+
+// Prepared, deterministic conversation copy. Never send merchant content for translation.
+export const ANN_LANGUAGES=Object.freeze(["en","hi","ta","mr","te"]);
 export const ANN_HINDI=Object.freeze({
   "Hi, I'm Ann! Let's bring your store to life. What's your brand name?":"नमस्ते! मैं Ann हूँ। चलिए आपका स्टोर बनाते हैं। आपके ब्रांड का नाम क्या है?",
   "Type your GSTIN to find your registered name and address. These go on your invoices and cannot change after confirmation.":"अपना GSTIN लिखें। हम आपका पंजीकृत नाम और पता दिखाएँगे। यही जानकारी इनवॉइस पर आएगी और पुष्टि के बाद बदली नहीं जा सकेगी।",
@@ -47,6 +49,7 @@ export const ANN_HINDI=Object.freeze({
   "Sketch up to five ideas per collection. These are planning notes, not real products. No prices or stock are set.":"हर कलेक्शन के लिए पाँच तक उत्पाद सुझाएँ। ये सिर्फ़ योजना के नोट हैं, असली उत्पाद नहीं। अभी कीमत या स्टॉक तय नहीं होगा।",
   "Choose a subcategory in Category to unlock product questions.":"उत्पाद के विकल्प देखने के लिए Category में एक सबकैटेगरी चुनें।",
 });
+export const ANN_TRANSLATIONS=Object.freeze({hi:ANN_HINDI,...ANN_REGIONAL_COPY});
 const templates=[
   [/^Lovely! Which type of ([\s\S]+) do you sell\?$/,v=>`अच्छा! ${v} में आप किस तरह के उत्पाद बेचते हैं?`],
   [/^What goes in ([\s\S]+)\? Pick up to five products, or type your own\.$/,v=>`${v} में कौन-से उत्पाद रखेंगे? पाँच तक उत्पाद चुनें या अपने उत्पादों के नाम लिखें।`],
@@ -56,10 +59,18 @@ const templates=[
   [/^What is the new note for "([\s\S]+)"\?$/,v=>`"${v}" के लिए नया नोट क्या है?`],
 ];
 export function annConversationText(text,language="en"){
-  if(language!=="hi"||typeof text!=="string")return text;
+  if(!Object.hasOwn(ANN_TRANSLATIONS,language)||typeof text!=="string")return text;
+  const dictionary=ANN_TRANSLATIONS[language];
   const [,before,source,after]=text.match(/^(\s*)([\s\S]*?)(\s*)$/);
-  let translated=Object.hasOwn(ANN_HINDI,source)?ANN_HINDI[source]:null;
-  if(!translated)for(const [pattern,format] of templates){const match=source.match(pattern);if(match){translated=format(...match.slice(1));break;}}
+  let translated=Object.hasOwn(dictionary,source)?dictionary[source]:null;
+  if(!translated)for(const [index,[pattern,hindiFormat]] of templates.entries()){
+    const match=source.match(pattern);
+    if(match){
+      const format=language==="hi"?hindiFormat:ANN_REGIONAL_TEMPLATES[language]?.[index];
+      if(format)translated=format(...match.slice(1));
+      break;
+    }
+  }
   return translated?before+translated+after:text;
 }
 export function readAnnLanguage(storage,key,requested){
@@ -79,15 +90,17 @@ export function attachAnnLanguage({root,select,storageKey,requested}){
     // catalogue options, the design workspace, the iframe or legal-name/address fields.
     for(const paragraph of root.querySelectorAll(".ann-msg:not(.me) .ann-bubble p,p.ann-note,.ann-error,.ann-callout")){
       if(paragraph.closest(".ann-msg")?.classList.contains("me")||paragraph.closest("[data-ann-value],.ann-store-address"))continue;
+      let hasTranslation=false;
       for(const node of paragraph.childNodes){
         if(node.nodeType!==3||!node.textContent.trim())continue;
         let record=originals.get(node);
         if(!record||node.textContent!==record.rendered)record={source:node.textContent};
         const rendered=annConversationText(record.source,language);
+        if(rendered!==record.source)hasTranslation=true;
         originals.set(node,{source:record.source,rendered});
         if(node.textContent!==rendered)node.textContent=rendered;
       }
-      paragraph.lang=language==="hi"&&[...paragraph.childNodes].some(n=>n.nodeType===3&&/[\u0900-\u097f]/.test(n.textContent))?"hi":"en";
+      paragraph.lang=hasTranslation?language:"en";
     }
   }
   const schedule=()=>{if(!queued){queued=true;queueMicrotask(refresh);}};
