@@ -309,3 +309,48 @@ body.ann-browser-shell{margin:0;height:100dvh;display:flex;flex-direction:column
 
 .ann-rail button:disabled{opacity:.65;cursor:default}
 .ann-tools[hidden]{display:none}
+
+/* Refinement: composer continuous with the conversation (Ann host only) */
+.ann .ann-foot{border-top:0;background:linear-gradient(to bottom,rgba(255,255,255,0),#fff 14px)}
+.ann #ann-composer{padding:6px 16px 4px}
+.ann .ann-compose .ann-input{border:1px solid #e3dade;border-radius:22px;background:#faf7f8;padding:4px 4px 4px 16px;transition:border-color .15s,background .15s,box-shadow .15s}
+.ann .ann-compose .ann-input:hover{border-color:#cdbfc4}
+.ann .ann-compose .ann-input:focus-within{background:#fff;border-color:var(--a);box-shadow:0 0 0 3px rgba(107,23,53,.14);outline:0}
+.ann .ann-compose .ann-input textarea{border:0;font-size:14px}
+.ann .ann-compose .ann-send{width:36px;height:36px;min-height:36px}
+.ann .ann-hint{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);padding:0;min-height:0}
+.ann #ann-savebar{border:0}
+.ann .ann-savebar-row{padding:2px 16px 10px;gap:4px 8px}
+.ann .ann-savebar-row .ann-btn{border-radius:999px;min-height:32px;padding:5px 14px;font-weight:600}
+.ann .ann-savebar-row [data-back]{border-color:transparent;background:transparent;color:var(--muted)}
+.ann .ann-savebar-row [data-back]:hover:not(:disabled){background:#f4eef0;color:var(--ink)}
+.ann .ann-savebar-row [data-save]{border-color:var(--a);background:#fff;color:var(--a)}
+.ann .ann-savebar-row [data-save]:hover:not(:disabled){background:#f7eef1}
+.ann .ann-savebar-row [data-save]:disabled{border-color:var(--line);color:var(--muted)}
+.ann .ann-savebar-row .ann-note{margin-left:auto;text-align:right;font-size:12px}
+.ann .ann-status{border-top:0;padding:0 16px 8px;min-height:0}
+.ann .ann-status:empty{display:none}
+.ann .ann-language{border-bottom:0}
+/* Refinement: preview controls */
+.ann .ann-stage .ann-bar{padding:12px 14px 8px;gap:14px}
+.ann .ann-stage .ann-styles{background:#f5f1f3;border-radius:999px;padding:3px;gap:2px;flex:0 1 auto;max-width:100%}
+.ann .ann-stage .ann-styles .ann-tab{min-height:32px;padding:5px 14px;border:0}
+.ann .ann-stage .ann-styles .ann-tab:hover{background:#ebe4e7}
+.ann .ann-stage .ann-styles .ann-tab[aria-pressed=true]{background:#fff;color:var(--a);box-shadow:0 1px 3px rgba(56,40,43,.18)}
+.ann .ann-bar-end{margin-left:auto;gap:6px}
+.ann .ann-device{border:0;background:#f5f1f3}
+.ann .ann-device button[aria-pressed=true]{background:#fff;color:var(--a);box-shadow:0 1px 3px rgba(56,40,43,.18)}
+.ann .ann-bar-end>.ann-btn.alt{border-color:transparent;background:transparent;color:var(--ink);border-radius:999px}
+.ann .ann-bar-end>.ann-btn.alt:hover{background:#f5f1f3}
+.ann .ann-bar-end>#ann-open-browser{border-color:var(--a);color:var(--a)}
+.ann .ann-bar-end>[data-ws-toggle][aria-pressed=true]{background:#f1e5ea;color:var(--a)}
+.ann .ann-subbar{border-bottom:1px solid var(--line);padding:0 14px 10px}
+.ann .ann-subbar .ann-modes{border:0;background:#f5f1f3}
+.ann .ann-modes .ann-tab[aria-pressed=true]{background:#fff;color:var(--a);box-shadow:0 1px 3px rgba(56,40,43,.18)}
+.ann .ann-subbar #ann-pages .ann-tab{border-color:transparent;background:transparent}
+.ann .ann-subbar #ann-pages .ann-tab:hover{background:#f5f1f3}
+.ann .ann-subbar #ann-pages .ann-tab[aria-pressed=true]{background:#f1e5ea;color:var(--a)}
+.ann .ann-design-card{border:0;border-radius:12px;background:#faf7f8}
+.ann .ann-design-card .ann-note{border:0;padding:0;margin:5px 0 0;line-height:1.5}
+.ann .ann-design-card .ann-actions{gap:6px}
+@media(max-width:900px){.ann .ann-savebar-row .ann-note{margin-left:0;flex-basis:100%;text-align:left}.ann .ann-stage .ann-styles{flex:1 1 100%}}

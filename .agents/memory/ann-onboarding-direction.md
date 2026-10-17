@@ -205,6 +205,17 @@ rather than requiring the merchant to create a SKU. Preserve existing saved SKUs
 
 **Why:** The user explicitly asked for auto-generated SKUs shown to the user.
 
+The reply composer must feel continuous with Ann's main conversation, not like
+a separate form card or section. Preview controls should have a clear hierarchy
+without changing the standalone theme editor.
+
+**Why:** The user requested professional refinement of the bottom conversation
+field and right-side preview controls, explicitly saying the conversation field
+should look like part of the main chat.
+
+**How to apply:** Keep Ann-specific presentation separate from shared editor
+behavior and preserve save, publish, validation and keyboard interactions.
+
 **Why:** The user explicitly requires product-adding features in Ann to also
 appear in the dashboard Add product form, and reported that the collection and
 product steps were not opening the requested modals.
