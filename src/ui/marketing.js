@@ -1,4 +1,5 @@
 import { pricingMain } from "./pricing.js";
+import { compareMain, COMPARE_FAQ } from "./compare.js";
 import { MARKETING_MEDIA } from "./marketing-media.js";
 import { FAVICON_LINKS } from "./favicon.js";
 import { platformSeoHead, PLATFORM_DESCRIPTION, PLATFORM_FAQ } from "./platform-seo.js";
@@ -26,7 +27,7 @@ function imageMarkup(media, { eager = false, className = "", alt = media.alt } =
   return `<img class="${className}" src="${media.src}"${srcset} width="${media.width}" height="${media.height}" alt="${alt}" ${priority} decoding="async">`;
 }
 
-function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://lebrands.store", pageClass = "", body }) {
+function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://lebrands.store", pageClass = "", body, head = "" }) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -51,6 +52,7 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
   <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <script src="/assets/marketing.js"></script>
   <link rel="stylesheet" href="/assets/marketing.css">
+  ${head}
 </head>
 <body class="${pageClass}">
 ${body}
@@ -65,6 +67,7 @@ function nav({ pricing = false } = {}) {
     <nav class="m-nav-links" aria-label="Main navigation">
       <a href="${pricing ? "/#features" : "#features"}">Features</a>
       <a href="/pricing">Pricing</a>
+      <a href="/compare">Compare</a>
       <a href="${pricing ? "/#faq" : "#faq"}">FAQ</a>
       <a class="m-nav-login" href="${LOGIN}">Log in</a>
       <button class="m-theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false"><span class="m-theme-icon" aria-hidden="true"></span><span data-theme-label>Dark</span></button>
@@ -83,6 +86,7 @@ function footer({ pricing = false } = {}) {
       <nav class="m-footer-links" aria-label="Footer">
         <a href="${homePrefix}#features">Features</a>
         <a href="/pricing">Pricing</a>
+        <a href="/compare">Compare</a>
         <a href="${homePrefix}#faq">FAQ</a>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
@@ -332,6 +336,7 @@ export function renderPricing() {
   const body = `<div class="m-pricing-page">
   ${nav({ pricing: true })}
   ${pricingMain()}
+  <p class="m-pr-wrap m-pr-disclose">Weighing other platforms? <a href="/compare">Compare LeBrands.Store with four alternatives</a> using your own sales numbers.</p>
   ${footer({ pricing: true })}
 </div>`;
   return shell({
@@ -339,6 +344,28 @@ export function renderPricing() {
     description: "Start with the proposed 30-day Free plan on your included LeBrands.Store address. Compare paid plans with custom domains. Confirm scope with our team.",
     canonical: "https://lebrands.store/pricing",
     pageClass: "m-pricing-document",
+    body
+  });
+}
+
+const jsonLd = (o) => JSON.stringify(o).replace(/</g, "\\u003c");
+
+export function renderCompare() {
+  const faqSchema = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: COMPARE_FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) };
+  const head = `<link rel="stylesheet" href="/assets/compare.css">
+  <script type="module" src="/assets/compare.js"></script>
+  <script type="application/ld+json">${jsonLd(faqSchema)}</script>`;
+  const body = `<div class="m-pricing-page">
+  ${nav({ pricing: true })}
+  ${compareMain()}
+  ${footer({ pricing: true })}
+</div>`;
+  return shell({
+    title: "Compare LeBrands.Store, Shopify, Zoho Commerce, ShopDeck and Dukaan",
+    description: "Compare five store builders for Indian D2C brands with a transparent cost calculator, a short quiz and the method behind both.",
+    canonical: "https://lebrands.store/compare",
+    pageClass: "m-pricing-document m-compare-document",
+    head,
     body
   });
 }

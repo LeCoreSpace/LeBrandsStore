@@ -20,6 +20,7 @@
 - [Platform crawler boundary](platform-crawler-boundary.md) — public platform URLs only; keep private and preview routes out, with truthful schema and AI-facing claims.
 - [Sandboxed storefront previews](sandboxed-store-previews.md) — bind preview controls from the trusted parent; blocked forms need explicit click/Enter handlers.
 - [Pricing presentation](pricing-presentation.md) — plan cards above a separate comparison; use provider-neutral integration descriptions and defer billing.
+- [Comparison source verification](comparison-source-verification.md) — extracted pricing can resolve to USD despite an Indian URL; verify regional currency and billing terms.
 - [Platform white surfaces](platform-white-surfaces.md) — homepage is white except hero/footer in both modes; platform neutrals and merchant presets stay separate.
 - [COD, returns and native components](cod-returns-native-components.md) — every-plan COD/RTO centre and built-in Aura commerce components; loyalty points later.
 - [AI store builder limits](ai-store-builder-limits.md) — one completed draft build per store, bounded approval-stage image regeneration and recorded costs.

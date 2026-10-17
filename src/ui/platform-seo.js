@@ -3,7 +3,7 @@ import { PLATFORM_COMPANY, PLATFORM_EMAIL, PLATFORM_INFO } from "./platform-info
 // Confirmed production domain in root wrangler.jsonc, not the preview origin.
 export const PLATFORM_ORIGIN = "https://lebrands.store";
 export const PLATFORM_DESCRIPTION = "Build an online store for your Indian D2C brand with product catalogues, COD orders, customer records and GST invoices. Zero sales commission.";
-export const PUBLIC_PLATFORM_PATHS = ["/", "/pricing", "/terms", "/privacy", "/contact", "/support"];
+export const PUBLIC_PLATFORM_PATHS = ["/", "/pricing", "/compare", "/terms", "/privacy", "/contact", "/support"];
 export const ACCOUNT_ROBOTS = "User-agent: *\nDisallow: /\n";
 
 // One source for both the visible, server-rendered answers and FAQ schema.
@@ -68,7 +68,7 @@ export function platformSeoHead({ canonical, title, description, includeImage = 
       })),
     });
   } else {
-    const name = url.pathname === "/pricing" ? "Pricing" : PLATFORM_INFO[url.pathname.slice(1)].title;
+    const name = url.pathname === "/pricing" ? "Pricing" : url.pathname === "/compare" ? "Compare platforms" : PLATFORM_INFO[url.pathname.slice(1)].title;
     graph.push({
       "@type": "BreadcrumbList",
       itemListElement: [

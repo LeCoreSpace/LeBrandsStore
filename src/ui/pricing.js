@@ -1,12 +1,7 @@
+import { PRICING_PLANS as PLANS } from "../public/pricing-plans.js";
+
 const MAIL = "mailto:support@lebrands.store";
 const mail = (plan) => `${MAIL}?subject=${encodeURIComponent(`Discuss the ${plan} plan`)}`;
-
-const PLANS = [
-  { name: "Launch", price: "₹1,499", annual: "₹14,990", pre: "", space: "Starter", blurb: "A complete branded store for a brand finding its feet.", orders: "Up to 300", staff: "2", support: "Email" },
-  { name: "Grow", price: "₹3,499", annual: "₹34,990", pre: "", space: "Premium", blurb: "More ways to lift basket size, plus priority help on WhatsApp.", orders: "Up to 1,500", staff: "5", support: "WhatsApp, priority", featured: true },
-  { name: "Scale", price: "₹7,999", annual: "₹79,990", pre: "", space: "Freedom", blurb: "Automation, messaging and analytics for brands with volume.", orders: "Up to 7,500", staff: "15", support: "Account manager" },
-  { name: "Flagship", price: "₹19,999", annual: "Custom", pre: "From ", space: "Freedom and extras", blurb: "Design work, multiple logistics partners and a dedicated team.", orders: "Unlimited", staff: "Unlimited", support: "Dedicated team" },
-];
 
 const Y = true, N = false;
 const SECTIONS = [
