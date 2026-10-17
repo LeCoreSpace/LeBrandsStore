@@ -10,6 +10,7 @@ import { RICH_CSS } from "./aura-showcase-rich-css.js";
 import { showcaseProfile, renderNicheSections, NICHE_SECTION_CSS, profileGuidance } from "./aura-showcase-profiles.js";
 import { styleSettings, STYLE_IDS } from "./aura-styles.js";
 import { CONVERSION_COPY, CONVERSION_NEUTRAL, CONVERSION_KIND, CONVERSION_CSS, CONVERSION_TABBAR, isConversionStyle, conversionTopper, buildConversion } from "./aura-conversion-styles.js";
+import { productDetailRows, productFeatureRows } from "./product-details.js";
 import { contrastColor } from "./validation.js";
 import {validateDesignMenus,renderDesignMenu,DESIGN_MENU_CSS} from "./ann-menu-model.js";
 
@@ -268,7 +269,8 @@ function productPageLive(x) {
   const p = x.products.find(i => String(i.id) === String(x.options.productId)) || x.products[0];
   if (!p) return `<section class="sc-chead"><h1>Product not found</h1><p><a class="sc-btn" href="/collections/all">Browse the range</a></p></section>`;
   const pics = (p.images || []).slice(0, 6).map((im, i) => img(im, p.title).replace("<img ", `<img data-gallery-image="${i}" `)).filter(Boolean);
-  const features = (p.content?.features || []).map(f => `<li><span>${esc(f.label)}</span>${esc(f.value)}</li>`).join("");
+  const own = String(p.id) === String(x.options.productId) && productDetailRows(p).length;
+  const features = (own ? productFeatureRows(p) : (p.content?.features || [])).map(f => `<li><span>${esc(f.label)}</span>${esc(f.value)}</li>`).join("");
   const rest = x.products.filter(i => i.id !== p.id).slice(0, 4), o = x.options;
   const avail = p.stock == null || Number(p.stock) > 0, on = o.commerce && (!o.readOnly || o.embeddedPreview);
   const max = p.stock == null ? 99 : Math.max(1, Math.min(99, Number(p.stock)));

@@ -116,3 +116,16 @@ compatibility or regulatory status of a merchant's actual product.
 **How to apply:** Keep contextual facts separate from SKU choices and approval
 checks. Preserve existing context-specific enum meanings rather than merging
 same-label descriptors across unrelated categories.
+
+Operational stock/price updates must not approve draft descriptor edits.
+Only an explicit live catalogue save or full store publication may refresh
+customer-facing product facts; older published facts remain authoritative
+between those actions.
+
+**Why:** An operational refresh can load the latest draft product while updating
+a published snapshot. Copying every draft field would publish content that the
+merchant has not approved through a catalogue save or store publication.
+
+**How to apply:** Freeze human-readable labels and values at publication, preserve
+the previous product's frozen facts on operational sync, and never query current
+masters or draft selections while serving a live product page.

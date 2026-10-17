@@ -11,6 +11,7 @@ import { productContent, collectionContent, saveProductContent } from "./catalog
 import { validCategoryPair } from "../public/aura-taxonomy.js";
 import {catalogueFormsEnabled,saveProductCatalogue} from "./catalogue-products.js";
 import {loadClassifications,writeClassification} from "./catalogue-classification.js";
+import { storefrontProduct } from "../public/product-details.js";
 
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
@@ -333,6 +334,7 @@ export async function publish(tx, id, live) {
     // Do not copy archived/deleted draft entity maps into the public snapshot.
     const { aura_content, ...publicSettings } = publicationData.settings;
     publicationData.settings = publicSettings;
+    publicationData.products = publicationData.products.map(product=>storefrontProduct(product));
     publicationData.store={store_id:data.store.store_id,name:data.store.name,subdomain:data.store.subdomain,status:data.store.status};
     await tx`INSERT INTO public.store_publications (store_id, snapshot)
       VALUES (${id}, ${tx.json(publicationData)}) ON CONFLICT (store_id) DO UPDATE

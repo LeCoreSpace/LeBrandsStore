@@ -3,6 +3,7 @@ import {validateDesignMenus,renderDesignMenu} from "./ann-menu-model.js";
 import { formatPhone } from "./commerce-rules.js";
 import { sanitizeRichText } from "./aura-layout.js";
 import { normalisePageSize } from "./catalog-page.js";
+import { productDetailRows } from "./product-details.js";
 
 export const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const UU = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
@@ -14,6 +15,10 @@ const POLICIES = ["privacy", "terms", "shipping", "cancellation-refund", "pricin
 const str = (v) => typeof v === "string" ? v.trim() : "";
 const blocks = (s) => (Array.isArray(s.blocks) ? s.blocks : []).map((b) => b?.settings || {});
 const off = (s) => s?.settings?.enabled === false;
+const detailKey = (v) => str(v).normalize("NFKC").toLowerCase();
+const detailsOf = (c) => c.options?.page === "product" && c.product ? productDetailRows(c.product) : [];
+const mergeDetails = (rows, details) => { if (!details.length) return rows; const n = new Set(details.map((r) => detailKey(r.label))); return [...rows.filter(([k]) => !n.has(detailKey(k))), ...details.map((r) => [r.label, r.value])]; };
+const specsOwn = (c) => (c.layout || []).some((i) => i.type === "product-specs" && i.settings?.enabled !== false);
 
 export const HERO_IMAGE_SIZES = "(max-width: 680px) 100vw, 50vw";
 export function imageSourceSet(image) {
@@ -218,7 +223,7 @@ export const SECTION_RENDERERS = {
       : o.commerce ? `<div class="au-buy"><button class="au-btn" type="button" disabled aria-disabled="true">Add to cart on the live store</button></div><p class="au-feedback" role="status">Read-only preview. Shopping is available on the live store.</p>`
         : `<button class="au-btn" disabled aria-disabled="true">Shopping unavailable</button>`;
     const sticky = o.commerce ? `<div class="au-sticky-buy"><span>${esc(p.title || "Product")}<strong>${money(p.price_paise)}</strong></span><button class="au-btn" type="button"${o.readOnly || !available(p) ? ' disabled aria-disabled="true"' : ` data-add-product="${esc(p.id)}"`}>${!available(p) ? "Sold out" : o.readOnly ? "Preview only" : "Add to cart"}</button></div>` : "";
-    return `<section class="au-product"><div class="au-pgallery">${imgs}</div><div class="au-pdetail"><h1>${esc(p.title || "Untitled product")}</h1><p class="au-price"><strong>${money(p.price_paise)}</strong>${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}</p><div class="aura-description au-desc">${c.renderDescription(p.description || "")}</div>${buy}</div>${sticky}</section>`;
+    return `<section class="au-product"><div class="au-pgallery">${imgs}</div><div class="au-pdetail"><h1>${esc(p.title || "Untitled product")}</h1><p class="au-price"><strong>${money(p.price_paise)}</strong>${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}</p><div class="aura-description au-desc">${c.renderDescription(p.description || "")}</div>${(() => { const d = specsOwn(c) ? [] : detailsOf(c); return d.length ? `<section class="au-product-details-block" aria-labelledby="au-pd-h"><h2 id="au-pd-h" class="au-sr">Product details</h2><dl class="au-specs au-product-details" data-product-details style="overflow-wrap:anywhere">${d.map((r) => `<div><dt>${esc(r.label)}</dt><dd>${esc(r.value)}</dd></div>`).join("")}</dl></section>` : ""; })()}${buy}</div>${sticky}</section>`;
   },
   about(s, c) {
     const x = s.settings || {};
@@ -267,6 +272,7 @@ Object.assign(SECTION_RENDERERS, {
   "product-specs"(s, c) {
     const mine = (Array.isArray(content(c).features) ? content(c).features : []).filter((b) => str(b?.label) && str(b?.value)).map((b) => [b.label, b.value]);
     const rows = mine.length || has(c, "features") ? mine : blocks(s).filter((b) => str(b.label) && str(b.value)).map((b) => [b.label, b.value]);
+    rows.splice(0, rows.length, ...mergeDetails(rows, detailsOf(c)));
     if (s.settings?.show_sku !== false && str(c.product?.sku)) rows.push(["SKU", c.product.sku]);
     if (off(s) || !rows.length) return "";
     return `<section class="au-section au-info">${heading(str(s.settings?.title) || "Specifications")}<dl class="au-specs">${rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl></section>`;

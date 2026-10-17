@@ -1,6 +1,7 @@
 import { loadDraft } from "../store/repository.js";
 import { transitionInput, shouldRestoreStock, dateFilters, stateName, indianDate, statusLabel } from "../public/dashboard-rules.js";
 import { commerceError } from "../public/commerce-rules.js";
+import { storefrontProduct } from "../public/product-details.js";
 
 const missing = () => commerceError("Record not found.",undefined,404);
 const numberFields = ["total_paise","subtotal_paise","shipping_paise","tax_paise","cod_fee_paise","discount_paise",
@@ -188,8 +189,8 @@ export async function syncPublishedProducts(tx,id,productId,activate = false) {
     product.collection_ids = index >= 0 ? products[index].collection_ids || [] : [];
   }
   if (index >= 0) {
-    if (product) products[index] = product; else products.splice(index,1);
-  } else if (product) products.push(product);
+    if (product) products[index] = storefrontProduct(product,{detailsFrom:activate?product:products[index]}); else products.splice(index,1);
+  } else if (product) products.push(storefrontProduct(product,{detailsFrom:activate?product:null}));
   // Refresh only this product. Never publish other catalogue/setup/policy drafts.
   await tx`UPDATE public.store_publications SET snapshot = jsonb_set(snapshot,'{products}',${tx.json(products)})
     WHERE store_id = ${id}`;

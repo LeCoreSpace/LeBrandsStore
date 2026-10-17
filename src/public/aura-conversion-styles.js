@@ -10,6 +10,7 @@
  * description, specification rows come from catalogue fields, and policy links
  * only appear when the store has those policies.
  */
+import { productDetailRows, productFeatureRows } from "./product-details.js";
 export const CONVERSION_STYLES = Object.freeze(["social-pop", "creator-feed", "proof-detail"]);
 export const isConversionStyle = style => CONVERSION_STYLES.includes(style);
 export const CONVERSION_KIND = Object.freeze({ "social-pop": "pop", "creator-feed": "slide", "proof-detail": "fade" });
@@ -61,8 +62,12 @@ export function buildConversion(h) {
   const { esc, rupees, img, pImg, pHref, cHref, cImg, rv, dc, num, cta, card, live } = h;
   const feats = p => (p.content?.features || []).filter(f => f && f.label && f.value);
   const sentences = t => String(t || "").replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s+/).filter(Boolean);
-  const hl = p => {
-    const f = feats(p).slice(0, 3).map(i => `${i.label}: ${i.value}`);
+  // Saved descriptors only on the live page of the requested product; never demo or related cards.
+  const owns = (x, p) => live() && String(p.id) === String(x.options?.productId) && productDetailRows(p).length > 0;
+  const facts = (x, p) => owns(x, p) ? productFeatureRows(p) : feats(p);
+  const manual = (x, p) => { if (!owns(x, p)) return feats(p); const d = new Set(productDetailRows(p).map(r => String(r.label).trim().normalize("NFKC").toLowerCase())); return feats(p).filter(f => !d.has(String(f.label).trim().normalize("NFKC").toLowerCase())); };
+  const hl = (p, rows = feats(p)) => {
+    const f = rows.slice(0, 3).map(i => `${i.label}: ${i.value}`);
     if (f.length) return f;
     return sentences(p.description).slice(0, 3).map(s => s.length > 90 ? `${s.slice(0, 87).replace(/\s+\S*$/, "")}...` : s);
   };
@@ -159,7 +164,7 @@ export function buildConversion(h) {
   const PRODUCT = {
     "social-pop": x => {
       const p = prodOf(x); if (!p) return none;
-      const pics = gallery(x, p), hls = hl(p), av = avail(p), feat = feats(p), more = rest(x, p, 6);
+      const feat = facts(x, p), pics = gallery(x, p), hls = hl(p, manual(x, p)), av = avail(p), more = rest(x, p, 6);
       return `<section class="sp-pdp"><div class="sp-reel" role="region" aria-label="Photos of ${esc(p.title)}" tabindex="0">${pics.length ? pics.map((i, k) => `<div class="sp-shot" style="--i:${k}">${i}</div>`).join("") : `<div class="sp-shot">${noPhoto}</div>`}</div>
       <div class="sp-panel">${crumb}<h1>${esc(p.title)}</h1><p class="sp-price"><strong>${price(p)}</strong>${av ? `<span class="sp-stock">${av}</span>` : ""}</p>${hls.length ? `<ul class="sp-hl" aria-label="Highlights">${hls.map(t => `<li>${esc(t)}</li>`).join("")}</ul>` : ""}${buy(x, p)}${terms(x)}</div></section>
       ${p.description || feat.length ? `<section class="sp-info"><h2>About this one</h2>${desc(p)}${feat.length ? `<dl class="sp-facts">${feat.map(f => `<div><dt>${esc(f.label)}</dt><dd>${esc(f.value)}</dd></div>`).join("")}</dl>` : ""}</section>` : ""}
@@ -167,7 +172,7 @@ export function buildConversion(h) {
     },
     "creator-feed": x => {
       const p = prodOf(x); if (!p) return none;
-      const pics = gallery(x, p), feat = feats(p), av = avail(p), more = rest(x, p, 4);
+      const pics = gallery(x, p), feat = facts(x, p), av = avail(p), more = rest(x, p, 4);
       const caps = ["Here is how it looks.", "A closer look.", "Another angle.", "And one more."];
       const posts = pics.map((i, k) => `<figure class="cf-post"><div class="cf-ph">${i}</div><figcaption class="cf-cap"><span>${esc(caps[k % caps.length])}</span>${k === 0 ? `<b>${esc(p.title)}, ${rupees(p.price_paise)}</b>${mini(x, p)}` : ""}</figcaption></figure>`).join("");
       return `<section class="cf-pdp"><div class="cf-pfeed">${posts || `<figure class="cf-post"><div class="cf-ph">${noPhoto}</div></figure>`}</div>
@@ -176,7 +181,7 @@ export function buildConversion(h) {
     },
     "proof-detail": x => {
       const p = prodOf(x); if (!p) return none;
-      const pics = gallery(x, p), feat = feats(p), av = avail(p), cs = colsOf(x, p), more = rest(x, p, 4);
+      const pics = gallery(x, p), feat = facts(x, p), av = avail(p), cs = colsOf(x, p), more = rest(x, p, 4);
       const rows = [["Price", rupees(p.price_paise)], av && ["Availability", av], cs.length && ["Collection", esc(cs.join(", "))], ...feat.map(f => [f.label, esc(f.value)])].filter(Boolean);
       return `<section class="pd-pdp"><div class="pd-gal"><div class="pd-main">${pics[0] || noPhoto}</div>${pics.length > 1 ? `<div class="pd-thumbs">${pics.slice(1).map(i => `<div>${i}</div>`).join("")}</div>` : ""}</div>
       <div class="pd-buy">${crumb}<h1>${esc(p.title)}</h1><p class="pd-price">${price(p)}</p>${av ? `<p class="pd-av">${av}</p>` : ""}${buy(x, p)}${terms(x)}</div></section>
