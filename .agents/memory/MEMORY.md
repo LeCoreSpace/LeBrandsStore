@@ -33,3 +33,4 @@
 - [Offline test memory](offline-test-memory.md) — keep concurrent PGlite tests bounded so verification does not exhaust the running workspace.
 - [Ann preview lifecycle](ann-preview-fixture-lifecycle.md) — backend edits can restart Vite and reset its in-memory store; stabilize the server before persistence checks.
 - [Image generation framing](image-generation-framing.md) — verify output dimensions; wide hero prompts can still return square images.
+- [Platform typography](platform-typography.md) — homepage font changes apply throughout the page; align with Pricing/Compare without changing merchant designs.

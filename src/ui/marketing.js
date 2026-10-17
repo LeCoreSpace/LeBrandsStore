@@ -329,7 +329,7 @@ export function renderHome() {
   </section>
 </main>
 ${footer()}`;
-  return shell({ body });
+  return shell({ body, pageClass: "m-home-document" });
 }
 
 export function renderPricing() {
