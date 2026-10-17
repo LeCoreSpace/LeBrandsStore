@@ -16,3 +16,14 @@ product facts without automatically creating SKU combinations. Use the same
 classification and product-form behaviour in Ann and the dashboard. Support
 product types mapped to multiple relevant subcategories rather than duplicating
 the type for each branch. HSN suggestions are not verified tax classifications.
+
+Product forms must expose all applicable product types, variant options and
+descriptors, not merely a small set of suggestions. Merchants should be able to
+select all descriptors that apply; descriptive fields do not share the SKU-axis
+limit.
+
+**Why:** The user explicitly requested the full selection in the product form.
+
+**How to apply:** Filter choices by their valid taxonomy mappings, but do not hide
+mapped options because they are outside a short recommended list. Keep the Ann
+and dashboard forms consistent.
