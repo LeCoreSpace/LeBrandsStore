@@ -6,12 +6,15 @@ import { matchesOrderTab, loadedSalesSummary, paymentState } from "/assets/dashb
 import {observeGSTINForms} from "/assets/gstin-ui.js";
 import { textToRich, cleanRows } from "/assets/content-form.js";
 import "/assets/dashboard-navigation.js";
+import * as catalogueModel from "/assets/catalogue-model.js";
+import { initCatalogueForm, readCataloguePayload, initSearchPreview, readSearchFields } from "/assets/catalogue-form.js";
 
 const root = document.querySelector(".lb-app");
 const storeId = root?.dataset.storeId || "";
 const role = root?.dataset.role || "editor";
 observeGSTINForms(root,storeId,{readOnly:!["owner","admin"].includes(role)});
-const api = `/api/stores/${encodeURIComponent(storeId)}`;
+const api = root?.dataset.apiRoot || `/api/stores/${encodeURIComponent(storeId)}`;
+const storeRoot = root?.dataset.storeRoot || `/stores/${encodeURIComponent(storeId)}`;
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]);
 const moneyToPaise = value => {
   const text = String(value || "").trim();
@@ -210,6 +213,7 @@ function productPayload(form) {
     hsn_code: String(fd.get("hsn_code") || "").trim(),
     gst_rate: fd.get("gst_rate") === "" || fd.get("gst_rate") == null ? null : Number(fd.get("gst_rate")),
     ...(form.querySelector("[data-content-form]") ? { content: contentPayload(form).content } : {}),
+    ...readCataloguePayload(form),
     ...(!isNewForm(form) ? { expected_stock: form.dataset.expectedStock === "null" ? null : Number(form.dataset.expectedStock) } : {}),
   };
 }
@@ -267,6 +271,7 @@ document.querySelectorAll("[data-product-form]").forEach(form => {
   form.addEventListener("input", () => updateGSTWarning(form));
   form.addEventListener("change", () => updateGSTWarning(form));
 });
+document.querySelectorAll("[data-product-form]").forEach(form => { initSearchPreview(form); initCatalogueForm(form, { model: catalogueModel, notify, confirm: message => window.confirm(message) }); });
 function isNewForm(form) { return form.dataset.new === "true"; }
 function updateSaveForUploads(form) {
   const submit = form?.querySelector('button[type="submit"]');
@@ -280,7 +285,8 @@ document.querySelector("[data-product-form]")?.addEventListener("submit", async 
   const form = event.currentTarget;
   const button = event.submitter || form.querySelector('button[type="submit"]');
   if (pendingUploads > 0) { notify("Wait for product images to finish uploading before saving.", true); return; }
-  const payload = productPayload(form);
+  let payload;
+  try { payload = productPayload(form); } catch (error) { const node = form.querySelector("[data-form-error]"); if (node) { node.textContent = error.message; node.hidden = false; } notify(error.message, true); return; }
   const errorNode = form.querySelector("[data-form-error]");
   const errors = validateProduct(payload);
   contentPayload(form).errors.forEach((message, i) => { errors["content_" + i] = message; });
@@ -300,7 +306,7 @@ document.querySelector("[data-product-form]")?.addEventListener("submit", async 
   try {
     await request(target, { method: isNew ? "POST" : "PATCH", body: JSON.stringify(payload) });
     notify("Product saved.");
-    window.location.href = `${location.origin}/stores/${encodeURIComponent(storeId)}/products`;
+    window.location.href = `${storeRoot}/products`;
   } catch (error) { handleError(error, button);if(parallelSave)busy(parallelSave,false);updateSaveForUploads(form); }
 });
 
@@ -351,7 +357,7 @@ document.querySelector("[data-archive]")?.addEventListener("click", async event 
   try {
     await postJson(`${api}/products/${encodeURIComponent(form.dataset.productId)}/archive`, {});
     notify("Product archived.");
-    window.location.href = `/stores/${encodeURIComponent(storeId)}/products`;
+    window.location.href = `${storeRoot}/products`;
   } catch (error) { handleError(error, button); }
 });
 document.querySelector("[data-stock-adjust]")?.addEventListener("click", async event => {
@@ -476,11 +482,15 @@ if (collectionForm) {
     if (Array.isArray(media.sources)) out.sources = media.sources.filter(x => x && typeof x.url === "string" && Number.isInteger(x.width) && x.width > 0).map(x => ({ url: x.url, width: x.width }));
     return out;
   };
+  initSearchPreview(collectionForm);
   const collectionBody = () => {
+    const searchErrors = []; let search = {};
+    try { search = readSearchFields(collectionForm); } catch (e) { searchErrors.push(e.message); }
     const fd = new FormData(collectionForm), faq = readRows(collectionForm.querySelector('[data-rows="faq"]'));
     const alt = coverBox.querySelector("[data-cover-alt]").value.trim();
-    return { errors: faq.errors, body: {
-      title: String(fd.get("title") || "").trim(), slug: String(fd.get("slug") || "").trim(), description: String(fd.get("description") || "").trim(),
+    return { errors: [...searchErrors, ...faq.errors], body: {
+      title: String(fd.get("title") || "").trim(), description: String(fd.get("description") || "").trim(),
+      ...search,
       product_ids: [...collectionForm.querySelectorAll("[data-product-pick]:checked")].map(i => i.value),
       related_ids: [...collectionForm.querySelectorAll("[data-related-pick]:checked")].map(i => i.value),
       cover: normalizeCover(cover, alt),
@@ -502,13 +512,13 @@ if (collectionForm) {
     try {
       await request(isNew ? api + "/collections" : api + "/collections/" + encodeURIComponent(collectionForm.dataset.collectionId), { method: isNew ? "POST" : "PATCH", body: JSON.stringify(body) });
       notify("Collection saved as a draft.");
-      window.location.href = "/stores/" + encodeURIComponent(storeId) + "/collections";
+      window.location.href = storeRoot + "/collections";
     } catch (error) { buttons.forEach(b => busy(b, false)); formError(error.message || "Collection could not be saved."); }
   });
   collectionForm.querySelector("[data-collection-delete]")?.addEventListener("click", async event => {
     if (!window.confirm("Delete this collection? Products stay in your catalogue. Draft only until you publish.")) return;
     busy(event.currentTarget, true, "Deleting...");
-    try { await request(api + "/collections/" + encodeURIComponent(collectionForm.dataset.collectionId), { method: "DELETE" }); window.location.href = "/stores/" + encodeURIComponent(storeId) + "/collections"; }
+    try { await request(api + "/collections/" + encodeURIComponent(collectionForm.dataset.collectionId), { method: "DELETE" }); window.location.href = storeRoot + "/collections"; }
     catch (error) { busy(event.currentTarget, false); formError(error.message || "Collection could not be deleted."); }
   });
 }

@@ -57,7 +57,7 @@ export async function saveCollection(tx, storeId, id, value) {
       SELECT ${storeId}::uuid,${entityId}::uuid,value::uuid,(ordinality-1)::integer
       FROM jsonb_array_elements_text(${tx.json(patch.product_ids)}::jsonb) WITH ORDINALITY x(value,ordinality)`;
   }
-  const extra = Object.fromEntries(["cover", "faq", "related_ids"].filter(key => key in patch).map(key => [key, patch[key]]));
+  const extra = Object.fromEntries(["cover", "faq", "related_ids","seo_title","seo_description"].filter(key => key in patch).map(key => [key, patch[key]]));
   if (Object.keys(extra).length) {
     if (extra.cover) {
       const key = new URL(extra.cover.url).pathname.slice(1);

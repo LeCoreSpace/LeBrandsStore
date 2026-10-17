@@ -35,6 +35,8 @@ test("live catalogue sync publishes only its target, never other wizard drafts",
     if (sql.startsWith("SELECT *, to_json(tags)")) return products;
     if (sql.includes("FROM public.product_media") || sql.includes("FROM public.policy_pages")) return [];
     if (sql.startsWith("UPDATE public.store_publications")) {saved = values[0];return [];}
+    if(sql.includes("FROM public.product_options"))return [];
+    if(sql.includes("information_schema.columns"))return [{enabled:false}];
     throw new Error(`Unexpected test SQL: ${sql}`);
   };
   tx.json = (value) => structuredClone(value);

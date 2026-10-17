@@ -293,6 +293,7 @@ body.ann-browser-shell{margin:0;height:100dvh;display:flex;flex-direction:column
 /* Design workspace: right-hand drawer inside the preview, never a third grid column */
 .ann-tools{position:absolute;z-index:5;top:0;right:0;bottom:0;width:296px;overflow:auto;background:#fffdfb;border-left:1px solid var(--line);padding:12px;display:grid;gap:10px;align-content:start}
 .ann-tools[hidden]{display:none}
+.ann-rail button:disabled{opacity:.65;cursor:default}
 .ann-ws-head{display:flex;justify-content:space-between;align-items:center}
 .ann-ws-tabs{display:flex;gap:2px;padding:3px;border:1px solid var(--line);border-radius:999px;background:#f5f2f3}
 .ann-ws-tabs button{flex:1;min-height:32px;border:0;border-radius:999px;background:transparent;font:600 12px var(--sans);color:var(--ink);cursor:pointer}

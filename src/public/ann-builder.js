@@ -41,6 +41,8 @@ const FONT_NAMES = { modern: "Modern sans", serif: "Serif", classic: "Classic" }
 const label = s => s.replace(/-/g, " ").replace(/^./, c => c.toUpperCase());
 
 let session = boot.sessionResponse?.session || null;
+let setupStepsLocked = UI_STEPS.findIndex(([key]) => key === session?.current_step) >= 2;
+const isSetupStepLocked = target => setupStepsLocked && ["business", "selling"].includes(target);
 let revision = session?.revision ?? 0;
 let saved = structuredClone(session?.answers || {});
 let answers = structuredClone(saved);
@@ -128,7 +130,7 @@ designUI = attachAnnDesign({ api, root, readOnly, mount: canvas, say, contextual
   onActivated: ({ useOwnProducts = false, restored = false } = {}) => { if (useOwnProducts) ownProductsConfirmed = true; saved = structuredClone(answers); touched = false; autosavePaused = false; saveProblem = ""; conflict = false;
     // The saved merchant design is shown immediately. Sample catalogue is a separate choice: only real products need consent.
     setPreviewMode("store", previewSource); page = ownProductsConfirmed && !previewSource.products?.some(p => p.status !== "archived") ? "home" : "product"; draw("keep"); renderPreview(false); workspaceUI?.refresh();
-    if (!restored && !readOnly) workspaceUI?.open();
+    if (!readOnly) workspaceUI?.open();
     say(ownProductsConfirmed ? "Your design is saved to draft. Select text or a photo to edit it. Your live site is unchanged." : restored ? "Welcome back. Your saved design is open for editing with sample products. Choose your own products whenever you are ready." : "Your style is adopted as your draft. Edit it here with sample products. Your live site is unchanged."); },
   onChange: () => { schedule(); drawFoot(); },
   onCatalogueConfirmed: () => { ownProductsConfirmed = true; setPreviewMode("store"); const next = pendingCatalogueAction; pendingCatalogueAction = null; next?.(); draw("keep"); renderPreview(false); say("You are now previewing your own products. Your catalogue and live site have not changed."); },
@@ -336,7 +338,7 @@ function curIdx(ps = prompts()) {
   return i;
 }
 const reachedIdx = ps => Math.max(curIdx(ps), ps.findIndex(p => p.id === reached));
-promptId = new URL(location.href).searchParams.get("logo") === "1" ? "logo" : prompts().find(p => p.step === step)?.id || "category"; reached = promptId;
+promptId = !setupStepsLocked && new URL(location.href).searchParams.get("logo") === "1" ? "logo" : prompts().find(p => p.step === step)?.id || "category"; reached = promptId;
 
 const cur = ps => (ps || prompts())[curIdx(ps)];
 const uniqueAccents = () => [...new Map(AURA_STYLES.map(s => [s.settings.accent_color.toLowerCase(), s.name])).entries()].map(([v, n]) => ({ v, t: `${n} accent` }));
@@ -414,7 +416,7 @@ function timeline() {
     out += annBubble(d.q, active ? "is-active" : "", active ? ' id="ann-active"' : "");
     if (active && notice) out += `<p class="ann-callout" role="status">${esc(notice)}</p>`;
     if (d.kind === "list") { if (d.items.length) out += meBubble(listHtml(d)); }
-    else if (!active && d.kind !== "info" && (d.reply || i < ri)) out += meBubble(d.reply ? `<span class="ann-reply">${esc(d.reply)}</span>` : "<em>Skipped</em>", readOnly ? "" : `<button type="button" class="ann-edit" data-edit-prompt="${esc(p.id)}" aria-label="Edit your answer to ${esc(d.label)}">Edit</button>`);
+    else if (!active && d.kind !== "info" && (d.reply || i < ri)) out += meBubble(d.reply ? `<span class="ann-reply">${esc(d.reply)}</span>` : "<em>Skipped</em>", readOnly || isSetupStepLocked(p.step) ? "" : `<button type="button" class="ann-edit" data-edit-prompt="${esc(p.id)}" aria-label="Edit your answer to ${esc(d.label)}">Edit</button>`);
     if (feeds[p.id]) out += feedHtml(feeds[p.id]);
     if (active && editing) out += annBubble(editQ());
     if (active) out += inlineControls(p, d);
@@ -512,12 +514,15 @@ function drawComposer(force) {
 function drawSteps() {
   const answered = new Set(annAnsweredStages(answers, ref || {}));
   if (obDone.brand) answered.add("business"); if (obDone.address) answered.add("selling");
+  if (setupStepsLocked) { answered.add("business"); answered.add("selling"); }
   const doneN = answered.size, total = UI_STEPS.filter(([k]) => !["domain","payments","shipping","review"].includes(k)).length;
   const state = isDirty() ? "Unsaved changes" : designUI?.active() ? "Design saved to draft" : session ? "Plan saved" : "Nothing saved yet";
   $("#ann-steps").innerHTML = `<div class="ann-rail">${UI_STEPS.map(([k, n], i) => { const st = k === step ? "current" : answered.has(k) ? "done" : "todo";
-    return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === step ? "step" : "false"}"><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
+    return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === step ? "step" : "false"}"${isSetupStepLocked(k) ? ' disabled aria-disabled="true" title="Completed. Setup is locked after reaching Style."' : ""}><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
     <div class="ann-meter" role="progressbar" aria-label="Planning progress" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${doneN}"><i style="transform:scaleX(${doneN / total})"></i></div>
     <p class="ann-meter-t">${doneN} of ${total} design areas filled. ${esc(state)}. Publishing checks are separate.</p>`;
+  const logoButton = document.querySelector('[data-edit-prompt="logo"]');
+  if (logoButton) logoButton.disabled = isSetupStepLocked("business") || readOnly;
 }
 function drawFoot() {
   const sb = $("#ann-savebar"); if (!sb) return;
@@ -525,7 +530,7 @@ function drawFoot() {
   sb.innerHTML = `${readOnly ? `<p class="ann-callout">You can look around, but only an owner or admin can save this plan.</p>` : ""}
     ${saveProblem ? `<p class="ann-callout" role="alert">${esc(saveProblem)} You can keep previewing. Your changes are not saved yet; use Retry save.</p>` : ""}
     ${conflict ? `<div class="ann-conflict" role="alert"><p>Another tab or person saved a newer plan. Your edits are still here and nothing was overwritten.</p><div class="ann-actions"><button type="button" class="ann-btn alt" data-reload>Load the saved plan</button><button type="button" class="ann-btn" data-overwrite>Keep my edits and save over it</button></div></div>` : ""}
-    <div class="ann-savebar-row"><button type="button" class="ann-btn alt sm" data-back ${i === 0 ? "disabled" : ""}>Back</button>
+    <div class="ann-savebar-row"><button type="button" class="ann-btn alt sm" data-back ${i === 0 || isSetupStepLocked(prompts()[i - 1]?.step) ? "disabled" : ""}>Back</button>
     <button type="button" class="ann-btn alt sm" data-save ${readOnly || saving || (!dirty && !saveProblem) || conflict ? "disabled" : ""}>${saving ? "Saving" : saveProblem ? "Retry save" : "Save plan"}</button>
     <span class="ann-note">${dirty ? "Unsaved changes. The preview already shows them." : esc(lastSavedAt)}</span></div>`;
 }
@@ -550,6 +555,7 @@ async function toPrompt(id) {
   if (navigating) return;
   let ps = prompts(); const ci = curIdx(ps);
   let ti = ps.findIndex(p => p.id === id); if (ti < 0) return;
+  if (isSetupStepLocked(ps[ti].step)) { say("Business and store address are complete. Continue customising your store from Style."); return; }
   const gstIndex=ps.findIndex(p=>p.id==="gstin");
   if(!readOnly&&!obDone.gst&&ti>gstIndex){promptId="gstin";step="business";editing=null;detail=false;draw("active");say("Verify your GSTIN and confirm the registered invoice address before continuing.");return;}
   navigating = true;
@@ -558,6 +564,7 @@ async function toPrompt(id) {
     ps = prompts(); ti = ps.findIndex(p => p.id === id); if (ti < 0) return;
     if (ps[ti].step !== step) notice = "";
     promptId = id; step = ps[ti].step; editing = null; detail = false; page = STEP_PAGE[step] || page; collectionId = undefined;
+    if (UI_STEPS.findIndex(([key]) => key === step) >= 2) setupStepsLocked = true;
     if (ti > ps.findIndex(p => p.id === reached)) reached = id;
     focusComposer = true;
     if (step === "products" && answers.subcategory_id) loadAttrs(answers.subcategory_id);
@@ -709,7 +716,7 @@ document.addEventListener("click", e => {
   const d = t.dataset;
   if (d.go) return go(d.go);
   if ("wsToggle" in d) {
-    if (previewMode === "showcase" && designUI?.isSavedStyle(config().theme.style_preset)) designUI.resumeEditing();
+    if (previewMode === "showcase" && designUI?.active()) designUI.resumeEditing();
     workspaceUI.toggle(); return;
   }
   if (d.viewSwitch) { app.dataset.view = d.viewSwitch; syncSwitch(); if (d.viewSwitch === "canvas") setTimeout(fit, 0); return; }
@@ -861,6 +868,7 @@ async function reloadLatest(keepEdits) {
     const body = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(body.error || "The saved plan could not be loaded.");
     session = body.session; revision = session?.revision ?? 0; saved = structuredClone(session?.answers || {});
+    setupStepsLocked ||= UI_STEPS.findIndex(([key]) => key === session?.current_step) >= 2;
     conflict = false;
     if (keepEdits) { say("Saving your edits over the newer plan"); drawFoot(); await save(step, revision); return; }
     answers = structuredClone(saved); touched = false; notice = "Loaded the latest saved plan. Your unsaved edits were discarded.";

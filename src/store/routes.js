@@ -96,11 +96,16 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         return saved;
       }
       if (route === "POST products" || route === "PATCH products/child") {
-        const body = await readJson(request), expected = body.expected_stock, catalogue = body.publish_catalogue;
+        const body = await readJson(request,262144), expected = body.expected_stock, catalogue = body.publish_catalogue;
         delete body.expected_stock;
         delete body.publish_catalogue;
         if (catalogue !== undefined && typeof catalogue !== "boolean") throw badInput("Invalid catalogue save request.");
         const patch = productPatch(body);
+        if(patch.variants?.length&&child){
+          const [record]=await tx`SELECT p.status AS product_status,s.status AS store_status FROM public.products p
+            JOIN public.stores s ON s.store_id=p.store_id WHERE p.store_id=${id} AND p.id=${child}`;
+          if(record?.product_status==="active"&&record?.store_status==="live")throw badInput("Buying options are draft preparation until SKU-level checkout is enabled. Add them to a draft product rather than changing a live listing.");
+        }
         if (child && expected !== undefined && patch.stock !== undefined) {
           if (expected !== null && (!Number.isInteger(expected) || expected < 0)) throw badInput("Invalid stock revision.");
           const [current] = await tx`SELECT stock,track_inventory FROM public.products WHERE store_id = ${id} AND id = ${child} FOR UPDATE`;
@@ -110,7 +115,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
           else if (stock !== expected) throw Object.assign(new Error("Stock changed while you were editing. Reload before adjusting it."),{status:409});
         }
         const result = await saveProduct(tx, id, child, patch);
-        if (catalogue) {
+        if (catalogue && !result.products?.find(p=>p.id===result.saved_product_id)?.variants?.length) {
           const product = result.products.find((p) => p.id === result.saved_product_id);
           const errors = product ? validateProduct(product) : {_general:"This archived product is not in the active catalogue."};
           // Archived edits remain archived; they cannot be used as an implicit restore.

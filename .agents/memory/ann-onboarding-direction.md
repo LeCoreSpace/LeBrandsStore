@@ -7,6 +7,17 @@ Use Ann as the single store-building entry point. Remove Standard Builder choice
 from the app, while keeping the theme editor for subsequent design editing and
 publishing. Products and Collections should be separate dashboard menu entries.
 
+After a merchant reaches Style, disable Ann's Business and Store address steps,
+including their transcript Edit links and logo shortcut. Keep GST verification
+mandatory before reaching Style.
+
+**Why:** The user explicitly requested the first two steps stop being editable
+once step 3 is reached.
+
+**How to apply:** Scope this navigation restriction to Ann. Do not treat it as
+permission to weaken the server's confirmed GST/invoice-identity lock or remove
+legitimate ongoing brand management from other screens.
+
 **Why:** The user said offering two ways to build confuses merchants.
 
 **How to apply:** Replace the choice, not existing merchant data. Preserve existing
@@ -184,3 +195,14 @@ Ann planning ideas/sample previews and actual saved catalogue products.
 
 **How to apply:** Include these catalogue details when implementing Ann product
 creation, rather than saving only product names and descriptions.
+
+Keep Ann's Design workspace discoverable and automatically open it when a saved
+merchant design is restored, not only immediately after adopting a new style.
+Opening it from a showcase should resume the saved merchant draft, never edit
+the shared showcase.
+
+**Why:** The user repeatedly reported that the workspace and editing controls
+were missing in Ann.
+
+**How to apply:** Preserve close/reopen controls, the shared theme-editor draft
+and read-only restrictions. Do not hide the entry point under More.

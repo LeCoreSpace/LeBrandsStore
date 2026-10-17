@@ -1,11 +1,33 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import vm from "node:vm";
 import { readFileSync } from "node:fs";
 import { sectionMeta, nextSections } from "../src/public/ann-design-workspace.js";
 import {stylePreviewData,designPreviewData,renderStylePreview} from "../src/public/style-preview.js";
 import {styleSettings} from "../src/public/aura-styles.js";
 
 const html = '<main><section class="ar-stats"><p>Highlights</p></section><section class="sc-sec sc-offers"><p>Offers</p></section></main>';
+
+test("restored and newly adopted merchant designs open the workspace without opening read-only controls",()=>{
+  const src=readFileSync("src/public/ann-builder.js","utf8");
+  const callback=src.slice(src.indexOf("onActivated:")+"onActivated:".length,src.indexOf("onChange:")).trim().replace(/,$/,"");
+  for(const restored of [false,true])for(const readOnly of [false,true]){
+    let opened=0;
+    const context={structuredClone,readOnly,answers:{},ownProductsConfirmed:false,previewSource:{products:[]},
+      workspaceUI:{refresh(){},open(){opened++;}},setPreviewMode(){},draw(){},renderPreview(){},say(){}};
+    const activate=vm.runInNewContext(`(${callback})`,context);
+    activate({restored});
+    assert.equal(opened,readOnly?0:1);
+  }
+});
+
+test("workspace control is clearly named and resumes the saved draft even while browsing a different showcase",()=>{
+  const b=readFileSync("src/public/ann-builder.js","utf8"),ui=readFileSync("src/ui/ann-builder.js","utf8");
+  assert.match(ui,/data-ws-toggle[^>]*>Design workspace</);
+  const click=b.slice(b.indexOf('if ("wsToggle" in d)'),b.indexOf("if (d.viewSwitch)"));
+  assert.match(click,/previewMode === "showcase" && designUI\?\.active\(\)/);
+  assert.match(click,/designUI\.resumeEditing\(\)/);
+});
 
 test("shared showcase data removes saved merchant design while editable sample draft preserves it",()=>{
   const design={version:1,style:"boutique",catalogue_mode:"sample",plan:{style_preset:"boutique"},copy:{title:"Merchant copy only"},media:{},sections:{}};
@@ -29,7 +51,7 @@ test("reselecting or keeping the adopted style resumes editing, and browser prev
   assert.ok(choose.indexOf("resumeEditing()")<choose.indexOf('setPreviewMode("showcase")'));
   assert.match(source,/chooseStyle\(v\)/);
   assert.match(source,/chooseStyle\(d\.pickStyle\)/);
-  assert.match(source,/if \("wsToggle" in d\)[^]*?isSavedStyle[^]*?resumeEditing\(\)/);
+  assert.match(source,/if \("wsToggle" in d\)[^]*?active\(\)[^]*?resumeEditing\(\)/);
   const html=readFileSync("src/ui/ann-builder.js","utf8");
   assert.ok(html.indexOf('id="ann-open-browser"')<html.indexOf('<details class="ann-more"'));
 });

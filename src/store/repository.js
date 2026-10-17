@@ -9,6 +9,7 @@ import { mergeSettingsToLayouts, validateLayout, defaultPageLayouts } from "../p
 import {verificationState} from "../gstin/service.js";
 import { productContent, collectionContent, saveProductContent } from "./catalog.js";
 import { validCategoryPair } from "../public/aura-taxonomy.js";
+import {catalogueFormsEnabled,saveProductCatalogue} from "./catalogue-products.js";
 
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
@@ -55,14 +56,19 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
     WHERE pm.store_id = ${storeId} ORDER BY pm.sort_order, pm.id`;
   const policies = await tx`SELECT slug, title, content, reviewed_at FROM public.policy_pages
     WHERE store_id = ${storeId} ORDER BY slug`;
+  const variants=await tx`SELECT * FROM public.product_options WHERE store_id=${storeId} ORDER BY sort_order,id`;
   const data = {
     store,
+    catalogue_forms_enabled:await catalogueFormsEnabled(tx),
     invoice_prefix_locked:!!prefixLock?.locked,
     settings: { ...DEFAULT_SETTINGS, brand_name: store.name, subdomain: store.subdomain,
       ...setup?.settings, logo_media_id: logo?.id ?? null, logo_url: logo ? mediaUrl(logo.object_key) : "",
       signature_url:signature ? mediaUrl(signature.object_key) : "" },
     products: products.map((p) => ({
-      id: p.id, status: p.status, title: p.title, description: p.description, price_paise: Number(p.price_paise),
+      id: p.id, slug:p.slug, status: p.status, title: p.title, description: p.description, price_paise: Number(p.price_paise),
+      catalogue:p.catalogue||{},
+      variants:variants.filter(v=>v.product_id===p.id).map(v=>({id:v.id,values:v.attributes?.length?v.attributes:[v.value],sku:v.sku||"",stock:v.stock,expected_stock:v.stock,price_paise:v.price_paise==null?null:Number(v.price_paise)})),
+      options:variants.filter(v=>v.product_id===p.id).map(v=>({...v,price_paise:v.price_paise==null?null:Number(v.price_paise)})),
       compare_at_paise: p.compare_at_price_paise == null ? null : Number(p.compare_at_price_paise),
       tags: p.tags, sku: p.sku ?? "", stock: p.track_inventory ? p.stock : null,
       hsn_code: p.hsn_code ?? "", gst_rate: p.gst_rate == null ? null : Number(p.gst_rate),
@@ -185,6 +191,7 @@ export async function saveProduct(tx, id, productId, patch, { returnDraft = true
     throw badInput("Choose a GST rate explicitly.", {gst_rate:"Choose a GST rate explicitly."});
   }
   await ensureSetup(tx, id);
+  await tx`SELECT store_id FROM public.stores WHERE store_id=${id} FOR UPDATE`;
   if (patch.content && !await skeletonEnabled(tx)) throw Object.assign(new Error("Apply the Aura section catalogue update before editing product content."), { status: 409 });
   const [existing] = productId ? await tx`SELECT *, to_json(tags) AS tags FROM public.products
     WHERE store_id = ${id} AND id = ${productId}` : [];
@@ -203,13 +210,19 @@ export async function saveProduct(tx, id, productId, patch, { returnDraft = true
   };
   const uuid = productId ?? crypto.randomUUID();
   const sku = p.sku || `LB-${uuid.slice(0, 8).toUpperCase()}`;
+  const slug=patch.slug||existing?.slug||p.title.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,80).replace(/-$/,"")||uuid;
+  const [duplicateSlug]=await tx`SELECT id FROM public.products WHERE store_id=${id} AND slug=${slug} AND id<>${uuid}`;
+  if(duplicateSlug)throw badInput("That product address is already in use.");
+  const [duplicateSKU]=await tx`SELECT id FROM public.products WHERE store_id=${id} AND lower(sku)=lower(${sku}) AND id<>${uuid}
+    UNION ALL SELECT id FROM public.product_options WHERE store_id=${id} AND lower(sku)=lower(${sku}) LIMIT 1`;
+  if(duplicateSKU)throw badInput("That SKU is already used in this store.");
   if (existing) await tx`UPDATE public.products SET title = ${p.title}, description = ${p.description},
     price_paise = ${p.price_paise}, compare_at_price_paise = ${p.compare_at_paise},
     tags = ARRAY(SELECT jsonb_array_elements_text(${tx.json(p.tags)})), sku = ${sku}, stock = ${p.stock ?? 0}, track_inventory = ${p.stock != null},
-    hsn_code = ${p.hsn_code}, gst_rate = ${p.gst_rate ?? 0} WHERE store_id = ${id} AND id = ${uuid}`;
+     hsn_code = ${p.hsn_code}, gst_rate = ${p.gst_rate ?? 0},slug=${slug},updated_at=now() WHERE store_id = ${id} AND id = ${uuid}`;
   else await tx`INSERT INTO public.products
     (id, store_id, title, slug, description, price_paise, compare_at_price_paise, tags, sku, stock, track_inventory, hsn_code, gst_rate)
-    VALUES (${uuid}, ${id}, ${p.title}, ${uuid}, ${p.description}, ${p.price_paise}, ${p.compare_at_paise},
+     VALUES (${uuid}, ${id}, ${p.title}, ${slug}, ${p.description}, ${p.price_paise}, ${p.compare_at_paise},
       ARRAY(SELECT jsonb_array_elements_text(${tx.json(p.tags)})), ${sku}, ${p.stock ?? 0}, ${p.stock != null}, ${p.hsn_code}, ${p.gst_rate ?? 0})`;
   if (patch.images) {
     for (const image of patch.images) {
@@ -226,6 +239,7 @@ export async function saveProduct(tx, id, productId, patch, { returnDraft = true
       VALUES (${id}, ${uuid}, ${image.id}, ${order})`;
   }
   if (patch.content) await saveProductContent(tx, id, uuid, patch.content);
+  await saveProductCatalogue(tx,id,uuid,patch,existing);
   await invalidatePolicies(tx, id);
   return { ...(returnDraft ? await loadDraft(tx, id) : {}), saved_product_id: uuid };
 }
@@ -281,6 +295,7 @@ export async function publish(tx, id, live) {
       if(unseen)throw badInput("Open the full AI draft in the theme editor before publishing.");
     }
     const data = await loadDraft(tx, id), checklist = publishChecklist(data);
+    if(data.products.some(p=>p.variants?.length))throw badInput("Products with buying options can be prepared as drafts. SKU-level checkout must be enabled before publishing them.");
     if(data.gstinVerification?.state==="blocked")throw badInput("An inactive or Composition GSTIN cannot publish.",{gstin:"Verify an active Regular registration."});
     if(data.gstinVerification?.state==="verified"&&!data.gstinVerification.confirmed)throw badInput("Confirm your verified registered supplier details before publishing.",{gstin:"Choose and confirm a registered address."});
     const gstErrors = businessGSTINErrors(data.settings);

@@ -2,6 +2,7 @@ import { CATEGORIES, UUID, validateTheme } from "../public/validation.js";
 import { CURRENT_GST_RATES, LEGACY_GST_RATES, INDIAN_STATES, gstinError, validInvoicePrefix } from "../public/commerce-rules.js";
 import { validateLayoutMedia } from "../public/aura-layout.js";
 import { validateProductContent } from "../public/catalog-content.js";
+import {validateCatalogue} from "../public/catalogue-model.js";
 import { validCategoryPair } from "../public/aura-taxonomy.js";
 
 export const badInput = (message, errors) => Object.assign(new Error(message), { status: 400, errors });
@@ -71,8 +72,18 @@ export function progressPatch(value) {
 }
 export function productPatch(value) {
   if (!object(value)) throw badInput("Use the product form.");
-  const result = {}, textFields = { title: 80, description: 2000, sku: 80, hsn_code: 8 };
+  const result = {}, textFields = { title: 80, description: 2000, sku: 80, hsn_code: 8, slug:80 };
   for (const [key, val] of Object.entries(value)) {
+    if(key==="catalogue"){result.catalogue=validateCatalogue(val);continue;}
+    if(key==="variants"){
+      if(!Array.isArray(val)||val.length>200)throw badInput("Use at most 200 variants.");
+      result.variants=val;continue;
+    }
+    if(key==="collection_ids"){
+      if(!Array.isArray(val)||val.length>100||val.some(id=>typeof id!=="string"||!UUID.test(id))||new Set(val.map(id=>id.toLowerCase())).size!==val.length)throw badInput("Choose different, valid collections.");
+      result.collection_ids=val.map(id=>id.toLowerCase());continue;
+    }
+    if(key==="slug"&&val!==""&&(typeof val!=="string"||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(val)))throw badInput("Use lowercase letters, numbers and hyphens for the product address.");
     if (key === "content") { result.content = validateProductContent(val); continue; }
     if (key in textFields) { result[key] = string(val, textFields[key], key); continue; }
     if (["price_paise", "compare_at_paise", "stock"].includes(key)) {
@@ -117,10 +128,10 @@ export async function readBody(request, limit = 65536) {
   for (const chunk of chunks) { data.set(chunk, offset); offset += chunk.byteLength; }
   return data;
 }
-export async function readJson(request) {
+export async function readJson(request,limit=65536) {
   if (!request.headers.get("content-type")?.startsWith("application/json")) throw badInput("Use the provided form.");
   try {
-    const value = JSON.parse(new TextDecoder().decode(await readBody(request)));
+    const value = JSON.parse(new TextDecoder().decode(await readBody(request,limit)));
     if (!object(value)) throw badInput("Use the provided form.");
     return value;
   } catch (error) {

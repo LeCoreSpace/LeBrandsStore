@@ -53,7 +53,7 @@ export function attachAnnWorkspace(o) {
   function paint() {
     mount.hidden = !open;
     if (!open) return;
-    mount.innerHTML = `<div class="ann-ws-head"><strong>Design tools</strong><button type="button" class="ann-btn alt sm" data-ws-close>Close</button></div><div class="ann-ws-tabs" role="tablist">${tabs.map(([k, t]) => `<button type="button" role="tab" aria-selected="${k === tab}" data-ws-tab="${k}">${t}</button>`).join("")}</div>${body()}`;
+    mount.innerHTML = `<div class="ann-ws-head"><strong>Design workspace</strong><button type="button" class="ann-btn alt sm" data-ws-close>Close</button></div><div class="ann-ws-tabs" role="tablist">${tabs.map(([k, t]) => `<button type="button" role="tab" aria-selected="${k === tab}" data-ws-tab="${k}">${t}</button>`).join("")}</div>${body()}`;
   }
   mount.addEventListener("click", e => {
     const b = e.target.closest("button"); if (!b || b.disabled) return;

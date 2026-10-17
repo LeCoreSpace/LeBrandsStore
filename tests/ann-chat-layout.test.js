@@ -27,6 +27,7 @@ function harness(kind = "choice", readOnly = false) {
     meBubble: html => html, listHtml: () => "<ul>Items</ul>", feedHtml: () => "",
     editQ: () => "New name?", reviewStep: () => "<p>Review plan</p>",
     replyFields: { current: () => null },
+    isSetupStepLocked: () => false,
   });
   vm.runInContext(composerCode + timelineCode, context);
   return { box, prompt, definition, context,

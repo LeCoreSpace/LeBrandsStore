@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-catalogue"){
+    return {staged:true,filename:"0019_catalogue_forms.sql",requires:"0018_commerce_runtime.sql"};
+  }
   if (values.length === 1 && values[0] === "--staged-gstin") {
     return { staged: true, filename: "0011_gstin_approval.sql", requires: "0009_required_gstin.sql" };
   }

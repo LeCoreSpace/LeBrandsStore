@@ -16,7 +16,10 @@ export function storefrontPage(path, data) {
   if (["/contact", "/pages/contact"].includes(path)) return { page: "contact", status: 200 };
   if (["/faq", "/pages/faq"].includes(path)) return { page: "faq", status: 200 };
   const product = path.match(/^\/products\/([^/]+)$/);
-  if (product && UUID.test(product[1]) && data.products?.some((p) => p.id === product[1])) return { page: "product", productId: product[1], status: 200 };
+  if(product){
+    const found=data.products?.find(p=>p.slug===product[1]||(UUID.test(product[1])&&p.id===product[1]));
+    if(found)return {page:"product",productId:found.id,status:200};
+  }
   const policy = path.match(/^\/policies\/([^/]+)$/);
   if (policy && POLICY_KINDS.includes(policy[1]) && data.policies?.some((p) => p.kind === policy[1])) return { page: "policy", policyKind: policy[1], status: 200 };
   return { page: "404", status: 404 };

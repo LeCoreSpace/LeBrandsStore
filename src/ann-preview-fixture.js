@@ -19,6 +19,9 @@ import { defaultPageLayouts } from "./public/aura-layout.js";
 import { stylePreviewData, renderStylePreview } from "./public/style-preview.js";
 import {mapGSTINResponse} from "./gstin/provider.js";
 import {handleGSTINRoutes} from "./gstin/routes.js";
+import {handleStoreRoutes} from "./store/routes.js";
+import {renderDashboard} from "./ui/dashboard.js";
+import {handleDashboard} from "./dashboard/routes.js";
 
 const storeId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const ownerId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
@@ -51,7 +54,7 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
     for (const file of ["0001_init.sql","0002_rls.sql","0003_accounts.sql","0004_password_pepper.sql","0005_store_wizard.sql","0006_cod_checkout.sql","0007_brand_dashboard.sql","0008_invoice_lockdown.sql","0009_required_gstin.sql","0010_store_pages.sql"]) {
       await pg.exec(await preparePageMigration(file, await readFile(new URL(`../db/migrations/${file}`, import.meta.url), "utf8")));
     }
-    for (const file of ["0012_aura_skeleton_sections.sql","0015_aura_starter_library.sql","0016_ann_foundation.sql","0017_ann_launch_setup.sql","0018_commerce_runtime.sql"]) {
+    for (const file of ["0012_aura_skeleton_sections.sql","0015_aura_starter_library.sql","0016_ann_foundation.sql","0017_ann_launch_setup.sql","0018_commerce_runtime.sql","0019_catalogue_forms.sql"]) {
       await pg.exec(await preparePageMigration(file, await readFile(new URL(`../db/staged/${file}`, import.meta.url), "utf8")));
     }
     await pg.exec(`
@@ -143,7 +146,34 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     const user = { id: readonly ? editorId : ownerId, name: "Example member", email: "member@example.invalid" };
     const hash = (readonly ? "b" : "a").repeat(64);
     let response;
-    if(url.pathname===`${prefix}/review`&&["GET","HEAD"].includes(req.method)){
+    if(url.pathname.startsWith(`${prefix}/catalogue/api/`)){
+      const target=new URL(`${APP_ORIGIN}/api/stores/${storeId}/${url.pathname.slice(`${prefix}/catalogue/api/`.length)}`);
+      const headers=new Headers(req.headers),incoming=headers.get("origin");
+      let allowed=false;
+      try{allowed=[url.hostname,new URL(previewOrigin||origin).hostname,process.env.REPLIT_DEV_DOMAIN,"localhost","127.0.0.1"].includes(new URL(incoming).hostname);}catch{}
+      if(allowed)headers.set("origin",APP_ORIGIN);
+      const init={method:req.method,headers};
+      if(!["GET","HEAD"].includes(req.method))Object.assign(init,{body:Readable.toWeb(req),duplex:"half"});
+      const request=new Request(target,init);
+      response=target.pathname.endsWith("/orders")&&req.method==="GET"
+        ?await handleDashboard(request,db,user,hash,{MEDIA:fixtureMedia})
+        :await handleStoreRoutes(request,{MEDIA:fixtureMedia},db,user,hash);
+    }else if(url.pathname.startsWith(`${prefix}/catalogue/`)&&["GET","HEAD"].includes(req.method)){
+      const match=url.pathname.slice(`${prefix}/catalogue/`.length).match(/^(products|collections)(?:\/(new|[a-f0-9-]{36}))?$/);
+      if(!match)response=new Response("Unknown isolated catalogue page.",{status:404});
+      else{
+        const draft=await db.withMemberStore(storeId,hash,tx=>loadDraft(tx,storeId));
+        const [kind,child]=match.slice(1),single=kind==="products"?"product":"collection";
+        const view=child==="new"?`${single}-new`:child?single:kind;
+        const data={...draft,draft,role:readonly?"editor":"owner",product_id:child,collection_id:child,product:draft.products.find(p=>p.id===child)};
+        const root=`${prefix}/catalogue`;
+        let html=renderDashboard(view,data,user)
+          .replace('class="lb-app"',`class="lb-app" data-api-root="${root}/api" data-store-root="${root}"`)
+          .replaceAll(`href="/stores/${storeId}`,`href="${root}`)
+          .replaceAll(`action="/stores/${storeId}`,`action="${root}`);
+        response=new Response(html,{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
+      }
+    }else if(url.pathname===`${prefix}/review`&&["GET","HEAD"].includes(req.method)){
       const draft=await db.withMemberStore(storeId,hash,tx=>loadDraft(tx,storeId));
       response=new Response(renderWizard(draft,{}, {reviewOnly:true}).replace('id="wizard"','id="wizard" data-visual-only="true"'),{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
     } else if(url.pathname===`${prefix}/editor`&&["GET","HEAD"].includes(req.method)){

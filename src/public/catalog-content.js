@@ -33,6 +33,7 @@ export function validateCollectionPatch(value, context = {}) {
   if (!plain(value)) fail("Use the collection form.");
   const result = {};
   for (const [key, item] of Object.entries(value)) {
+    if(["seo_title","seo_description"].includes(key)){result[key]=text(item,key==="seo_title"?70:160);continue;}
     if (["title", "slug", "description"].includes(key)) result[key] = text(item, { title: 120, slug: 80, description: 4000 }[key]);
     else if (["product_ids", "related_ids"].includes(key)) {
       if (!Array.isArray(item) || item.length > (key === "product_ids" ? 500 : 20) || item.some(id => typeof id !== "string" || !UUID.test(id))) fail("Choose valid catalogue items.");
