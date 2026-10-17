@@ -4,6 +4,8 @@ import { formatPhone } from "./commerce-rules.js";
 import { sanitizeRichText } from "./aura-layout.js";
 import { normalisePageSize } from "./catalog-page.js";
 import { productDetailRows } from "./product-details.js";
+import { hasOptions, renderOptionBuy, renderOptionSticky, OPTION_CSS } from "./commerce-options.js";
+export { OPTION_CSS };
 
 export const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const UU = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
@@ -218,12 +220,14 @@ export const SECTION_RENDERERS = {
     if (!p) return "";
     const o = c.options;
     const imgs = (p.images || []).map((im, i) => img(im, { eager: i === 0, label: p.title }).replace("<img ", `<img data-gallery-image="${i}" `)).join("");
-    const buy = o.commerce && !o.readOnly
+    const vo = hasOptions(p);
+    const buy = vo && o.commerce && !o.readOnly ? renderOptionBuy(p, { esc, money })
+      : o.commerce && !o.readOnly
       ? `<div class="au-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="${p.stock == null ? 99 : Math.max(1, Math.min(99, Number(p.stock)))}" value="1" inputmode="numeric" aria-label="Quantity"><button class="au-btn" type="button" data-add-product="${esc(p.id)}"${available(p) ? "" : ' disabled aria-disabled="true"'}>${available(p) ? "Add to cart" : "Sold out"}</button></div><p class="au-feedback" data-commerce-feedback role="status"></p>`
       : o.commerce ? `<div class="au-buy"><button class="au-btn" type="button" disabled aria-disabled="true">Add to cart on the live store</button></div><p class="au-feedback" role="status">Read-only preview. Shopping is available on the live store.</p>`
         : `<button class="au-btn" disabled aria-disabled="true">Shopping unavailable</button>`;
-    const sticky = o.commerce ? `<div class="au-sticky-buy"><span>${esc(p.title || "Product")}<strong>${money(p.price_paise)}</strong></span><button class="au-btn" type="button"${o.readOnly || !available(p) ? ' disabled aria-disabled="true"' : ` data-add-product="${esc(p.id)}"`}>${!available(p) ? "Sold out" : o.readOnly ? "Preview only" : "Add to cart"}</button></div>` : "";
-    return `<section class="au-product"><div class="au-pgallery">${imgs}</div><div class="au-pdetail"><h1>${esc(p.title || "Untitled product")}</h1><p class="au-price"><strong>${money(p.price_paise)}</strong>${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}</p><div class="aura-description au-desc">${c.renderDescription(p.description || "")}</div>${(() => { const d = specsOwn(c) ? [] : detailsOf(c); return d.length ? `<section class="au-product-details-block" aria-labelledby="au-pd-h"><h2 id="au-pd-h" class="au-sr">Product details</h2><dl class="au-specs au-product-details" data-product-details style="overflow-wrap:anywhere">${d.map((r) => `<div><dt>${esc(r.label)}</dt><dd>${esc(r.value)}</dd></div>`).join("")}</dl></section>` : ""; })()}${buy}</div>${sticky}</section>`;
+    const sticky = o.commerce && vo && !o.readOnly ? `<div class="au-sticky-buy"><span>${esc(p.title || "Product")}<strong data-opt-price>${money(p.price_paise)}</strong></span>${renderOptionSticky(p, { esc, money })}</div>` : o.commerce ? `<div class="au-sticky-buy"><span>${esc(p.title || "Product")}<strong>${money(p.price_paise)}</strong></span><button class="au-btn" type="button"${o.readOnly || !available(p) ? ' disabled aria-disabled="true"' : ` data-add-product="${esc(p.id)}"`}>${!available(p) ? "Sold out" : o.readOnly ? "Preview only" : "Add to cart"}</button></div>` : "";
+    return `<section class="au-product"><div class="au-pgallery">${imgs}</div><div class="au-pdetail"><h1>${esc(p.title || "Untitled product")}</h1><p class="au-price"><strong data-opt-price>${money(p.price_paise)}</strong>${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}</p><div class="aura-description au-desc">${c.renderDescription(p.description || "")}</div>${(() => { const d = specsOwn(c) ? [] : detailsOf(c); return d.length ? `<section class="au-product-details-block" aria-labelledby="au-pd-h"><h2 id="au-pd-h" class="au-sr">Product details</h2><dl class="au-specs au-product-details" data-product-details style="overflow-wrap:anywhere">${d.map((r) => `<div><dt>${esc(r.label)}</dt><dd>${esc(r.value)}</dd></div>`).join("")}</dl></section>` : ""; })()}${buy}</div>${sticky}</section>`;
   },
   about(s, c) {
     const x = s.settings || {};

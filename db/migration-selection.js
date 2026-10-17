@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-sku-checkout"){
+    return {staged:true,filename:"0029_sku_checkout.sql",requires:"0028_d2c_descriptor_coverage.sql"};
+  }
   if(values.length===1&&values[0]==="--staged-d2c-descriptors"){
     return {staged:true,filename:"0028_d2c_descriptor_coverage.sql",requires:"0027_d2c_food_profile_corrections.sql"};
   }

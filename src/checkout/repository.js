@@ -1,6 +1,7 @@
 import { DEFAULT_CHECKOUT_SETTINGS, checkoutSettings, inferStoreState, registeredBusinessState, quoteCart, commerceError } from "../public/commerce-rules.js";
 import { onlineAvailable, reservePayment, runtimeAvailable } from "../connections/payments.js";
 import { checkShipping } from "../connections/shipping.js";
+import {requireSkuCheckout,updateAggregateStock} from "./sku-inventory.js";
 
 const denied = () => commerceError("This store is not available for checkout.",undefined,404);
 export async function checkoutContext(tx, id, lock = false) {
@@ -20,15 +21,26 @@ export async function checkoutContext(tx, id, lock = false) {
 export async function inventoryFor(tx,id,items,lock = false) {
   const result = [];
   // Sorted locks plus the store lock give deterministic, atomic inventory writes.
-  for (const item of [...items].sort((a,b) => a.product_id.localeCompare(b.product_id))) {
+  for (const item of [...new Map(items.map(i=>[i.product_id,i])).values()].sort((a,b) => a.product_id.localeCompare(b.product_id))) {
     const rows = lock ? await tx`SELECT id,status,stock,track_inventory FROM public.products
       WHERE store_id = ${id} AND id = ${item.product_id} FOR UPDATE` :
       await tx`SELECT id,status,stock,track_inventory FROM public.products WHERE store_id = ${id} AND id = ${item.product_id}`;
-    if (rows[0]) result.push(rows[0]);
+    if (rows[0]) {
+      const row=rows[0],variants=[];
+      for(const selected of items.filter(i=>i.product_id===item.product_id&&i.product_option_id).sort((a,b)=>a.product_option_id.localeCompare(b.product_option_id))){
+        const found=lock?await tx`SELECT id,stock,attributes FROM public.product_options
+          WHERE store_id=${id} AND product_id=${item.product_id} AND id=${selected.product_option_id} FOR UPDATE`:
+          await tx`SELECT id,stock,attributes FROM public.product_options
+          WHERE store_id=${id} AND product_id=${item.product_id} AND id=${selected.product_option_id}`;
+        if(found[0])variants.push(found[0]);
+      }
+      result.push({...row,variants});
+    }
   }
   return result;
 }
 export async function checkoutQuote(tx,id,items,state = "") {
+  if(items.some(i=>i.product_option_id))await requireSkuCheckout(tx);
   const context = await checkoutContext(tx,id);
   return {...quoteCart(context.snapshot.products ?? [],await inventoryFor(tx,id,items),items,context.settings,state),
     online_available:await onlineAvailable(tx,id)};
@@ -56,6 +68,7 @@ export async function findReplay(tx,id,input,requestHash) {
     receipt_url:`/orders/${input.receipt_token}`,replayed:true};
 }
 export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source,env={},fetcher=fetch) {
+  if(input.items.some(i=>i.product_option_id))await requireSkuCheckout(tx);
   const context = await checkoutContext(tx,id,true);
   const replay = await findReplay(tx,id,input,requestHash);
   if (replay) return replay;
@@ -96,13 +109,27 @@ export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source,e
         address:context.snapshot.settings?.address || "",gstin:context.snapshot.settings?.gstin || "",state:context.settings.store_state,
       })})`;
   for (const line of quote.items) {
+    if(line.product_option_id){
+      await tx`INSERT INTO public.order_items
+        (store_id,order_id,product_id,product_option_id,title,sku,option_snapshot,hsn_code,gst_rate,quantity,unit_price_paise,total_paise,
+          tax_paise,taxable_paise,cgst_paise,sgst_paise,igst_paise,inventory_deducted)
+        VALUES (${id},${orderId},${line.product_id},${line.product_option_id},${line.title},${line.sku},${tx.json(line.variant_values)},
+          ${line.hsn_code},${line.gst_rate},${line.quantity},${line.unit_price_paise},${line.line_total_paise},
+          ${line.tax_paise},${line.taxable_paise},${line.cgst_paise},${line.sgst_paise},${line.igst_paise},true)`;
+      const [updated]=await tx`UPDATE public.product_options SET stock=stock-${line.quantity}
+        WHERE store_id=${id} AND product_id=${line.product_id} AND id=${line.product_option_id}
+          AND stock>=${line.quantity} RETURNING id`;
+      if(!updated)throw commerceError("Stock changed while you were checking out. Please review your cart.",undefined,409);
+      await updateAggregateStock(tx,id,line.product_id);
+      continue;
+    }
     await tx`INSERT INTO public.order_items
       (store_id,order_id,product_id,title,hsn_code,gst_rate,quantity,unit_price_paise,total_paise,
-        tax_paise,taxable_paise,cgst_paise,sgst_paise,igst_paise,inventory_deducted)
+        tax_paise,taxable_paise,cgst_paise,sgst_paise,igst_paise,inventory_deducted,sku)
       VALUES (${id},${orderId},${line.product_id},${line.title},${line.hsn_code},${line.gst_rate},
         ${line.quantity},${line.unit_price_paise},${line.line_total_paise},${line.tax_paise},
         ${line.taxable_paise},${line.cgst_paise},${line.sgst_paise},${line.igst_paise},
-        (SELECT track_inventory FROM public.products WHERE store_id = ${id} AND id = ${line.product_id}))`;
+        (SELECT track_inventory FROM public.products WHERE store_id = ${id} AND id = ${line.product_id}),${line.sku})`;
     const [updated] = await tx`UPDATE public.products SET stock = CASE WHEN track_inventory THEN stock - ${line.quantity} ELSE stock END
       WHERE store_id = ${id} AND id = ${line.product_id} AND status = 'active'
         AND (NOT track_inventory OR stock >= ${line.quantity}) RETURNING id`;
@@ -117,7 +144,7 @@ export async function receiptOrder(tx,id,hash) {
   const [order] = await tx`SELECT id,order_number,status,payment_method,subtotal_paise,shipping_paise,total_paise,shipping_address,created_at
     FROM public.orders WHERE store_id = ${id} AND confirmation_hash = ${hash}`;
   if (!order) throw commerceError("Order not found.",undefined,404);
-  const items = await tx`SELECT title,quantity,unit_price_paise,total_paise AS line_total_paise
+  const items = await tx`SELECT title,sku,quantity,unit_price_paise,total_paise AS line_total_paise
     FROM public.order_items WHERE store_id = ${id} AND order_id = ${order.id} ORDER BY created_at,id`;
   const [invoice] = await tx`SELECT id,invoice_number,status FROM public.invoices WHERE store_id = ${id} AND order_id = ${order.id}`;
   const attempt=order.payment_method==="online" && await runtimeAvailable(tx)

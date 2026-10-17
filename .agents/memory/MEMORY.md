@@ -4,6 +4,7 @@
 - [Worker array boundaries](worker-array-boundaries.md) — disabled type discovery leaves native arrays unparsed; use explicit JSON boundaries on reads and writes.
 - [GST choices and legacy values](gst-choices.md) — use current slabs for new edits, but never silently replace previously saved 12%/28% product rates.
 - [Catalogue classification](catalogue-classification.md) — five masters; use Variants consistently, separate SKU options from descriptors, and keep custom values store-private.
+- [SKU publication boundary](sku-publication-boundary.md) — published SKU prices/options, live SKU stock and copied order selections have separate authority.
 - [Prepared function identity](prepared-function-identity.md) — preserve callable PostgreSQL function identities when adding guards; published Workers retain prepared calls.
 - [GST registration and exempt invoices](gstin-registration-boundary.md) — publication requires valid checksum/state-matched GSTIN; zero-rate lines are Exempt, not a new Bill of Supply flow.
 - [Invoice permission boundary](invoice-privilege-boundary.md) — APP financial writes must use tenant-checked functions; preserve strict 42501 isolation denials.

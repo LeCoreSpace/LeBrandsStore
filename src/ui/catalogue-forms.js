@@ -46,7 +46,7 @@ export function renderCatalogueOptions({ enabled, product = {}, maxAxes = 3, max
   const initial = { axes: arr(cat.axes), variants: arr(product.variants) };
   return `<section id="buying-options" class="lb-side-box lb-catalogue-options" data-catalogue-options data-max-axes="${maxAxes}" data-max-variants="${maxVariants}" data-initial="${attrJson(initial)}">
     <div class="lb-options-head"><div><h2>Variants</h2><p>Choose from your product type's options and values. Optional, up to ${maxAxes} options and ${maxVariants} variants.</p></div></div>
-    <p class="lb-draft-note" role="note"><strong>Draft preparation.</strong> Variants are saved with the product as catalogue drafts. SKU-level checkout is not enabled yet, so products with product options cannot be published to the live store.</p>
+    <p class="lb-draft-note" role="note"><strong>Variant inventory.</strong> Each combination has its own SKU, price and stock. Save changes to your draft, then publish them when ready. SKU checkout must be enabled before variants can go live.</p>
     <p class="lb-legacy-note" data-legacy-note role="status" hidden>These saved variants do not match the saved options. They are kept as they are and shown read only. Generate variants to replace them.</p>
     <div class="lb-descriptors" data-descriptors-wrap hidden><h3>Product details</h3><p class="lb-field-note">Add the details that apply. These fields do not create variants or change stock. Use manufacturer information for ingredients, safety and warranty details.</p><div class="lb-descriptor-grid" data-descriptors></div></div>
     <p class="lb-muted" data-buying-status role="status">Loading product options…</p>

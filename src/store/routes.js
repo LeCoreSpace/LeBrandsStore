@@ -13,6 +13,7 @@ import {
 import { audit, syncPublishedProducts, dashboardAccess } from "../dashboard/repository.js";
 import { saveCollection, deleteCollection } from "./catalog.js";
 import {addStoreVariantValue} from "./catalogue-variant-values.js";
+import {requireSkuCheckout} from "../checkout/sku-inventory.js";
 
 export const isStoreRoute = (path) => /^\/(?:api\/)?stores\/(?!new(?:\/|$))[^/]+(?:\/|$)/.test(path);
 const json = (value, status = 200) => new Response(JSON.stringify(value), {
@@ -109,7 +110,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         if(patch.variants?.length&&child){
           const [record]=await tx`SELECT p.status AS product_status,s.status AS store_status FROM public.products p
             JOIN public.stores s ON s.store_id=p.store_id WHERE p.store_id=${id} AND p.id=${child}`;
-          if(record?.product_status==="active"&&record?.store_status==="live")throw badInput("Variants are draft preparation until SKU-level checkout is enabled. Add them to a draft product rather than changing a live listing.");
+          if(record?.product_status==="active"&&record?.store_status==="live")await requireSkuCheckout(tx);
         }
         if (child && expected !== undefined && patch.stock !== undefined) {
           if (expected !== null && (!Number.isInteger(expected) || expected < 0)) throw badInput("Invalid stock revision.");
@@ -120,7 +121,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
           else if (stock !== expected) throw Object.assign(new Error("Stock changed while you were editing. Reload before adjusting it."),{status:409});
         }
         const result = await saveProduct(tx, id, child, patch, {tokenHash});
-        if (catalogue && !result.products?.find(p=>p.id===result.saved_product_id)?.variants?.length) {
+        if (catalogue) {
           const product = result.products.find((p) => p.id === result.saved_product_id);
           const errors = product ? validateProduct(product) : {_general:"This archived product is not in the active catalogue."};
           // Archived edits remain archived; they cannot be used as an implicit restore.

@@ -11,6 +11,8 @@ import { showcaseProfile, renderNicheSections, NICHE_SECTION_CSS, profileGuidanc
 import { styleSettings, STYLE_IDS } from "./aura-styles.js";
 import { CONVERSION_COPY, CONVERSION_NEUTRAL, CONVERSION_KIND, CONVERSION_CSS, CONVERSION_TABBAR, isConversionStyle, conversionTopper, buildConversion } from "./aura-conversion-styles.js";
 import { productDetailRows, productFeatureRows } from "./product-details.js";
+import { hasOptions, renderOptionBuy, renderOptionSticky, OPTION_CSS } from "./commerce-options.js";
+export { OPTION_CSS };
 import { contrastColor } from "./validation.js";
 import {validateDesignMenus,renderDesignMenu,DESIGN_MENU_CSS} from "./ann-menu-model.js";
 
@@ -274,11 +276,12 @@ function productPageLive(x) {
   const rest = x.products.filter(i => i.id !== p.id).slice(0, 4), o = x.options;
   const avail = p.stock == null || Number(p.stock) > 0, on = o.commerce && (!o.readOnly || o.embeddedPreview);
   const max = p.stock == null ? 99 : Math.max(1, Math.min(99, Number(p.stock)));
-  const buy = on ? `<div class="au-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="${max}" value="1" inputmode="numeric" aria-label="Quantity"><button class="au-btn" type="button" data-add-product="${esc(p.id)}"${avail ? "" : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div><p class="au-feedback" data-commerce-feedback role="status"></p>`
+  const vo = hasOptions(p) && o.commerce && !o.readOnly;
+  const buy = vo ? renderOptionBuy(p, { esc, money: rupees }) : on ? `<div class="au-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="${max}" value="1" inputmode="numeric" aria-label="Quantity"><button class="au-btn" type="button" data-add-product="${esc(p.id)}"${avail ? "" : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div><p class="au-feedback" data-commerce-feedback role="status"></p>`
     : `<div class="au-buy"><button class="au-btn" type="button" disabled aria-disabled="true">${o.commerce ? "Add to cart on the live store" : "Shopping unavailable"}</button></div>`;
   return `<section class="sc-prod"><div class="sc-gal"><div class="sc-gal-main">${pics[0] || ""}</div>${pics.length > 1 ? `<div class="sc-gal-sub">${pics.slice(1).map(i => `<div>${i}</div>`).join("")}</div>` : ""}</div>
-  <div class="sc-info"><p class="sc-crumb"><a href="/">Home</a> / <a href="/collections/all">Shop</a></p><h1>${esc(p.title)}</h1><p class="sc-pp">${rupees(p.price_paise)}${p.compare_at_paise ? ` <del>${rupees(p.compare_at_paise)}</del>` : ""}</p><p class="sc-desc" style="white-space:pre-line">${esc(p.description || "")}</p>${features ? `<ul class="sc-feat">${features}</ul>` : ""}${buy}</div></section>
-  ${rest.length ? `<section class="sc-rel"><h2>You may also like</h2><div class="sc-list">${rest.map((r, i) => card(r, i)).join("")}</div></section>` : ""}${on ? `<div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button" class="au-btn"${avail ? ` data-add-product="${esc(p.id)}"` : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div>` : ""}`;
+  <div class="sc-info"><p class="sc-crumb"><a href="/">Home</a> / <a href="/collections/all">Shop</a></p><h1>${esc(p.title)}</h1><p class="sc-pp" data-opt-price>${rupees(p.price_paise)}${p.compare_at_paise ? ` <del>${rupees(p.compare_at_paise)}</del>` : ""}</p><p class="sc-desc" style="white-space:pre-line">${esc(p.description || "")}</p>${features ? `<ul class="sc-feat">${features}</ul>` : ""}${buy}</div></section>
+  ${rest.length ? `<section class="sc-rel"><h2>You may also like</h2><div class="sc-list">${rest.map((r, i) => card(r, i)).join("")}</div></section>` : ""}${vo ? `<div class="au-sticky-buy"><b data-opt-price>${rupees(p.price_paise)}</b>${renderOptionSticky(p, { esc })}</div>` : on ? `<div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button" class="au-btn"${avail ? ` data-add-product="${esc(p.id)}"` : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div>` : ""}`;
 }
 function contactPageLive(x) {
   const st = x.settings || {};

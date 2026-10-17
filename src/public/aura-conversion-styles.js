@@ -11,6 +11,7 @@
  * only appear when the store has those policies.
  */
 import { productDetailRows, productFeatureRows } from "./product-details.js";
+import { hasOptions, renderOptionBuy, renderOptionSticky } from "./commerce-options.js";
 export const CONVERSION_STYLES = Object.freeze(["social-pop", "creator-feed", "proof-detail"]);
 export const isConversionStyle = style => CONVERSION_STYLES.includes(style);
 export const CONVERSION_KIND = Object.freeze({ "social-pop": "pop", "creator-feed": "slide", "proof-detail": "fade" });
@@ -90,6 +91,7 @@ export function buildConversion(h) {
   const buy = (x, p) => {
     if (!live()) return `<div class="au-buy"><button type="button">Add to bag (preview)</button></div>`;
     const ok = p.stock == null || Number(p.stock) > 0, o = x.options;
+    if (hasOptions(p) && on(x)) return renderOptionBuy(p, { esc, money: rupees, word });
     const max = p.stock == null ? 99 : Math.max(1, Math.min(99, Number(p.stock)));
     return on(x)
       ? `<div class="au-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="${max}" value="1" inputmode="numeric" aria-label="Quantity"><button class="au-btn" type="button" data-add-product="${esc(p.id)}"${ok ? "" : ' disabled aria-disabled="true"'}>${ok ? word : "Sold out"}</button></div><p class="au-feedback" data-commerce-feedback role="status"></p>`
@@ -98,12 +100,14 @@ export function buildConversion(h) {
   const mini = (x, p) => {
     if (!live()) return `<div class="au-buy cf-mini"><button type="button">Add to bag (preview)</button></div>`;
     if (!on(x)) return "";
+    if (hasOptions(p)) return `<div class="au-buy cf-mini"><a class="au-btn" href="${pHref(p)}">Choose options</a></div>`;
     const ok = p.stock == null || Number(p.stock) > 0;
     return `<div class="au-buy cf-mini"><button class="au-btn" type="button" data-add-product="${esc(p.id)}"${ok ? "" : ' disabled aria-disabled="true"'}>${ok ? word : "Sold out"}</button></div>`;
   };
   const sticky = (x, p) => {
     if (!live()) return `<div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button">Add to bag (preview)</button></div>`;
     if (!on(x)) return "";
+    if (hasOptions(p)) return `<div class="au-sticky-buy"><b data-opt-price>${rupees(p.price_paise)}</b>${renderOptionSticky(p, { esc })}</div>`;
     const ok = p.stock == null || Number(p.stock) > 0;
     return `<div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button" class="au-btn"${ok ? ` data-add-product="${esc(p.id)}"` : ' disabled aria-disabled="true"'}>${ok ? word : "Sold out"}</button></div>`;
   };
@@ -209,7 +213,8 @@ export function buildConversion(h) {
   return { HOME, PRODUCT, ABOUT, cardExtra, cardX, steps, lead };
 }
 
-export const CONVERSION_CSS = `
+import { OPTION_CSS as _OC } from "./commerce-options.js";
+export const CONVERSION_CSS = _OC + `
 .cv-no-photo{display:grid;place-items:center;min-height:100%;padding:2rem;text-align:center;font-size:.9rem}
 .sc.sc-social-pop,.sc.sc-creator-feed,.sc.sc-proof-detail{background:var(--paper)}
 .sc-social-pop,.sc-creator-feed,.sc-proof-detail{--body:"Instrument Sans",system-ui,sans-serif;--disp:"Instrument Sans",system-ui,sans-serif}

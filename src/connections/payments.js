@@ -1,3 +1,4 @@
+import {restoreSkuStock} from "../checkout/sku-inventory.js";
 import { connection, keyFor, failure, razorpayClient, verifyHmac, boundedText } from "./runtime-client.js";
 import { openCredentials, sealCredentials } from "./providers.js";
 import { sha256 } from "../auth/passwords.js";
@@ -54,7 +55,7 @@ export async function restoreReservedStock(tx,id,order) {
     WHERE store_id=${id} AND order_id=${order.id} ORDER BY product_id,product_option_id,id`;
   for (const item of items) {
     if (!item.inventory_deducted || !item.product_id) continue;
-    if (item.product_option_id) await tx`UPDATE public.product_options SET stock=stock+${item.quantity} WHERE store_id=${id} AND product_id=${item.product_id} AND id=${item.product_option_id}`;
+    if (item.product_option_id) await restoreSkuStock(tx,id,item);
     else await tx`UPDATE public.products SET stock=stock+${item.quantity} WHERE store_id=${id} AND id=${item.product_id}`;
   }
   await tx`UPDATE public.orders SET stock_restored_at=now() WHERE store_id=${id} AND id=${order.id} AND stock_restored_at IS NULL`;

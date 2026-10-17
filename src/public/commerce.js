@@ -1,4 +1,5 @@
 import { statusLabel, indianDate } from "./dashboard-rules.js";
+import { cartKey, sameLine, cleanLine, normaliseCart, matchIssue, optionId, resolveSelection, valueStatus, variantTitleLines } from "./commerce-options.js";
 const configNode = document.querySelector("[data-commerce-config]");
 const storeKey = configNode?.dataset.storeKey || "";
 const page = configNode?.dataset.page || "";
@@ -73,13 +74,12 @@ let validationSequence = 0;
 function readCart() {
   if (readOnly) return [];
   try {
-    const value = JSON.parse(localStorage.getItem(storageKey) || "[]");
-    return Array.isArray(value) ? value.filter((item) => item && typeof item.product_id === "string" && Number.isInteger(item.quantity) && item.quantity >= 1 && item.quantity <= 99) : [];
+    return normaliseCart(JSON.parse(localStorage.getItem(storageKey) || "[]"));
   } catch { return []; }
 }
 function saveCart() {
   if (readOnly) return;
-  try { localStorage.setItem(storageKey, JSON.stringify(cart.map(({ product_id, quantity }) => ({ product_id, quantity })))); }
+  try { localStorage.setItem(storageKey, JSON.stringify(cart.map(cleanLine))); }
   catch { message("Your browser could not save this bag. Please enable local storage and try again."); }
   updateCount();
 }
@@ -99,7 +99,7 @@ function message(text) {
 }
 async function api(path, payload) {
   if (readOnly) throw new Error("Read-only preview. Sign in to use store actions.");
-  const response = await fetch(path, { method: "POST", credentials: "same-origin", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+  const response = await fetch(`${configNode?.dataset.apiRoot||""}${path}`, { method: "POST", credentials: "same-origin", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(payload) });
   let result = {};
   try { result = await response.json(); } catch {}
   if (!response.ok) {
@@ -128,11 +128,11 @@ async function validateCart({ render = true } = {}) {
   }
   updatePlaceOrderAvailability();
   try {
-    const result = await api("/api/cart/validate", { items: cart, ...(currentState() ? { state: currentState() } : {}) });
+    const result = await api("/api/cart/validate", { items: cart.map(cleanLine), ...(currentState() ? { state: currentState() } : {}) });
     if (seq !== validationSequence) return validated;
     validated = result;
     for (const item of result.items || []) {
-      const local = cart.find((entry) => String(entry.product_id) === String(item.product_id));
+      const local = cart.find((entry) => cartKey(entry) === cartKey(item));
       if (local) local.quantity = item.quantity;
     }
     saveCart();
@@ -166,9 +166,10 @@ function linesMarkup(items, interactive = true) {
   const issues = validated?.issues || [];
   if (!items?.length) return `${issues.map((entry)=>`<p class="commerce-error" role="alert">${esc(entry.message)}</p>`).join("")}<div class="commerce-empty"><span class="commerce-kicker">A considered start</span><h2>Your bag is empty.</h2><p>Find something made with care.</p><a class="commerce-button" href="/collections/all">Explore the collection</a></div>`;
   return `<div class="commerce-lines">${items.map((item) => {
-    const issue = issues.find((entry) => String(entry.product_id) === String(item.product_id));
+    const issue = matchIssue(issues, item);
+    const key = esc(cartKey(item)), opts = variantTitleLines(item);
     const qty = Number(item.quantity) || 1;
-    return `<article class="commerce-line" data-line="${esc(item.product_id)}">${productImage(item.image_url, item.title)}<div><div class="commerce-line-title">${esc(item.title || "Product")}</div><div class="commerce-line-price">${money(item.unit_price_paise)} each</div>${interactive ? `<div class="commerce-line-tools"><div class="commerce-qty" aria-label="Quantity"><button type="button" data-quantity="-1" data-id="${esc(item.product_id)}" aria-label="Decrease quantity" ${qty<=1?"disabled":""}>−</button><output>${qty}</output><button type="button" data-quantity="1" data-id="${esc(item.product_id)}" aria-label="Increase quantity" ${qty>=99?"disabled":""}>+</button></div><button class="commerce-remove" type="button" data-remove="${esc(item.product_id)}">Remove</button></div>` : `<div class="commerce-line-price">Quantity ${qty}</div>`}${issue ? `<p class="commerce-error" role="alert">${esc(issue.message)}</p>` : ""}</div><strong class="commerce-line-total">${money(item.line_total_paise)}</strong></article>`;
+    return `<article class="commerce-line" data-line="${key}">${productImage(item.image_url, item.title)}<div><div class="commerce-line-title">${esc(item.title || "Product")}</div>${opts.length ? `<span class="au-line-opts">${esc(opts.join(" · "))}</span>` : ""}${item.sku ? `<span class="au-line-opts">SKU ${esc(item.sku)}</span>` : ""}<div class="commerce-line-price">${money(item.unit_price_paise)} each</div>${interactive ? `<div class="commerce-line-tools"><div class="commerce-qty" aria-label="Quantity"><button type="button" data-quantity="-1" data-id="${esc(item.product_id)}" data-option="${esc(optionId(item.product_option_id))}" aria-label="Decrease quantity" ${qty<=1?"disabled":""}>−</button><output>${qty}</output><button type="button" data-quantity="1" data-id="${esc(item.product_id)}" data-option="${esc(optionId(item.product_option_id))}" aria-label="Increase quantity" ${qty>=Math.min(99,item.stock==null?99:Math.max(1,Number(item.stock)))?"disabled":""}>+</button></div><button class="commerce-remove" type="button" data-remove="${esc(item.product_id)}" data-option="${esc(optionId(item.product_option_id))}">Remove</button></div>` : `<div class="commerce-line-price">Quantity ${qty}</div>`}${issue ? `<p class="commerce-error" role="alert">${esc(issue.message)}</p>` : ""}</div><strong class="commerce-line-total">${money(item.line_total_paise)}</strong></article>`;
   }).join("")}</div>`;
 }
 function summaryMarkup(result, { checkout = false } = {}) {
@@ -178,13 +179,13 @@ function summaryMarkup(result, { checkout = false } = {}) {
   const method = selectedMethod(result);
   const unavailable = issues.length > 0 || (checkout ? !methodAvailable(result, method) : (result.cod_available === false && result.online_available !== true));
   const codMessage = !result.settings?.cod_enabled ? "This store is not accepting Cash on Delivery right now." : result.total_paise > Number(result.settings?.cod_max_paise) ? `Cash on Delivery is available up to ${money(result.settings.cod_max_paise)}.` : "Cash on Delivery is not available for this order. Please contact the store.";
-  return `<div class="commerce-summary"><h2>${checkout?"Order summary":"Your total"}</h2>${checkout?`<div class="checkout-summary-lines">${result.items.map((item)=>`<div class="checkout-summary-item"><span>${esc(item.title)}<small>Qty ${Number(item.quantity)||0}</small></span><strong>${money(item.line_total_paise)}</strong></div>`).join("")}</div>`:""}<div class="commerce-total-row"><span>Subtotal</span><strong>${money(result.subtotal_paise)}</strong></div><div class="commerce-total-row"><span>Delivery</span><strong>${Number(result.delivery_paise)===0?"Free":money(result.delivery_paise)}</strong></div>${Number(result.tax_paise)>0?`<div class="commerce-total-row"><span>Included taxes</span><strong>${money(result.tax_paise)}</strong></div>`:""}<div class="commerce-total-row grand"><span>Total</span><strong>${money(result.total_paise)}</strong></div>${issues.map((entry)=>`<p class="commerce-error">${esc(entry.message)}</p>`).join("")}${checkout&&!methodAvailable(result,method)?`<p class="commerce-error">${esc(codMessage)}</p>`:""}${checkout?"":`<a class="commerce-button" href="/checkout" ${unavailable?'aria-disabled="true"':''}>Continue to checkout <span aria-hidden="true">→</span></a>`}</div>`;
+  return `<div class="commerce-summary"><h2>${checkout?"Order summary":"Your total"}</h2>${checkout?`<div class="checkout-summary-lines">${result.items.map((item)=>`<div class="checkout-summary-item"><span>${esc(item.title)}${variantTitleLines(item).length?`<small>${esc(variantTitleLines(item).join(" · "))}</small>`:""}${item.sku?`<small>SKU ${esc(item.sku)}</small>`:""}<small>Qty ${Number(item.quantity)||0}</small></span><strong>${money(item.line_total_paise)}</strong></div>`).join("")}</div>`:""}<div class="commerce-total-row"><span>Subtotal</span><strong>${money(result.subtotal_paise)}</strong></div><div class="commerce-total-row"><span>Delivery</span><strong>${Number(result.delivery_paise)===0?"Free":money(result.delivery_paise)}</strong></div>${Number(result.tax_paise)>0?`<div class="commerce-total-row"><span>Included taxes</span><strong>${money(result.tax_paise)}</strong></div>`:""}<div class="commerce-total-row grand"><span>Total</span><strong>${money(result.total_paise)}</strong></div>${issues.map((entry)=>`<p class="commerce-error">${esc(entry.message)}</p>`).join("")}${checkout&&!methodAvailable(result,method)?`<p class="commerce-error">${esc(codMessage)}</p>`:""}${checkout?"":`<a class="commerce-button" href="${esc(configNode?.dataset.apiRoot||"")}/checkout" ${unavailable?'aria-disabled="true"':''}>Continue to checkout <span aria-hidden="true">→</span></a>`}</div>`;
 }
 function renderCommerce() {
   const items = validated?.items || [];
   const cartLines = document.querySelector("[data-cart-page-lines]");
   if (cartLines) cartLines.innerHTML = linesMarkup(items, true);
-  const inBag = new Set(items.map((item) => String(item.product_id)));
+  const inBag = new Set(items.filter((item) => !optionId(item.product_option_id)).map((item) => String(item.product_id)));
   document.querySelectorAll("[data-rec-id]").forEach((node) => { node.hidden = inBag.has(node.dataset.recId); });
   const recs = document.querySelector("[data-cart-recs]");
   if (recs) recs.hidden = ![...recs.querySelectorAll("[data-rec-id]")].some((node) => !node.hidden);
@@ -238,33 +239,67 @@ function closeDrawer() {
   document.body.classList.remove("commerce-lock");
   lastFocus?.focus?.();
 }
-function addProduct(id, quantity) {
+function addProduct(id, quantity, option = "") {
   if (readOnly || busy) return;
   const productId = String(id || "");
   const qty = Math.max(1, Math.min(99, Number.parseInt(quantity, 10) || 1));
-  const current = cart.find((item) => item.product_id === productId);
+  const line = cleanLine({ product_id: productId, product_option_id: option, quantity: qty });
+  const current = cart.find((item) => sameLine(item, line));
   if (current) current.quantity = Math.min(99, current.quantity + qty);
-  else cart.push({ product_id: productId, quantity: qty });
+  else cart.push(line);
   validated = null;
   saveCart();
   updatePlaceOrderAvailability();
   message("Added to your bag.");
   openDrawer();
 }
-async function changeQuantity(id, delta) {
-  const entry = cart.find((item) => item.product_id === String(id));
+async function changeQuantity(id, delta, option = "") {
+  const target = { product_id: String(id), product_option_id: option };
+  const entry = cart.find((item) => sameLine(item, target));
   if (!entry || busy) return;
   entry.quantity = Math.max(1, Math.min(99, entry.quantity + Number(delta)));
   validated = null;
   saveCart();
   await validateCart();
 }
-async function removeProduct(id) {
+async function removeProduct(id, option = "") {
   if (busy) return;
-  cart = cart.filter((item) => item.product_id !== String(id));
+  const target = { product_id: String(id), product_option_id: option };
+  cart = cart.filter((item) => !sameLine(item, target));
   validated = null;
   saveCart();
   await validateCart();
+}
+/* ---- SKU option selector: explicit choice on every axis, no auto-select ---- */
+function initOptions(box) {
+  let data;
+  try { data = JSON.parse(box.dataset.optionJson || ""); } catch { return; }
+  const product = { id: data.id, price_paise: data.price, catalogue: { axes: data.axes }, variants: data.variants };
+  const qty = document.getElementById("aura-quantity");
+  const buttons = () => [...document.querySelectorAll(`[data-add-product][data-needs-option]`)].filter((b) => b.dataset.addProduct === String(data.id));
+  const update = () => {
+    const sel = {};
+    box.querySelectorAll("input[data-opt-name]:checked").forEach((i) => { sel[i.dataset.optName] = i.value; });
+    box.querySelectorAll("input[data-opt-name]").forEach((i) => {
+      const others = { ...sel }; delete others[i.dataset.optName];
+      const st = valueStatus(product, others, i.dataset.optName, i.value);
+      const note = i.nextElementSibling?.querySelector("[data-opt-note]");
+      if (note) note.textContent = st === "soldout" ? "Sold out" : st === "unavailable" ? "Unavailable" : "";
+    });
+    const r = resolveSelection(product, sel), ok = r.state === "ok";
+    const status = box.querySelector("[data-opt-status]"); if (status) status.textContent = r.label;
+    const sku = box.querySelector("[data-opt-sku]");
+    if (sku) { sku.hidden = !r.variant; sku.textContent = r.variant ? `SKU ${r.variant.sku} · ${(r.price_paise / 100).toLocaleString("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 2 })}` : ""; }
+    document.querySelectorAll("[data-opt-price]").forEach((n) => { if (r.variant) n.textContent = money(r.price_paise); else n.textContent = money(data.price); });
+    if (qty) { qty.disabled = !ok; qty.max = String(ok ? r.max : 1); if (!ok) qty.value = "1"; else if (Number(qty.value) > r.max) qty.value = String(r.max); }
+    for (const b of buttons()) {
+      b.disabled = !ok; b.setAttribute("aria-disabled", String(!ok));
+      b.dataset.option = ok ? r.variant.id : "";
+      b.textContent = ok ? (b.closest(".au-sticky-buy") ? "Add to cart" : (box.dataset.word || "Add to cart")) : r.state === "soldout" ? "Sold out" : r.state === "missing" ? "Unavailable" : "Choose options";
+    }
+  };
+  box.addEventListener("change", update);
+  update();
 }
 function formValues(form) {
   const data = new FormData(form);
@@ -333,7 +368,7 @@ async function placeOrder(event) {
   if (button) { button.disabled = true; button.textContent = "Preparing secure order…"; }
   let key;
   try {
-    const canonical = JSON.stringify({ items: cart.map(({product_id,quantity})=>({product_id,quantity})), payment_method: selectedMethod(), contact: values.contact, address: values.address });
+    const canonical = JSON.stringify({ items: cart.map(cleanLine), payment_method: selectedMethod(), contact: values.contact, address: values.address });
     const fingerprintValue = await fingerprint(canonical);
     if (!checkoutAttempt || checkoutAttempt.fingerprint !== fingerprintValue) {
       let previous = null;
@@ -381,7 +416,7 @@ async function placeOrder(event) {
   const method = selectedMethod();
   try {
     const result = await api("/api/checkout/order", {
-      items: cart.map(({product_id,quantity})=>({product_id,quantity})),
+      items: cart.map(cleanLine),
       contact: values.contact,
       address: values.address,
       idempotency_key: key.idempotencyKey,
@@ -572,13 +607,13 @@ function bind() {
   document.addEventListener("click", (event) => {
     if (event.target.closest('a[aria-disabled="true"]')) { event.preventDefault(); return; }
     const add = event.target.closest("[data-add-product]");
-    if (add) { event.preventDefault(); addProduct(add.dataset.addProduct, document.getElementById("aura-quantity")?.value || 1); return; }
+    if (add) { event.preventDefault(); if (add.disabled) return; addProduct(add.dataset.addProduct, document.getElementById("aura-quantity")?.value || 1, add.dataset.option || ""); return; }
     if (event.target.closest("[data-cart-open]")) { openDrawer(); return; }
     if (event.target.closest("[data-drawer-close]")) { closeDrawer(); return; }
     const quantity = event.target.closest("[data-quantity]");
-    if (quantity) { changeQuantity(quantity.dataset.id, Number(quantity.dataset.quantity)); return; }
+    if (quantity) { changeQuantity(quantity.dataset.id, Number(quantity.dataset.quantity), quantity.dataset.option || ""); return; }
     const remove = event.target.closest("[data-remove]");
-    if (remove) { removeProduct(remove.dataset.remove); return; }
+    if (remove) { removeProduct(remove.dataset.remove, remove.dataset.option || ""); return; }
     if (event.target.closest("[data-retry-validation]")) { validateCart(); return; }
   });
   document.addEventListener("keydown", (event) => {
@@ -607,6 +642,7 @@ if (readOnly) {
   mountDrawer();
   updateCount();
   bind();
+  document.querySelectorAll("[data-product-options]").forEach(initOptions);
   if (page === "cart" || page === "checkout") validateCart();
   initTurnstile();
 }

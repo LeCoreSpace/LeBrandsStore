@@ -2,6 +2,7 @@ import { loadDraft } from "../store/repository.js";
 import { transitionInput, shouldRestoreStock, dateFilters, stateName, indianDate, statusLabel } from "../public/dashboard-rules.js";
 import { commerceError } from "../public/commerce-rules.js";
 import { storefrontProduct } from "../public/product-details.js";
+import {restoreSkuStock,requireSkuCheckout} from "../checkout/sku-inventory.js";
 
 const missing = () => commerceError("Record not found.",undefined,404);
 const numberFields = ["total_paise","subtotal_paise","shipping_paise","tax_paise","cod_fee_paise","discount_paise",
@@ -126,8 +127,7 @@ export async function changeOrderStatus(tx,id,orderId,actorId,body,{managedShipm
       WHERE store_id = ${id} AND order_id = ${orderId} ORDER BY product_id,product_option_id,id`;
     for (const item of items) {
       if (!item.product_id || !item.inventory_deducted) continue;
-      if (item.product_option_id) await tx`UPDATE public.product_options SET stock = stock + ${item.quantity}
-        WHERE store_id = ${id} AND product_id = ${item.product_id} AND id = ${item.product_option_id}`;
+      if (item.product_option_id) await restoreSkuStock(tx,id,item);
       else await tx`UPDATE public.products SET stock = stock + ${item.quantity} WHERE store_id = ${id} AND id = ${item.product_id}`;
     }
     await tx`UPDATE public.orders SET stock_restored_at = now() WHERE store_id = ${id} AND id = ${orderId}`;
@@ -167,7 +167,8 @@ export async function archiveProduct(tx,id,productId,actorId) {
 export async function adjustStock(tx,id,productId,actorId,body) {
   if (!Number.isInteger(body.delta) || body.delta === 0 || Math.abs(body.delta) > 1000000 || typeof body.reason !== "string" || !body.reason.trim() || body.reason.length > 240) throw commerceError("Enter an adjustment and reason.");
   const [product] = await tx`UPDATE public.products SET stock = stock + ${body.delta}
-    WHERE store_id = ${id} AND id = ${productId} AND track_inventory AND stock + ${body.delta} >= 0 RETURNING id,stock`;
+    WHERE store_id = ${id} AND id = ${productId} AND track_inventory AND stock + ${body.delta} >= 0
+      AND NOT EXISTS(SELECT 1 FROM public.product_options v WHERE v.store_id=${id} AND v.product_id=${productId}) RETURNING id,stock`;
   if (!product) throw commerceError("Product not found, stock is untracked, or adjustment would make stock negative.",undefined,409);
   await audit(tx,id,actorId,"product.stock_adjusted","product",productId,{delta:body.delta,reason:body.reason.trim(),stock:product.stock});
   return product;
@@ -185,8 +186,15 @@ export async function syncPublishedProducts(tx,id,productId,activate = false) {
   // A stock/price/archive or explicit catalogue save is not a theme publish.
   // Retain published per-product content and collection assignment until republish.
   if (product) {
+    if(activate&&product.variants?.length)await requireSkuCheckout(tx);
     product.content = index >= 0 ? products[index].content || {} : {};
     product.collection_ids = index >= 0 ? products[index].collection_ids || [] : [];
+    if(!activate){
+      const previous=index>=0?products[index]:{};
+      product.variants=(previous.variants||[]).map(v=>({...v,stock:product.variants.find(now=>now.id===v.id)?.stock??0}));
+      product.options=previous.options||[];
+      product.catalogue={...product.catalogue,axes:previous.catalogue?.axes||[]};
+    }
   }
   if (index >= 0) {
     if (product) products[index] = storefrontProduct(product,{detailsFrom:activate?product:products[index]}); else products.splice(index,1);

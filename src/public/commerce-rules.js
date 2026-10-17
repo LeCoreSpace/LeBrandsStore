@@ -101,9 +101,13 @@ export function cartItems(items, allowEmpty = true) {
   const found = new Set();
   return items.map((item) => {
     if (!item || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.product_id ?? "") ||
-      !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 99 || found.has(item.product_id.toLowerCase())) throw commerceError("Check the products and quantities in your cart.");
-    found.add(item.product_id.toLowerCase());
-    return {product_id:item.product_id.toLowerCase(),quantity:item.quantity};
+      (item.product_option_id != null && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(item.product_option_id)) ||
+      !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 99) throw commerceError("Check the products and quantities in your cart.");
+    const product_id=item.product_id.toLowerCase(),product_option_id=item.product_option_id?.toLowerCase();
+    const key=`${product_id}:${product_option_id||""}`;
+    if(found.has(key))throw commerceError("Check the products and quantities in your cart.");
+    found.add(key);
+    return {product_id,...(product_option_id?{product_option_id}:{}),quantity:item.quantity};
   });
 }
 export function inclusiveTax(gross, rate, intraState) {
@@ -126,18 +130,30 @@ export function quoteCart(published, inventory, requested, settings, state = "")
   for (const wanted of cartItems(requested)) {
     const product = published.find((p) => p.id === wanted.product_id);
     const stock = inventory.find((p) => p.id === wanted.product_id);
+    const identity={product_id:wanted.product_id,...(wanted.product_option_id?{product_option_id:wanted.product_option_id}:{})};
     if (!product || !stock || stock.status !== "active") {
-      issues.push({product_id:wanted.product_id,message:"This product is no longer available."}); continue;
+      issues.push({...identity,message:"This product is no longer available."}); continue;
     }
-    const available = stock.track_inventory ? Number(stock.stock) : null;
+    const variants=Array.isArray(product.variants)?product.variants:[],axes=product.catalogue?.axes||[];
+    const variant=wanted.product_option_id?variants.find(v=>v.id===wanted.product_option_id):null;
+    const current=variant?stock.variants?.find(v=>v.id===variant.id):null;
+    if((variants.length||axes.length||wanted.product_option_id)&&(!variant||!current||
+      !axes.length||variant.values?.length!==axes.length||
+      JSON.stringify(current.attributes)!==JSON.stringify(variant.values))){
+      issues.push({...identity,message:wanted.product_option_id?"This variant is no longer available. Choose its options again.":"Choose a variant before adding this product."});continue;
+    }
+    const available = variant?Number(current.stock):stock.track_inventory ? Number(stock.stock) : null;
+    if(available!==null&&(!Number.isInteger(available)||available<0))throw commerceError("Inventory is unavailable. Please try again.",undefined,409);
     const quantity = available == null ? wanted.quantity : Math.min(wanted.quantity, available);
-    if (quantity !== wanted.quantity) issues.push({product_id:wanted.product_id,message:quantity ?
+    if (quantity !== wanted.quantity) issues.push({...identity,message:quantity ?
       `Only ${quantity} of this product are available.` : "This product is out of stock."});
     if (!quantity) continue;
-    const price = Number(product.price_paise);
+    const price = Number(variant?.price_paise??product.price_paise);
     if (!Number.isSafeInteger(price) || price <= 0 || price > 10000000000) throw commerceError("A product is not available for checkout.", undefined, 409);
     const gross = price * quantity;
-    items.push({product_id:product.id,title:product.title,quantity,unit_price_paise:price,line_total_paise:gross,
+    const variant_values=variant?axes.map((a,i)=>({name:a.name,value:variant.values[i]})):[];
+    const title=variant?`${product.title} (${variant_values.map(v=>`${v.name}: ${v.value}`).join(" / ")})`:product.title;
+    items.push({...identity,title,sku:variant?.sku||product.sku||"",variant_values,quantity,unit_price_paise:price,line_total_paise:gross,
       image_url:product.images?.[0]?.url ?? "", stock:available,hsn_code:product.hsn_code,gst_rate:Number(product.gst_rate),
       ...inclusiveTax(gross,Number(product.gst_rate),!state || state === settings.store_state)});
   }
