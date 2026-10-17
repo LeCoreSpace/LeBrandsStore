@@ -110,7 +110,6 @@ export const COMPARISON_ROWS = [
     `Standard: ${rupees(PLATFORMS[2].plans[0].annual)}`,
     "₹0 subscription; success fee",
     `Starter: ${rupees(PLATFORMS[4].plans[1].annual)}`) },
-  { section: "Understand the cost", label: "Estimated monthly cost", type: "estimate" },
   { section: "Included tools", label: "COD and RTO tools", cells: cells("COD; RTO tools planned", "Manual COD supported", "Confirm COD / RTO tools", "RTO consulting; partial COD", "COD listed on Starter+") },
   { section: "Included tools", label: "Conversion features", cells: cells("Review / trust sections; automation planned", "Theme features + apps", "Check features by plan", "Confirm included tools", "Check features by plan") },
   { section: "Included tools", label: "Customer messaging", cells: cells("Order email; Arattai planned", "Email + apps; costs vary", "Confirm channels / licences", "Confirm channels / charges", "Confirm channels / charges") },

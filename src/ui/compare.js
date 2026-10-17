@@ -1,5 +1,5 @@
 import { PLATFORMS, COMPARISON_ROWS } from "../public/compare-data.js";
-import { DEFAULTS, esc, resultsHtml, referenceCostText, scenarioText } from "../public/compare.js";
+import { DEFAULTS, esc, resultsHtml } from "../public/compare.js";
 import { estimateCosts } from "../public/compare-engine.js";
 
 
@@ -16,10 +16,7 @@ function diffTable() {
   const ids = ["lebrands", "shopify", "zoho", "shopdeck", "dukaan"];
   const cls = (id) => (id === "lebrands" ? ' class="is-own"' : "");
   const head = PLATFORMS.map((p) => `<th scope="col"${cls(p.id)}>${esc(p.name)}${p.id === "lebrands" ? '<span class="c-tag">Our platform</span>' : ""}</th>`).join("");
-  const estimates = estimateCosts({ ...DEFAULTS, quotes: {} });
-  const row = (r) => `<tr${r.type === "estimate" ? " data-estimate-row" : ""}><th scope="row">${esc(r.label)}</th>${ids.map((id) => r.type === "estimate"
-    ? `<td${cls(id)} data-reference-cost="${id}">${esc(referenceCostText(estimates.find(x => x.id === id)))}</td>`
-    : `<td${cls(id)}>${esc(r.cells[id])}</td>`).join("")}</tr>`;
+  const row = (r) => `<tr><th scope="row">${esc(r.label)}</th>${ids.map(id => `<td${cls(id)}>${esc(r.cells[id])}</td>`).join("")}</tr>`;
   const groups = [];
   for (const r of COMPARISON_ROWS) {
     const last = groups[groups.length - 1];
@@ -27,8 +24,6 @@ function diffTable() {
   }
   const body = groups.map((g) => `<tbody aria-label="${esc(g.name)}"><tr class="c-group"><th scope="rowgroup" colspan="6">${esc(g.name)}</th></tr>${g.rows.map(row).join("")}</tbody>`).join("");
   return `<div class="c-scroll" role="region" tabindex="0" aria-label="Platform differentiators, scrollable table"><table class="c-table c-diff"><caption class="c-sr">Main differentiators across five platforms</caption><thead><tr><th scope="col">Differentiator</th>${head}</tr></thead>${body}</table></div>
-  <p class="c-foot" data-reference-scenario>${esc(scenarioText(DEFAULTS))}</p>
-  <p class="c-foot" role="status" data-estimate-status></p>
   <p class="c-foot">LeBrands.Store pricing and explicitly marked features are proposed. Not verified means unconfirmed, not unavailable.</p>`;
 }
 

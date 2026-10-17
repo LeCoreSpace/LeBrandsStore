@@ -55,7 +55,6 @@
 .c-errors p { margin: 0 0 6px; }
 .c-errors ul { margin: 0; padding-left: 18px; }
 .c-results[data-stale] { opacity: .55; }
-[data-estimate-row][data-stale] { opacity: .55; }
 .c-cost th:first-child { position: sticky; left: 0; z-index: 2; border-right: 1px solid var(--m-line); }
 .c-cost thead th:first-child { z-index: 3; background: var(--m-paper); }
 .c-close-in { display: flex; justify-content: space-between; align-items: end; gap: 20px; flex-wrap: wrap; }

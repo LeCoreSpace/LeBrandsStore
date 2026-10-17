@@ -6,7 +6,7 @@ import preview from "../src/preview.js";
 import { PRICING_PLANS } from "../src/public/pricing-plans.js";
 import { PLATFORMS, COMPARISON_ROWS } from "../src/public/compare-data.js";
 import { estimateCosts } from "../src/public/compare-engine.js";
-import { DEFAULTS, parseInputs, resultsHtml, referenceCostText, scenarioText, esc } from "../src/public/compare.js";
+import { DEFAULTS, parseInputs, resultsHtml, esc } from "../src/public/compare.js";
 import { COMPARE_FAQ, compareMain } from "../src/ui/compare.js";
 import { renderCompare, renderHome, renderPricing } from "../src/ui/marketing.js";
 
@@ -88,7 +88,6 @@ test("differentiators are complete, grouped, concise rows with five platform col
   for (const r of COMPARISON_ROWS) {
     assert.ok(html.includes(esc(r.label)));
     assert.ok(r.section);
-    if (r.type === "estimate") continue;
     assert.deepEqual(Object.keys(r.cells), PLATFORMS.map(p => p.id));
     for (const text of Object.values(r.cells)) {
       assert.equal(typeof text, "string");
@@ -101,18 +100,13 @@ test("differentiators are complete, grouped, concise rows with five platform col
   assert.match(html, /Arattai planned/);
 });
 
-test("both estimates are semantic tables, escaped and linked to calculator inputs", () => {
+test("calculator results remain tabular and escaped, without a monthly-cost comparison row", () => {
   const results = estimateCosts(DEFAULTS);
   const html = resultsHtml(results, DEFAULTS);
   assert.match(html, /<table class="c-table c-cost">/);
   assert.match(html, /Annual subscription upfront/);
   assert.equal((html.match(/<th scope="col">/g) || []).length, 7);
-  for (const r of results) {
-    assert.ok(referenceCostText(r).includes(r.plan));
-    assert.ok(compareMain().includes(`data-reference-cost="${r.id}"`));
-  }
-  assert.equal(referenceCostText(cost({ sales: 7000000 }).lebrands), "Quote only");
-  assert.ok(scenarioText(DEFAULTS).includes("annual billing"));
+  assert.doesNotMatch(compareMain(), /data-reference-cost|data-reference-scenario|Estimated monthly cost<\/th>|Monthly cost at/);
   const escaped = resultsHtml([{ ...results[0], name: "<img src=x onerror=alert(1)>" }], DEFAULTS);
   assert.doesNotMatch(escaped, /<img/);
   assert.match(escaped, /&lt;img/);
@@ -123,8 +117,6 @@ test("quiz, recommendation storage and all comparison cards are removed", async 
   assert.doesNotMatch(html, /quiz|c-plat|c-res-card|c-quiz|c-ledger/i);
   const client = await readFile("src/public/compare.js", "utf8");
   assert.doesNotMatch(client, /localStorage|recommend|QUIZ_|quizHtml/);
-  assert.match(client, /cell\.textContent = referenceCostText/);
-  assert.match(client, /scenario\.textContent = scenarioText/);
 });
 
 test("server-rendered page contains five sources, usable default estimates and dated methodology", () => {

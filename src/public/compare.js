@@ -41,8 +41,6 @@ export function parseInputs(raw) {
 }
 
 const isPriced = (r) => (r.status === "estimated" || r.status === "from") && typeof r.total === "number" && Number.isFinite(r.total);
-export const referenceCostText = (r) => r && isPriced(r) ? `${inr(r.total)} / month (${r.plan})` : "Quote only";
-export const scenarioText = (i) => `Scenario: ${inr(i.sales)} monthly sales, AOV ${inr(i.aov)}, prepaid ${i.prepaid}%, gateway ${i.gateway}%, delivered ${i.delivered}%, ${i.billing} billing. Effective monthly, before tax.`;
 
 export function resultsHtml(results, inputs) {
   const annual = inputs.billing === "annual";
@@ -59,8 +57,6 @@ function init() {
   const out = form.querySelector("[data-results]");
   const status = form.querySelector("[data-status]");
   const errBox = form.querySelector("[data-errors]");
-  const estimateRow = document.querySelector("[data-estimate-row]");
-  const estimateStatus = document.querySelector("[data-estimate-status]");
 
   const raw = () => Object.fromEntries(new FormData(form).entries());
   function setInvalid(errors) {
@@ -78,22 +74,12 @@ function init() {
       errBox.innerHTML = `<p><b>Results not updated.</b> Fix these inputs:</p><ul>${Object.values(p.errors).map((e) => `<li>${esc(e)}</li>`).join("")}</ul>`;
       status.textContent = `Results not updated. ${Object.keys(p.errors).length} input problem${Object.keys(p.errors).length === 1 ? "" : "s"}.`;
       out.setAttribute("data-stale", "true");
-      estimateRow?.setAttribute("data-stale", "true");
-      if (estimateStatus) estimateStatus.textContent = "Last valid estimate. Correct the calculator inputs to update.";
       return;
     }
     errBox.hidden = true; errBox.textContent = "";
     out.removeAttribute("data-stale");
     const results = estimateCosts(p.inputs);
     out.innerHTML = resultsHtml(results, p.inputs);
-    estimateRow?.removeAttribute("data-stale");
-    if (estimateStatus) estimateStatus.textContent = "";
-    for (const r of results) {
-      const cell = document.querySelector(`[data-reference-cost="${r.id}"]`);
-      if (cell) cell.textContent = referenceCostText(r);
-    }
-    const scenario = document.querySelector("[data-reference-scenario]");
-    if (scenario) scenario.textContent = scenarioText(p.inputs);
     const n = results.filter(isPriced).length;
     status.textContent = `Estimate updated. ${n} priced, ${results.length - n} quote only.`;
   }
