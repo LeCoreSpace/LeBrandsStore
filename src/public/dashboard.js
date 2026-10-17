@@ -7,7 +7,7 @@ import {observeGSTINForms} from "/assets/gstin-ui.js";
 import { textToRich, cleanRows } from "/assets/content-form.js";
 import "/assets/dashboard-navigation.js";
 import * as catalogueModel from "/assets/catalogue-model.js";
-import { initCatalogueForm, readCataloguePayload, initSearchPreview, readSearchFields } from "/assets/catalogue-form.js";
+import { initCatalogueForm, readCataloguePayload, initSearchPreview, readSearchFields, ensureProductSku } from "/assets/catalogue-form.js";
 import {attachCatalogueEmbed} from "/assets/catalogue-modal.js";
 
 const root = document.querySelector(".lb-app");
@@ -273,7 +273,7 @@ document.querySelectorAll("[data-product-form]").forEach(form => {
   form.addEventListener("input", () => updateGSTWarning(form));
   form.addEventListener("change", () => updateGSTWarning(form));
 });
-document.querySelectorAll("[data-product-form]").forEach(form => { initSearchPreview(form); initCatalogueForm(form, { model: catalogueModel, notify, confirm: message => window.confirm(message) }); });
+document.querySelectorAll("[data-product-form]").forEach(form => { ensureProductSku(form); initSearchPreview(form); initCatalogueForm(form, { model: catalogueModel, notify, confirm: message => window.confirm(message), referenceUrl: `${api}/ann/reference` }); });
 function isNewForm(form) { return form.dataset.new === "true"; }
 function updateSaveForUploads(form) {
   catalogueEmbed?.saving(pendingUploads>0);

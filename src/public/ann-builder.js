@@ -697,13 +697,9 @@ function productsStep() {
   return out.join("");
 }
 function ideaCard(p, i, st) {
-  const picked = new Map((p.attributes || []).map(x => [x.attribute_id, new Set(x.value_ids)]));
-  let attrs = "";
-  if (!answers.subcategory_id) attrs = "";
-  else if (!st || st.status === "loading") attrs = `<div class="ann-skel"><i></i><i></i></div>`;
-  else if (st.status === "error") attrs = `<p class="ann-error">${esc(st.error)}</p><button type="button" class="ann-btn alt" data-retry-attrs>Try again</button>`;
-  else if (!st.attrs.length) attrs = `<p class="ann-note">No product questions are listed for this subcategory.</p>`;
-  else attrs = `<details class="ann-attrs"><summary>Product details${(p.attributes || []).length ? ` (${p.attributes.length} chosen)` : ""}</summary>${st.attrs.map(at => `<fieldset><legend>${esc(attrName(at))}</legend><div class="ann-vals">${(at.values || []).map(v => `<label class="ann-check"><input type="checkbox" data-attr="${i}:${esc(at.id)}:${esc(v.id)}" ${picked.get(Number(at.id))?.has(Number(v.id)) ? "checked" : ""}${dis}><span>${esc(valName(v))}</span></label>`).join("")}</div></fieldset>`).join("")}</details>`;
+  // Buying options belong to the shared product form, not conversation notes.
+  // Previously saved idea attributes remain in the plan without being rewritten.
+  const attrs = "";
   return `<fieldset class="ann-item"><legend>Idea ${i + 1}</legend>
     <label class="ann-field">Name<input data-idea="${i}" data-f="name" maxlength="120" value="${esc(p.name)}"${dis}></label>
     <label class="ann-field">Description<textarea data-idea="${i}" data-f="description" maxlength="1200" rows="2"${dis}>${esc(p.description || "")}</textarea></label>${attrs}

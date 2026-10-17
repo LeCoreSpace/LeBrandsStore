@@ -2,6 +2,7 @@ import {UUID} from "./validation.js";
 
 export const MAX_AXES=3;
 export const MAX_VARIANTS=200;
+export const createProductSku = () => `LB-${crypto.randomUUID().replaceAll("-", "").slice(0, 16).toUpperCase()}`;
 const MAX_STOCK=2147483647,MAX_PRICE=10000000000;
 const object=v=>v&&typeof v==="object"&&!Array.isArray(v);
 const fail=message=>{throw Object.assign(new Error(message),{status:400});};

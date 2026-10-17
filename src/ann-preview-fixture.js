@@ -148,6 +148,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     let response;
     if(url.pathname.startsWith(`${prefix}/catalogue/api/`)){
       const target=new URL(`${APP_ORIGIN}/api/stores/${storeId}/${url.pathname.slice(`${prefix}/catalogue/api/`.length)}`);
+      target.search=url.search;
       const headers=new Headers(req.headers),incoming=headers.get("origin");
       let allowed=false;
       try{allowed=[url.hostname,new URL(previewOrigin||origin).hostname,process.env.REPLIT_DEV_DOMAIN,"localhost","127.0.0.1"].includes(new URL(incoming).hostname);}catch{}
@@ -157,6 +158,8 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       const request=new Request(target,init);
       response=target.pathname.endsWith("/orders")&&req.method==="GET"
         ?await handleDashboard(request,db,user,hash,{MEDIA:fixtureMedia})
+        :target.pathname.endsWith("/ann/reference")
+        ?await handleAnnRoutes(request,{},db,user,hash)
         :await handleStoreRoutes(request,{MEDIA:fixtureMedia},db,user,hash);
     }else if(url.pathname.startsWith(`${prefix}/catalogue/`)&&["GET","HEAD"].includes(req.method)){
       const match=url.pathname.slice(`${prefix}/catalogue/`.length).match(/^(products|collections)(?:\/(new|[a-f0-9-]{36}))?$/);

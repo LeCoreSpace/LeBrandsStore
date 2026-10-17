@@ -1,8 +1,15 @@
 // Reusable catalogue form controller. No globals: model, callbacks and scope are passed in.
+import { initCatalogueReference, attributeFor, referenceAxesAllowed } from "./catalogue-reference.js";
+import { createProductSku } from "./catalogue-model.js";
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const instances = new WeakMap();
+export function ensureProductSku(scope, generate = createProductSku) {
+  const input = scope?.querySelector('[name="sku"]');
+  if (!input) return "";
+  if (!String(input.value || "").trim()) input.value = generate();
+  return input.value;
+}
 const key = values => JSON.stringify(values);
-const parseValues = text => String(text || "").split(/[,\n]/).map(s => s.trim()).filter(Boolean);
 const rupeesToPaise = text => {
   const t = String(text ?? "").trim();
   if (t === "") return null;
@@ -22,9 +29,9 @@ export function hasLegacyVariants(model, axes, rows) {
   try { model.validateVariants(toModelRows(rows), { axes }); return false; } catch { return true; }
 }
 
-export function initCatalogueForm(scope, { model, notify = () => {}, confirm = () => true, baseSku } = {}) {
+export function initCatalogueForm(scope, { model, notify = () => {}, confirm = () => true, baseSku, referenceUrl } = {}) {
   const box = scope?.querySelector("[data-catalogue-options]");
-  if (!scope || !model) return null;
+  if (!scope || !model || !box) return null;
   if (instances.has(scope)) return instances.get(scope);
   const maxAxes = model.MAX_AXES || 3, maxVariants = model.MAX_VARIANTS || 200;
   const field = name => scope.querySelector(`[name="${name}"]`);
@@ -32,14 +39,17 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   let initial = { axes: [], variants: [] };
   try { initial = JSON.parse(box?.dataset.initial || "{}"); } catch { /* keep empty */ }
   const state = {
-    axes: (initial.axes || []).map(a => ({ name: a.name || "", text: (a.values || []).join(", ") })),
+    axes: (initial.axes || []).map(a => ({ name: a.name || "", values: [...(a.values || [])] })),
     rows: (initial.variants || []).map(v => ({ id: v.id, values: v.values, sku: v.sku, stock: v.stock, price_paise: v.price_paise ?? null, expected_stock: v.stock })),
     generated: null,
     legacy: false,
   };
   state.legacy = hasLegacyVariants(model, (initial.axes || []).map(a => ({ name: a.name, values: a.values })), state.rows);
 
-  const cleanAxes = () => state.axes.map(a => ({ name: a.name.trim(), values: parseValues(a.text) })).filter(a => a.name || a.values.length);
+  let reference = { status: "loading", attributes: [] };
+  const initialScope = [field("catalogue_category")?.value || "", field("catalogue_subcategory")?.value || ""];
+  const changedScope = () => JSON.stringify(initialScope) !== JSON.stringify([field("catalogue_category")?.value || "", field("catalogue_subcategory")?.value || ""]);
+  const cleanAxes = () => state.axes.map(a => ({ name: a.name, values: [...a.values] })).filter(a => a.name || a.values.length);
   const axesKey = () => key(cleanAxes().map(a => [a.name, a.values]));
   state.generated = axesKey();
   const comboCount = axes => axes.reduce((n, a) => n * a.values.length, axes.length ? 1 : 0);
@@ -55,6 +65,8 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
 
   function axisProblems() {
     const axes = cleanAxes();
+    if (changedScope() && axes.length && reference.status !== "ready") return "Load the selected subcategory's options before generating or saving.";
+    if (!referenceAxesAllowed(axes, reference.attributes, initial.axes || [], changedScope())) return "Choose options and values for the selected subcategory, or remove the old options.";
     for (const [i, a] of axes.entries()) {
       if (!a.name) return `Name option ${i + 1}.`;
       if (!a.values.length) return `Add at least one value for ${a.name}.`;
@@ -75,14 +87,18 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     else text = `${n.toLocaleString("en-IN")} ${n === 1 ? "combination" : "combinations"} from these options.${stale ? " Generate to update the table before saving." : ""}`;
     node.textContent = text;
     node.dataset.tone = problem || n > maxVariants ? "error" : stale ? "pending" : "ok";
-    box.querySelector("[data-axis-add]").disabled = state.axes.length >= maxAxes;
+    box.querySelector("[data-axis-add]").disabled = state.axes.length >= maxAxes || reference.status !== "ready" || !reference.attributes.some(a => !state.axes.some(p => p.name === a.name));
   }
   function paintAxes() {
     const host = box.querySelector("[data-axes]");
-    host.innerHTML = state.axes.map((a, i) => `<fieldset class="lb-axis" data-axis="${i}"><legend>Option ${i + 1}</legend>
-      <label class="lb-field">Name<input data-axis-name value="${esc(a.name)}" maxlength="40" placeholder="Size"></label>
-      <label class="lb-field">Values<input data-axis-values value="${esc(a.text)}" placeholder="Small, Medium, Large"><small>Separate values with commas.</small></label>
-      <button type="button" class="lb-text-button" data-axis-remove aria-label="Remove option ${i + 1}">Remove option</button></fieldset>`).join("");
+    host.innerHTML = state.axes.map((a, i) => {
+      const current = attributeFor(reference.attributes, a.name);
+      const values = [...new Set([...(current?.values || []).map(v => v.value), ...a.values])];
+      return `<fieldset class="lb-axis" data-axis="${i}"><legend>Option ${i + 1}</legend>
+      <label class="lb-field">Option<select data-axis-name${reference.status !== "ready" ? " disabled" : ""}><option value="">Choose an option</option>${a.name && !current ? `<option value="${esc(a.name)}" selected>${esc(a.name)} (saved)</option>` : ""}${reference.attributes.map(at => `<option value="${esc(at.name)}"${at.name === a.name ? " selected" : ""}${at.name !== a.name && state.axes.some(x => x.name === at.name) ? " disabled" : ""}>${esc(at.name)}</option>`).join("")}</select></label>
+      <div class="lb-check-list" role="group" aria-label="${esc(a.name || "Option")} values">${values.map(value => `<label class="lb-check-input"><input type="checkbox" data-axis-choice value="${esc(value)}"${a.values.includes(value) ? " checked" : ""}>${esc(value)}${!current?.values.some(v => v.value === value) ? " (saved value)" : ""}</label>`).join("") || '<span class="lb-muted">Choose an option to see its values.</span>'}</div>
+      <button type="button" class="lb-text-button" data-axis-remove aria-label="Remove option ${i + 1}">Remove option</button></fieldset>`;
+    }).join("");
     paintCount();
   }
   function paintMatrix() {
@@ -103,8 +119,12 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     const axis = event.target.closest("[data-axis]");
     if (axis) {
       const a = state.axes[Number(axis.dataset.axis)];
-      if (event.target.matches("[data-axis-name]")) a.name = event.target.value;
-      if (event.target.matches("[data-axis-values]")) a.text = event.target.value;
+      if (event.target.matches("[data-axis-name]")) {
+        if (a.name !== event.target.value) { a.name = event.target.value; a.values = []; }
+        paintAxes();
+        box.querySelector(`[data-axis="${axis.dataset.axis}"] select`)?.focus();
+      }
+      if (event.target.matches("[data-axis-choice]")) a.values = event.target.checked ? [...new Set([...a.values, event.target.value])] : a.values.filter(v => v !== event.target.value);
       showError(""); paintCount(); return;
     }
     const tr = event.target.closest("[data-row]");
@@ -117,7 +137,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   });
   box.addEventListener("click", event => {
     if (event.target.closest("[data-axis-add]")) {
-      if (state.axes.length < maxAxes) { state.axes.push({ name: "", text: "" }); paintAxes(); box.querySelector(`[data-axis="${state.axes.length - 1}"] input`)?.focus(); }
+      if (reference.status === "ready" && state.axes.length < maxAxes) { state.axes.push({ name: "", values: [] }); paintAxes(); box.querySelector(`[data-axis="${state.axes.length - 1}"] select`)?.focus(); }
     } else if (event.target.closest("[data-axis-remove]")) {
       state.axes.splice(Number(event.target.closest("[data-axis]").dataset.axis), 1); paintAxes();
     } else if (event.target.closest("[data-variants-generate]")) generate();
@@ -128,8 +148,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     if (problem) { showError(problem); return false; }
     const axes = cleanAxes(), n = comboCount(axes);
     if (n > maxVariants) { showError(`This would create ${n.toLocaleString("en-IN")} combinations. A product can have at most ${maxVariants}.`); return false; }
-    const base = getBaseSku();
-    if (n && !base) { showError("Enter a base SKU first. Variant SKUs are generated from it."); field("sku")?.focus(); return false; }
+    const base = getBaseSku() || ensureProductSku(scope);
     let catalogue;
     try { catalogue = model.validateCatalogue({ ...identity(), axes }); } catch (e) { showError(e.message); return false; }
     const existing = toModelRows(state.rows.filter(r => r.values));
@@ -185,6 +204,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   paint();
   const api = { payload, generate, state };
   instances.set(scope, api);
+  initCatalogueReference(scope, { url: referenceUrl, onChange(next) { reference = next; if (box) paintAxes(); } });
   return api;
 }
 

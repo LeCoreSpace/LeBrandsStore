@@ -25,8 +25,10 @@ export function renderCatalogueOrganisation({ enabled, product = {}, collections
   return `<section class="lb-side-box lb-catalogue-org" data-catalogue-org>
     <h2>Organisation</h2>
     <label class="lb-field">Vendor or maker<input name="catalogue_vendor" maxlength="80" value="${escapeHtml(cat.vendor || "")}" placeholder="Your brand or the maker"></label>
-    <label class="lb-field">Product category<input name="catalogue_category" maxlength="80" value="${escapeHtml(cat.category || "")}" placeholder="For example, Skincare"></label>
-    <label class="lb-field">Subcategory<input name="catalogue_subcategory" maxlength="80" value="${escapeHtml(cat.subcategory || "")}" placeholder="For example, Face oils"></label>
+    <label class="lb-field">Product category<select name="catalogue_category"><option value="${escapeHtml(cat.category || "")}">${escapeHtml(cat.category || "Choose a category")}</option></select></label>
+    <label class="lb-field">Subcategory<select name="catalogue_subcategory"><option value="${escapeHtml(cat.subcategory || "")}">${escapeHtml(cat.subcategory || "Choose a subcategory")}</option></select></label>
+    <p class="lb-muted" data-reference-status role="status">Loading product options…</p>
+    <button type="button" class="lb-text-button" data-reference-retry hidden>Retry loading options</button>
     <small class="lb-field-note">Category is how you group products. It does not change tax. Tax comes from the HSN code and GST rate below.</small>
     <div class="lb-field"><span id="lb-cat-collections-label" class="lb-field-label">Collections</span>${picker}</div>
   </section>`;
@@ -38,7 +40,7 @@ export function renderCatalogueOptions({ enabled, product = {}, maxAxes = 3, max
   const cat = obj(product.catalogue);
   const initial = { axes: arr(cat.axes), variants: arr(product.variants) };
   return `<section class="lb-side-box lb-catalogue-options" data-catalogue-options data-max-axes="${maxAxes}" data-max-variants="${maxVariants}" data-initial="${attrJson(initial)}">
-    <div class="lb-options-head"><div><h2>Buying options</h2><p>Optional. Add options such as size or shade when customers choose a version. Leave empty for a single-version product. Up to ${maxAxes} options and ${maxVariants} combinations.</p></div></div>
+    <div class="lb-options-head"><div><h2>Buying options</h2><p>Choose from your subcategory's options and values. Optional, up to ${maxAxes} options and ${maxVariants} combinations.</p></div></div>
     <p class="lb-draft-note" role="note"><strong>Draft preparation.</strong> Combinations are saved with the product as catalogue drafts. SKU-level checkout is not enabled yet, so products with buying options cannot be published to the live store.</p>
     <p class="lb-legacy-note" data-legacy-note role="status" hidden>These saved combinations do not match the saved options. They are kept as they are and shown read only. Generate combinations to replace them.</p>
     <div class="lb-axes" data-axes></div>

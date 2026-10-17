@@ -186,6 +186,19 @@ variant/SKU behavior and media associations, not separate copies.
 Collection and product forms should open as modals within Ann and reuse the
 dashboard forms. Their inputs stay inside the form, not Ann's chat composer.
 
+Buying-option selection belongs inside that shared product form only. Use the
+existing subcategory-specific attribute names and values exactly; let merchants
+choose their options and values rather than inventing a separate suggestion list.
+
+**Why:** The user explicitly requested the exact variants and values for each
+subcategory in both Ann and Dashboard, then clarified that selection should move
+into the product form itself.
+
+Generate product and variant SKUs automatically and show them to the merchant,
+rather than requiring the merchant to create a SKU. Preserve existing saved SKUs.
+
+**Why:** The user explicitly asked for auto-generated SKUs shown to the user.
+
 **Why:** The user explicitly requires product-adding features in Ann to also
 appear in the dashboard Add product form, and reported that the collection and
 product steps were not opening the requested modals.
