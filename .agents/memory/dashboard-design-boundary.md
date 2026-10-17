@@ -20,6 +20,17 @@ pages, templates and shared catalogue records.
 not a recoloured Shopify layout. Keep proposed/unimplemented destinations
 clearly distinguished from working features.
 
+Settings must be a normal, visible expandable menu in the dashboard sidebar,
+with its settings destinations listed underneath, not merely a pinned footer
+link to a separate settings screen.
+
+**Why:** The user wants merchants to see what capabilities the application
+contains directly in the dashboard menu.
+
+**How to apply:** Include the agreed settings destinations in the sidebar
+hierarchy and label unavailable capabilities honestly. Help and the account
+menu can remain in the footer.
+
 **Why:** The user requested a professional operational dashboard and later
 explicitly authorised changing its and the wizard's accent colour and LeBrands
 logo only to plum, with layout, behaviour, copy and test assertions unchanged.
