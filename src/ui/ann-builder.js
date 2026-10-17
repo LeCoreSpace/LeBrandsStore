@@ -42,8 +42,15 @@ ${accountHeader(user)}
       <p class="ann-status" id="ann-status" role="status" aria-live="polite"></p>
     </section>
     <section class="ann-stage" aria-label="Live store preview">
-      <div class="ann-bar">
+      <section class="ann-style-picker" aria-labelledby="ann-style-label">
+        <h2 class="ann-control-label" id="ann-style-label">Store style</h2>
         <div class="ann-styles" id="ann-style-tabs" role="group" aria-label="Preview style"></div>
+      </section>
+      <div class="ann-bar">
+        <div class="ann-pages ann-modes" role="group" aria-label="Preview content">
+          <button type="button" class="ann-tab" data-preview-mode="showcase" aria-pressed="true">Style showcase</button>
+          <button type="button" class="ann-tab" data-preview-mode="store" aria-pressed="false">Your store</button>
+        </div>
         <div class="ann-bar-end">
           <div class="ann-device" role="group" aria-label="Preview viewport"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div>
           <button type="button" class="ann-btn alt sm" data-ws-toggle aria-pressed="false" aria-controls="ann-tools">Design workspace</button>
@@ -51,13 +58,10 @@ ${accountHeader(user)}
           <details class="ann-more"><summary aria-label="More preview options">More</summary><div class="ann-more-menu"><button type="button" class="ann-btn alt sm" data-edit-prompt="logo">Brand logo</button></div></details>
         </div>
       </div>
-      <div class="ann-subbar">
-        <div class="ann-pages ann-modes" role="group" aria-label="Preview content">
-          <button type="button" class="ann-tab" data-preview-mode="showcase" aria-pressed="true">Style showcase</button>
-          <button type="button" class="ann-tab" data-preview-mode="store" aria-pressed="false">Your store</button>
-        </div>
+      <nav class="ann-pagebar" id="ann-pagebar" aria-label="Store preview pages">
+        <span class="ann-control-label" aria-hidden="true">Pages</span>
         <div class="ann-pages" id="ann-pages" role="group" aria-label="Page"></div>
-      </div>
+      </nav>
       <div class="ann-canvas" id="ann-canvas" data-device="desktop" data-tools="closed" data-updating="false"><i class="ann-sweep" aria-hidden="true"></i><p class="ann-updated" id="ann-updated" data-state="done" hidden></p><aside class="ann-tools" id="ann-tools" aria-label="Design workspace" hidden></aside><iframe id="ann-preview" sandbox="allow-same-origin" title="Live store preview" tabindex="0"></iframe></div>
       <p class="ann-note" id="ann-preview-note">Preview only. Sample imagery and prices are illustrative. Nothing here is published, and no products or orders are created.</p>
     </section>

@@ -8,6 +8,23 @@ const owner = "22222222-2222-4222-8222-222222222222";
 const data = { store: { store_id: id, name: "Example" }, role: "owner",
   settings: { brand_name: "Example", category: "fashion", subcategory: "mens-clothing" },
   products: [], collections: [], layouts: {}, policies: [], reviews: [] };
+test("Ann separates style choices and places page navigation immediately above the preview",async()=>{
+  const html=renderAnnBuilder(data);
+  const styles=html.indexOf('id="ann-style-tabs"');
+  const tools=html.indexOf('class="ann-bar"');
+  const pages=html.indexOf('id="ann-pagebar"');
+  const canvas=html.indexOf('id="ann-canvas"');
+  assert.ok(styles>=0&&styles<tools&&tools<pages&&pages<canvas);
+  assert.match(html,/<\/nav>\s*<div class="ann-canvas"/);
+  assert.match(html,/aria-labelledby="ann-style-label"/);
+  for(const selector of ['id="ann-open-browser"','data-ws-toggle','data-preview-mode="showcase"','data-preview-mode="store"','id="ann-pages"']){
+    assert.equal(html.split(selector).length-1,1,selector);
+  }
+  for(const device of ["desktop","mobile"])
+    assert.equal([...html.matchAll(new RegExp(`<button\\b[^>]*data-device="${device}"`,"g"))].length,1,`${device} button`);
+  const client=await readFile("src/public/ann-builder.js","utf8");
+  assert.match(client,/mount: \$\("#ann-pagebar"\) \|\| canvas/,"design status must be inserted before pages, not between pages and preview");
+});
 mock.module("../src/store/repository.js", { namedExports: { loadDraft: async () => structuredClone(data) } });
 const { handleBuilderRoutes } = await import("../src/store/builder-routes.js");
 function database({ ready = true, role = "owner" } = {}) {

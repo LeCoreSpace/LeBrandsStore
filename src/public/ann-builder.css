@@ -376,3 +376,39 @@ body.ann-browser-shell{margin:0;height:100dvh;display:flex;flex-direction:column
 .ann .ann-catalogue-tools .ann-btn{border-radius:10px;min-height:40px;font-weight:600}
 .ann .ann-catalogue-record{border-top-color:#e9e1e4;padding:10px 0}
 .ann .ann-catalogue-tools .ann-comp-row{gap:8px}
+
+/* Ann preview hierarchy: style choices, tools, design status, pages, canvas.
+   Host-scoped so the shared standalone theme editor remains unchanged. */
+.ann .ann-control-label{margin:0;font:600 11px/1.4 var(--sans);letter-spacing:.05em;color:var(--muted)}
+.ann .ann-style-picker{flex:none;display:grid;gap:9px;padding:14px 16px;background:#faf8f9;border-bottom:1px solid var(--line)}
+.ann .ann-stage .ann-style-picker .ann-styles{display:flex;flex:initial;flex-wrap:wrap;gap:6px;overflow:visible;padding:0;border-radius:0;background:transparent;order:initial}
+.ann .ann-stage .ann-style-picker .ann-tab{min-height:34px;padding:7px 12px;border:1px solid #e3dade;border-radius:7px;background:#fff;color:var(--muted);box-shadow:none}
+.ann .ann-stage .ann-style-picker .ann-tab:hover{border-color:#bca9b1;background:#f5eff2;color:var(--ink)}
+.ann .ann-stage .ann-style-picker .ann-tab[aria-pressed=true]{border-color:var(--a);background:#f1e5ea;color:var(--a);box-shadow:inset 0 0 0 1px var(--a)}
+.ann .ann-stage .ann-bar{flex:none;flex-wrap:wrap;gap:10px 16px;padding:11px 16px;background:#fff;border-bottom:1px solid var(--line)}
+.ann .ann-bar>.ann-modes{flex:none;gap:2px;padding:3px;border:0;border-radius:8px;background:#f5f1f3}
+.ann .ann-bar>.ann-modes .ann-tab{min-height:32px;border-radius:6px;padding:5px 12px}
+.ann .ann-bar-end{order:initial;width:auto;max-width:100%;flex-wrap:wrap;gap:6px}
+.ann .ann-bar-end .ann-device{border-radius:8px}
+.ann .ann-bar-end .ann-device button{border-radius:6px}
+.ann .ann-bar-end>.ann-btn.alt,.ann .ann-bar-end .ann-more summary{border-radius:7px;min-height:36px}
+.ann .ann-bar-end>#ann-open-browser{border-color:var(--line);color:var(--ink)}
+.ann .ann-bar-end>#ann-open-browser:hover{border-color:#bca9b1;background:#faf7f8}
+.ann .ann-design{flex:none;margin:0;padding:12px 16px}
+.ann .ann-design:empty{display:none}
+.ann .ann-design-card{border:1px solid #ece4e8;border-radius:9px;background:#fcfafb;padding:12px}
+.ann .ann-pagebar{display:flex;flex:none;align-items:center;gap:16px;min-width:0;padding:0 16px;background:#faf8f9;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.ann .ann-pagebar>.ann-control-label{flex:none}
+.ann .ann-pagebar .ann-pages{flex:1;min-width:0;flex-wrap:nowrap;gap:4px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:thin;border:0;padding:0}
+.ann .ann-pagebar .ann-tab{flex:none;min-height:42px;padding:10px 12px;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;color:var(--muted);white-space:nowrap}
+.ann .ann-pagebar .ann-tab:hover{background:#f2edf0;color:var(--ink)}
+.ann .ann-pagebar .ann-tab[aria-pressed=true]{border-bottom-color:var(--a);background:#f1e5ea;color:var(--a)}
+.ann .ann-pagebar .ann-tab:focus-visible{outline-offset:-3px}
+@media(max-width:600px){
+  .ann .ann-style-picker{padding:12px}
+  .ann .ann-stage .ann-bar{padding:10px 12px}
+  .ann .ann-bar-end{width:100%;margin-left:0}
+  .ann .ann-design{padding:10px 12px}
+  .ann .ann-pagebar{padding:0 12px;gap:10px}
+  .ann .ann-pagebar .ann-tab{min-height:44px}
+}

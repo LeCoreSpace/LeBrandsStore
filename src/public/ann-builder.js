@@ -134,7 +134,7 @@ const app = $("#ann-app");
 const say = t => { statusEl.textContent = t; };
 const config = () => annPreviewConfiguration(answers, { ...boot.settings, ...(boot.sessionResponse?.preview?.theme || {}) });
 let designUI = null, workspaceUI = null;
-designUI = attachAnnDesign({ api, root, readOnly, mount: canvas, say, contextual: true, getPreview: () => frame,
+designUI = attachAnnDesign({ api, root, readOnly, mount: $("#ann-pagebar") || canvas, say, contextual: true, getPreview: () => frame,
   sectionState: id => sectionInfo().meta.get(id) || null, onSectionAction: (id, act) => sectionAction(id, act),
   getAnswers: () => answers, getPreviewMode: () => previewMode, getBrand: () => boot.settings?.brand_name || boot.store?.name,
   getStyle: () => config().theme.style_preset,
