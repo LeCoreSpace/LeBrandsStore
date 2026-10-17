@@ -10,6 +10,7 @@ import { attachAuraMotion } from "./aura-motion.js";
 import { attachAnnApplication } from "./ann-application-ui.js";
 import { attachAnnOnboarding } from "./ann-onboarding-ui.js";
 import { attachAnnReplyFields } from "./ann-reply-fields.js";
+import {attachAnnLanguage} from "./ann-language.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { attachStoreEssentials, connectionHref } from "./store-essentials.js";
 import { openAnnBrowserPreview,browserPreviewLocation } from "./ann-browser-preview.js";
@@ -112,6 +113,7 @@ const obUIs = { brand: brandUI, gstin: gstUI, address: addressUI };
 const extrasNow = currentExtras(base.layouts);
 const bag = new Map((base.products || []).slice(0, 2).map(p => [p.id, 1]));
 const frame = $("#ann-preview"), canvas = $("#ann-canvas"), log = $("#ann-log"), foot = $("#ann-foot"), statusEl = $("#ann-status");
+attachAnnLanguage({root:log,select:$("#ann-language"),storageKey:`lebrands.ann.language.${boot.store.store_id}`,requested:new URL(location.href).searchParams.get("ann_lang")});
 $("#ann-open-browser")?.addEventListener("click",()=>{
   renderPreview();
   if(!openAnnBrowserPreview({data:current,theme:config().theme,page,productId,collectionId,policyKind,device:canvas.dataset.device,bag}))

@@ -219,3 +219,15 @@ standalone editor, and treat navigation as merchant-owned content when changing
 visual styles. Keep draft edits separate from publishing.
 Design workspace and contextual editor inputs stay local to those controls;
 chat-only typing applies to Ann's conversational questions, not design tools.
+
+Localize Ann's conversation only, starting with Hindi alongside English.
+Do not translate merchant-entered content, verified invoice identity, dashboard,
+design workspace, theme editor or storefront as a side effect.
+
+**Why:** The user requested Hindi first for the limited set of Ann-side
+conversations, rather than translating the application or launching five
+languages together.
+
+**How to apply:** Keep language preference separate from store draft data and
+use prepared copy for questions and warnings. Preserve identifiers, names,
+addresses and user answers exactly when changing conversation language.
