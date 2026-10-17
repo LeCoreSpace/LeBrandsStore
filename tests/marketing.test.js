@@ -75,7 +75,7 @@ test("homepage preserves the requested story, six native FAQ items, and honest a
     "We never market to your customers.","Simple monthly pricing. No commission, ever.",
     "Your brand is ready. Your store can be too.","LeBrandsSpace Digital Private Limited","Chennai"
   ])assert.ok(copy.includes(required),`Missing requested copy: ${required}`);
-  assert.equal((html.match(/<details\b/g)||[]).length,6);
+  assert.equal((html.match(/<details\b/g)||[]).length,7);
   assert.match(copy,/valid GSTIN is required to publish/i);
   assert.match(copy,/First publication requires platform approval/);
   assert.doesNotMatch(html,/id="integrations"|m-coming|Integrations and what's next/);

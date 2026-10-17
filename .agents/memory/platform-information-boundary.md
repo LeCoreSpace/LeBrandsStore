@@ -20,3 +20,9 @@ confirm every commercial policy.
 
 **How to apply:** Flag the need for qualified legal review before publication.
 Confirm business decisions before making additional binding commitments.
+
+Brands can set up payments, delivery and custom domains through their own dashboard. FAQ copy must not describe ordinary connection setup as contact-only or custom domains as unavailable in self-service.
+
+**Why:** The user explicitly clarified that brands configure these connections through their dashboard.
+
+**How to apply:** Keep public FAQ wording aligned with dashboard setup. Preserve provider verification and DNS requirements rather than promising immediate activation.

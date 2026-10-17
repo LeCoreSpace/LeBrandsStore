@@ -10,8 +10,9 @@ export const ACCOUNT_ROBOTS = "User-agent: *\nDisallow: /\n";
 export const PLATFORM_FAQ = [
   ["Do you take a commission?", "No. LeBrands.Store takes no commission on your sales."],
   ["Do I need GST registration?", "Yes. A valid GSTIN is required to publish. Your brand remains responsible for accurate business details and applicable taxes."],
-  ["How do payments work?", "Customers can pay with Cash on Delivery. Razorpay payments with your own account can be set up for your brand, so the money goes straight to you. Contact us to discuss your setup."],
-  ["Can I use my own domain?", "Your store starts at yourbrand.lebrands.store. Custom domains are not enabled in the self-serve setup."],
+  ["How do payments work?", "Set up Cash on Delivery and connect your brand’s own Razorpay account through your dashboard. Razorpay settles online payments to your brand’s account."],
+  ["How do I set up delivery?", "Set up delivery through your dashboard. Connect your own Shiprocket account, or manage shipping manually and add tracking details for your orders."],
+  ["Can I use my own domain?", "Yes. Your store starts at yourbrand.lebrands.store. You can connect your own custom domain through your dashboard by following the DNS setup and domain verification instructions."],
   ["Who owns my customer data?", "Your brand owns its customer data. We never market to your customers."],
   ["How long does setup take?", "Setup time varies with your product catalogue and business details. You complete a guided wizard, then first publication requires platform approval."],
 ];
