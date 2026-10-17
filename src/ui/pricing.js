@@ -11,6 +11,8 @@ const PLANS = [
 const Y = true, N = false;
 const SECTIONS = [
   { title: "Limits", rows: [
+    ["Buying-option types per product", "Up to 3", "Up to 3", "Up to 3", "Up to 3"],
+    ["Variants per product (within the plan's total SKU allowance)", "Up to 200", "Up to 200", "Up to 200", "Up to 200"],
     ["Orders a month (soft band, never blocks checkout)", "Up to 300", "Up to 1,500", "Up to 7,500", "Unlimited"],
     ["Staff accounts", "2", "5", "15", "Unlimited"],
     ["Commission on sales", "0%", "0%", "0%", "0%"],
@@ -87,7 +89,12 @@ const ADDONS = [
 ];
 
 const BILLING_TERMS = [
-  ["Free plan", "30 days free on your included yourbrand.lebrands.store address. Choose a paid plan to continue after 30 days."],
+  ["Free plan", "30 days free from your first successful store publication on your included yourbrand.lebrands.store address. Prepare your store before the live period begins. Choose a paid plan to continue after 30 days."],
+  ["Free catalogue allowance", "Up to 100 published products and 1,000 published SKUs in total. Each sellable combination counts as one SKU; a product without variations counts as one. A parent product is not counted again on top of its variants. Multiple collection placements do not add SKUs. Published out-of-stock variants count; drafts, archived variants and sample-preview products do not."],
+  ["Variant limits", "Up to 3 buying-option types and 200 variants per product, within your remaining store-wide SKU allowance. Descriptive specifications do not create SKUs."],
+  ["Paid catalogue allowances", "Paid SKU allowances are still to be finalised. The entry paid plan must support at least the Free plan's 1,000 SKUs, so upgrading does not require shrinking your catalogue."],
+  ["Free plan reminders and expiry", "Show remaining days and catalogue usage, with advance expiry reminders. Upgrade without rebuilding: preserve your design, products, media and URLs. Without an upgrade, pause new order-taking after expiry, but keep existing orders and fulfilment accessible. Data retention and draft inactivity limits will be disclosed before this offer is activated."],
+  ["Usage and partner costs", "AI generation, media storage and messaging have separate allowances to be finalised. Payment-provider, shipping and advertising charges are separate."],
   ["Custom domains", "Available on paid plans only. Custom domain integration is not included in the 30-day Free plan."],
   ["Founding members", "Discounted pricing for the first brands. Discount to be decided."],
   ["Billing", 'One GST invoice from LeBrandsSpace Digital Pvt Ltd, for example: "Grow plan (includes LeBrands.Space Premium)".'],
@@ -144,7 +151,7 @@ export function pricingMain() {
     <div class="m-pr-wrap">
       <p class="m-kicker">Proposed pricing</p>
       <h1 id="pricing-title">Pick the size of your flagship.</h1>
-      <p class="m-pr-lede">Start free for 30 days on your included store address. When you are ready, choose a paid plan to continue and connect your own domain. 0% commission on your sales.</p>
+      <p class="m-pr-lede">Build your complete store, then launch free for 30 days on your included store address. Choose a paid plan to continue and connect your own domain. 0% commission on your sales.</p>
     </div>
   </section>
   <section class="m-pr-plans" aria-label="Plans">
@@ -152,12 +159,17 @@ export function pricingMain() {
       <article class="m-pr-card m-pr-free" aria-labelledby="plan-Free">
         <div>
           <div class="m-pr-card-top"><h2 id="plan-Free">Free</h2><span class="m-pr-tag">30 days</span></div>
-          <p>Give your brand a place to start.</p>
+          <p>Build and launch your complete store free for 30 days.</p>
           <ul class="m-pr-free-features">
             <li>Build with Ann and customise in the theme editor.</li>
+             <li>Up to <strong>100 published products</strong> and <strong>1,000 published SKUs in total</strong>.</li>
+             <li>Up to 3 buying-option types and 200 variants per product, within the total SKU allowance.</li>
+             <li>Your 30 live days start with your first successful publication, not during store preparation.</li>
             <li>Use your included <strong>yourbrand.lebrands.store</strong> address.</li>
             <li>Custom domain integration is available on paid plans only.</li>
           </ul>
+          <p class="m-pr-note">Each sellable combination counts as one SKU. A product without variations counts as one.</p>
+          <p class="m-pr-note"><strong>Planned offer:</strong> catalogue limits, the publication-based timer and expiry controls are not implemented yet.</p>
         </div>
         <div class="m-pr-free-action">
           <p class="m-pr-price"><b>₹0</b><span>for 30 days</span></p>

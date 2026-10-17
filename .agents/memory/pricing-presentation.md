@@ -27,13 +27,16 @@ backgrounds with white; it does not change merchant theme presets.
 
 ## Billing terms
 
-- Free plan: 30 days on the included store address, with no custom domain integration. Custom domains require a paid plan.
+- Free plan: 30 live days beginning with the first successful publication, not store preparation. Included store address only; custom domains require a paid plan. Up to 100 published products and 1,000 published SKUs store-wide, with up to 3 buying-option types and 200 variants per product within that allowance. This replaces the discussed 10-product/50-SKU restriction.
+- SKU counting: each sellable combination counts once; a no-variation product counts as one. Do not add the parent again or count multiple collection placements. Published out-of-stock variants count; drafts, archived variants and sample previews do not.
+- Paid SKU allowances remain undecided, but the entry paid plan must accommodate at least 1,000 SKUs so upgrading does not require shrinking the Free catalogue.
+- Free expiry: show usage/remaining days and advance reminders; preserve designs, products, media and URLs on upgrade. Without an upgrade, pause new order-taking after expiry but preserve access to existing orders and fulfilment. Draft inactivity/retention and separate AI/media/messaging allowances must be disclosed before activation; partner costs remain separate.
 - Founding members: discounted price for the first brands (to decide).
 - Billing: one GST invoice from LeBrandsSpace Digital Pvt Ltd, e.g. "Grow plan (includes LeBrands.Space Premium)".
 - Upgrades / downgrades: Store and LeBrands.Space plans move together.
 - Non-payment: 7-day grace, then dashboard read-only, then store paused; data kept 90 days; LeBrands.Space plan returns to free registration.
 - Order band exceeded: upgrade prompt after 2 months over the band, checkout never blocked.
 
-**Why:** The user asked to remember these billing terms, then replaced the 14-day trial with a 30-day Free plan without custom domain integration.
+**Why:** The user asked to remember these billing terms, then chose a complete-store 30-day experience rather than a 50-SKU restriction and explicitly asked to put the proposal on pricing for later implementation.
 
-**How to apply:** Preserve these terms when implementing billing later. The founding-member discount remains to be decided.
+**How to apply:** Preserve these terms when implementing billing later. Pricing copy is a proposal, not enforcement: the publication-based timer, catalogue quotas and expiry controls still require implementation. The founding-member discount remains to be decided.

@@ -3,6 +3,14 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { renderPricing } from "../src/ui/marketing.js";
 
+test("pricing records the complete-store Free proposal without claiming enforcement is live", () => {
+  const html=renderPricing();
+  for(const term of ["100 published products","1,000 published SKUs in total","3 buying-option types","200 variants per product","first successful publication","not implemented yet","at least the Free plan's 1,000 SKUs","existing orders and fulfilment accessible","separate allowances to be finalised"]){
+    assert.ok(html.includes(term),`Missing agreed offer detail: ${term}`);
+  }
+  assert.doesNotMatch(html, /50 SKUs|10 published products/);
+});
+
 test("pricing leads with a 30-day Free offer, four paid cards and a separate comparison", () => {
   const html = renderPricing();
   assert.equal((html.match(/<article class="m-pr-card\b/g) || []).length, 5);
