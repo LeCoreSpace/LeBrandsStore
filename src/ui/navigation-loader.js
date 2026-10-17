@@ -8,7 +8,7 @@ export function navigationHead(){
   @keyframes lb-navigation-progress{from{transform:translateX(-100%)}to{transform:translateX(386%)}}
   @media(prefers-reduced-motion:reduce){#lb-navigation::before{animation:none;width:65%}}
   @media print{#lb-navigation{display:none!important}}
-  </style><script>(${navigationController.toString()})();</script>`;
+  </style><script>${NAVIGATION_SCRIPT}</script>`;
 }
 export const NAVIGATION_BODY='<div id="lb-navigation" role="status" aria-live="polite" aria-atomic="true"><span>Loading page…</span></div>';
 export function withNavigation(html){
@@ -16,7 +16,9 @@ export function withNavigation(html){
   return html.replace(/<\/head>/i,`${navigationHead()}</head>`).replace(/<body\b[^>]*>/i,body=>body+NAVIGATION_BODY);
 }
 
-export function navigationController(){
+// Keep browser source as literal text. Serializing a compiled function with
+// toString() can copy references to bundler helpers without their definitions.
+export const NAVIGATION_SCRIPT=String.raw`(()=>{
   const root=document.documentElement;
   let timer;
   const finish=()=>{
@@ -65,4 +67,4 @@ export function navigationController(){
   if(window.navigation){
     window.navigation.addEventListener("navigateerror",finish);
   }
-}
+})();`;

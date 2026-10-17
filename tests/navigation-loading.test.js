@@ -1,6 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {navigationController,navigationHead,NAVIGATION_BODY,withNavigation} from "../src/ui/navigation-loader.js";
+import {runInNewContext} from "node:vm";
+import {readFile} from "node:fs/promises";
+import {createRequire} from "node:module";
+import {NAVIGATION_SCRIPT,navigationHead,NAVIGATION_BODY,withNavigation} from "../src/ui/navigation-loader.js";
 import {layout} from "../src/ui/layout.js";
 
 test("navigation feedback starts immediately, respects intercepted/new-tab actions, and resets on return or cancellation",async()=>{
@@ -18,7 +21,7 @@ test("navigation feedback starts immediately, respects intercepted/new-tab actio
     href,getAttribute:key=>attrs[key]??null,hasAttribute:key=>Object.hasOwn(attrs,key),
   })},...extra});
   try{
-    navigationController();
+    runInNewContext(NAVIGATION_SCRIPT,{document,window,location,setTimeout,clearTimeout,URL,queueMicrotask});
     assert.equal(root.dataset.navigationLoading,"true");
     events.DOMContentLoaded();assert.equal(root.dataset.navigationLoading,undefined);
     for(const [attrs,extra,href] of [
@@ -46,6 +49,25 @@ test("navigation feedback starts immediately, respects intercepted/new-tab actio
   }finally{
     for(const key of keys){if(original[key])Object.defineProperty(globalThis,key,original[key]);else delete globalThis[key];}
   }
+});
+
+test("Worker-bundled inline navigation runs without relying on esbuild naming helpers",async()=>{
+  const require=createRequire(import.meta.url);
+  const {transform}=require(require.resolve("esbuild",{paths:[require.resolve("wrangler")]}));
+  const source=await readFile(new URL("../src/ui/navigation-loader.js",import.meta.url),"utf8");
+  const {code}=await transform(source,{format:"esm",platform:"node",keepNames:true,target:"es2022"});
+  const compiled=await import(`data:text/javascript;base64,${Buffer.from(code).toString("base64")}`);
+  const script=compiled.navigationHead().match(/<script>([\s\S]*?)<\/script>/)?.[1];
+  assert.ok(script);
+  assert.doesNotMatch(script,/\b__name\b/);
+  const root={dataset:{}},events={};
+  runInNewContext(script,{
+    document:{documentElement:root,querySelector:()=>null,addEventListener:(name,fn)=>events[name]=fn},
+    window:{addEventListener:()=>{}},setTimeout:()=>1,clearTimeout:()=>{},
+  });
+  assert.equal(root.dataset.navigationLoading,"true");
+  events.DOMContentLoaded();
+  assert.equal(root.dataset.navigationLoading,undefined);
 });
 
 test("shared account pages embed feedback without another blocking asset request",()=>{
