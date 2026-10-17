@@ -105,3 +105,14 @@ the original taxonomy; forcing a fit can mislabel ordinary merchant products.
 **How to apply:** Distinguish placement by function from material, certification,
 condition and legal sale eligibility. Cross-check ambiguous names against their
 actual meaning, not only their spelling or their older variant-profile family.
+
+Shared descriptor presets provide a vocabulary for merchant declarations, not
+verified product claims. Expanding coverage must never autofill merchant facts
+or establish tax, licence, medical or certification eligibility.
+
+**Why:** A global reference choice cannot prove the composition, safety,
+compatibility or regulatory status of a merchant's actual product.
+
+**How to apply:** Keep contextual facts separate from SKU choices and approval
+checks. Preserve existing context-specific enum meanings rather than merging
+same-label descriptors across unrelated categories.

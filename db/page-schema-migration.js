@@ -14,6 +14,13 @@ export function compilePageSchemaSnapshot(snapshot) {
   }]));
 }
 export async function preparePageMigration(filename, source) {
+  if (filename === "0028_d2c_descriptor_coverage.sql") {
+    const marker="__D2C_DESCRIPTOR_COVERAGE_V1__";
+    if(source.split(marker).length!==2)throw Error("Descriptor coverage marker must occur exactly once.");
+    const {d2cDescriptorSeed}=await import("./d2c-descriptor-seed.js");
+    const {sql}=await d2cDescriptorSeed();
+    return source.replace(marker,()=>sql);
+  }
   if (filename === "0027_d2c_food_profile_corrections.sql") {
     const marker="__D2C_MEMBERSHIP_PROFILE_CORRECTIONS_V1__";
     if(source.split(marker).length!==2)throw Error("Food profile correction marker must occur exactly once.");

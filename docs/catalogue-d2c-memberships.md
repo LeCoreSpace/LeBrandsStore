@@ -99,6 +99,10 @@ Generated reports are ignored by Git and deployment.
 
 ## Remaining phase boundaries
 
+The subsequent descriptor coverage phase is documented in
+[`catalogue-d2c-descriptors.md`](catalogue-d2c-descriptors.md). The notes below
+describe the original boundary of the membership import.
+
 Descriptors are not expanded in this phase. Existing descriptor definitions,
 values and links remain unchanged; comprehensive type-specific descriptor
 coverage is the next catalogue phase.

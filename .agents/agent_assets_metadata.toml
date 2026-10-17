@@ -602,3 +602,31 @@ mtime_ms = 1792242215703
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/13f22e5b-fc7c-49d6-8c63-147d73aa56a1/a85e934e-85b7-4391-aa39-224fe3b6ce5f"
 storage_version_token = "1792242341488935"
 content_type = "text/csv"
+
+[[outputs]]
+id = "3vlfGpF9C8n8sdp7k8UAE"
+uri = "file://generated-artifacts/d2c-descriptors/coverage.csv"
+type = "table"
+title = "Product descriptor coverage"
+description = "All 1,698 product types, their detail fields and descriptor counts."
+logical_id = "e163e188-c3c5-4da6-9122-d1f5d38aa680"
+content_hash = "sha256:662935e8c1ca35fd620f812cb1a141dfddf1443690abee5408c7ea31f04db9ac"
+size = 389330
+mtime_ms = 1792243721603
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/e163e188-c3c5-4da6-9122-d1f5d38aa680/60069fda-11e6-429b-84f1-3a604229b8fd"
+storage_version_token = "1792243912843983"
+content_type = "text/csv"
+
+[[outputs]]
+id = "_Fo5I2sPmU64BP9BvJJcb"
+uri = "file://generated-artifacts/d2c-descriptors/details.csv"
+type = "table"
+title = "Descriptor fields and preset values"
+description = "Product-type mappings, input types, units and allowed preset values."
+logical_id = "d9b05dc7-0259-4e4f-b503-d0c977b6dd45"
+content_hash = "sha256:020f38a3315985cd9938533d34834f9f7c1dd52d206d2bad9cbd20f29edf964d"
+size = 1488926
+mtime_ms = 1792243721691
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/d9b05dc7-0259-4e4f-b503-d0c977b6dd45/c154af70-ea8e-4058-b5bb-295258cb7f6b"
+storage_version_token = "1792243914361543"
+content_type = "text/csv"
