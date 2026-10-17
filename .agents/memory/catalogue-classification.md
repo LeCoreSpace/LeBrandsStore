@@ -60,3 +60,14 @@ silently replace previously chosen meanings while reference data is incomplete.
 **How to apply:** Keep this boundary identical in Ann, dashboard forms and save
 validation. Treat reference activation and merchant backfill as separately
 reviewed work, never as side effects of opening or saving a form.
+
+The user confirmed existing mapping proposals were reviewed and authorised
+reference population on 2026-10-17. Historical Phase 1 reports still say
+`needs_review`; that is their original audit status, not a reversal of approval.
+
+**Why:** Approval was given in conversation, not by rewriting the uploaded CSVs.
+
+**How to apply:** Consult the applied import manifest and current reference
+status rather than re-requesting approval of the same proposals. Missing
+memberships and attributes without an assigned role are distinct unresolved
+source gaps; approval does not supply those missing assignments.

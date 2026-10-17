@@ -14,6 +14,13 @@ export function compilePageSchemaSnapshot(snapshot) {
   }]));
 }
 export async function preparePageMigration(filename, source) {
+  if (filename === "0022_catalogue_reviewed_references.sql") {
+    const marker = "__CATALOGUE_REVIEWED_REFERENCES_V1__";
+    if (source.split(marker).length !== 2) throw new Error("Reviewed reference marker must occur exactly once.");
+    const { reviewedCatalogueSeed } = await import("./catalogue-reviewed-seed.js");
+    const { sql } = await reviewedCatalogueSeed();
+    return source.replace(marker, () => sql);
+  }
   if (filename === "0020_catalogue_masters.sql") {
     const marker = "__CATALOGUE_PRODUCT_TYPES_V1__";
     if (source.split(marker).length !== 2) throw new Error("Catalogue seed marker must occur exactly once.");
