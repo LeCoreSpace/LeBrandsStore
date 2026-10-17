@@ -88,41 +88,75 @@ export const PLATFORMS = [
   },
 ];
 
-// Concise differentiators for the comparison matrix. Unknown is not unavailable.
-// Order is the same as PLATFORMS. Prices/fees stay in the shared platform records.
+// The supplied differentiator list, excluding the monthly-sales cost scenario.
+// Keep current product facts and planned features distinct. Calculator prices
+// remain independently sourced in PLATFORMS, not copied from the brief.
 const cells = (...values) => Object.fromEntries(PLATFORMS.map((p, i) => [p.id, values[i]]));
 export const COMPARISON_ROWS = [
-  { section: "Build your store", label: "Who builds the store?", cells: cells("You, guided by Ann", "You, with AI + themes", "You, with templates", "Their team assists", "You, with themes") },
-  { section: "Build your store", label: "Outside hiring", cells: cells("Optional for custom work", "Optional; depends on scope", "Optional", "Setup team included", "Optional") },
-  { section: "Build your store", label: "Design control", cells: cells(`Inline edits; menus; ${AURA_STYLES.length} styles`, "Theme editor + apps", "Template editor", "Confirm customisation limits", "Theme editor on Growth+") },
-  { section: "Build your store", label: "Builder conversation languages", cells: cells("English, Hindi, Tamil, Marathi, Telugu", "Not verified", "Not verified", "Confirm with their team", "Not verified") },
-  { section: "Understand the cost", label: "Platform commission / fee", cells: cells("0%; gateway extra", "2% / 1% / 0.6% on prepaid*", "0%; gateway extra", "3% + GST on delivered orders", "4.99% to 0.99%; ₹200/order cap") },
-  { section: "Understand the cost", label: "Paid extras", cells: cells("Partner costs; plan scope proposed", "Apps, themes, POS add-ons", "Other Zoho licences separate", "Ad spend + operating costs", "Plugins vary by plan") },
-  { section: "Understand the cost", label: "Monthly subscription", cells: cells(
-    `Proposed: ${rupees(PLATFORMS[0].plans[0].monthly)}`,
-    `Basic: ${rupees(PLATFORMS[1].plans[0].monthly)}`,
-    `Standard: ${rupees(PLATFORMS[2].plans[0].monthly)}`,
-    "₹0 subscription; success fee",
-    "Free tier; paid monthly quote needed") },
-  { section: "Understand the cost", label: "Annual subscription upfront", cells: cells(
-    `Proposed Launch: ${rupees(PLATFORMS[0].plans[0].annual)}`,
-    `Basic: ${rupees(PLATFORMS[1].plans[0].annual)}`,
-    `Standard: ${rupees(PLATFORMS[2].plans[0].annual)}`,
-    "₹0 subscription; success fee",
-    `Starter: ${rupees(PLATFORMS[4].plans[1].annual)}`) },
-  { section: "Included tools", label: "COD and RTO tools", cells: cells("COD; RTO tools planned", "Manual COD supported", "Confirm COD / RTO tools", "RTO consulting; partial COD", "COD listed on Starter+") },
-  { section: "Included tools", label: "Conversion features", cells: cells("Review / trust sections; automation planned", "Theme features + apps", "Check features by plan", "Confirm included tools", "Check features by plan") },
-  { section: "Included tools", label: "Customer messaging", cells: cells("Order email; Arattai planned", "Email + apps; costs vary", "Confirm channels / licences", "Confirm channels / charges", "Confirm channels / charges") },
-  { section: "Included tools", label: "Integrations", cells: cells("GST check; provider activation required", "Large app / integration ecosystem", "Zoho ecosystem; check licences", "Team-managed setup", "Plugins vary by plan") },
-  { section: "Included tools", label: "Variant selling", cells: cells("Draft preparation only", "Check option / variant limits", "Check option / variant limits", "Confirm variant support", "Check option / variant limits") },
-  { section: "Included tools", label: "Store mobile app", cells: cells("Proposed add-on", "Confirm app service / cost", "Not verified", "Free Android app listed", "Not verified") },
-  { section: "Control your business", label: "Customer data", cells: cells("Brand-owned records; confirm export scope", "Confirm export scope / terms", "Confirm export scope / terms", "Confirm ownership / export", "Confirm export scope / terms") },
-  { section: "Control your business", label: "Payment / courier accounts", cells: cells("Your accounts; activation required", "Your providers / apps", "Your chosen integrations", "Confirm account ownership", "Own gateway options; check tier") },
-  { section: "Control your business", label: "Leaving / portability", cells: cells("Confirm export + domain portability", "Export tools; check scope", "Confirm export + domain transfer", "Confirm export + domain transfer", "Confirm export + domain transfer") },
-  { section: "Control your business", label: "Custom domain", cells: cells("Paid-plan proposal; not self-serve", "Supported; domain extra", "Supported; domain extra", "Confirm with their team", "Confirm eligible plan") },
-  { section: "Find customers", label: "Built-in discovery", cells: cells("Mall placement proposed", "Channels vary by region", "ONDC sales channel listed", "Managed paid advertising", "Confirm available channels") },
-  { section: "Find customers", label: "Who runs marketing?", cells: cells("You", "You or your agency", "You", "Their consulting team", "You") },
-  { section: "Find customers", label: "Selling in AI chats", cells: cells("Not verified", "AI channels listed; region limits", "Not verified", "Not verified", "Not verified") },
-  { section: "India and support", label: "India-specific setup", cells: cells("GST-verified onboarding + INR", "INR pricing; tax setup varies", "INR pricing; tax setup varies", "India-focused managed service", "India-focused store builder") },
-  { section: "India and support", label: "Support", cells: cells(`Proposed: ${PRICING_PLANS[0].support}`, "Plan-dependent; confirm SLA", "Plan-dependent; confirm SLA", "Team-assisted; confirm SLA", "Plan-dependent; confirm SLA") },
+  { section: "Build your store", label: "How easy to build", cells: cells(
+    "Ann asks questions. Pick answers and build your store with a live preview.",
+    "AI store from a prompt, then theme setup",
+    "Drag-and-drop builder, done yourself",
+    "Their team sets it up; confirm the timeline",
+    "Basic store in minutes from a phone") },
+  { section: "Build your store", label: "Who builds it", cells: cells(
+    "You, guided by Ann", "You or a hired agency", "You", "The platform's team", "You") },
+  { section: "Build your store", label: "Hiring needed", cells: cells(
+    "No", "Optional; depends on the work", "No", "No; setup team included", "No") },
+  { section: "Build your store", label: "Theme options", cells: cells(
+    `${AURA_STYLES.length} styles, with optional sections`,
+    "Free and paid themes in a large Theme Store",
+    "Ready templates",
+    "Multiple customisable themes advertised",
+    "7 free themes; 14+ on Growth (check current plan)") },
+  { section: "Build your store", label: "How much you can customise", cells: cells(
+    "Edit text, images and supported video; add or remove sections; inline theme editor",
+    "Extensive theme editing, code access and apps",
+    "Drag-and-drop editing within templates",
+    "Customisation advertised; confirm editing access",
+    "Theme editor on Growth and above") },
+  { section: "Understand the cost", label: "Commission on sales", cells: cells(
+    "0%; gateway charges separate",
+    "2% / 1% / 0.6% on online payments; 0% on COD",
+    "0%; gateway charges separate",
+    "3% + GST on delivered orders",
+    "4.99% to 0.99%; ₹200/order cap; manual orders excluded") },
+  { section: "Understand the cost", label: "Paid extras", cells: cells(
+    "Native store tools in proposed plans; partner charges separate",
+    "Paid apps and premium themes",
+    "Books, Inventory and CRM are separate products",
+    "Ad spend on top",
+    "More plugins on higher plans") },
+  { section: "Included tools", label: "COD and RTO tools", cells: cells(
+    "COD by default; returns reasons, RTO tracking and analysis planned",
+    "COD supported; RTO through apps",
+    "COD; confirm RTO analytics",
+    "Team-managed RTO; partial COD and early COD payout advertised",
+    "COD supported") },
+  { section: "Control your business", label: "You own customer data", cells: cells(
+    "Brand-owned records; confirm export scope",
+    "Yes; check export scope",
+    "Yes; check export scope",
+    "Not verified publicly",
+    "Yes; check export scope") },
+  { section: "Control your business", label: "Payment and courier accounts", cells: cells(
+    "Your own Razorpay and courier accounts; activation required",
+    "Your own gateway; couriers through apps",
+    "Your own gateway and shipping",
+    "Run through ShopDeck; confirm account ownership",
+    "Dukaan Pay or your Razorpay; Dukaan Delivery or your own") },
+  { section: "Find customers", label: "Built-in discovery", cells: cells(
+    "LeBrands.Space mall placement planned",
+    "Shop app; AI chat availability varies by region",
+    "No general marketplace; ONDC channel listed",
+    "Managed paid ads",
+    "No built-in discovery listed") },
+  { section: "Find customers", label: "Who runs marketing", cells: cells(
+    "You", "You or an agency", "You", "ShopDeck's team", "You") },
+  { section: "India and support", label: "Built for India", cells: cells(
+    "INR, GST-verified onboarding, COD by default",
+    "INR plans; GST invoicing and Indian payments may need setup or apps",
+    "INR; Chennai-based company",
+    "INR; focused on tier-2 and tier-3 sellers",
+    "INR; Hindi support") },
 ];

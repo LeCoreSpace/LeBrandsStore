@@ -83,6 +83,12 @@ test("Flagship starting prices stay quote-only and are never ranked as complete 
 test("differentiators are complete, grouped, concise rows with five platform columns", () => {
   const html = compareMain();
   const groups = [...new Set(COMPARISON_ROWS.map(r => r.section))];
+  assert.deepEqual(COMPARISON_ROWS.map(r => r.label), [
+    "How easy to build", "Who builds it", "Hiring needed", "Theme options",
+    "How much you can customise", "Commission on sales", "Paid extras",
+    "COD and RTO tools", "You own customer data", "Payment and courier accounts",
+    "Built-in discovery", "Who runs marketing", "Built for India",
+  ]);
   assert.equal(groups.length, 6);
   assert.equal((html.match(/scope="rowgroup"/g) || []).length, 6);
   for (const r of COMPARISON_ROWS) {
@@ -96,8 +102,10 @@ test("differentiators are complete, grouped, concise rows with five platform col
     }
   }
   assert.match(html, /GST-verified onboarding/);
-  assert.match(html, /Draft preparation only/);
-  assert.match(html, /Arattai planned/);
+  assert.match(html, /live preview/);
+  assert.match(html, /RTO tracking and analysis planned/);
+  assert.match(html, /LeBrands.Space mall placement planned/);
+  assert.doesNotMatch(html, /2 themes at launch|Monthly cost at|Monthly subscription<\/th>/);
 });
 
 test("calculator results remain tabular and escaped, without a monthly-cost comparison row", () => {
