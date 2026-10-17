@@ -6,6 +6,20 @@ The brand dashboard should feel like a dense, calm professional commerce admin,
 using LeBrands plum accents and system UI typography rather than editorial headings.
 Its visual identity is separate from the public Aura storefront and checkout.
 
+The dashboard must have its own visual design, navigation structure and naming,
+not reproduce Shopify's sidebar. Do not use “Growth” as a navigation label;
+use “Brand reach” for the proposed marketing group. Products and Collections
+remain separately visible as previously requested.
+
+**Why:** After sharing a Shopify screenshot, the user emphasised that neither
+the UI nor naming convention should reflect it, explicitly requested replacing
+Growth, and accepted the proposal separating dashboard operations from store
+pages, templates and shared catalogue records.
+
+**How to apply:** Create a distinct LeBrands sidebar and task-based hierarchy,
+not a recoloured Shopify layout. Keep proposed/unimplemented destinations
+clearly distinguished from working features.
+
 **Why:** The user requested a professional operational dashboard and later
 explicitly authorised changing its and the wizard's accent colour and LeBrands
 logo only to plum, with layout, behaviour, copy and test assertions unchanged.
