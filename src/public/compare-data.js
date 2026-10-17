@@ -14,7 +14,7 @@ export const PLATFORMS = [
     build: "Ann guides setup with conversations in English, Hindi, Tamil, Marathi and Telugu.",
     domain: "Included store address. Custom domains are proposed for paid plans; self-serve activation is not available.",
     marketing: "You run your own marketing. No promised traffic or sales.",
-    caution: "Buying options can be prepared as drafts, but variant checkout is not live. First publication requires approval.",
+    caution: "Variants can be prepared as drafts, but variant checkout is not live. First publication requires approval.",
     statusNote: "Commercial proposal, not active subscription billing. The proposed Free offer is 30 live days with no custom domain; the timer and quota enforcement are not enabled.",
     sourceUrl: "https://lebrands.store/pricing", checkedOn: CHECKED_ON, pricingVerified: true,
     plans: PRICING_PLANS.map(p => ({ name: p.name, monthly: p.monthlyFee, annual: p.annualFee, rate: 0, feeScope: "none", maxOrders: p.orderBand, from: p.name === "Flagship" })),
@@ -130,7 +130,7 @@ export const COMPARISON_ROWS = [
     "Drag-and-drop editing within templates",
     "Customisation advertised; confirm editing access",
     "Theme editor on Growth and above") },
-  { section: "Build your store", label: "Catalogue and buying options", cells: cells(
+  { section: "Build your store", label: "Catalogue and variants", cells: cells(
     "Shared Ann/dashboard forms: collections, tags, vendor, auto SKUs. Up to 3 options and 200 variants per product as drafts; variant checkout not live.",
     "Products and variants; check current plan limits",
     "Products, variants and variant inventory",

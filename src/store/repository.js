@@ -303,7 +303,7 @@ export async function publish(tx, id, live) {
       if(unseen)throw badInput("Open the full AI draft in the theme editor before publishing.");
     }
     const data = await loadDraft(tx, id), checklist = publishChecklist(data);
-    if(data.products.some(p=>p.variants?.length))throw badInput("Products with buying options can be prepared as drafts. SKU-level checkout must be enabled before publishing them.");
+    if(data.products.some(p=>p.variants?.length))throw badInput("Products with variants can be prepared as drafts. SKU-level checkout must be enabled before publishing them.");
     if(data.gstinVerification?.state==="blocked")throw badInput("An inactive or Composition GSTIN cannot publish.",{gstin:"Verify an active Regular registration."});
     if(data.gstinVerification?.state==="verified"&&!data.gstinVerification.confirmed)throw badInput("Confirm your verified registered supplier details before publishing.",{gstin:"Choose and confirm a registered address."});
     const gstErrors = businessGSTINErrors(data.settings);

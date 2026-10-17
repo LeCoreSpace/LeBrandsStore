@@ -1,5 +1,14 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-catalogue-writer-identity"){
+    return {staged:true,filename:"0025_catalogue_writer_identity.sql",requires:"0024_store_variant_values.sql"};
+  }
+  if(values.length===1&&values[0]==="--staged-d2c-variants"){
+    return {staged:true,filename:"0023_d2c_variant_profiles.sql",requires:"0022_catalogue_reviewed_references.sql"};
+  }
+  if(values.length===1&&values[0]==="--staged-store-variant-values"){
+    return {staged:true,filename:"0024_store_variant_values.sql",requires:"0023_d2c_variant_profiles.sql"};
+  }
   if(values.length===1&&values[0]==="--staged-catalogue-references"){
     return {staged:true,filename:"0022_catalogue_reviewed_references.sql",requires:"0021_catalogue_forms_api.sql"};
   }
@@ -37,5 +46,5 @@ export function migrationSelection(args) {
   if (values.length === 1 && values[0] === "--staged-starters") {
     return { staged: true, filename: "0015_aura_starter_library.sql", requires: "0012_aura_skeleton_sections.sql" };
   }
-  throw new Error("Use no arguments for regular migrations, --staged-gstin, --staged-aura, --staged-ai, --staged-email, --staged-starters, --staged-ann, --staged-launch, --staged-commerce, --staged-catalogue, --staged-catalogue-masters, --staged-catalogue-api or --staged-catalogue-references.");
+  throw new Error("Use no arguments for regular migrations, --staged-gstin, --staged-aura, --staged-ai, --staged-email, --staged-starters, --staged-ann, --staged-launch, --staged-commerce, --staged-catalogue, --staged-catalogue-masters, --staged-catalogue-api, --staged-catalogue-references, --staged-d2c-variants, --staged-store-variant-values or --staged-catalogue-writer-identity.");
 }

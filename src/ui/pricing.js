@@ -6,7 +6,7 @@ const mail = (plan) => `${MAIL}?subject=${encodeURIComponent(`Discuss the ${plan
 const Y = true, N = false;
 const SECTIONS = [
   { title: "Limits", rows: [
-    ["Buying-option types per product", "Up to 3", "Up to 3", "Up to 3", "Up to 3"],
+    ["Variant options per product", "Up to 3", "Up to 3", "Up to 3", "Up to 3"],
     ["Variants per product (within the plan's total SKU allowance)", "Up to 200", "Up to 200", "Up to 200", "Up to 200"],
     ["Orders a month (soft band, never blocks checkout)", "Up to 300", "Up to 1,500", "Up to 7,500", "Unlimited"],
     ["Staff accounts", "2", "5", "15", "Unlimited"],
@@ -86,7 +86,7 @@ const ADDONS = [
 const BILLING_TERMS = [
   ["Free plan", "30 days free from your first successful store publication on your included yourbrand.lebrands.store address. Prepare your store before the live period begins. Choose a paid plan to continue after 30 days."],
   ["Free catalogue allowance", "Up to 100 published products and 1,000 published SKUs in total. Each sellable combination counts as one SKU; a product without variations counts as one. A parent product is not counted again on top of its variants. Multiple collection placements do not add SKUs. Published out-of-stock variants count; drafts, archived variants and sample-preview products do not."],
-  ["Variant limits", "Up to 3 buying-option types and 200 variants per product, within your remaining store-wide SKU allowance. Descriptive specifications do not create SKUs."],
+  ["Variant limits", "Up to 3 product options and 200 variants per product, within your remaining store-wide SKU allowance. Descriptive specifications do not create SKUs."],
   ["Paid catalogue allowances", "Paid SKU allowances are still to be finalised. The entry paid plan must support at least the Free plan's 1,000 SKUs, so upgrading does not require shrinking your catalogue."],
   ["Free plan reminders and expiry", "Show remaining days and catalogue usage, with advance expiry reminders. Upgrade without rebuilding: preserve your design, products, media and URLs. Without an upgrade, pause new order-taking after expiry, but keep existing orders and fulfilment accessible. Data retention and draft inactivity limits will be disclosed before this offer is activated."],
   ["Usage and partner costs", "AI generation, media storage and messaging have separate allowances to be finalised. Payment-provider, shipping and advertising charges are separate."],
@@ -158,7 +158,7 @@ export function pricingMain() {
           <ul class="m-pr-free-features">
             <li>Build with Ann and customise in the theme editor.</li>
              <li>Up to <strong>100 published products</strong> and <strong>1,000 published SKUs in total</strong>.</li>
-             <li>Up to 3 buying-option types and 200 variants per product, within the total SKU allowance.</li>
+             <li>Up to 3 product options and 200 variants per product, within the total SKU allowance.</li>
              <li>Your 30 live days start with your first successful publication, not during store preparation.</li>
             <li>Use your included <strong>yourbrand.lebrands.store</strong> address.</li>
             <li>Custom domain integration is available on paid plans only.</li>

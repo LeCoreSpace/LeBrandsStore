@@ -14,12 +14,12 @@ export function validateCatalogue(value){
   if(!object(value)||Object.keys(value).some(k=>!["vendor","category","subcategory","axes","seo_title","seo_description"].includes(k)))fail("Use the catalogue details form.");
   const out={};
   for(const [key,max] of Object.entries({vendor:120,category:80,subcategory:80,seo_title:70,seo_description:160}))out[key]=text(value[key]??"",max,key.replaceAll("_"," "));
-  if(!Array.isArray(value.axes??[])||(value.axes??[]).length>MAX_AXES)fail("Choose up to three buying-option types.");
+  if(!Array.isArray(value.axes??[])||(value.axes??[]).length>MAX_AXES)fail("Choose up to three product options for variants.");
   const names=new Set();
   out.axes=(value.axes??[]).map(axis=>{
-    if(!object(axis)||Object.keys(axis).some(k=>!["name","values"].includes(k)))fail("Check each buying-option type.");
+    if(!object(axis)||Object.keys(axis).some(k=>!["name","values"].includes(k)))fail("Check each variant option.");
     const name=text(axis.name,60,"option name");
-    if(!name||names.has(name.toLowerCase()))fail("Give each buying-option type a different name.");
+    if(!name||names.has(name.toLowerCase()))fail("Give each variant option a different name.");
     names.add(name.toLowerCase());
     if(!Array.isArray(axis.values)||!axis.values.length||axis.values.length>50)fail("Add between 1 and 50 values to each option.");
     const values=axis.values.map(v=>text(v,80,"option value"));
@@ -50,7 +50,7 @@ export function reconcileVariants(axes,existing=[],baseSKU=""){
 }
 export function validateVariants(rows,catalogue){
   const axes=validateCatalogue(catalogue).axes,combinations=variantCombinations(axes);
-  if(!Array.isArray(rows)||rows.length>MAX_VARIANTS||rows.length!==combinations.length)fail("Generate and complete every buying-option combination.");
+  if(!Array.isArray(rows)||rows.length>MAX_VARIANTS||rows.length!==combinations.length)fail("Generate and complete every variant.");
   const allowed=new Set(combinations.map(v=>JSON.stringify(v))),seen=new Set(),skus=new Set(),ids=new Set();
   let stockTotal=0;
   return rows.map(row=>{

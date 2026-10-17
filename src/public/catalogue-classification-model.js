@@ -21,15 +21,15 @@ export function validateClassification(value) {
     if (value.clear !== true || Object.keys(value).some(k => !["clear", "expected_revision"].includes(k))) fail("Check the classification reset.");
     return { clear: true, expected_revision: revision };
   }
-  if (!Array.isArray(value.options) || value.options.length > 3) fail("Choose up to three buying-option types.");
+  if (!Array.isArray(value.options) || value.options.length > 3) fail("Choose up to three product options for variants.");
   if (!Array.isArray(value.descriptors) || value.descriptors.length > 1000) fail("Check the product details.");
   const options = value.options.map(option => {
     keys(option, ["option_id", "value_ids"]);
     const values = ids(option.value_ids);
-    if (values.length > 50) fail("Choose up to 50 values per buying option.");
+    if (values.length > 50) fail("Choose up to 50 values per variant option.");
     return { option_id: id(option.option_id), value_ids: values };
   });
-  if (new Set(options.map(o => o.option_id)).size !== options.length) fail("Choose each buying-option type only once.");
+  if (new Set(options.map(o => o.option_id)).size !== options.length) fail("Choose each variant option only once.");
   if (options.reduce((n, o) => n * o.value_ids.length, 1) > 200) fail("Use at most 200 combinations per product.");
   const descriptors = value.descriptors.map(field => {
     keys(field, ["descriptor_id", "value_ids", "text_value", "number_value", "boolean_value"]);

@@ -12,6 +12,7 @@ import {
 } from "./repository.js";
 import { audit, syncPublishedProducts, dashboardAccess } from "../dashboard/repository.js";
 import { saveCollection, deleteCollection } from "./catalog.js";
+import {addStoreVariantValue} from "./catalogue-variant-values.js";
 
 export const isStoreRoute = (path) => /^\/(?:api\/)?stores\/(?!new(?:\/|$))[^/]+(?:\/|$)/.test(path);
 const json = (value, status = 200) => new Response(JSON.stringify(value), {
@@ -20,7 +21,7 @@ const json = (value, status = 200) => new Response(JSON.stringify(value), {
 const unavailable = () => Object.assign(new Error("Store services are temporarily unavailable. Please try again."), { status: 503 });
 export async function handleStoreRoutes(request, env, db, user, tokenHash) {
   const url = new URL(request.url), api = url.pathname.startsWith("/api/");
-  const match = url.pathname.match(/^\/(?:api\/)?stores\/([^/]+)\/(setup|products|collections|media|policies|publish|unpublish)(?:\/([^/]+))?$/);
+  const match = url.pathname.match(/^\/(?:api\/)?stores\/([^/]+)\/(setup|products|collections|media|policies|publish|unpublish|catalogue)(?:\/([^/]+))?$/);
   if (!match || !UUID.test(match[1])) return json({ error: "Page not found." }, 404);
   if (!user || user.must_change_password) return json({ error: "Sign in and complete any required password change first." }, 401);
   const [, id, action, child] = match;
@@ -41,14 +42,18 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
     const verb = request.method;
     const route = `${verb} ${action}${child ? "/child" : ""}`;
     const supported = [
-      "GET setup", "PATCH setup", "POST products", "PATCH products/child", "DELETE products/child",
+      "GET setup", "PATCH setup", "POST products", "PATCH products/child", "DELETE products/child", "POST catalogue/child",
       "GET collections", "POST collections", "PATCH collections/child", "DELETE collections/child",
       "GET media", "POST media", "PATCH media/child", "PUT policies/child", "POST policies/child", "POST publish", "POST unpublish",
     ];
-    if (!supported.includes(route) || (["products", "collections"].includes(action) && child && !UUID.test(child)) ||
+    if (!supported.includes(route) || (action==="catalogue"&&child!=="variant-values") || (["products", "collections"].includes(action) && child && !UUID.test(child)) ||
       (action === "policies" && verb === "POST" && child !== "generate")) return json({ error: "Method or page not available." }, 405);
     // Authorize before reading or storing an upload. No bytes reach R2 for outsiders.
     const result = await db.withMemberStore(id, tokenHash, async (tx) => {
+      if(action==="catalogue"){
+        await dashboardAccess(tx,id,user.id,true);
+        return addStoreVariantValue(tx,id,tokenHash,await readJson(request));
+      }
       if (action === "collections") {
         await dashboardAccess(tx, id, user.id, verb !== "GET");
         if (route === "GET collections") return { collections: (await loadDraft(tx, id)).collections || [] };
@@ -104,7 +109,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         if(patch.variants?.length&&child){
           const [record]=await tx`SELECT p.status AS product_status,s.status AS store_status FROM public.products p
             JOIN public.stores s ON s.store_id=p.store_id WHERE p.store_id=${id} AND p.id=${child}`;
-          if(record?.product_status==="active"&&record?.store_status==="live")throw badInput("Buying options are draft preparation until SKU-level checkout is enabled. Add them to a draft product rather than changing a live listing.");
+          if(record?.product_status==="active"&&record?.store_status==="live")throw badInput("Variants are draft preparation until SKU-level checkout is enabled. Add them to a draft product rather than changing a live listing.");
         }
         if (child && expected !== undefined && patch.stock !== undefined) {
           if (expected !== null && (!Number.isInteger(expected) || expected < 0)) throw badInput("Invalid stock revision.");

@@ -65,15 +65,15 @@ export function initCatalogueReference(scope, { url, onChange, defaults = {}, fe
       || options.some(o => !o || o.id == null || !o.name || !Array.isArray(o.values) || o.values.some(v => typeof v?.value !== "string"))
       || descriptors.some(d => !d || d.id == null || !d.name || !Array.isArray(d.values || [])))
       throw new Error("The product type reference is incomplete. Please retry.");
-    return { enabled: true, product_types: types, product_type: raw.product_type || null, options, descriptors: descriptors.map(d => ({ ...d, values: d.values || [] })) };
+    return { enabled: true, custom_values_enabled: raw.custom_values_enabled === true, product_types: types, product_type: raw.product_type || null, options, descriptors: descriptors.map(d => ({ ...d, values: d.values || [] })) };
   }
   async function attributes() {
     const attempt = ++token;
     const parent = findReference(reference.categories, category.value);
     const sub = findReference(reference.subcategories.filter(s => Number(s.category_id) === Number(parent?.category_id)), subcategory.value);
     const ids = { categoryId: parent ? Number(parent.category_id) : null, subcategoryId: sub ? Number(sub.subcategory_id) : null };
-    if (!sub) { paintTypes([]); emit({ status: "empty", attributes: [], catalogue: noCatalogue, ...ids }, "Choose a category and subcategory to see their buying options."); return; }
-    emit({ status: "loading", attributes: [], catalogue: noCatalogue, ...ids }, "Loading buying options…");
+    if (!sub) { paintTypes([]); emit({ status: "empty", attributes: [], catalogue: noCatalogue, ...ids }, "Choose a category and subcategory to see their product options."); return; }
+    emit({ status: "loading", attributes: [], catalogue: noCatalogue, ...ids }, "Loading product options…");
     const fetchScope = async typeId => {
       const key = `${sub.subcategory_id}:${typeId}`;
       return cache.get(key) || get(`${url}?subcategory_id=${encodeURIComponent(sub.subcategory_id)}&catalogue=1${typeId ? `&product_type_id=${encodeURIComponent(typeId)}` : ""}`).then(b => ({ key, b }));
@@ -98,8 +98,8 @@ export function initCatalogueReference(scope, { url, onChange, defaults = {}, fe
       pending.push(hit);
       if (!Array.isArray(body.attributes) || body.attributes.some(a => !a.name || !Array.isArray(a.values) || a.values.some(v => typeof v.value !== "string"))) throw new Error("The product option reference is incomplete. Please retry.");
       pending.forEach(p => p.key && cache.set(p.key, p.b));
-      let message = body.attributes.length ? "Choose your buying options and the values you sell." : "No predefined buying options for this subcategory.";
-      if (catalogue.enabled) message = !catalogue.product_types.length ? "Product types for this subcategory are pending approval." : catalogue.product_type ? "Choose your buying options and product details." : "Choose a product type to see its buying options and details.";
+      let message = body.attributes.length ? "Choose your product options and the values you sell." : "No predefined product options for this subcategory.";
+      if (catalogue.enabled) message = !catalogue.product_types.length ? "Product types for this subcategory are pending approval." : catalogue.product_type ? "Choose your product options and product details." : "Choose a product type to see its product options and details.";
       emit({ status: "ready", attributes: body.attributes, catalogue, ...ids }, message);
     } catch (error) {
       if (attempt === token) emit({ status: "error", attributes: [], catalogue: noCatalogue, ...ids }, error.message);

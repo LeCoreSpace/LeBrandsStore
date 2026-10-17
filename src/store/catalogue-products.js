@@ -10,7 +10,7 @@ export async function catalogueFormsEnabled(tx){
 export async function saveProductCatalogue(tx,storeId,productId,patch,existing,tokenHash){
   if(patch.catalogue===undefined&&patch.variants===undefined&&patch.collection_ids===undefined&&patch.classification===undefined)return;
   if(patch.catalogue!==undefined||patch.variants!==undefined||patch.classification!==undefined){
-    if(!await catalogueFormsEnabled(tx))throw Object.assign(new Error("Apply the catalogue forms database update before saving buying options or catalogue details."),{status:409});
+    if(!await catalogueFormsEnabled(tx))throw Object.assign(new Error("Apply the catalogue forms database update before saving variants or catalogue details."),{status:409});
     let catalogue=validateCatalogue(patch.catalogue??existing?.catalogue??{});
     let classification=patch.classification;
     if(classification===undefined&&existing?.product_type_id){
@@ -23,7 +23,7 @@ export async function saveProductCatalogue(tx,storeId,productId,patch,existing,t
       await writeClassification(tx,storeId,productId,tokenHash,classification,"prepare");
     }
     const saved=await tx`SELECT * FROM public.product_options WHERE store_id=${storeId} AND product_id=${productId} ORDER BY sort_order,id FOR UPDATE`;
-    if(patch.variants===undefined&&JSON.stringify(catalogue.axes)!==JSON.stringify(existing?.catalogue?.axes||[]))throw badInput("Generate and save the buying-option combinations together.");
+    if(patch.variants===undefined&&JSON.stringify(catalogue.axes)!==JSON.stringify(existing?.catalogue?.axes||[]))throw badInput("Generate and save the variants together.");
     if(patch.variants!==undefined){
       const variants=validateVariants(patch.variants,catalogue),ids=new Set();
       for(const row of variants){

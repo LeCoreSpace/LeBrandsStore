@@ -6,7 +6,7 @@ export const COMPARE_FAQ = [
   { q: "Are the prices verified?", a: "Each platform is marked verified or not verified with the date it was checked against its official source. Unknown values are shown as quote only, never as zero." },
   { q: "Are LeBrands.Store plans live?", a: "No. The plans are proposed and automated billing is not enabled. The proposed Free plan is 30 live days on your included address, without a custom domain. The timer is not shipped yet." },
   { q: "Which languages does Ann support?", a: "Ann's guided conversations support English, Hindi, Tamil, Marathi and Telugu. This does not translate your storefront, product content or partner dashboards." },
-  { q: "Are product variants ready for checkout?", a: "Buying options, variant SKUs and quantities can be prepared in the shared product form in Ann and the dashboard. Variant checkout is not enabled yet, so products with buying options cannot currently be published." },
+  { q: "Are product variants ready for checkout?", a: "Variants, SKUs and quantities can be prepared in the shared product form in Ann and the dashboard. Variant checkout is not enabled yet, so products with variants cannot currently be published." },
   { q: "Which costs are separate?", a: "Payment gateway charges, shipping, advertising, applicable taxes and partner services are separate. Check each provider's current terms and plan limits." },
 ];
 

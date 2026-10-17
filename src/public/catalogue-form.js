@@ -2,6 +2,7 @@
 import { initCatalogueReference, attributeFor, referenceAxesAllowed } from "./catalogue-reference.js";
 import { validateClassification } from "./catalogue-classification-model.js";
 import { initDescriptorState, applyDescriptorInput, renderDescriptors, renderSavedSummary, buildClassification, PENDING_NOTICE } from "./catalogue-classification-ui.js";
+import { submitCustomValue, insertValue, variantValuesUrl, nextRequestToken, applyCustomResult, isReadOnlyScope } from "./catalogue-custom-values.js";
 import { createProductSku } from "./catalogue-model.js";
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const instances = new WeakMap();
@@ -99,9 +100,9 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     const n = comboCount(axes);
     let text = "";
     if (problem) text = problem;
-    else if (n > maxVariants) text = `${n.toLocaleString("en-IN")} combinations is over the limit of ${maxVariants}. Remove values or an option.`;
-    else if (!axes.length) text = stale ? "Generating will remove the existing combinations." : "";
-    else text = `${n.toLocaleString("en-IN")} ${n === 1 ? "combination" : "combinations"} from these options.${stale ? " Generate to update the table before saving." : ""}`;
+    else if (n > maxVariants) text = `${n.toLocaleString("en-IN")} variants is over the limit of ${maxVariants}. Remove values or an option.`;
+    else if (!axes.length) text = stale ? "Generating will remove the existing variants." : "";
+    else text = `${n.toLocaleString("en-IN")} ${n === 1 ? "variant" : "variants"} from these options.${stale ? " Generate to update the table before saving." : ""}`;
     node.textContent = text;
     node.dataset.tone = problem || n > maxVariants ? "error" : stale ? "pending" : "ok";
     box.querySelector("[data-axis-add]").disabled = state.axes.length >= maxAxes || reference.status !== "ready" || !choices().some(a => !state.axes.some(p => p.name === a.name));
@@ -110,6 +111,29 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     box.querySelectorAll("[data-add-reference-axis]").forEach(button => {
       button.disabled = state.axes.length >= maxAxes || state.axes.some(a => a.name === button.dataset.addReferenceAxis);
     });
+  }
+  const customOn = () => typed() && cat().custom_values_enabled === true && reference.status === "ready" && !!variantValuesUrl(referenceUrl) && !isReadOnlyScope(box);
+  const scopeKey = () => [typeValue(), field("catalogue_category")?.value || "", field("catalogue_subcategory")?.value || ""].join("|");
+  function customEditor(a, i, current) {
+    if (!customOn() || !current) return "";
+    const id = `lb-custom-${i}`;
+    return `<div class="lb-custom-value" data-custom-wrap><label class="lb-field" for="${id}">Add your own ${esc(a.name)} value</label><div class="lb-custom-row"><input id="${id}" type="text" data-custom-value maxlength="200" autocomplete="off" value="${esc(a.draft || "")}" aria-describedby="${id}-note ${id}-err"${a.pending ? " disabled" : ""}><button type="button" class="lb-button lb-button-outline lb-button-small" data-custom-add${a.pending ? " disabled" : ""}>${a.pending ? "Adding…" : "Add value"}</button></div><small id="${id}-note">Saved for this store and this product type only. Brand, model, size or shade values you add here are not shared as global choices.</small><p class="lb-custom-error" id="${id}-err" role="alert"${a.customError ? "" : " hidden"}>${esc(a.customError || "")}</p></div>`;
+  }
+  async function addCustom(i) {
+    const a = state.axes[i], current = a && attributeFor(choices(), a.name);
+    if (!a || a.pending || !current || !customOn()) return;
+    if (isReadOnlyScope(box)) return;
+    const key0 = scopeKey(), name = a.name, text = a.draft || "";
+    const token = nextRequestToken();
+    a.pending = true; a.req = token; a.customError = ""; paintAxes(); box.querySelector(`[data-axis="${i}"] [data-custom-add]`)?.focus?.();
+    const r = await submitCustomValue({ fetcher: globalThis.fetch.bind(globalThis), url: variantValuesUrl(referenceUrl), productTypeId: Number(typeValue()), optionId: current.id, text, scopeKey: key0, currentScopeKey: scopeKey, option: current });
+    const out = applyCustomResult({ axes: state.axes, axis: a, token, name, result: scopeKey() === key0 ? r : { status: "stale" }, text });
+    if (!out.live) { paintAxes(); return; }
+    if (r.status !== "error") { insertValue(cat(), current.id, r.value); showError(""); }
+    paintAxes();
+    const at = state.axes.indexOf(a);
+    box.querySelector(`[data-axis="${at}"] [data-custom-value]`)?.focus();
+    if (r.status !== "error") notify(r.status === "reused" ? `${r.value.value} already exists and is selected.` : `${r.value.value} added for this product type. Generate variants to update the table.`);
   }
   function paintAxes() {
     const available = box.querySelector("[data-available-axes]");
@@ -122,6 +146,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
       return `<fieldset class="lb-axis" data-axis="${i}"><legend>Option ${i + 1}</legend>
       <label class="lb-field">Option<select data-axis-name${reference.status !== "ready" ? " disabled" : ""}><option value="">Choose an option</option>${a.name && !current ? `<option value="${esc(a.name)}" selected>${esc(a.name)} (saved)</option>` : ""}${choices().map(at => `<option value="${esc(at.name)}"${at.name === a.name ? " selected" : ""}${at.name !== a.name && state.axes.some(x => x.name === at.name) ? " disabled" : ""}>${esc(at.name)}</option>`).join("")}</select></label>
       <div class="lb-check-list" role="group" aria-label="${esc(a.name || "Option")} values">${values.map(value => `<label class="lb-check-input"><input type="checkbox" data-axis-choice value="${esc(value)}"${a.values.includes(value) ? " checked" : ""}>${esc(value)}${!current?.values.some(v => v.value === value) ? " (saved value)" : ""}</label>`).join("") || '<span class="lb-muted">Choose an option to see its values.</span>'}</div>
+      ${customEditor(a, i, current)}
       <button type="button" class="lb-text-button" data-axis-remove aria-label="Remove option ${i + 1}">Remove option</button></fieldset>`;
     }).join("");
     paintCount();
@@ -145,8 +170,9 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     const axis = event.target.closest("[data-axis]");
     if (axis) {
       const a = state.axes[Number(axis.dataset.axis)];
+      if (event.target.matches("[data-custom-value]")) { a.draft = event.target.value; return; }
       if (event.target.matches("[data-axis-name]")) {
-        if (a.name !== event.target.value) { a.name = event.target.value; a.values = []; }
+        if (a.name !== event.target.value) { a.name = event.target.value; a.values = []; a.draft = ""; a.customError = ""; a.pending = false; a.req = 0; }
         paintAxes();
         box.querySelector(`[data-axis="${axis.dataset.axis}"] select`)?.focus();
       }
@@ -161,7 +187,11 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     if (event.target.matches("[data-v-price]")) r.price_paise = rupeesToPaise(event.target.value);
     showError("");
   });
+  box.addEventListener("keydown", event => {
+    if (event.key === "Enter" && event.target.matches?.("[data-custom-value]")) { event.preventDefault(); event.stopPropagation(); addCustom(Number(event.target.closest("[data-axis]").dataset.axis)); }
+  });
   box.addEventListener("click", event => {
+    if (event.target.closest("[data-custom-add]")) { addCustom(Number(event.target.closest("[data-axis]").dataset.axis)); return; }
     const suggested = event.target.closest("[data-add-reference-axis]");
     if (suggested) {
       const name = suggested.dataset.addReferenceAxis;
@@ -182,7 +212,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     const problem = axisProblems();
     if (problem) { showError(problem); return false; }
     const axes = cleanAxes(), n = comboCount(axes);
-    if (n > maxVariants) { showError(`This would create ${n.toLocaleString("en-IN")} combinations. A product can have at most ${maxVariants}.`); return false; }
+    if (n > maxVariants) { showError(`This would create ${n.toLocaleString("en-IN")} variants. A product can have at most ${maxVariants}.`); return false; }
     const base = getBaseSku() || ensureProductSku(scope);
     let catalogue;
     try { catalogue = model.validateCatalogue({ ...identity(), axes }); } catch (e) { showError(e.message); return false; }
@@ -194,8 +224,8 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     const added = next.filter(r => !byKey.has(key(r.values))).length;
     const kept = next.length - added;
     if (dropped.length || (n >= 25 && added)) {
-      const parts = [`This will create ${n.toLocaleString("en-IN")} combinations: ${kept} kept, ${added} new.`];
-      if (dropped.length) parts.push(`${dropped.length} existing ${dropped.length === 1 ? "combination" : "combinations"} will be removed with their SKU, stock and price entries when you save.`);
+      const parts = [`This will create ${n.toLocaleString("en-IN")} variants: ${kept} kept, ${added} new.`];
+      if (dropped.length) parts.push(`${dropped.length} existing ${dropped.length === 1 ? "variant" : "variants"} will be removed with their SKU, stock and price entries when you save.`);
       if (!confirm(parts.join(" ") + " Continue?")) return false;
     }
     state.rows = next.map(r => {
@@ -205,7 +235,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     state.legacy = false;
     state.generated = axesKey();
     showError(""); paint();
-    notify(n ? `${n} ${n === 1 ? "combination" : "combinations"} ready.` : "Buying options cleared.");
+    notify(n ? `${n} ${n === 1 ? "variant" : "variants"} ready.` : "Variants cleared.");
     return true;
   }
 
@@ -223,7 +253,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   function payload() {
     const problem = axisProblems();
     if (problem) throw new Error(problem);
-    if (axesKey() !== state.generated) throw new Error("Buying options changed. Generate combinations to update the variant table before saving.");
+    if (axesKey() !== state.generated) throw new Error("Variants changed. Generate variants to update the variant table before saving.");
     const search = readSearchFields(scope);
     if (state.legacy) {
       // Keep older variant rows exactly as saved; send identity and SEO only.
@@ -251,7 +281,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     const wrap = box.querySelector("[data-descriptors-wrap]"), host = box.querySelector("[data-descriptors]");
     let text = "";
     if (c.enabled && reference.status === "ready" && !c.product_types.length) text = PENDING_NOTICE;
-    else if (c.enabled && reference.status === "ready" && !typeValue() && !legacyProduct) text = "Choose a product type to unlock its buying options and details.";
+    else if (c.enabled && reference.status === "ready" && !typeValue() && !legacyProduct) text = "Choose a product type to unlock its product options and details.";
     else if (!c.enabled && reference.status === "ready" && reference.catalogue) text = "Product types need the catalogue update to be applied before they can be used.";
     if (notice) { notice.textContent = text; notice.hidden = !text; }
     const show = typed() && c.descriptors.length > 0;
@@ -272,7 +302,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     if (t !== lastType) { descByType.set(lastType, desc); lastType = t; desc = descByType.get(t) || initDescriptorState(t === initialType ? initialCls : null); }
     paintClassification();
     const status = box.querySelector("[data-buying-status]");
-    if (status) status.textContent = next.message || "Choose a category and subcategory in Organisation to see buying options.";
+    if (status) status.textContent = next.message || "Choose a category and subcategory in Organisation to see product options.";
     const retry = box.querySelector("[data-buying-retry]");
     if (retry) retry.hidden = next.status !== "error";
     paintAxes();

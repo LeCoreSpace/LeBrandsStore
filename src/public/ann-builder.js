@@ -699,7 +699,7 @@ function productsStep() {
   return out.join("");
 }
 function ideaCard(p, i, st) {
-  // Buying options belong to the shared product form, not conversation notes.
+  // Variants belong to the shared product form, not conversation notes.
   // Previously saved idea attributes remain in the plan without being rewritten.
   const attrs = "";
   return `<fieldset class="ann-item"><legend>Idea ${i + 1}</legend>

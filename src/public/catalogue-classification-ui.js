@@ -4,7 +4,7 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const arr = v => Array.isArray(v) ? v : [];
 const posInt = v => Number.isInteger(Number(v)) && Number(v) > 0 && String(v).trim() !== "" ? Number(v) : null;
 
-export const PENDING_NOTICE = "Product types for this subcategory are pending approval. Buying options and product details open up once a type is approved. Your product still saves without them.";
+export const PENDING_NOTICE = "Product types for this subcategory are pending approval. Variants and product details open up once a type is approved. Your product still saves without them.";
 
 export function initDescriptorState(classification) {
   const out = {};

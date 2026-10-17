@@ -14,6 +14,13 @@ export function compilePageSchemaSnapshot(snapshot) {
   }]));
 }
 export async function preparePageMigration(filename, source) {
+  if (filename === "0023_d2c_variant_profiles.sql") {
+    const marker="__D2C_VARIANT_PROFILES_V1__";
+    if(source.split(marker).length!==2)throw Error("Variant profile marker must occur exactly once.");
+    const {d2cVariantSeed}=await import("./d2c-variant-seed.js");
+    const {sql}=await d2cVariantSeed();
+    return source.replace(marker,()=>sql);
+  }
   if (filename === "0022_catalogue_reviewed_references.sql") {
     const marker = "__CATALOGUE_REVIEWED_REFERENCES_V1__";
     if (source.split(marker).length !== 2) throw new Error("Reviewed reference marker must occur exactly once.");

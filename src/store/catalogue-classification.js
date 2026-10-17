@@ -7,6 +7,7 @@ export async function catalogueApiEnabled(tx) {
 }
 export async function catalogueReference(tx, subcategoryId, typeId) {
   if (!await catalogueApiEnabled(tx)) return { enabled: false, product_types: [], product_type: null, options: [], descriptors: [] };
+  const [capability]=await tx`SELECT to_regprocedure('public.catalogue_add_variant_value(uuid,text,bigint,bigint,text)') IS NOT NULL AS enabled`;
   const types = subcategoryId ? await tx`SELECT t.id,t.type_key,t.name FROM public.catalogue_product_types t
     JOIN public.catalogue_subcategory_product_types m ON m.product_type_id=t.id
     JOIN public.catalogue_subcategories s ON s.subcategory_id=m.subcategory_id
@@ -31,7 +32,7 @@ export async function catalogueReference(tx, subcategoryId, typeId) {
     WHERE m.product_type_id=${typeId} AND m.is_active AND d.is_active
       AND m.review_status='approved' AND d.review_status='approved' ORDER BY m.sort_order,d.id` : [];
   const fields = rows => rows.map(({ values_json, ...r }) => ({ ...r, id: Number(r.id), values: parse(values_json).map(v => ({ ...v, id: Number(v.id) })) }));
-  return { enabled: true, product_types: types.map(t => ({ ...t, id: Number(t.id) })),
+  return { enabled: true, custom_values_enabled:capability?.enabled===true, product_types: types.map(t => ({ ...t, id: Number(t.id) })),
     product_type: selected ? { ...selected, id: Number(selected.id) } : null, options: fields(options), descriptors: fields(descriptors) };
 }
 export async function loadClassifications(tx, storeId) {
@@ -71,13 +72,13 @@ export async function resolveClassification(tx, storeId, productId, raw, catalog
   if (Number(saved?.catalogue_revision || 0) !== selection.expected_revision) throw Object.assign(new Error("Product classification changed in another window. Reload before saving."), { status: 409 });
   const previous = parse(saved?.selection_json || null);
   if (selection.clear) {
-    if (catalogue.axes.length) throw badInput("Remove buying options and generate the updated combinations before clearing the product type.");
+    if (catalogue.axes.length) throw badInput("Remove variants and generate the updated combinations before clearing the product type.");
     return { selection, catalogue };
   }
   // A retired definition may remain attached unchanged. Never silently replace it.
   if (previous && comparable(selection) === comparable(previous)) {
     const old = parse(saved.catalogue_json);
-    if (JSON.stringify(catalogue.axes) !== JSON.stringify(old.axes || [])) throw badInput("Keep the saved buying options, or choose an approved product type to replace them.");
+    if (JSON.stringify(catalogue.axes) !== JSON.stringify(old.axes || [])) throw badInput("Keep the saved variant options, or choose an approved product type to replace them.");
     return { selection, catalogue: { ...catalogue, category: old.category, subcategory: old.subcategory, axes: old.axes || [] } };
   }
   const refs = await catalogueReference(tx, selection.subcategory_id, selection.product_type_id);
@@ -87,7 +88,7 @@ export async function resolveClassification(tx, storeId, productId, raw, catalog
   if (!refs.product_type || !scope) throw badInput("Choose an approved product type for this category and subcategory.");
   const axes = selection.options.map(pick => {
     const option = refs.options.find(o => o.id === pick.option_id);
-    if (!option || pick.value_ids.some(id => !option.values.some(v => v.id === id))) throw badInput("Choose approved buying options and values for this product type.");
+    if (!option || pick.value_ids.some(id => !option.values.some(v => v.id === id))) throw badInput("Choose available variant options and values for this product type.");
     return { name: option.name, values: pick.value_ids.map(id => option.values.find(v => v.id === id).value) };
   });
   for (const pick of selection.descriptors) {
@@ -108,7 +109,7 @@ export async function writeClassification(tx, storeId, productId, tokenHash, sel
     return row?.revision;
   } catch (error) {
     if (error.code === "40001") throw Object.assign(new Error("Product classification changed in another window. Reload before saving."), { status: 409 });
-    if (error.code === "22023" || error.code === "23514") throw badInput("Check the product type, buying options and required details.");
+    if (error.code === "22023" || error.code === "23514") throw badInput("Check the product type, variants and required details.");
     throw error;
   }
 }

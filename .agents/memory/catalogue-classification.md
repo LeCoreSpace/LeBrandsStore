@@ -1,6 +1,6 @@
 ---
 name: Catalogue classification
-description: Accepted five-master catalogue model and separation of product types, buying options and descriptors.
+description: Accepted five-master catalogue model, Variants terminology and store-private brand values.
 ---
 
 The user confirmed the catalogue should use five masters: category, subcategory,
@@ -10,7 +10,7 @@ product type, variant and descriptors.
 type between subcategory and the merchant's listing.
 
 **How to apply:** Keep product type separate from the merchant's product title.
-The variant master defines buying options and allowed values; actual combinations,
+The variant master defines product options and allowed values; actual combinations,
 SKUs and quantities belong to individual merchant products. Descriptors capture
 product facts without automatically creating SKU combinations. Use the same
 classification and product-form behaviour in Ann and the dashboard. Support
@@ -71,3 +71,24 @@ reference population on 2026-10-17. Historical Phase 1 reports still say
 status rather than re-requesting approval of the same proposals. Missing
 memberships and attributes without an assigned role are distinct unresolved
 source gaps; approval does not supply those missing assignments.
+
+Use **Variants** as the universal merchant-facing term, including Ann, dashboard,
+pricing and comparison copy. Label the dimensions **Product options** rather than
+calling the whole feature “Buying options”.
+
+**Why:** The user explicitly selected “Variants” on 2026-10-17.
+
+**How to apply:** Keep terminology consistent without renaming persisted SKU
+tables or breaking existing form hooks and links.
+
+Complete D2C coverage needs standard profiles plus store-private custom values,
+not an allegedly exhaustive global list of brand shades, models or strengths.
+Custom values belong to one store, product type and approved dimension; never
+promote them into public reference choices automatically.
+
+**Why:** Manufacturer-specific values cannot be exhaustively enumerated, and one
+merchant's catalogue edits must not alter another merchant's choices.
+
+**How to apply:** Keep shared masters read-only, retain typed applicability and
+tenant ownership on both reference reads and privileged writes. Profile coverage
+does not approve missing subcategory memberships or reclassify existing products.

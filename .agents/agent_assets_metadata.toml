@@ -574,3 +574,17 @@ mtime_ms = 1792234322436
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/d411b1d3-baa6-4fa1-a9a5-c0df15125a55/64202bc5-e948-409a-bda4-7a14092bc8d7"
 storage_version_token = "1792234414821951"
 content_type = "text/csv"
+
+[[outputs]]
+id = "UJCPvZCprWs1DkJOjMcUX"
+uri = "file://generated-artifacts/d2c-variants/coverage.csv"
+type = "table"
+title = "D2C variant coverage"
+description = "All 1,698 product types, their variant profiles and remaining category-mapping gaps."
+logical_id = "561fe90f-a4fb-49c4-b16e-5ddd2611ad72"
+content_hash = "sha256:b99309e9b2a1428762f77c26f06f9642afa670b654215fe0646b1c637475a43a"
+size = 107486
+mtime_ms = 1792240692979
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/561fe90f-a4fb-49c4-b16e-5ddd2611ad72/968c8c18-6dfc-418d-bd8f-2001a756d133"
+storage_version_token = "1792241020547462"
+content_type = "text/csv"
