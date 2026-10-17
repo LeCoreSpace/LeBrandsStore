@@ -1,17 +1,7 @@
 import { PLATFORMS } from "./compare-data.js";
-import { estimateCosts, recommend } from "./compare-engine.js";
+import { estimateCosts } from "./compare-engine.js";
 
 export const DEFAULTS = { sales: 200000, aov: 800, prepaid: 60, gateway: 2, delivered: 100, billing: "annual" };
-export const QUIZ_KEY = "lebrands-compare-quiz-v1";
-export const QUIZ_FIELDS = {
-  marketing: ["managed", "self"],
-  international: ["no", "yes"],
-  zoho: ["no", "yes"],
-  variants: ["no", "yes"],
-  guided: ["no", "yes"],
-  budget: ["fixed", "lowest"],
-};
-export const QUIZ_DEFAULT = { marketing: "self", international: "no", zoho: "no", variants: "no", guided: "no", budget: "fixed" };
 
 export const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export const inr = (n) => (typeof n === "number" && Number.isFinite(n) ? `\u20B9${Math.round(n).toLocaleString("en-IN")}` : "Not verified");
@@ -51,40 +41,16 @@ export function parseInputs(raw) {
 }
 
 const isPriced = (r) => (r.status === "estimated" || r.status === "from") && typeof r.total === "number" && Number.isFinite(r.total);
+export const referenceCostText = (r) => r && isPriced(r) ? `${inr(r.total)} / month (${r.plan})` : "Quote only";
+export const scenarioText = (i) => `Scenario: ${inr(i.sales)} monthly sales, AOV ${inr(i.aov)}, prepaid ${i.prepaid}%, gateway ${i.gateway}%, delivered ${i.delivered}%, ${i.billing} billing. Effective monthly, before tax.`;
 
 export function resultsHtml(results, inputs) {
   const annual = inputs.billing === "annual";
-  const priced = results.filter(isPriced).sort((a, b) => a.total - b.total);
-  const unknown = results.filter((r) => !isPriced(r));
-  const row = (r, i) => `<li class="c-res"><div class="c-res-head"><span class="c-res-rank" aria-hidden="true">${String(i + 1).padStart(2, "0")}</span><h4>${esc(r.name)}</h4><span class="c-res-tag">${r.status === "from" ? "Entry price, from" : "Estimated"}</span></div>
-    <p class="c-res-total"><b>${inr(r.total)}</b><span> a month${annual ? ", effective" : ""}</span></p>
-    <dl class="c-res-lines">
-      <div><dt>Plan</dt><dd>${esc(r.plan || "Not stated")}</dd></div>
-      <div><dt>Subscription</dt><dd>${inr(r.subscription)}</dd></div>
-      <div><dt>Platform fee</dt><dd>${inr(r.platformFee)}</dd></div>
-      <div><dt>Gateway fee</dt><dd>${inr(r.gatewayFee)}</dd></div>
-      ${annual && typeof r.annualUpfront === "number" ? `<div><dt>Annual subscription upfront</dt><dd>${inr(r.annualUpfront)}</dd></div>` : ""}
-    </dl>${r.note ? `<p class="c-res-note">${esc(r.note)}</p>` : ""}</li>`;
-  const unk = (r) => `<li class="c-unk"><h4>${esc(r.name)}</h4><p>${esc(r.note || "No verified INR price. Add a regional quote above, or check the official source.")}</p></li>`;
-  return `<h3 class="c-sub">Priced options, lowest estimate first</h3>
-  ${priced.length ? `<ol class="c-res-list">${priced.map(row).join("")}</ol>` : '<p class="c-empty">No platform has a fully priced result for these inputs yet.</p>'}
-  ${unknown.length ? `<h3 class="c-sub">Not priced, so not ranked</h3><ul class="c-unk-list">${unknown.map(unk).join("")}</ul>` : ""}`;
-}
-
-export function quizHtml(rec, results) {
-  if (!rec) return "";
-  const list = (arr) => `<ul>${(arr || []).map((x) => `<li>${esc(x)}</li>`).join("")}</ul>`;
-  const primary = PLATFORMS.find((p) => p.id === rec.primary);
-  const cost = rec.estimate && isPriced(rec.estimate) ? rec.estimate : results && results.find((r) => r.id === rec.primary && isPriced(r));
-  const link = !primary ? "" : primary.id === "lebrands" ? '<a class="m-pr-btn" href="https://app.lebrands.store/signup">Start free with Ann</a>' : `<a class="m-pr-btn" href="${esc(primary.sourceUrl)}" rel="noopener" target="_blank">Official ${esc(primary.name)} source<span class="c-sr"> (opens in a new tab)</span></a>`;
-  if (!primary) return `<div class="c-quiz-card"><h3>No platform fits every answer</h3>${rec.note ? `<p>${esc(rec.note)}</p>` : ""}${(rec.excluded || []).length ? `<h4>Ruled out</h4><ul>${rec.excluded.map((e) => `<li>${esc(nameOf(e.id))}: ${esc(e.reason)}</li>`).join("")}</ul>` : ""}</div>`;
-  return `<div class="c-quiz-card"><p class="c-kick">Best fit on your answers</p><h3>${esc(primary.name)}</h3>
-  ${list((rec.reasons || {})[rec.primary])}
-  ${cost ? `<p class="c-quiz-cost">At your calculator inputs: about <b>${inr(cost.total)}</b> a month${cost.plan ? ` on ${esc(cost.plan)}` : ""}.</p>` : '<p class="c-quiz-cost">No fully priced estimate for this platform yet. Use the calculator with a regional quote.</p>'}
-  ${rec.plan ? `<p>Plan: ${esc(typeof rec.plan === "string" ? rec.plan : rec.plan.name || "")}</p>` : ""}
-  ${(rec.alternatives || []).length ? `<h4>Also worth a look</h4><ul>${rec.alternatives.map((id) => `<li><b>${esc(nameOf(id))}</b>${((rec.reasons || {})[id] || [])[0] ? `: ${esc(rec.reasons[id][0])}` : ""}</li>`).join("")}</ul>` : ""}
-  ${(rec.excluded || []).length ? `<h4>Ruled out by your answers</h4><ul>${rec.excluded.map((e) => `<li>${esc(nameOf(e.id))}: ${esc(e.reason)}</li>`).join("")}</ul>` : ""}
-  ${rec.note ? `<p class="c-res-note">${esc(rec.note)}</p>` : ""}${link}</div>`;
+  const q = '<span class="c-quote">Quote only</span>';
+  const money = (r, v) => (isPriced(r) && typeof v === "number" ? inr(v) : q);
+  const rows = results.map((r) => `<tr${r.id === "lebrands" ? ' class="is-own"' : ""}><th scope="row">${esc(r.name)}</th><td>${r.plan ? esc(r.plan) : q}</td><td class="c-num">${money(r, r.subscription)}</td><td class="c-num">${money(r, r.platformFee)}</td><td class="c-num">${money(r, r.gatewayFee)}</td><td class="c-num c-strong">${money(r, r.total)}</td><td class="c-num">${annual && isPriced(r) && typeof r.annualUpfront === "number" ? inr(r.annualUpfront) : annual ? q : "Not applicable"}</td></tr>`).join("");
+  const notes = results.filter((r) => r.note).map((r) => `<details class="c-note"><summary>${esc(r.name)} note</summary><p>${esc(r.note)}</p></details>`).join("");
+  return `<div class="c-scroll" role="region" tabindex="0" aria-label="Estimated monthly cost by platform, scrollable table"><table class="c-table c-cost"><caption class="c-sr">Estimated monthly cost, ${annual ? "annual" : "monthly"} billing, lowest-cost eligible plan per platform</caption><thead><tr><th scope="col">Platform</th><th scope="col">Selected plan</th><th scope="col">Subscription / mo</th><th scope="col">Platform fee / mo</th><th scope="col">Gateway fee / mo</th><th scope="col">Monthly total</th><th scope="col">Annual subscription upfront</th></tr></thead><tbody>${rows}</tbody></table></div>${notes ? `<div class="c-notes">${notes}</div>` : ""}`;
 }
 
 function init() {
@@ -93,12 +59,8 @@ function init() {
   const out = form.querySelector("[data-results]");
   const status = form.querySelector("[data-status]");
   const errBox = form.querySelector("[data-errors]");
-  const q = document.querySelector("[data-quiz]");
-  const qstat = document.querySelector("[data-quiz-status]");
-  const qout = document.querySelector("[data-quiz-out]");
-  let lastQuiz = null;
-  let lastInputs = { ...DEFAULTS, quotes: {} };
-  let lastResults = [];
+  const estimateRow = document.querySelector("[data-estimate-row]");
+  const estimateStatus = document.querySelector("[data-estimate-status]");
 
   const raw = () => Object.fromEntries(new FormData(form).entries());
   function setInvalid(errors) {
@@ -116,20 +78,24 @@ function init() {
       errBox.innerHTML = `<p><b>Results not updated.</b> Fix these inputs:</p><ul>${Object.values(p.errors).map((e) => `<li>${esc(e)}</li>`).join("")}</ul>`;
       status.textContent = `Results not updated. ${Object.keys(p.errors).length} input problem${Object.keys(p.errors).length === 1 ? "" : "s"}.`;
       out.setAttribute("data-stale", "true");
-      if (lastQuiz) {
-        qout.setAttribute("data-stale", "true");
-        qstat.textContent = "Recommendation uses the previous valid calculator inputs. Fix the calculator to update it.";
-      }
+      estimateRow?.setAttribute("data-stale", "true");
+      if (estimateStatus) estimateStatus.textContent = "Last valid estimate. Correct the calculator inputs to update.";
       return;
     }
     errBox.hidden = true; errBox.textContent = "";
     out.removeAttribute("data-stale");
-    lastInputs = p.inputs;
-    lastResults = estimateCosts(p.inputs);
-    out.innerHTML = resultsHtml(lastResults, p.inputs);
-    const n = lastResults.filter(isPriced).length;
-    status.textContent = `Estimate updated. ${n} priced, ${lastResults.length - n} not priced.`;
-    if (lastQuiz) show(lastQuiz, false);
+    const results = estimateCosts(p.inputs);
+    out.innerHTML = resultsHtml(results, p.inputs);
+    estimateRow?.removeAttribute("data-stale");
+    if (estimateStatus) estimateStatus.textContent = "";
+    for (const r of results) {
+      const cell = document.querySelector(`[data-reference-cost="${r.id}"]`);
+      if (cell) cell.textContent = referenceCostText(r);
+    }
+    const scenario = document.querySelector("[data-reference-scenario]");
+    if (scenario) scenario.textContent = scenarioText(p.inputs);
+    const n = results.filter(isPriced).length;
+    status.textContent = `Estimate updated. ${n} priced, ${results.length - n} quote only.`;
   }
   form.addEventListener("input", run);
   form.addEventListener("submit", (e) => { e.preventDefault(); run(); });
@@ -137,34 +103,6 @@ function init() {
     setTimeout(() => { for (const [k, v] of Object.entries(DEFAULTS)) { const el = form.elements[k]; if (el && el.type !== "radio") el.value = v; } form.elements.billing.value = "annual"; run(); }, 0);
   });
   run();
-
-  if (!q) return;
-  function valid(o) {
-    return o && typeof o === "object" && Object.entries(QUIZ_FIELDS).every(([k, set]) => set.includes(o[k]));
-  }
-  const toRec = (o) => ({ marketing: o.marketing, international: o.international === "yes", zoho: o.zoho === "yes", variants: o.variants === "yes", guided: o.guided === "yes", budget: o.budget, sales: lastInputs.sales, aov: lastInputs.aov });
-  function readQuiz() { return Object.fromEntries(Object.keys(QUIZ_FIELDS).map((k) => [k, q.elements[k].value])); }
-  function show(o, save) {
-    lastQuiz = o;
-    qout.removeAttribute("data-stale");
-    let rec = null;
-    try { rec = recommend(toRec(o), lastInputs); } catch { rec = null; }
-    if (!rec) { qout.innerHTML = '<p class="c-empty">The recommendation could not be worked out. Try the calculator instead.</p>'; qstat.textContent = "Recommendation unavailable."; return; }
-    qout.innerHTML = quizHtml(rec, lastResults);
-    qstat.textContent = rec.primary ? `Best fit: ${nameOf(rec.primary)}.` : "No platform fits every answer.";
-    if (save) { try { localStorage.setItem(QUIZ_KEY, JSON.stringify(o)); } catch { /* storage optional */ } }
-  }
-  try {
-    const saved = JSON.parse(localStorage.getItem(QUIZ_KEY) || "null");
-    if (valid(saved)) { for (const k of Object.keys(QUIZ_FIELDS)) q.elements[k].value = saved[k]; show(saved, false); }
-  } catch { /* ignore bad storage */ }
-  q.addEventListener("submit", (e) => { e.preventDefault(); show(readQuiz(), true); });
-  q.querySelector("[data-quiz-reset]")?.addEventListener("click", () => {
-    lastQuiz = null;
-    setTimeout(() => { for (const [k, v] of Object.entries(QUIZ_DEFAULT)) q.elements[k].value = v; }, 0);
-    try { localStorage.removeItem(QUIZ_KEY); } catch { /* ignore */ }
-    qout.innerHTML = ""; qstat.textContent = "Quiz reset.";
-  });
 }
 
 if (typeof document !== "undefined") {

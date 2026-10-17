@@ -1,0 +1,16 @@
+Differentiator	LeBrands.Store	Shopify	Zoho Commerce	ShopDeck	Dukaan
+How easy to build	One guided flow with Ann: GST check, store address, style, colours, fonts, category, collections, products, brand story, review. Live desktop and mobile preview throughout	AI store from a prompt, then theme setup; most brands hire help to finish	Drag-and-drop builder, done yourself	ShopDeck’s team sets it up in month 1	Basic store in minutes from a phone
+Language while building	Ann speaks Hindi, plus the languages in her dropdown	English admin; Shopify’s own website is in 7 Indian languages	English	Their team helps you	Hindi support
+GST verification	Built into the first step; legal name and address auto-filled	Manual	Manual (Zoho Books separately)	During setup by their team	Manual
+Hiring needed	No	Often, in practice	No	No	No
+Theme options	4 themes (Editorial, Modern Boutique, Bold Architectural, Minimal)	Free and paid themes in a large Theme Store	Ready templates	Says “multiple customisable themes”	7 themes free; 14+ on Growth
+Customisation	Click any text or photo to edit in place; add, remove and reorder sections; edit menus; full theme editor	Very high: theme editor, code access, thousands of apps	Moderate: drag-and-drop	ShopDeck claims high; one App Store reviewer says none	Theme editor only on Growth and above
+Payment, delivery, domain	Connect your own Razorpay, courier and custom domain from the dashboard, any time; optional to launch	Own gateway with a 2% fee on online payments; couriers through apps	Own gateway and shipping	Run through ShopDeck	Dukaan Pay or your Razorpay; Dukaan Delivery or your own
+Mobile app for the store	Webview app as an add-on (proposed)	Through third-party apps, paid	Not advertised	Free Android app	Store app file on some plans
+Commission on sales	0%	2% / 1% / 0.6% on online payments; 0% on COD	0%	3% + GST on delivered orders	4.99% to 0.99% per order, capped ₹200, COD included
+Monthly cost at ₹2 lakh sales*	~₹3,900	~₹6,300	~₹3,000	~₹8,400	~₹7,400
+Paid extras	Common app features built into every plan	Paid apps and premium themes	Books, Inventory and CRM sold separately	Ad spend on top	More plugins on higher plans
+COD and RTO tools	COD returns with reasons, RTO tracking (planned)	COD yes; RTO through apps	COD yes; no RTO analytics advertised	RTO managed by their team, partial COD, early COD payout	COD yes
+You own customer data	Yes, full export	Yes	Yes	Not stated publicly	Yes
+Built-in discovery	LeBrands.Space mall (if shown)	Shop app and AI chats (ChatGPT selling is for US buyers)	None	Managed paid ads	None
+Who runs marketing	You	You or an agency	You	ShopDeck’s team	You

@@ -362,7 +362,7 @@ export function renderCompare() {
 </div>`;
   return shell({
     title: "Compare LeBrands.Store, Shopify, Zoho Commerce, ShopDeck and Dukaan",
-    description: "Compare five store builders for Indian D2C brands with a transparent cost calculator, a short quiz and the method behind both.",
+    description: "Compare five platforms for Indian D2C brands side by side: store setup, design, fees, languages and integrations, with transparent cost estimates.",
     canonical: "https://lebrands.store/compare",
     pageClass: "m-pricing-document m-compare-document",
     head,

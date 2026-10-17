@@ -1,9 +1,17 @@
 ---
-name: Comparison source verification
-description: Regional pricing can be misreported by extracted pages; verify the actual currency and source before publishing comparisons.
+name: Comparison page boundaries
+description: Verified regional pricing and the user's table-first comparison-page presentation requirements.
 ---
 An India-specific vendor URL can return globally extracted USD pricing even when its actual regional HTML contains INR. Verify the displayed currency and billing term from the regional HTML or the vendor's linked pricing data before marking an INR price as checked.
 
 **Why:** During the comparison-page research, extracted Shopify and Zoho pages returned global prices. The actual Shopify regional HTML and Zoho's official currency-indexed pricing data supplied different Indian prices. The supplied brief also contained different Dukaan prices from the official annual offers.
 
 **How to apply:** Do not convert global prices into alleged Indian prices or reuse a previous checked date after guessing. Keep missing regional prices unknown, distinguish annual commitments from monthly bills, and link any additional official source needed to reproduce the figures.
+
+## Presentation
+
+The Compare page must use a side-by-side table against the main differentiators, not paragraphs or platform cards. Remove the quiz and use tabular calculator results rather than cost cards.
+
+**Why:** The user said no one would read the paragraphs, supplied a differentiator list, and explicitly requested removal of the quiz and cards.
+
+**How to apply:** Keep this rule scoped to Compare, not the separate Pricing page's plan cards. Put necessary assumptions and sources in compact expandable notes.

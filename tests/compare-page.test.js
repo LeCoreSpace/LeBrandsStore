@@ -4,14 +4,13 @@ import { readFile } from "node:fs/promises";
 import worker from "../src/index.js";
 import preview from "../src/preview.js";
 import { PRICING_PLANS } from "../src/public/pricing-plans.js";
-import { PLATFORMS } from "../src/public/compare-data.js";
-import { estimateCosts, recommend } from "../src/public/compare-engine.js";
-import { DEFAULTS, parseInputs, resultsHtml, quizHtml } from "../src/public/compare.js";
+import { PLATFORMS, COMPARISON_ROWS } from "../src/public/compare-data.js";
+import { estimateCosts } from "../src/public/compare-engine.js";
+import { DEFAULTS, parseInputs, resultsHtml, referenceCostText, scenarioText, esc } from "../src/public/compare.js";
 import { COMPARE_FAQ, compareMain } from "../src/ui/compare.js";
 import { renderCompare, renderHome, renderPricing } from "../src/ui/marketing.js";
 
 const cost = (inputs = {}) => Object.fromEntries(estimateCosts({ ...DEFAULTS, ...inputs }).map(r => [r.id, r]));
-const answers = { marketing: "self", international: false, zoho: false, variants: false, guided: false, budget: "fixed" };
 
 test("all five estimates use independently checked public recurring rates", () => {
   const c = cost({ sales: 500000 });
@@ -77,43 +76,55 @@ test("Flagship starting prices stay quote-only and are never ranked as complete 
   assert.equal(c.lebrands.total, null);
   assert.equal(c.lebrands.plan, "Flagship");
   const html = resultsHtml(Object.values(c), DEFAULTS);
-  assert.match(html, /Not priced, so not ranked/);
+  assert.match(html, /Quote only/);
   assert.match(html, /tailored quote/);
 });
 
-test("capabilities filter before preferences, including unavailable variant checkout", () => {
-  const rec = recommend({ ...answers, variants: true, guided: true }, DEFAULTS);
-  assert.notEqual(rec.primary, "lebrands");
-  assert.ok(!rec.alternatives.includes("lebrands"));
-  assert.match(rec.excluded.find(x => x.id === "lebrands").reason, /not live/);
-  assert.equal(recommend({ ...answers, marketing: "managed" }, DEFAULTS).primary, "shopdeck");
-  assert.equal(recommend({ ...answers, zoho: true }, DEFAULTS).primary, "zoho");
-  assert.equal(recommend({ ...answers, international: true }, DEFAULTS).primary, "shopify");
-  assert.equal(recommend({ ...answers, marketing: "managed", international: true }, DEFAULTS).primary, null);
+test("differentiators are complete, grouped, concise rows with five platform columns", () => {
+  const html = compareMain();
+  const groups = [...new Set(COMPARISON_ROWS.map(r => r.section))];
+  assert.equal(groups.length, 6);
+  assert.equal((html.match(/scope="rowgroup"/g) || []).length, 6);
+  for (const r of COMPARISON_ROWS) {
+    assert.ok(html.includes(esc(r.label)));
+    assert.ok(r.section);
+    if (r.type === "estimate") continue;
+    assert.deepEqual(Object.keys(r.cells), PLATFORMS.map(p => p.id));
+    for (const text of Object.values(r.cells)) {
+      assert.equal(typeof text, "string");
+      assert.ok(text.length > 0 && !text.includes("undefined"));
+      assert.ok(html.includes(esc(text)));
+    }
+  }
+  assert.match(html, /GST-verified onboarding/);
+  assert.match(html, /Draft preparation only/);
+  assert.match(html, /Arattai planned/);
 });
 
-test("guided language preference can favour Ann but is not a fake price advantage", () => {
-  assert.equal(recommend({ ...answers, guided: true }, DEFAULTS).primary, "lebrands");
-  assert.equal(recommend(answers, DEFAULTS).primary, "zoho");
-  const rec = recommend({ ...answers, guided: true, sales: 900000 }, { ...DEFAULTS, sales: 900000 });
-  assert.equal(rec.primary, "lebrands");
-  assert.equal(rec.plan, "Grow");
+test("both estimates are semantic tables, escaped and linked to calculator inputs", () => {
+  const results = estimateCosts(DEFAULTS);
+  const html = resultsHtml(results, DEFAULTS);
+  assert.match(html, /<table class="c-table c-cost">/);
+  assert.match(html, /Annual subscription upfront/);
+  assert.equal((html.match(/<th scope="col">/g) || []).length, 7);
+  for (const r of results) {
+    assert.ok(referenceCostText(r).includes(r.plan));
+    assert.ok(compareMain().includes(`data-reference-cost="${r.id}"`));
+  }
+  assert.equal(referenceCostText(cost({ sales: 7000000 }).lebrands), "Quote only");
+  assert.ok(scenarioText(DEFAULTS).includes("annual billing"));
+  const escaped = resultsHtml([{ ...results[0], name: "<img src=x onerror=alert(1)>" }], DEFAULTS);
+  assert.doesNotMatch(escaped, /<img/);
+  assert.match(escaped, /&lt;img/);
 });
 
-test("international Zoho recommendation quotes an eligible tier, not Standard", () => {
-  const rec = recommend({ ...answers, international: true, zoho: true }, DEFAULTS);
-  assert.equal(rec.primary, "zoho");
-  assert.equal(rec.plan, "Professional");
-  assert.equal(rec.estimate.subscription, 1799);
-  assert.match(quizHtml(rec, estimateCosts(DEFAULTS)), /Professional/);
-});
-
-test("invalid and incomplete quiz states fail explicitly; displayed copy is escaped", () => {
-  assert.throws(() => recommend({}, DEFAULTS), RangeError);
-  assert.throws(() => recommend({ ...answers, guided: "invented" }, DEFAULTS), RangeError);
-  const html = quizHtml({ primary: "lebrands", reasons: { lebrands: ["<img src=x onerror=alert(1)>"] } }, []);
-  assert.ok(!html.includes("<img"));
-  assert.match(html, /&lt;img/);
+test("quiz, recommendation storage and all comparison cards are removed", async () => {
+  const html = renderCompare();
+  assert.doesNotMatch(html, /quiz|c-plat|c-res-card|c-quiz|c-ledger/i);
+  const client = await readFile("src/public/compare.js", "utf8");
+  assert.doesNotMatch(client, /localStorage|recommend|QUIZ_|quizHtml/);
+  assert.match(client, /cell\.textContent = referenceCostText/);
+  assert.match(client, /scenario\.textContent = scenarioText/);
 });
 
 test("server-rendered page contains five sources, usable default estimates and dated methodology", () => {
@@ -123,10 +134,10 @@ test("server-rendered page contains five sources, usable default estimates and d
     assert.ok(html.includes(p.sourceUrl.replaceAll("&", "&amp;")));
     assert.equal(p.checkedOn, "2026-10-17");
   }
-  assert.match(html, /data-results><h3/);
-  assert.match(html, /Annual upfront/);
+  assert.match(html, /data-results><div class="c-scroll"/);
+  assert.match(html, /Annual subscription upfront/);
   assert.match(html, /not an independent review/);
-  assert.match(html, /not live/);
+  assert.match(html, /not enabled/);
   assert.doesNotMatch(html, /300,000|Free LeBrands.Space|keep 100%|—/);
 });
 
@@ -155,7 +166,7 @@ test("production and preview expose GET/HEAD with marketing CSP and reject write
 });
 
 test("every public comparison asset is allowlisted and dependencies are served as JS/CSS", async () => {
-  for (const file of ["compare.js", "compare.css", "compare-data.js", "compare-engine.js", "pricing-plans.js"]) {
+  for (const file of ["compare.js", "compare.css", "compare-data.js", "compare-engine.js", "pricing-plans.js", "aura-styles.js"]) {
     const res = await worker.fetch(new Request(`https://lebrands.store/assets/${file}`), { ASSETS: { fetch: async req => {
       assert.equal(new URL(req.url).pathname, "/" + file);
       return new Response(await readFile("src/public/" + file, "utf8"), { headers: { "content-type": file.endsWith(".css") ? "text/css" : "text/javascript" } });
@@ -163,7 +174,6 @@ test("every public comparison asset is allowlisted and dependencies are served a
     assert.equal(res.status, 200);
   }
   const client = await readFile("src/public/compare.js", "utf8");
-  assert.match(client, /document\.querySelector\("\[data-quiz-out\]"\)/);
-  assert.doesNotMatch(client, /q\.querySelector\("\[data-quiz-out\]"\)/);
-  assert.match(client, /if \(lastQuiz\) show\(lastQuiz, false\)/);
+  assert.match(client, /form\.querySelector\("\[data-results\]"\)/);
+  assert.match(client, /form\.addEventListener\("input", run\)/);
 });

@@ -1,0 +1,31 @@
+A. “Who builds my store, and can I change it?”
+
+Who builds the store: you alone, an agency you hire, the platform’s team, or AI guided by you (Ann). LeBrands win.
+Hiring needed to launch: none, optional, or practically required (Shopify brands usually hire someone). LeBrands win.
+Design control after launch: a full theme editor, limited edits, or the platform decides. LeBrands win against ShopDeck; level with Shopify.
+Builder in Indian languages: Ann in Hindi, Tamil and others vs English-only dashboards. LeBrands win, once it’s built.
+
+B. “What will it really cost me?”
+5. Commission on sales: 0%, a per-order fee, or a revenue share. LeBrands win.
+6. Paid extras: apps, premium themes, plugins, agency retainers. LeBrands win; you include common app features in every plan.
+7. Monthly cost at your sales level, pulled from the calculator. LeBrands win against percentage-fee platforms; Zoho is cheaper.
+
+C. “What’s included without add-ons?”
+8. COD and RTO tools: COD return reasons, RTO tracking and analysis. LeBrands win.
+9. Conversion features built in: reviews, upsell and cross-sell, social proof, abandoned cart. LeBrands win on paper; Shopify gets there with apps.
+10. Customer messaging: order updates on Arattai plus email included, vs paid WhatsApp apps. LeBrands win, once built.
+11. Integrations ready to connect: Razorpay, Shiprocket, GST check. Shopify wins on breadth; LeBrands is simpler.
+
+D. “Who controls my business?”
+12. Who owns customer data: can you see, export and call your buyers? LeBrands win against ShopDeck.
+13. Whose payment and courier accounts: yours or the platform’s. LeBrands win.
+14. Easy to leave: data export and domain portability. Level with Shopify.
+
+E. “Where do customers come from?”
+15. Built-in discovery: a shopper mall, nothing, or managed paid ads. LeBrands’ unique row, if you show LeBrands.Space.
+16. Who runs marketing: you, or the platform’s team. ShopDeck wins for founders who want it done for them.
+17. Selling in AI chats like ChatGPT. Shopify wins today.
+
+F. “Is it built for India?”
+18. India-native setup: INR pricing, GST-verified onboarding, UPI and COD as defaults. LeBrands, Zoho and Dukaan level; Wix and BigCommerce weak.
+19. Support: channel, language, and response speed. Needs your actual support plan to fill.
