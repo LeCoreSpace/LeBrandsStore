@@ -3,6 +3,7 @@
 - [Cloudflare SaaS routing](cloudflare-saas-routing.md) — catch-all routes require SaaS enablement; adding them early partially fails ordinary production deployment.
 - [Worker array boundaries](worker-array-boundaries.md) — disabled type discovery leaves native arrays unparsed; use explicit JSON boundaries on reads and writes.
 - [GST choices and legacy values](gst-choices.md) — use current slabs for new edits, but never silently replace previously saved 12%/28% product rates.
+- [Catalogue classification](catalogue-classification.md) — accepted five masters; distinguish product types, SKU-driving buying options and descriptive facts across Ann and dashboard.
 - [GST registration and exempt invoices](gstin-registration-boundary.md) — publication requires valid checksum/state-matched GSTIN; zero-rate lines are Exempt, not a new Bill of Supply flow.
 - [Invoice permission boundary](invoice-privilege-boundary.md) — APP financial writes must use tenant-checked functions; preserve strict 42501 isolation denials.
 - [GSTIN transaction boundary](gstin-transaction-boundary.md) — approve/invoice published suppliers; commit paid lookup evidence before a financial transaction can fail.
