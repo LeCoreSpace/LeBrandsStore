@@ -250,7 +250,14 @@ export function renderHome() {
         <p>A conversation, not a complicated setup. Ann asks one simple question at a time while your store takes shape beside you.</p>
       </div>
       <div class="m-how-grid">
-        <div class="m-wizard-media m-reveal">${imageMarkup(MARKETING_MEDIA.annBuilder, { className: "m-ann-builder-image" })}<span class="m-media-caption">A conversation with Ann. Your store coming to life beside it. Sample store shown.</span></div>
+        <div class="m-wizard-media m-ann-viewer m-reveal" data-ann-tabs>
+          <div class="m-ann-tablist" role="tablist" aria-label="Ann Builder language and style">
+            <button type="button" role="tab" class="m-ann-tab" id="ann-tab-en" aria-controls="ann-panel-en" aria-selected="true" tabindex="0" data-ann-tab="en">English / Modern Boutique</button>
+            <button type="button" role="tab" class="m-ann-tab" id="ann-tab-hi" aria-controls="ann-panel-hi" aria-selected="false" tabindex="-1" data-ann-tab="hi"><span lang="hi">हिन्दी</span> / Bold Architectural</button>
+          </div>
+          <div class="m-ann-panel" role="tabpanel" id="ann-panel-en" aria-labelledby="ann-tab-en" data-ann-panel="en"><figure class="m-ann-figure">${imageMarkup(MARKETING_MEDIA.annBuilder, { className: "m-ann-builder-image" })}<figcaption class="m-media-caption">Ann builds in English, Modern Boutique style. Home preview of a sample store.</figcaption></figure></div>
+          <div class="m-ann-panel" role="tabpanel" id="ann-panel-hi" aria-labelledby="ann-tab-hi" data-ann-panel="hi" hidden><figure class="m-ann-figure">${imageMarkup(MARKETING_MEDIA.annBuilderHindi, { className: "m-ann-builder-image" })}<figcaption class="m-media-caption">Ann builds in Hindi, Bold Architectural style. Home preview of a sample store.</figcaption></figure></div>
+        </div>
         <div>
           <div class="m-steps">
             <article class="m-step m-reveal"><span class="m-step-no">01</span><div><h3>Say hello to Ann.</h3><p>Share your brand name and verify your business. Ann guides you through the essentials.</p></div></article>

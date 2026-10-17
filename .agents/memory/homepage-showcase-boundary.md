@@ -132,3 +132,14 @@ independent-looking sections.
 
 **How to apply:** Keep genuinely light bands and the shared dark gradient.
 Keep the pattern behind readable content and preserve the existing hero motion.
+
+The "In one sitting" section should show real Ann screenshots in two languages
+and styles: English with Modern Boutique and Hindi with Bold Architectural.
+Both should show a store homepage, not a product detail page. Hindi applies to
+Ann's conversation, not to merchant content or the rest of the interface.
+
+**Why:** The user explicitly requested English in one theme and Hindi in another
+for this section.
+
+**How to apply:** Use isolated fictional-store captures and keep each screenshot
+large enough to inspect, with a clear language/style selector.

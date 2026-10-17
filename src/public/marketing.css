@@ -1140,3 +1140,14 @@ body.m-home-document :is(.m-hero h1, .m-section-title, .m-statement p, .m-craft-
 body.m-home-document .m-hero h1 { line-height: 1.06; }
 body.m-home-document :is(.m-step h3, .m-coming h2) { font-weight: 600; letter-spacing: normal; }
 body.m-home-document :is(.m-hero-line, .m-hs-copy strong, .m-hs-kpi b) { letter-spacing: normal; }
+
+/* Ann Builder two-tab screenshot viewer */
+.m-ann-viewer { grid-column: 1 / -1; height: auto; aspect-ratio: auto; }
+.m-ann-tablist { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--band-line); background: var(--m-paper); }
+.m-ann-tab { flex: 1 1 220px; min-height: 48px; padding: 10px 16px; background: transparent; color: var(--m-muted); border: 0; border-bottom: 3px solid transparent; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.m-ann-tab[aria-selected="true"] { color: var(--m-ink); border-bottom-color: var(--m-accent); }
+.m-ann-tab:focus-visible { outline: 2px solid var(--m-accent); outline-offset: -4px; }
+.m-ann-panel[hidden] { display: none; }
+.m-ann-figure { margin: 0; }
+.m-ann-viewer .m-ann-figure img, .m-ann-viewer .m-ann-builder-image { display: block; width: 100%; height: auto; aspect-ratio: 1440 / 960; object-fit: contain; }
+.m-ann-viewer .m-responsive-media { display: block; }

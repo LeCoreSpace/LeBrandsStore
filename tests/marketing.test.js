@@ -176,7 +176,7 @@ test("marketing routes are read-only, scoped CSP supports font/video, and previe
     const post=await worker.fetch(new Request("https://lebrands.store"+pathname,{method:"POST"}),env,{});
     assert.equal(post.status,405);
   }
-  const annMedia=[MARKETING_MEDIA.exampleDesktop,MARKETING_MEDIA.exampleMobile,MARKETING_MEDIA.annBuilder,MARKETING_MEDIA.productPhoto,MARKETING_MEDIA.checkout];
+  const annMedia=[MARKETING_MEDIA.exampleDesktop,MARKETING_MEDIA.exampleMobile,MARKETING_MEDIA.annBuilder,MARKETING_MEDIA.annBuilderHindi,MARKETING_MEDIA.productPhoto,MARKETING_MEDIA.checkout];
   const annPaths=annMedia.flatMap(media=>[media.src,...media.srcset.split(",").map(value=>value.trim().split(" ")[0])]);
   for(const pathname of ["/assets/marketing.css","/assets/marketing.js","/assets/instrument-sans-latin.woff2",...new Set(annPaths)]){
     const response=await worker.fetch(new Request("https://lebrands.store"+pathname),env,{});

@@ -225,6 +225,24 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       }
        options.catalogueRoot=`${prefix}/catalogue`;
        let html = renderAnnBuilder({ ...options.draft, role: readonly ? "editor" : "owner" }, user, options);
+      if (url.searchParams.get("page") === "home") {
+        // Capture the real Home control after the client has mounted it.
+        // This affects only the isolated development page, never stored data.
+        html = html.replace("</body>", `<script>
+          (() => {
+            const pages = document.getElementById("ann-pages");
+            const chooseHome = () => {
+              const button = pages?.querySelector('[data-page="home"]');
+              if (!button) return false;
+              requestAnimationFrame(() => button.click());
+              return true;
+            };
+            const observer = new MutationObserver(() => { if (chooseHome()) observer.disconnect(); });
+            observer.observe(pages, { childList: true });
+            if (chooseHome()) observer.disconnect();
+          })();
+        </script></body>`);
+      }
       if (url.searchParams.get("device") === "mobile") {
         html = html.replace('id="ann-canvas" data-device="desktop"', 'id="ann-canvas" data-device="mobile"')
           .replace('data-device="desktop" aria-pressed="true"', 'data-device="desktop" aria-pressed="false"')

@@ -617,6 +617,32 @@
   setNavTone();
   }
 
+  function initializeAnnTabs() {
+    for (const root of document.querySelectorAll("[data-ann-tabs]")) {
+      const tabs = Array.from(root.querySelectorAll("[data-ann-tab]"));
+      const select = (i, focus) => {
+        tabs.forEach((tab, n) => {
+          const on = n === i;
+          tab.setAttribute("aria-selected", on ? "true" : "false");
+          tab.tabIndex = on ? 0 : -1;
+          const panel = root.querySelector(`[data-ann-panel="${tab.dataset.annTab}"]`);
+          if (panel) panel.hidden = !on;
+        });
+        if (focus) tabs[i].focus();
+      };
+      tabs.forEach((tab, i) => tab.addEventListener("click", () => select(i, false)));
+      root.querySelector("[role=tablist]").addEventListener("keydown", (e) => {
+        const cur = Math.max(0, tabs.findIndex((t) => t.getAttribute("aria-selected") === "true"));
+        const keys = { ArrowRight: (cur + 1) % tabs.length, ArrowLeft: (cur - 1 + tabs.length) % tabs.length, Home: 0, End: tabs.length - 1 };
+        if (!(e.key in keys)) return;
+        e.preventDefault();
+        select(keys[e.key], true);
+      });
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initializeAnnTabs, { once: true });
+  else initializeAnnTabs();
+
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initializeMarketing, { once: true });
   else initializeMarketing();
 })();

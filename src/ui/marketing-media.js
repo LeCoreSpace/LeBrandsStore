@@ -20,12 +20,21 @@ export const MARKETING_MEDIA = Object.freeze({
   }),
   annBuilder: Object.freeze({
     available: true,
-    src: "/img/ann-skincare-boutique-builder.webp",
-    srcset: "/img/ann-skincare-boutique-builder-640.webp 640w, /img/ann-skincare-boutique-builder-1280.webp 1280w, /img/ann-skincare-boutique-builder.webp 1440w",
+    src: "/img/ann-skincare-boutique-builder-home-en.webp",
+    srcset: "/img/ann-skincare-boutique-builder-home-en-640.webp 640w, /img/ann-skincare-boutique-builder-home-en-1280.webp 1280w, /img/ann-skincare-boutique-builder-home-en.webp 1440w",
     sizes: "(max-width: 600px) 92vw, 85vw",
     width: 1440,
     height: 960,
-    alt: "Build with Ann: a conversation beside a Modern Boutique skincare store preview. Fictional sample store."
+    alt: "Ann's English conversation beside the homepage of a Modern Boutique skincare sample store."
+  }),
+  annBuilderHindi: Object.freeze({
+    available: true,
+    src: "/img/ann-skincare-architectural-builder-home-hi.webp",
+    srcset: "/img/ann-skincare-architectural-builder-home-hi-640.webp 640w, /img/ann-skincare-architectural-builder-home-hi-1280.webp 1280w, /img/ann-skincare-architectural-builder-home-hi.webp 1440w",
+    sizes: "(max-width: 600px) 92vw, 85vw",
+    width: 1440,
+    height: 960,
+    alt: "Ann's Hindi conversation beside the homepage of a Bold Architectural skincare sample store."
   }),
   productPhoto: Object.freeze({
     available: true,
