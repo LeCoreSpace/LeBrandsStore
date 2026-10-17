@@ -27,3 +27,13 @@ limit.
 **How to apply:** Filter choices by their valid taxonomy mappings, but do not hide
 mapped options because they are outside a short recommended list. Keep the Ann
 and dashboard forms consistent.
+
+All five masters should follow the catalogue naming convention, including
+renaming the existing category and subcategory tables.
+
+**Why:** The user explicitly requested consistent catalogue-prefixed names.
+
+**How to apply:** Preserve IDs and relationships when renaming; do not keep
+legacy names as the canonical schema merely to avoid updating application SQL.
+Complete one phase and confirm its outcome before proceeding to the next phase,
+as the user requested for this rollout.

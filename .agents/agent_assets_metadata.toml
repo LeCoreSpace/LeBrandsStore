@@ -546,3 +546,31 @@ mtime_ms = 1792073497245
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/cee43322-4b0c-4041-8a15-378717bb9402/0964a239-4062-4d2b-8010-21c5489df0dc"
 storage_version_token = "1792073554829670"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "JPwSds1nNB44ulBHdgNz9"
+uri = "file://generated-artifacts/catalogue-audit/candidate-type-mappings.csv"
+type = "table"
+title = "Product type mapping review"
+description = "313 candidate subcategory-to-product-type links with source evidence. Every link requires review; none is approved."
+logical_id = "9441712e-faa6-4f86-bf4f-a5b2fc6e8fb9"
+content_hash = "sha256:3bdfe9bdd37c7c7d39ad0052206425cd4c10872e65c3bfb60c0ddface834ad1e"
+size = 76881
+mtime_ms = 1792234322448
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/9441712e-faa6-4f86-bf4f-a5b2fc6e8fb9/36d46ec9-5f44-4d43-8b87-560fbf8aff09"
+storage_version_token = "1792234413567330"
+content_type = "text/csv"
+
+[[outputs]]
+id = "uJSxA6dcPamivFui5tyEU"
+uri = "file://generated-artifacts/catalogue-audit/attribute-role-review.csv"
+type = "table"
+title = "Variant and descriptor review"
+description = "All 1,971 cleaned attribute definitions, original IDs, proposed roles and value counts."
+logical_id = "d411b1d3-baa6-4fa1-a9a5-c0df15125a55"
+content_hash = "sha256:99af697b3b37971aa66fb674cce5f1bd138190184078e631507316824a72757a"
+size = 389300
+mtime_ms = 1792234322436
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/d411b1d3-baa6-4fa1-a9a5-c0df15125a55/64202bc5-e948-409a-bda4-7a14092bc8d7"
+storage_version_token = "1792234414821951"
+content_type = "text/csv"
