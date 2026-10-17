@@ -22,11 +22,16 @@ export function renderCatalogueOrganisation({ enabled, product = {}, collections
   const picker = cols.length
     ? `<div class="lb-check-list" role="group" aria-labelledby="lb-cat-collections-label">${cols.map(c => `<label class="lb-check-input"><input type="checkbox" name="collection_ids" data-collection-pick value="${escapeHtml(c.id)}" ${selected.has(String(c.id)) ? "checked" : ""}>${escapeHtml(c.title || "Untitled collection")}</label>`).join("")}</div>`
     : `<p class="lb-muted">No collections yet. Create one from Collections, then add this product here.</p>`;
-  return `<section class="lb-side-box lb-catalogue-org" data-catalogue-org>
+  const cls = product.classification && typeof product.classification === "object" ? product.classification : null;
+  const rev = Number.isInteger(Number(product.catalogue_revision)) ? Number(product.catalogue_revision) : 0;
+  const typeId = cls?.product_type_id ? String(cls.product_type_id) : "";
+  return `<section class="lb-side-box lb-catalogue-org" data-catalogue-org data-revision="${rev}" data-classification="${attrJson(cls)}" data-classification-reference="${attrJson(product.classification_reference && typeof product.classification_reference === 'object' ? product.classification_reference : null)}">
     <h2>Organisation</h2>
     <label class="lb-field">Vendor or maker<input name="catalogue_vendor" maxlength="80" value="${escapeHtml(cat.vendor || "")}" placeholder="Your brand or the maker"></label>
     <label class="lb-field">Product category<select name="catalogue_category"><option value="${escapeHtml(cat.category || "")}">${escapeHtml(cat.category || "Choose a category")}</option></select></label>
     <label class="lb-field">Subcategory<select name="catalogue_subcategory"><option value="${escapeHtml(cat.subcategory || "")}">${escapeHtml(cat.subcategory || "Choose a subcategory")}</option></select></label>
+    <label class="lb-field">Product type<select name="catalogue_product_type" data-initial-type="${escapeHtml(typeId)}" ${typeId ? "" : "disabled"}><option value="">Choose a product type</option>${typeId ? `<option value="${escapeHtml(typeId)}" selected>${escapeHtml(product.classification_reference?.product_type_name || "Product type")} (saved)</option>` : ""}</select></label>
+    <p class="lb-classification-notice" data-classification-notice role="status" hidden></p>
     <p class="lb-muted" data-reference-status role="status">Loading product options…</p>
     <button type="button" class="lb-text-button" data-reference-retry hidden>Retry loading options</button>
     <small class="lb-field-note">Category is how you group products. It does not change tax. Tax comes from the HSN code and GST rate below.</small>
@@ -43,6 +48,7 @@ export function renderCatalogueOptions({ enabled, product = {}, maxAxes = 3, max
     <div class="lb-options-head"><div><h2>Buying options</h2><p>Choose from your subcategory's options and values. Optional, up to ${maxAxes} options and ${maxVariants} combinations.</p></div></div>
     <p class="lb-draft-note" role="note"><strong>Draft preparation.</strong> Combinations are saved with the product as catalogue drafts. SKU-level checkout is not enabled yet, so products with buying options cannot be published to the live store.</p>
     <p class="lb-legacy-note" data-legacy-note role="status" hidden>These saved combinations do not match the saved options. They are kept as they are and shown read only. Generate combinations to replace them.</p>
+    <div class="lb-descriptors" data-descriptors-wrap hidden><h3>Product details</h3><div class="lb-descriptor-grid" data-descriptors></div></div>
     <p class="lb-muted" data-buying-status role="status">Loading product options…</p>
     <button type="button" class="lb-text-button" data-buying-retry hidden>Retry loading options</button>
     <div class="lb-options-actions" data-available-axes role="group" aria-label="Available buying options"></div>

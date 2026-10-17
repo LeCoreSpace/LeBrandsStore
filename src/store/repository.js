@@ -10,6 +10,7 @@ import {verificationState} from "../gstin/service.js";
 import { productContent, collectionContent, saveProductContent } from "./catalog.js";
 import { validCategoryPair } from "../public/aura-taxonomy.js";
 import {catalogueFormsEnabled,saveProductCatalogue} from "./catalogue-products.js";
+import {loadClassifications,writeClassification} from "./catalogue-classification.js";
 
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
@@ -57,6 +58,7 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
   const policies = await tx`SELECT slug, title, content, reviewed_at FROM public.policy_pages
     WHERE store_id = ${storeId} ORDER BY slug`;
   const variants=await tx`SELECT * FROM public.product_options WHERE store_id=${storeId} ORDER BY sort_order,id`;
+  const classifications=await loadClassifications(tx,storeId);
   const data = {
     store,
     catalogue_forms_enabled:await catalogueFormsEnabled(tx),
@@ -67,6 +69,7 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
     products: products.map((p) => ({
       id: p.id, slug:p.slug, status: p.status, title: p.title, description: p.description, price_paise: Number(p.price_paise),
       catalogue:p.catalogue||{},
+      ...(classifications.get(p.id)||{classification:null,catalogue_revision:0}),
       variants:variants.filter(v=>v.product_id===p.id).map(v=>({id:v.id,values:v.attributes?.length?v.attributes:[v.value],sku:v.sku||"",stock:v.stock,expected_stock:v.stock,price_paise:v.price_paise==null?null:Number(v.price_paise)})),
       options:variants.filter(v=>v.product_id===p.id).map(v=>({...v,price_paise:v.price_paise==null?null:Number(v.price_paise)})),
       compare_at_paise: p.compare_at_price_paise == null ? null : Number(p.compare_at_price_paise),
@@ -186,7 +189,7 @@ export async function saveSetup(tx, id, settings, progress, options = {}) {
   }
   return loadDraft(tx, id);
 }
-export async function saveProduct(tx, id, productId, patch, { returnDraft = true, preserveMediaAlt = false } = {}) {
+export async function saveProduct(tx, id, productId, patch, { returnDraft = true, preserveMediaAlt = false, tokenHash } = {}) {
   if (!productId && patch.gst_rate == null) {
     throw badInput("Choose a GST rate explicitly.", {gst_rate:"Choose a GST rate explicitly."});
   }
@@ -239,17 +242,22 @@ export async function saveProduct(tx, id, productId, patch, { returnDraft = true
       VALUES (${id}, ${uuid}, ${image.id}, ${order})`;
   }
   if (patch.content) await saveProductContent(tx, id, uuid, patch.content);
-  await saveProductCatalogue(tx,id,uuid,patch,existing);
+  await saveProductCatalogue(tx,id,uuid,patch,existing,tokenHash);
   await invalidatePolicies(tx, id);
   return { ...(returnDraft ? await loadDraft(tx, id) : {}), saved_product_id: uuid };
 }
-export async function deleteProduct(tx, id, productId) {
+export async function deleteProduct(tx, id, productId, {tokenHash}={}) {
   const [product] = await tx`SELECT id FROM public.products WHERE store_id = ${id} AND id = ${productId}`;
   if (!product) throw missing();
   const [used] = await tx`SELECT id FROM public.order_items WHERE store_id = ${id} AND product_id = ${productId} LIMIT 1`;
   if (used) throw badInput("This product has orders. Archive it instead of deleting it.");
+  const [classified]=await tx`SELECT to_jsonb(p)->>'product_type_id' AS product_type_id,
+    to_jsonb(p)->>'catalogue_revision' AS catalogue_revision FROM public.products p WHERE store_id=${id} AND id=${productId}`;
+  const reset=classified?.product_type_id?{clear:true,expected_revision:Number(classified.catalogue_revision)}:null;
+  if(reset)await writeClassification(tx,id,productId,tokenHash,reset,"prepare");
   await tx`DELETE FROM public.product_media WHERE store_id = ${id} AND product_id = ${productId}`;
   await tx`DELETE FROM public.product_options WHERE store_id = ${id} AND product_id = ${productId}`;
+  if(reset)await writeClassification(tx,id,productId,tokenHash,reset,"clear");
   await tx`DELETE FROM public.collection_products WHERE store_id = ${id} AND product_id = ${productId}`;
   await tx`DELETE FROM public.products WHERE store_id = ${id} AND id = ${productId}`;
   await invalidatePolicies(tx, id);

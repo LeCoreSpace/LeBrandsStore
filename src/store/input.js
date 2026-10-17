@@ -3,6 +3,7 @@ import { CURRENT_GST_RATES, LEGACY_GST_RATES, INDIAN_STATES, gstinError, validIn
 import { validateLayoutMedia } from "../public/aura-layout.js";
 import { validateProductContent } from "../public/catalog-content.js";
 import {validateCatalogue} from "../public/catalogue-model.js";
+import {validateClassification} from "../public/catalogue-classification-model.js";
 import { validCategoryPair } from "../public/aura-taxonomy.js";
 
 export const badInput = (message, errors) => Object.assign(new Error(message), { status: 400, errors });
@@ -74,6 +75,7 @@ export function productPatch(value) {
   if (!object(value)) throw badInput("Use the product form.");
   const result = {}, textFields = { title: 80, description: 2000, sku: 80, hsn_code: 8, slug:80 };
   for (const [key, val] of Object.entries(value)) {
+    if(key==="classification"){result.classification=validateClassification(val);continue;}
     if(key==="catalogue"){result.catalogue=validateCatalogue(val);continue;}
     if(key==="variants"){
       if(!Array.isArray(val)||val.length>200)throw badInput("Use at most 200 variants.");

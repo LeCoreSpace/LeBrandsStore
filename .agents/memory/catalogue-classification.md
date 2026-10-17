@@ -48,3 +48,15 @@ reach an older published Worker before updated application code is published.
 **How to apply:** Preserve RLS-safe transitional reads until those consumers are
 retired. Canonical schema names remain catalogue-prefixed; compatibility must not
 turn into duplicated independently writable masters.
+
+Existing merchant products are grandfathered while master mappings are reviewed.
+Retiring a definition must not force merchants to recreate SKUs or reclassify a
+product just to update quantities, prices, vendor or SEO. Preserve exact saved
+selections; require approved active mappings for changed selections.
+
+**Why:** A staged catalogue rollout must not interrupt inventory maintenance or
+silently replace previously chosen meanings while reference data is incomplete.
+
+**How to apply:** Keep this boundary identical in Ann, dashboard forms and save
+validation. Treat reference activation and merchant backfill as separately
+reviewed work, never as side effects of opening or saving a form.

@@ -746,3 +746,16 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .lb-slug-prefix { display:inline-flex; align-items:center; padding:0 10px; border:1px solid var(--lb-line); border-right:0; white-space:nowrap; }
 .lb-slug-row input { flex:1; min-width:0; }
 .lb-draft-note,.lb-legacy-note { margin:10px 0; padding:9px 12px; border:1px solid var(--lb-line); }
+
+/* Catalogue classification: product type, notices and product details */
+.lb-classification-notice { margin:0 0 10px; padding:10px 12px; border:1px solid var(--lb-line); border-left:3px solid var(--lb-ink, #3b3b3b); background:var(--lb-surface); font-size:.9em; line-height:1.45; }
+.lb-descriptors { margin:0 0 14px; padding:12px; border:1px solid var(--lb-line); background:var(--lb-surface); }
+.lb-descriptors h3 { margin:0 0 10px; font-size:1em; font-weight:600; }
+.lb-descriptor-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; }
+@media (min-width:720px) { .lb-descriptor-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+.lb-descriptor { min-width:0; margin:0; padding:0; border:0; }
+.lb-req { margin-left:6px; font-size:.75em; letter-spacing:.04em; text-transform:uppercase; color:#8a1f1f; }
+.lb-saved-details { margin:0; display:grid; gap:6px; }
+.lb-saved-details div { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,2fr); gap:10px; padding:6px 0; border-top:1px solid var(--lb-line); }
+.lb-saved-details dt { font-weight:500; }
+.lb-saved-details dd { margin:0; overflow-wrap:anywhere; }

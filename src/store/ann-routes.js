@@ -10,6 +10,7 @@ import { prepareAnnReadiness, saveAnnReadiness } from "./ann-readiness.js";
 import { handleStoreRoutes } from "./routes.js";
 import { prepareAnnDesign, saveAnnDesign } from "./ann-design.js";
 import { prepareAnnLaunch, saveAnnLaunch } from "./ann-launch.js";
+import { catalogueReference } from "./catalogue-classification.js";
 const pattern = /^\/api\/stores\/([a-f0-9-]{36})\/ann\/(reference|session|application|readiness|media|design|launch|onboarding)$/i;
 export const isAnnRoute = path => pattern.test(path);
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
@@ -53,6 +54,11 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
         if (raw !== null && (!/^[1-9][0-9]{0,9}$/.test(raw))) throw Object.assign(new Error("Choose a valid subcategory."), { status: 400 });
         const reference = await annReference(tx, raw === null ? null : Number(raw));
         if (raw !== null && !reference.subcategories.some(s => Number(s.subcategory_id) === Number(raw))) throw Object.assign(new Error("Choose a product subcategory."), { status: 400 });
+        if(url.searchParams.get("catalogue")==="1"){
+          const type=url.searchParams.get("product_type_id");
+          if(type!==null&&(!/^[1-9][0-9]{0,14}$/.test(type)||!Number.isSafeInteger(Number(type)))) throw Object.assign(new Error("Choose a valid product type."),{status:400});
+          reference.catalogue=await catalogueReference(tx,raw===null?null:Number(raw),type===null?null:Number(type));
+        }
         return reference;
       }
       let session = await loadAnnSession(tx, storeId);

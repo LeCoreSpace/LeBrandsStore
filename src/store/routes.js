@@ -114,7 +114,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
           if (patch.stock === expected) delete patch.stock; // No intended stock edit: preserve current checkout-adjusted stock.
           else if (stock !== expected) throw Object.assign(new Error("Stock changed while you were editing. Reload before adjusting it."),{status:409});
         }
-        const result = await saveProduct(tx, id, child, patch);
+        const result = await saveProduct(tx, id, child, patch, {tokenHash});
         if (catalogue && !result.products?.find(p=>p.id===result.saved_product_id)?.variants?.length) {
           const product = result.products.find((p) => p.id === result.saved_product_id);
           const errors = product ? validateProduct(product) : {_general:"This archived product is not in the active catalogue."};
@@ -127,7 +127,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         return result;
       }
       if (route === "DELETE products/child") {
-        const result = await deleteProduct(tx,id,child);
+        const result = await deleteProduct(tx,id,child,{tokenHash});
         await syncPublishedProducts(tx,id,child);
         await audit(tx,id,user.id,"product.deleted","product",child);
         return result;

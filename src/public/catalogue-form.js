@@ -1,5 +1,7 @@
 // Reusable catalogue form controller. No globals: model, callbacks and scope are passed in.
 import { initCatalogueReference, attributeFor, referenceAxesAllowed } from "./catalogue-reference.js";
+import { validateClassification } from "./catalogue-classification-model.js";
+import { initDescriptorState, applyDescriptorInput, renderDescriptors, renderSavedSummary, buildClassification, PENDING_NOTICE } from "./catalogue-classification-ui.js";
 import { createProductSku } from "./catalogue-model.js";
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const instances = new WeakMap();
@@ -46,9 +48,24 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   };
   state.legacy = hasLegacyVariants(model, (initial.axes || []).map(a => ({ name: a.name, values: a.values })), state.rows);
 
-  let reference = { status: "loading", attributes: [] };
+  let reference = { status: "loading", attributes: [], catalogue: null };
+  const org = scope.querySelector("[data-catalogue-org]");
+  let initialCls = null;
+  try { initialCls = JSON.parse(org?.dataset.classification || "null"); } catch { /* none */ }
+  let savedRef = null;
+  try { savedRef = JSON.parse(org?.dataset.classificationReference || "null"); } catch { /* none */ }
+  const revision = Number(org?.dataset.revision || 0);
+  const initialType = String(initialCls?.product_type_id || "");
+  const typeValue = () => String(field("catalogue_product_type")?.value || "");
+  let lastType = initialType, desc = initDescriptorState(initialCls);
+  const descByType = new Map();
+  const cat = () => reference.catalogue || { enabled: false, product_types: [], product_type: null, options: [], descriptors: [] };
+  const typed = () => cat().enabled && !!cat().product_type && String(cat().product_type.id) === typeValue();
+  const legacyProduct = !initialType && (initial.axes || []).length > 0;
+  // Legacy reference attributes stay usable only for products that already have legacy axes.
+  const choices = () => typed() ? cat().options : cat().enabled && !legacyProduct ? [] : reference.attributes;
   const initialScope = [field("catalogue_category")?.value || "", field("catalogue_subcategory")?.value || ""];
-  const changedScope = () => JSON.stringify(initialScope) !== JSON.stringify([field("catalogue_category")?.value || "", field("catalogue_subcategory")?.value || ""]);
+  const changedScope = () => typeValue() !== initialType || JSON.stringify(initialScope) !== JSON.stringify([field("catalogue_category")?.value || "", field("catalogue_subcategory")?.value || ""]);
   const cleanAxes = () => state.axes.map(a => ({ name: a.name, values: [...a.values] })).filter(a => a.name || a.values.length);
   const axesKey = () => key(cleanAxes().map(a => [a.name, a.values]));
   state.generated = axesKey();
@@ -66,7 +83,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   function axisProblems() {
     const axes = cleanAxes();
     if (changedScope() && axes.length && reference.status !== "ready") return "Load the selected subcategory's options before generating or saving.";
-    if (!referenceAxesAllowed(axes, reference.attributes, initial.axes || [], changedScope())) return "Choose options and values for the selected subcategory, or remove the old options.";
+    if (!referenceAxesAllowed(axes, choices(), initial.axes || [], changedScope())) return "Choose options and values for the selected subcategory, or remove the old options.";
     for (const [i, a] of axes.entries()) {
       if (!a.name) return `Name option ${i + 1}.`;
       if (!a.values.length) return `Add at least one value for ${a.name}.`;
@@ -87,7 +104,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     else text = `${n.toLocaleString("en-IN")} ${n === 1 ? "combination" : "combinations"} from these options.${stale ? " Generate to update the table before saving." : ""}`;
     node.textContent = text;
     node.dataset.tone = problem || n > maxVariants ? "error" : stale ? "pending" : "ok";
-    box.querySelector("[data-axis-add]").disabled = state.axes.length >= maxAxes || reference.status !== "ready" || !reference.attributes.some(a => !state.axes.some(p => p.name === a.name));
+    box.querySelector("[data-axis-add]").disabled = state.axes.length >= maxAxes || reference.status !== "ready" || !choices().some(a => !state.axes.some(p => p.name === a.name));
     const generateButton = box.querySelector("[data-variants-generate]");
     if (generateButton) generateButton.disabled = !state.rows.length && (!axes.length || !!problem || n > maxVariants);
     box.querySelectorAll("[data-add-reference-axis]").forEach(button => {
@@ -96,14 +113,14 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   }
   function paintAxes() {
     const available = box.querySelector("[data-available-axes]");
-    if (available) available.innerHTML = reference.status === "ready" ? reference.attributes.map(a =>
+    if (available) available.innerHTML = reference.status === "ready" ? choices().map(a =>
       `<button type="button" class="lb-button lb-button-outline" data-add-reference-axis="${esc(a.name)}">${esc(a.name)}</button>`).join("") : "";
     const host = box.querySelector("[data-axes]");
     host.innerHTML = state.axes.map((a, i) => {
-      const current = attributeFor(reference.attributes, a.name);
+      const current = attributeFor(choices(), a.name);
       const values = [...new Set([...(current?.values || []).map(v => v.value), ...a.values])];
       return `<fieldset class="lb-axis" data-axis="${i}"><legend>Option ${i + 1}</legend>
-      <label class="lb-field">Option<select data-axis-name${reference.status !== "ready" ? " disabled" : ""}><option value="">Choose an option</option>${a.name && !current ? `<option value="${esc(a.name)}" selected>${esc(a.name)} (saved)</option>` : ""}${reference.attributes.map(at => `<option value="${esc(at.name)}"${at.name === a.name ? " selected" : ""}${at.name !== a.name && state.axes.some(x => x.name === at.name) ? " disabled" : ""}>${esc(at.name)}</option>`).join("")}</select></label>
+      <label class="lb-field">Option<select data-axis-name${reference.status !== "ready" ? " disabled" : ""}><option value="">Choose an option</option>${a.name && !current ? `<option value="${esc(a.name)}" selected>${esc(a.name)} (saved)</option>` : ""}${choices().map(at => `<option value="${esc(at.name)}"${at.name === a.name ? " selected" : ""}${at.name !== a.name && state.axes.some(x => x.name === at.name) ? " disabled" : ""}>${esc(at.name)}</option>`).join("")}</select></label>
       <div class="lb-check-list" role="group" aria-label="${esc(a.name || "Option")} values">${values.map(value => `<label class="lb-check-input"><input type="checkbox" data-axis-choice value="${esc(value)}"${a.values.includes(value) ? " checked" : ""}>${esc(value)}${!current?.values.some(v => v.value === value) ? " (saved value)" : ""}</label>`).join("") || '<span class="lb-muted">Choose an option to see its values.</span>'}</div>
       <button type="button" class="lb-text-button" data-axis-remove aria-label="Remove option ${i + 1}">Remove option</button></fieldset>`;
     }).join("");
@@ -124,6 +141,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   const paint = () => { paintAxes(); paintMatrix(); };
 
   box.addEventListener("input", event => {
+    if (event.target.matches("[data-descriptor]")) { applyDescriptorInput(desc, event.target); showError(""); return; }
     const axis = event.target.closest("[data-axis]");
     if (axis) {
       const a = state.axes[Number(axis.dataset.axis)];
@@ -147,7 +165,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     const suggested = event.target.closest("[data-add-reference-axis]");
     if (suggested) {
       const name = suggested.dataset.addReferenceAxis;
-      if (reference.status === "ready" && state.axes.length < maxAxes && attributeFor(reference.attributes, name) && !state.axes.some(a => a.name === name)) {
+      if (reference.status === "ready" && state.axes.length < maxAxes && attributeFor(choices(), name) && !state.axes.some(a => a.name === name)) {
         state.axes.push({ name, values: [] }); paintAxes();
         box.querySelector(`[data-axis="${state.axes.length - 1}"] input`)?.focus();
       }
@@ -192,6 +210,16 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   }
 
   // Throws an Error with a merchant-readable message when the catalogue cannot be saved.
+  function classificationFor(axes, savedAxes) {
+    const typeId = typeValue();
+    if (typeId && reference.status !== "ready") throw new Error("Wait for the product type details to load, or retry, before saving.");
+    if (typeId && !cat().enabled) throw new Error("Product types are not available for this workspace yet.");
+    const cls0 = buildClassification({ initial: initialCls, revision, typeId, categoryId: reference.categoryId, subcategoryId: reference.subcategoryId, axes, savedAxes,
+      options: typed() ? cat().options : [], descriptors: typed() ? cat().descriptors : [], descriptorState: desc });
+    if (cls0 === undefined) return undefined;
+    try { return validateClassification(cls0); } catch (e) { throw new Error(e.message); }
+  }
+  const withClassification = (out, axes, savedAxes) => { const cls = classificationFor(axes, savedAxes); if (cls) out.classification = cls; return out; };
   function payload() {
     const problem = axisProblems();
     if (problem) throw new Error(problem);
@@ -201,7 +229,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
       // Keep older variant rows exactly as saved; send identity and SEO only.
       const saved = (initial.axes || []).map(a => ({ name: a.name, values: a.values }));
       const kept = { ...model.validateCatalogue({ ...identity(), axes: saved }), seo_title: search.seo_title, seo_description: search.seo_description };
-      return { catalogue: kept, collection_ids: [...scope.querySelectorAll("[data-collection-pick]:checked")].map(i => i.value), slug: search.slug };
+      return withClassification({ catalogue: kept, collection_ids: [...scope.querySelectorAll("[data-collection-pick]:checked")].map(i => i.value), slug: search.slug }, saved, saved);
     }
     const axes = cleanAxes();
     const catalogue = { ...model.validateCatalogue({ ...identity(), axes }), seo_title: search.seo_title, seo_description: search.seo_description };
@@ -216,7 +244,21 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
       return out;
     });
     const collection_ids = [...scope.querySelectorAll("[data-collection-pick]:checked")].map(i => i.value);
-    return { catalogue, collection_ids, variants, slug: search.slug };
+    return withClassification({ catalogue, collection_ids, variants, slug: search.slug }, axes, (initial.axes || []).map(a => ({ name: a.name, values: a.values })));
+  }
+  function paintClassification() {
+    const c = cat(), notice = scope.querySelector("[data-classification-notice]");
+    const wrap = box.querySelector("[data-descriptors-wrap]"), host = box.querySelector("[data-descriptors]");
+    let text = "";
+    if (c.enabled && reference.status === "ready" && !c.product_types.length) text = PENDING_NOTICE;
+    else if (c.enabled && reference.status === "ready" && !typeValue() && !legacyProduct) text = "Choose a product type to unlock its buying options and details.";
+    else if (!c.enabled && reference.status === "ready" && reference.catalogue) text = "Product types need the catalogue update to be applied before they can be used.";
+    if (notice) { notice.textContent = text; notice.hidden = !text; }
+    const show = typed() && c.descriptors.length > 0;
+    const retired = !typed() && !!initialType && typeValue() === initialType && reference.status === "ready";
+    const summary = retired ? renderSavedSummary(initialCls, savedRef) : "";
+    if (wrap) wrap.hidden = !show && !summary;
+    if (host) host.innerHTML = show ? renderDescriptors(c.descriptors, desc, savedRef) : summary;
   }
   paint();
   const api = { payload, generate, state };
@@ -226,6 +268,9 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     ? { category_id: params.get("ann_category_id"), subcategory_id: params.get("ann_subcategory_id") } : {};
   initCatalogueReference(scope, { url: referenceUrl, defaults, onChange(next) {
     reference = next;
+    const t = typeValue();
+    if (t !== lastType) { descByType.set(lastType, desc); lastType = t; desc = descByType.get(t) || initDescriptorState(t === initialType ? initialCls : null); }
+    paintClassification();
     const status = box.querySelector("[data-buying-status]");
     if (status) status.textContent = next.message || "Choose a category and subcategory in Organisation to see buying options.";
     const retry = box.querySelector("[data-buying-retry]");

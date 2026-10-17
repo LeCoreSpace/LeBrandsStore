@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-catalogue-api"){
+    return {staged:true,filename:"0021_catalogue_forms_api.sql",requires:"0020_catalogue_masters.sql"};
+  }
   if (values.length === 1 && values[0] === "--staged-catalogue-masters") {
     return { staged: true, filename: "0020_catalogue_masters.sql", requires: "0019_catalogue_forms.sql" };
   }
@@ -31,5 +34,5 @@ export function migrationSelection(args) {
   if (values.length === 1 && values[0] === "--staged-starters") {
     return { staged: true, filename: "0015_aura_starter_library.sql", requires: "0012_aura_skeleton_sections.sql" };
   }
-  throw new Error("Use no arguments for regular migrations, --staged-gstin, --staged-aura, --staged-ai, --staged-email, --staged-starters, --staged-ann, --staged-launch, --staged-commerce, --staged-catalogue or --staged-catalogue-masters.");
+  throw new Error("Use no arguments for regular migrations, --staged-gstin, --staged-aura, --staged-ai, --staged-email, --staged-starters, --staged-ann, --staged-launch, --staged-commerce, --staged-catalogue, --staged-catalogue-masters or --staged-catalogue-api.");
 }

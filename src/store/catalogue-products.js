@@ -1,18 +1,29 @@
 import {validateCatalogue,validateVariants} from "../public/catalogue-model.js";
 import {badInput} from "./input.js";
+import {resolveClassification,writeClassification} from "./catalogue-classification.js";
 
 export async function catalogueFormsEnabled(tx){
   const [row]=await tx`SELECT EXISTS(SELECT 1 FROM information_schema.columns
     WHERE table_schema='public' AND table_name='products' AND column_name='catalogue') AS enabled`;
   return row?.enabled===true;
 }
-export async function saveProductCatalogue(tx,storeId,productId,patch,existing){
-  if(patch.catalogue===undefined&&patch.variants===undefined&&patch.collection_ids===undefined)return;
-  if(patch.catalogue!==undefined||patch.variants!==undefined){
+export async function saveProductCatalogue(tx,storeId,productId,patch,existing,tokenHash){
+  if(patch.catalogue===undefined&&patch.variants===undefined&&patch.collection_ids===undefined&&patch.classification===undefined)return;
+  if(patch.catalogue!==undefined||patch.variants!==undefined||patch.classification!==undefined){
     if(!await catalogueFormsEnabled(tx))throw Object.assign(new Error("Apply the catalogue forms database update before saving buying options or catalogue details."),{status:409});
-    const catalogue=validateCatalogue(patch.catalogue??existing?.catalogue??{});
+    let catalogue=validateCatalogue(patch.catalogue??existing?.catalogue??{});
+    let classification=patch.classification;
+    if(classification===undefined&&existing?.product_type_id){
+      const [row]=await tx`SELECT public.catalogue_product_selection(${storeId},${productId})::text AS selection_json`;
+      classification=typeof row?.selection_json==="string"?JSON.parse(row.selection_json):row?.selection_json;
+    }
+    if(classification!==undefined){
+      const resolved=await resolveClassification(tx,storeId,productId,classification,catalogue);
+      catalogue=resolved.catalogue;classification=resolved.selection;
+      await writeClassification(tx,storeId,productId,tokenHash,classification,"prepare");
+    }
     const saved=await tx`SELECT * FROM public.product_options WHERE store_id=${storeId} AND product_id=${productId} ORDER BY sort_order,id FOR UPDATE`;
-    if(patch.variants===undefined&&catalogue.axes.length&&JSON.stringify(catalogue.axes)!==JSON.stringify(existing?.catalogue?.axes||[]))throw badInput("Generate and save the buying-option combinations together.");
+    if(patch.variants===undefined&&JSON.stringify(catalogue.axes)!==JSON.stringify(existing?.catalogue?.axes||[]))throw badInput("Generate and save the buying-option combinations together.");
     if(patch.variants!==undefined){
       const variants=validateVariants(patch.variants,catalogue),ids=new Set();
       for(const row of variants){
@@ -45,6 +56,7 @@ export async function saveProductCatalogue(tx,storeId,productId,patch,existing){
       if(variants.length)await tx`UPDATE public.products SET stock=${variants.reduce((sum,row)=>sum+row.stock,0)},track_inventory=true WHERE store_id=${storeId} AND id=${productId}`;
     }
     await tx`UPDATE public.products SET catalogue=${tx.json(catalogue)},updated_at=now() WHERE store_id=${storeId} AND id=${productId}`;
+    if(classification!==undefined)await writeClassification(tx,storeId,productId,tokenHash,classification,classification.clear?"clear":"save");
   }
   if(patch.collection_ids!==undefined){
     const owned=await tx`SELECT id FROM public.collections WHERE store_id=${storeId}

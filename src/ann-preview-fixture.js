@@ -45,7 +45,7 @@ const fixtureMedia={
   async put(key,bytes,options){memoryMedia.set(key,{bytes:new Uint8Array(bytes),type:options.httpMetadata.contentType});},
   async delete(key){memoryMedia.delete(key);},
 };
-export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false,verifiedBusiness=false,catalogueMasters=true}={}) {
+export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false,verifiedBusiness=false,catalogueMasters=true,catalogueApi=false,sampleClassification=false}={}) {
   const pg = new PGlite();
   try {
     await pg.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
@@ -61,6 +61,10 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
     if (catalogueMasters) {
       const file = "0020_catalogue_masters.sql";
       await pg.exec(await preparePageMigration(file, await readFile(new URL(`../db/staged/${file}`, import.meta.url), "utf8")));
+    }
+    if(catalogueApi){
+      const file="0021_catalogue_forms_api.sql";
+      await pg.exec(await preparePageMigration(file,await readFile(new URL(`../db/staged/${file}`,import.meta.url),"utf8")));
     }
     await pg.exec(`
       INSERT INTO brands(id,name,legal_name) VALUES('${storeId}','Example Studio','Example Studio');
@@ -96,10 +100,15 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
       }),{},annFixtureAdapter(pg),{id:ownerId},"a".repeat(64));
       if(!response.ok)throw new Error("Synthetic GST invoice identity could not be confirmed.");
     }
+    if(sampleClassification){
+      if(!catalogueApi)throw new Error("Sample classification requires the catalogue API fixture.");
+      const {seedCataloguePreviewReferences}=await import("./catalogue-preview-references.js");
+      await seedCataloguePreviewReferences(pg);
+    }
     return pg;
   } catch (error) { await pg.close(); throw error; }
 }
-const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true,sampleCatalogue:true,verifiedBusiness:true}).catch(error => { database = null; throw error; });
+const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true,sampleCatalogue:true,verifiedBusiness:true,catalogueApi:true,sampleClassification:true}).catch(error => { database = null; throw error; });
 export function annFixtureAdapter(pg) {
   return { withMemberStore: async (id, hash, fn) => {
     if (id !== storeId || !["a".repeat(64), "b".repeat(64)].includes(hash))
