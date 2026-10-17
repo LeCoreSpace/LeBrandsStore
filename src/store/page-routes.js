@@ -42,7 +42,7 @@ export async function handlePageRoutes(request, env, db, user, tokenHash) {
         : await savePage(tx, id, page, body.layout, body.expected_version, tokenHash, data);
       await audit(tx, id, user.id, restore ? "store.page_restored" : "store.page_saved", "store_page", id, { page_key: page, version: row.version });
       return row;
-    });
+    },{lockStore:!read});
     return json(result);
   } catch (error) {
     const status = error.code === "42501" ? 403 : error.code === "40001" ? 409 : error.code === "22023" ? 400 : error.status || 503;

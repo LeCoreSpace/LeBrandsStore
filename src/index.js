@@ -17,6 +17,7 @@ import { CRAWLER_FILES, serveCrawlerFile } from "./crawler-files.js";
 import { processAiMessage } from "./ai/worker.js";
 import { scheduleCommerce } from "./connections/jobs.js";
 import { razorpayWebhook } from "./connections/payments.js";
+import {withNavigation} from "./ui/navigation-loader.js";
 
 const ROOT_DOMAIN = ".lebrands.store";
 const STORE_NAME_PATTERN = /^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])$/;
@@ -146,9 +147,12 @@ export default {
     }
     if (hostname === "app.lebrands.store" && url.pathname === "/robots.txt") return serveCrawlerFile(request, env, true);
     if (hostname === "app.lebrands.store"){
+      const started=performance.now();
       const response=await handleAccounts(request,env,ctx);
       if(request.method==="POST"&&response.status<400&&env.AI_BUILD_QUEUE)ctx?.waitUntil(schedulePendingEmails(env));
-      return response;
+      const headers=new Headers(response.headers);
+      headers.append("server-timing",`app;dur=${(performance.now()-started).toFixed(1)};desc="Account response"`);
+      return new Response(response.body,{status:response.status,statusText:response.statusText,headers});
     }
     if (hostname === "lebrands.store") {
       if (Object.hasOwn(CRAWLER_FILES, url.pathname)) return serveCrawlerFile(request, env);
@@ -168,7 +172,7 @@ export default {
       const marketing=url.pathname==="/" || url.pathname==="/pricing" || url.pathname==="/compare";
       const headers={ ...SECURITY_HEADERS, "cache-control": "public, max-age=300", "content-type": "text/html; charset=utf-8" };
       if(marketing)headers["content-security-policy"]=headers["content-security-policy"].replace("font-src https://fonts.gstatic.com","font-src 'self' https://fonts.gstatic.com");
-      return new Response(request.method==="HEAD"?null:url.pathname === "/" ? renderHome() : url.pathname==="/pricing"?renderPricing():url.pathname==="/compare"?renderCompare():renderLegal(legal[url.pathname]), {
+      return new Response(request.method==="HEAD"?null:withNavigation(url.pathname === "/" ? renderHome() : url.pathname==="/pricing"?renderPricing():url.pathname==="/compare"?renderCompare():renderLegal(legal[url.pathname])), {
         headers,
       });
     }

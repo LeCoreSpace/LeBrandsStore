@@ -3,6 +3,7 @@ import { POLICY_KINDS, UUID } from "../public/validation.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import { handleCheckout, isCheckoutPath } from "../checkout/routes.js";
 import { pagesEnabled, pageLayouts, skeletonEnabled } from "./pages.js";
+import {withNavigation} from "../ui/navigation-loader.js";
 
 export function storefrontPage(path, data) {
   if (path === "/") return { page: "home", status: 200 };
@@ -48,7 +49,7 @@ export async function serveStorefront(request, db, store, env = {}) {
   if (isCheckoutPath(url.pathname)) return handleCheckout(request,env,db,store,data);
   if (!["GET","HEAD"].includes(request.method)) return new Response("Method not allowed",{status:405,headers:SECURITY_HEADERS});
   const options = storefrontPage(url.pathname, data);
-  return new Response(request.method === "HEAD" ? null : renderAura(data, {...options,commerce:true,siteKey:env.TURNSTILE_SITE_KEY ?? ""}), {
+  return new Response(request.method === "HEAD" ? null : withNavigation(renderAura(data, {...options,commerce:true,siteKey:env.TURNSTILE_SITE_KEY ?? ""})), {
     status: options.status,
     headers: { ...SECURITY_HEADERS, "content-type": "text/html; charset=utf-8" },
   });

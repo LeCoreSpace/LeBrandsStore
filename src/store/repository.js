@@ -29,7 +29,7 @@ const mediaRecord = (m) => ({
   ...(m.upload_type==="image"&&m.renditions?.length?{sources:m.renditions}:{}),
   ...(m.ai_generated?{ai_generated:true,approval_status:m.approval_status,source_media_id:m.source_media_id}:{}),
 });
-export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
+export async function loadDraft(tx, storeId, { includeArchived = false, includeDesign = true } = {}) {
   // to_jsonb is compatible both before and after the staged approval migration.
   const [store] = await tx`SELECT store_id, name, subdomain, status, subdomain_changed_at,
     to_jsonb(s) ? 'approved_at' AS approval_enabled,
@@ -53,18 +53,22 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
       OR (i.credit_note_number IS NOT NULL AND (i.cancelled_at AT TIME ZONE 'Asia/Kolkata')::date >=
       make_date(extract(year FROM now() AT TIME ZONE 'Asia/Kolkata')::integer -
         CASE WHEN extract(month FROM now() AT TIME ZONE 'Asia/Kolkata') < 4 THEN 1 ELSE 0 END,4,1)))) AS locked`;
-  const products = await tx`SELECT *, to_json(tags) AS tags FROM public.products WHERE store_id = ${storeId}
-    AND (${includeArchived} OR status <> 'archived') ORDER BY created_at, id`;
-  const images = await tx`SELECT pm.product_id, m.* FROM public.product_media pm
-    JOIN public.media m ON m.store_id = pm.store_id AND m.id = pm.media_id
-    WHERE pm.store_id = ${storeId} ORDER BY pm.sort_order, pm.id`;
-  const policies = await tx`SELECT slug, title, content, reviewed_at FROM public.policy_pages
-    WHERE store_id = ${storeId} ORDER BY slug`;
-  const variants=await tx`SELECT * FROM public.product_options WHERE store_id=${storeId} ORDER BY sort_order,id`;
-  const classifications=await loadClassifications(tx,storeId);
+  // Independent reads share the already-authorized transaction. Queue them
+  // together instead of paying a separate client/server wait for each read.
+  const [products,images,policies,variants,classifications,formsEnabled]=await Promise.all([
+    tx`SELECT *, to_json(tags) AS tags FROM public.products WHERE store_id = ${storeId}
+      AND (${includeArchived} OR status <> 'archived') ORDER BY created_at, id`,
+    tx`SELECT pm.product_id, m.* FROM public.product_media pm
+      JOIN public.media m ON m.store_id = pm.store_id AND m.id = pm.media_id
+      WHERE pm.store_id = ${storeId} ORDER BY pm.sort_order, pm.id`,
+    tx`SELECT slug, title, content, reviewed_at FROM public.policy_pages
+      WHERE store_id = ${storeId} ORDER BY slug`,
+    tx`SELECT * FROM public.product_options WHERE store_id=${storeId} ORDER BY sort_order,id`,
+    loadClassifications(tx,storeId),catalogueFormsEnabled(tx),
+  ]);
   const data = {
     store,
-    catalogue_forms_enabled:await catalogueFormsEnabled(tx),
+    catalogue_forms_enabled:formsEnabled,
     invoice_prefix_locked:!!prefixLock?.locked,
     settings: { ...DEFAULT_SETTINGS, brand_name: store.name, subdomain: store.subdomain,
       ...setup?.settings, logo_media_id: logo?.id ?? null, logo_url: logo ? mediaUrl(logo.object_key) : "",
@@ -86,12 +90,15 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
   };
   data.progress.completed = completion(data, data.progress);
   if (await pagesEnabled(tx)) {
-    const[publication]=await tx`SELECT snapshot->'settings' AS settings FROM public.store_publications WHERE store_id=${storeId}`;
-    data.published_settings=publication?.settings||null;
+    if(includeDesign){
+      const[publication]=await tx`SELECT snapshot->'settings' AS settings FROM public.store_publications WHERE store_id=${storeId}`;
+      data.published_settings=publication?.settings||null;
+    }
     const collections = await tx`SELECT id,title,slug,description FROM public.collections WHERE store_id=${storeId} ORDER BY created_at,id`;
     const memberships = await tx`SELECT collection_id,product_id FROM public.collection_products WHERE store_id=${storeId}`;
     data.collections = collections.map(c => ({ ...c, ...collectionContent(setup?.settings, c.id), product_ids: memberships.filter(m => m.collection_id === c.id).map(m => m.product_id) }));
     for (const product of data.products) product.collection_ids = memberships.filter(m => m.product_id === product.id).map(m => m.collection_id);
+    if(includeDesign){
     const pages = await pageLayouts(tx, storeId);
     data.aura_skeleton_enabled = pages.aura_skeleton_enabled;
     data.layouts = { ...defaultPageLayouts(data), ...pages.layouts };
@@ -102,6 +109,9 @@ export async function loadDraft(tx, storeId, { includeArchived = false } = {}) {
       const [pilot] = await tx`SELECT EXISTS(SELECT 1 FROM public.aura_library_packs
         WHERE pack_id='c0010001-0000-4000-8000-000000000001' AND status='published') AS available`;
       data.aura_starter_enabled = pilot?.available === true;
+    }
+    }else{
+      data.aura_skeleton_enabled=await skeletonEnabled(tx);
     }
   }
   if(store.approval_enabled)data.gstinVerification=await verificationState(tx,storeId,data.settings);

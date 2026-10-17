@@ -11,7 +11,7 @@ export async function handleStyleStudio(request, env, db, user, hash) {
     const data = await db.withMemberStore(id, hash, async tx => {
       const role = await dashboardAccess(tx, id, user.id);
       return { ...await loadDraft(tx, id), role };
-    });
+    },{lockStore:false});
     return new Response(request.method === "HEAD" ? null : renderStyleStudio(data, user), {
       headers: { ...SECURITY_HEADERS, "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
     });

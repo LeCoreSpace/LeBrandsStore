@@ -1,6 +1,7 @@
 import { LE_BRANDS_LOGO } from "./brand.js";
 import { FAVICON_LINKS } from "./favicon.js";
 import { platformSeoHead } from "./platform-seo.js";
+import {navigationHead,NAVIGATION_BODY} from "./navigation-loader.js";
 
 export function escapeHtml(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({
@@ -44,9 +45,10 @@ export function layout({ title, description, canonical, body, noindex = false, e
     @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
     .form-control input,.form-control textarea,.form-control select,.empty-card,.subdomain-suffix{background:#ffffff}
   </style>
+  ${navigationHead()}
   ${extraHead}
 </head>
-<body>${body}</body>
+<body>${NAVIGATION_BODY}${body}</body>
 </html>`;
 }
 

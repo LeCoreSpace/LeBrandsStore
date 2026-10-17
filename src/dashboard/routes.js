@@ -77,7 +77,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
         await audit(tx,id,user.id,"data.exported","store",id,{kind:child,row_count:exported.rows.length,filters:dateFilters(body)});
         return exported;
       }
-      const draft = await loadDraft(tx,id,{includeArchived:section === "products"});
+      const draft = await loadDraft(tx,id,{includeArchived:section === "products",includeDesign:!["overview","orders","customers","invoices"].includes(section)});
       const data = {store:draft.store,draft,role,filters};
       if (section === "settings" || section === "overview") {
         const [checkoutSchema]=await tx`SELECT to_regclass('public.checkout_settings') IS NOT NULL AS enabled`;
@@ -116,7 +116,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
         if (child && child !== "new" && !data.product) throw commerceError("Product not found.",undefined,404);
       }
       return data;
-    });
+    },{lockStore:!read});
     if (section === "exports") return new Response(csv(result.headers,result.rows),{headers:{...headers,
       "content-type":"text/csv; charset=utf-8","content-disposition":`attachment; filename="${section}-${child}.csv"`}});
     if (api) return json(result);

@@ -84,7 +84,7 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
         ${body.current_step}::text,${JSON.stringify(answers)}::text::jsonb) AS revision`;
       session = await loadAnnSession(tx, storeId);
       return annSessionResponse(tx, storeId, session, merged.cleared);
-    });
+    },{lockStore:writing||!["reference","session","design"].includes(action)});
     if (data.conflict) return json({ error: "Ann progress changed in another tab. Reload your progress before saving." }, 409);
     return request.method === "HEAD" ? new Response(null, { headers: json({}).headers }) : json(data);
   } catch (error) {

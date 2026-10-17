@@ -50,7 +50,7 @@ export function createDb(env) {
         return fn(tx);
       });
     },
-    async withMemberStore(storeId, tokenHash, fn) {
+    async withMemberStore(storeId, tokenHash, fn, {lockStore=true}={}) {
       if (!UUID_PATTERN.test(storeId) || !/^[0-9a-f]{64}$/.test(tokenHash ?? "")) {
         throw Object.assign(new Error("Store not found."), { status: 404 });
       }
@@ -59,8 +59,13 @@ export function createDb(env) {
         const [access] = await tx`SELECT public.authorize_store_session(${tokenHash}, ${storeId}) AS allowed`;
         if (!access?.allowed) throw Object.assign(new Error("You do not have access to this store."), { status: 403 });
         await tx`SELECT set_config('app.store_id', ${storeId}, true)`;
-        // Every wizard mutation and publication serializes on the store row.
-        const [store] = await tx`SELECT store_id FROM public.stores WHERE store_id = ${storeId} FOR UPDATE`;
+        // Mutations serialize on the store row. Read callers use compatible
+        // shared locks: they do not queue each other, but a concurrent save
+        // cannot change the draft halfway through a multi-query read.
+        // Do not use a READ ONLY transaction: authorization takes SHARE locks.
+        const [store] = lockStore
+          ? await tx`SELECT store_id FROM public.stores WHERE store_id = ${storeId} FOR UPDATE`
+          : await tx`SELECT store_id FROM public.stores WHERE store_id = ${storeId} FOR SHARE`;
         if (!store) throw Object.assign(new Error("Store not found."), { status: 404 });
         return fn(tx);
       });

@@ -148,6 +148,24 @@ test("member transactions authorize the session before setting tenant context an
   await db.close();
 });
 
+test("explicit page reads keep authorization and tenant isolation without an exclusive store lock; saves still lock",async()=>{
+  const db=createDb(env);
+  await db.withMemberStore(STORE_ID,"a".repeat(64),async()=>{},{lockStore:false});
+  const authorize=state.queries.findIndex(q=>q.query.includes("authorize_store_session"));
+  const context=state.queries.findIndex(q=>q.query.includes("set_config"));
+  assert.ok(authorize>=0&&context>authorize);
+  assert.ok(state.queries.some(q=>q.query.includes("FROM public.stores")));
+  assert.ok(state.queries.some(q=>q.query.includes("FROM public.stores")&&q.query.includes("FOR SHARE")));
+  assert.ok(!state.queries.some(q=>q.query.includes("FOR UPDATE")));
+  state.queries=[];
+  await db.withMemberStore(STORE_ID,"a".repeat(64),async()=>{});
+  assert.ok(state.queries.some(q=>q.query.includes("FOR UPDATE")));
+  state.queries=[];state.allowed=false;
+  await assert.rejects(db.withMemberStore(SECOND_STORE_ID,"a".repeat(64),()=>assert.fail("unauthorized read"),{lockStore:false}),{status:403});
+  assert.ok(!state.queries.some(q=>q.query.includes("set_config")));
+  await db.close();
+});
+
 test("database failures return 503 and log only a diagnostic code", async () => {
   const logger = mock.method(console, "error", () => {});
   state.error = Object.assign(new Error("sensitive connection details"), { code: "08006" });

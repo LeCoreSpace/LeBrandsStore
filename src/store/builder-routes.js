@@ -64,8 +64,8 @@ export async function handleBuilderRoutes(request, env, db, user, tokenHash) {
           };
         }
       }
-      return data;
-    });
+    return data;
+    },{lockStore:false});
     if (target !== "ann") return redirect(`/stores/${id}/build/ann`);
     // Never send this route into the legacy AI-generation interface.
     if (target === "ann" && !annBuilderEnabled(env)) data.annUnavailable="Ann is temporarily unavailable. Your saved store and theme editor are unchanged.";
