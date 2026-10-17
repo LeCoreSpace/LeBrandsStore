@@ -14,6 +14,12 @@ export function compilePageSchemaSnapshot(snapshot) {
   }]));
 }
 export async function preparePageMigration(filename, source) {
+  if (filename === "0020_catalogue_masters.sql") {
+    const marker = "__CATALOGUE_PRODUCT_TYPES_V1__";
+    if (source.split(marker).length !== 2) throw new Error("Catalogue seed marker must occur exactly once.");
+    const { catalogueProductTypeSeed } = await import("./catalogue-master-seed.js");
+    return source.replace(marker, (await catalogueProductTypeSeed()).sql);
+  }
   if (filename === "0016_ann_foundation.sql") {
     if (!source.includes("__ANN_REFERENCE_SEED_V1__")) throw new Error("Missing Ann reference seed token.");
     const { annReferenceSeed } = await import("./ann-reference-seed.js");

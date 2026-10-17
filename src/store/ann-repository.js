@@ -10,8 +10,19 @@ export async function annReady(tx) {
   if (!row?.ready) throw Object.assign(new Error("Ann needs its Stage 3 migration before progress can be saved."), { status: 503 });
 }
 export async function annReference(tx, subcategoryId) {
-  const categories = await tx`SELECT category_id,name,slug FROM public.aura_library_categories WHERE is_active ORDER BY category_id`;
-  const subcategories = await tx`SELECT subcategory_id,category_id,name,slug FROM public.aura_library_subcategories WHERE is_active ORDER BY category_id,subcategory_id`;
+  // Explicit schema-version bridge while old and new Workers coexist.
+  const [schema] = await tx`SELECT
+    to_regclass('public.catalogue_categories') IS NOT NULL AS categories_ready,
+    to_regclass('public.catalogue_subcategories') IS NOT NULL AS subcategories_ready`;
+  if (!!schema?.categories_ready !== !!schema?.subcategories_ready) {
+    throw Object.assign(new Error("The catalogue taxonomy migration is incomplete."), { status: 503 });
+  }
+  const categories = schema?.categories_ready
+    ? await tx`SELECT category_id,name,slug FROM public.catalogue_categories WHERE is_active ORDER BY category_id`
+    : await tx`SELECT category_id,name,slug FROM public.aura_library_categories WHERE is_active ORDER BY category_id`;
+  const subcategories = schema?.subcategories_ready
+    ? await tx`SELECT subcategory_id,category_id,name,slug FROM public.catalogue_subcategories WHERE is_active ORDER BY category_id,subcategory_id`
+    : await tx`SELECT subcategory_id,category_id,name,slug FROM public.aura_library_subcategories WHERE is_active ORDER BY category_id,subcategory_id`;
   const attributes = subcategoryId ? await tx`SELECT a.id,a.subcategory_id,a.name,
     COALESCE((SELECT jsonb_agg(jsonb_build_object('id',v.id,'value',v.value) ORDER BY v.sort_order,v.id)
       FROM public.ann_reference_values v WHERE v.attribute_id=a.id),'[]'::jsonb)::text AS values_json

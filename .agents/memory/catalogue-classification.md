@@ -37,3 +37,14 @@ renaming the existing category and subcategory tables.
 legacy names as the canonical schema merely to avoid updating application SQL.
 Complete one phase and confirm its outcome before proceeding to the next phase,
 as the user requested for this rollout.
+
+Catalogue schema changes and published Worker updates happen independently.
+Retiring legacy schema aliases requires checking deployed consumers, not merely
+finding no legacy queries in the current workspace.
+
+**Why:** The application uses a shared external database, so a schema rename can
+reach an older published Worker before updated application code is published.
+
+**How to apply:** Preserve RLS-safe transitional reads until those consumers are
+retired. Canonical schema names remain catalogue-prefixed; compatibility must not
+turn into duplicated independently writable masters.
