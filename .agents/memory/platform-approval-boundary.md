@@ -3,7 +3,7 @@ name: Platform approval boundary
 description: Staff-only store approval, first go-live, manual review and staged rollout decisions.
 ---
 
-Every store's first go-live requires approval from LeBrands staff, even when
+The earlier product direction required every store's first go-live to receive approval from LeBrands staff, even when
 GSTIN verification succeeds. Brand owners, admins and staff cannot approve
 any store, including their own. The approval mechanism is an administrative
 script using the postgres connection, not a Worker endpoint or brand UI.
@@ -20,3 +20,9 @@ Require a documented manual-review flag and note when there is no valid
 provider verification. Manual approval is not GSTIN verification and must
 not unlock tax invoices while registration remains unverified. Never add a
 brand-facing approve endpoint or approval control.
+
+The user subsequently corrected the public setup FAQ: "there is no platform approval." Do not repeat the earlier approval requirement as current product policy.
+
+**Why:** The user's latest stated policy supersedes the earlier product direction.
+
+**How to apply:** Public setup explanations should describe required setup checks and merchant-led publication. The FAQ correction alone does not authorize removing database or publishing safeguards; inspect those separately before changing enforcement.

@@ -14,3 +14,10 @@ test("platform FAQ explains dashboard self-service for payments, delivery and cu
   assert.match(faq.get("How do I set up delivery?"),/manually/);
   assert.match(faq.get("Can I use my own domain?"),/DNS setup and domain verification/);
 });
+
+test("setup FAQ describes guided setup without claiming platform approval is required",()=>{
+  const answer=new Map(PLATFORM_FAQ).get("How long does setup take?");
+  assert.doesNotMatch(answer,/platform approval/i);
+  assert.match(answer,/required setup checks/);
+  assert.match(answer,/publish when you are ready/);
+});

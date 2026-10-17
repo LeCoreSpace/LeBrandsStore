@@ -14,7 +14,7 @@ export const PLATFORM_FAQ = [
   ["How do I set up delivery?", "Set up delivery through your dashboard. Connect your own Shiprocket account, or manage shipping manually and add tracking details for your orders."],
   ["Can I use my own domain?", "Yes. Your store starts at yourbrand.lebrands.store. You can connect your own custom domain through your dashboard by following the DNS setup and domain verification instructions."],
   ["Who owns my customer data?", "Your brand owns its customer data. We never market to your customers."],
-  ["How long does setup take?", "Setup time varies with your product catalogue and business details. You complete a guided wizard, then first publication requires platform approval."],
+  ["How long does setup take?", "Setup time varies with your product catalogue and business details. Ann guides you through building your store. Complete the required setup checks, review your store and publish when you are ready."],
 ];
 
 const attribute = value => String(value).replace(/[&<>"']/g, c => ({
