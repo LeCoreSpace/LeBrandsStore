@@ -281,7 +281,6 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     const wrap = box.querySelector("[data-descriptors-wrap]"), host = box.querySelector("[data-descriptors]");
     let text = "";
     if (c.enabled && reference.status === "ready" && !c.product_types.length) text = PENDING_NOTICE;
-    else if (c.enabled && reference.status === "ready" && !typeValue() && !legacyProduct) text = "Choose a product type to unlock its product options and details.";
     else if (!c.enabled && reference.status === "ready" && reference.catalogue) text = "Product types need the catalogue update to be applied before they can be used.";
     if (notice) { notice.textContent = text; notice.hidden = !text; }
     const show = typed() && c.descriptors.length > 0;

@@ -1,3 +1,16 @@
+test("product type selection and loading feedback live with Variants, not a separate sidebar",()=>{
+  const product={classification:{product_type_id:15},classification_reference:{product_type_name:"T-shirts <saved>"}};
+  const org=renderCatalogueOrganisation({enabled:true,product});
+  const variants=renderCatalogueOptions({enabled:true,product});
+  assert.doesNotMatch(org,/name="catalogue_product_type"/);
+  assert.match(variants,/name="catalogue_product_type"/);
+  assert.match(variants,/data-initial-type="15"/);
+  assert.match(variants,/value="15" selected/);
+  assert.match(variants,/T-shirts &lt;saved&gt;/);
+  assert.match(variants,/data-reference-status/);
+  assert.match(variants,/data-reference-retry/);
+  assert.equal((variants.match(/name="catalogue_product_type"/g)||[]).length,1);
+});
 import test from "node:test";
 import assert from "node:assert/strict";
 import { renderCatalogueOrganisation, renderCatalogueOptions, renderSearchPreview, cataloguePrerequisiteNotice } from "../src/ui/catalogue-forms.js";

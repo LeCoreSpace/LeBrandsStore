@@ -72,7 +72,8 @@ export function initCatalogueReference(scope, { url, onChange, defaults = {}, fe
     const parent = findReference(reference.categories, category.value);
     const sub = findReference(reference.subcategories.filter(s => Number(s.category_id) === Number(parent?.category_id)), subcategory.value);
     const ids = { categoryId: parent ? Number(parent.category_id) : null, subcategoryId: sub ? Number(sub.subcategory_id) : null };
-    if (!sub) { paintTypes([]); emit({ status: "empty", attributes: [], catalogue: noCatalogue, ...ids }, "Choose a category and subcategory to see their product options."); return; }
+    if (!sub) { paintTypes([]); if(typeSelect&&!savedType)typeSelect.innerHTML='<option value="">Choose a category and subcategory first</option>'; emit({ status: "empty", attributes: [], catalogue: noCatalogue, ...ids }, "Choose a category and subcategory in Organisation to load product types here."); return; }
+    if(typeSelect)typeSelect.disabled=true;
     emit({ status: "loading", attributes: [], catalogue: noCatalogue, ...ids }, "Loading product options…");
     const fetchScope = async typeId => {
       const key = `${sub.subcategory_id}:${typeId}`;
@@ -99,10 +100,10 @@ export function initCatalogueReference(scope, { url, onChange, defaults = {}, fe
       if (!Array.isArray(body.attributes) || body.attributes.some(a => !a.name || !Array.isArray(a.values) || a.values.some(v => typeof v.value !== "string"))) throw new Error("The product option reference is incomplete. Please retry.");
       pending.forEach(p => p.key && cache.set(p.key, p.b));
       let message = body.attributes.length ? "Choose your product options and the values you sell." : "No predefined product options for this subcategory.";
-      if (catalogue.enabled) message = !catalogue.product_types.length ? "Product types for this subcategory are pending approval." : catalogue.product_type ? "Choose your product options and product details." : "Choose a product type to see its product options and details.";
+      if (catalogue.enabled) message = !catalogue.product_types.length ? "Product types for this subcategory are pending approval." : catalogue.product_type ? "Choose your product options and product details." : `${catalogue.product_types.length} product ${catalogue.product_types.length===1?"type available":"types available"}. Choose a product type to see its variants and product details.`;
       emit({ status: "ready", attributes: body.attributes, catalogue, ...ids }, message);
     } catch (error) {
-      if (attempt === token) emit({ status: "error", attributes: [], catalogue: noCatalogue, ...ids }, error.message);
+      if (attempt === token) {if(typeSelect)typeSelect.disabled=true;emit({ status: "error", attributes: [], catalogue: noCatalogue, ...ids }, error.message);}
     }
   }
   function subs(keepSaved, value = subcategory.value) {
