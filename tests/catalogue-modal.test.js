@@ -3,6 +3,22 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import {catalogueFormURL,isCatalogueMessage,attachAnnCatalogue} from "../src/public/catalogue-modal.js";
 
+test("closing Ann uses an in-app discard prompt; rendering reference data does not mark a form dirty",()=>{
+  const source=readFileSync("src/public/catalogue-modal.js","utf8");
+  const close=source.slice(source.indexOf("async function close()"),source.indexOf("function open("));
+  assert.match(close,/await confirmCatalogueAction/);
+  assert.doesNotMatch(close,/window\.confirm/);
+  assert.match(close,/closePending/);
+  assert.match(source,/form\.addEventListener\("lebrands:catalogue-change",changed\)/);
+  assert.match(source,/change\.target\.closest\("\[data-images\],\[data-cover-preview\]"\)/);
+  const controller=readFileSync("src/public/catalogue-form.js","utf8");
+  assert.match(controller,/async function generate/);
+  assert.match(controller,/await confirm\(/);
+  assert.match(controller,/finally\s*\{/);
+  assert.match(controller,/if\(signature\(\)!==before\)/);
+  assert.match(controller,/markChanged\(\)/);
+});
+
 test("modal destinations stay on the current store's existing form routes",()=>{
   const origin="https://example.invalid",root="/stores/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
   assert.equal(catalogueFormURL(root,"products","new",origin).href,`${origin}${root}/products/new?ann_modal=1`);

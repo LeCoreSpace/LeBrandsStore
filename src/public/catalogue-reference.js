@@ -72,7 +72,7 @@ export function initCatalogueReference(scope, { url, onChange, defaults = {}, fe
     const parent = findReference(reference.categories, category.value);
     const sub = findReference(reference.subcategories.filter(s => Number(s.category_id) === Number(parent?.category_id)), subcategory.value);
     const ids = { categoryId: parent ? Number(parent.category_id) : null, subcategoryId: sub ? Number(sub.subcategory_id) : null };
-    if (!sub) { paintTypes([]); if(typeSelect&&!savedType)typeSelect.innerHTML='<option value="">Choose a category and subcategory first</option>'; emit({ status: "empty", attributes: [], catalogue: noCatalogue, ...ids }, "Choose a category and subcategory in Organisation to load product types here."); return; }
+    if (!sub) { paintTypes([]); if(typeSelect&&!savedType)typeSelect.innerHTML='<option value="">Choose a category and subcategory first</option>'; emit({ status: "empty", attributes: [], catalogue: noCatalogue, ...ids }, "Choose a category and subcategory above to load product types."); return; }
     if(typeSelect)typeSelect.disabled=true;
     emit({ status: "loading", attributes: [], catalogue: noCatalogue, ...ids }, "Loading product options…");
     const fetchScope = async typeId => {

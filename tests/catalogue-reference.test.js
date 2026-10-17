@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { attributeFor, findReference, referenceAxesAllowed, initCatalogueReference, catalogueDefaultSelection } from "../src/public/catalogue-reference.js";
-import { renderCatalogueOrganisation } from "../src/ui/catalogue-forms.js";
+import { renderCatalogueOptions } from "../src/ui/catalogue-forms.js";
 import { initCatalogueForm, ensureProductSku } from "../src/public/catalogue-form.js";
 import * as model from "../src/public/catalogue-model.js";
 
@@ -64,8 +64,8 @@ test("reference loading discards a stale response after subcategory changes", as
   assert.equal(states.at(-1).attributes[0].name, "Second only");
   assert.ok(!states.some(s => s.attributes.some(a => a.name === "Wrong stale option")));
 });
-test("product organisation has real category/subcategory selectors and a retry", () => {
-  const html = renderCatalogueOrganisation({ enabled: true, product: { catalogue: { category: "<saved>", subcategory: "Legacy" } } });
+test("variant setup has real category/subcategory selectors", () => {
+  const html = renderCatalogueOptions({ enabled: true, product: { catalogue: { category: "<saved>", subcategory: "Legacy" } } });
   assert.match(html, /<select name="catalogue_category">/);
   assert.match(html, /<select name="catalogue_subcategory">/);
   assert.match(html, /&lt;saved&gt;/);

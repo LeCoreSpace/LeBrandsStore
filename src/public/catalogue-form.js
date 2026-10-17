@@ -46,6 +46,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     rows: (initial.variants || []).map(v => ({ id: v.id, values: v.values, sku: v.sku, stock: v.stock, price_paise: v.price_paise ?? null, expected_stock: v.stock })),
     generated: null,
     legacy: false,
+    generating: false,
   };
   state.legacy = hasLegacyVariants(model, (initial.axes || []).map(a => ({ name: a.name, values: a.values })), state.rows);
 
@@ -80,6 +81,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   });
   const errorNode = box?.querySelector("[data-options-error]");
   const showError = message => { if (!errorNode) return; errorNode.textContent = message || ""; errorNode.hidden = !message; };
+  const markChanged=()=>scope.dispatchEvent(new Event("lebrands:catalogue-change",{bubbles:true}));
 
   function axisProblems() {
     const axes = cleanAxes();
@@ -101,13 +103,17 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     let text = "";
     if (problem) text = problem;
     else if (n > maxVariants) text = `${n.toLocaleString("en-IN")} variants is over the limit of ${maxVariants}. Remove values or an option.`;
-    else if (!axes.length) text = stale ? "Generating will remove the existing variants." : "";
+    else if (!axes.length) text = stale ? "Generating will remove the existing variants." : reference.status==="ready"&&choices().length ? "Select an option above and choose its values to generate variants." : "";
     else text = `${n.toLocaleString("en-IN")} ${n === 1 ? "variant" : "variants"} from these options.${stale ? " Generate to update the table before saving." : ""}`;
     node.textContent = text;
     node.dataset.tone = problem || n > maxVariants ? "error" : stale ? "pending" : "ok";
     box.querySelector("[data-axis-add]").disabled = state.axes.length >= maxAxes || reference.status !== "ready" || !choices().some(a => !state.axes.some(p => p.name === a.name));
     const generateButton = box.querySelector("[data-variants-generate]");
-    if (generateButton) generateButton.disabled = !state.rows.length && (!axes.length || !!problem || n > maxVariants);
+    if (generateButton) {
+      generateButton.disabled = state.generating || (!state.rows.length && (!axes.length || !!problem || n > maxVariants));
+      generateButton.title=state.generating?"Preparing variants…":problem||(!axes.length&&!state.rows.length?text:"Generate SKUs for your selected values");
+      generateButton.textContent=state.generating?"Preparing variants…":"Generate variants";
+    }
     box.querySelectorAll("[data-add-reference-axis]").forEach(button => {
       button.disabled = state.axes.length >= maxAxes || state.axes.some(a => a.name === button.dataset.addReferenceAxis);
     });
@@ -129,7 +135,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     const r = await submitCustomValue({ fetcher: globalThis.fetch.bind(globalThis), url: variantValuesUrl(referenceUrl), productTypeId: Number(typeValue()), optionId: current.id, text, scopeKey: key0, currentScopeKey: scopeKey, option: current });
     const out = applyCustomResult({ axes: state.axes, axis: a, token, name, result: scopeKey() === key0 ? r : { status: "stale" }, text });
     if (!out.live) { paintAxes(); return; }
-    if (r.status !== "error") { insertValue(cat(), current.id, r.value); showError(""); }
+    if (r.status !== "error") { insertValue(cat(), current.id, r.value); showError(""); markChanged(); }
     paintAxes();
     const at = state.axes.indexOf(a);
     box.querySelector(`[data-axis="${at}"] [data-custom-value]`)?.focus();
@@ -196,19 +202,25 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     if (suggested) {
       const name = suggested.dataset.addReferenceAxis;
       if (reference.status === "ready" && state.axes.length < maxAxes && attributeFor(choices(), name) && !state.axes.some(a => a.name === name)) {
-        state.axes.push({ name, values: [] }); paintAxes();
+        state.axes.push({ name, values: [] }); paintAxes(); markChanged();
         box.querySelector(`[data-axis="${state.axes.length - 1}"] input`)?.focus();
       }
     } else if (event.target.closest("[data-buying-retry]")) {
       scope.querySelector("[data-reference-retry]")?.click();
     } else if (event.target.closest("[data-axis-add]")) {
-      if (reference.status === "ready" && state.axes.length < maxAxes) { state.axes.push({ name: "", values: [] }); paintAxes(); box.querySelector(`[data-axis="${state.axes.length - 1}"] select`)?.focus(); }
+      if (reference.status === "ready" && state.axes.length < maxAxes) { state.axes.push({ name: "", values: [] }); paintAxes(); markChanged(); box.querySelector(`[data-axis="${state.axes.length - 1}"] select`)?.focus(); }
     } else if (event.target.closest("[data-axis-remove]")) {
-      state.axes.splice(Number(event.target.closest("[data-axis]").dataset.axis), 1); paintAxes();
+      state.axes.splice(Number(event.target.closest("[data-axis]").dataset.axis), 1); paintAxes(); markChanged();
     } else if (event.target.closest("[data-variants-generate]")) generate();
   });
 
-  function generate() {
+  async function generate() {
+    if(state.generating)return false;
+    state.generating=true;
+    const button=box.querySelector("[data-variants-generate]");
+    if(button)button.dataset.busy="true";
+    paintCount();
+    try{
     const problem = axisProblems();
     if (problem) { showError(problem); return false; }
     const axes = cleanAxes(), n = comboCount(axes);
@@ -223,10 +235,13 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     const dropped = existing.filter(r => !nextKeys.has(key(r.values)));
     const added = next.filter(r => !byKey.has(key(r.values))).length;
     const kept = next.length - added;
+    const signature=()=>JSON.stringify([identity(),typeValue(),cleanAxes(),toModelRows(state.rows)]);
+    const before=signature();
     if (dropped.length || (n >= 25 && added)) {
       const parts = [`This will create ${n.toLocaleString("en-IN")} variants: ${kept} kept, ${added} new.`];
       if (dropped.length) parts.push(`${dropped.length} existing ${dropped.length === 1 ? "variant" : "variants"} will be removed with their SKU, stock and price entries when you save.`);
-      if (!confirm(parts.join(" ") + " Continue?")) return false;
+      if (!await confirm(parts.join(" ") + " Continue?")) return false;
+      if(signature()!==before){showError("Your options or variant entries changed. Review them and generate again.");return false;}
     }
     state.rows = next.map(r => {
       const old = byKey.get(key(r.values));
@@ -234,9 +249,15 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     });
     state.legacy = false;
     state.generated = axesKey();
-    showError(""); paint();
+    showError(""); paint(); markChanged();
     notify(n ? `${n} ${n === 1 ? "variant" : "variants"} ready.` : "Variants cleared.");
     return true;
+    }catch(error){showError(error.message||"Variants could not be generated. Please try again.");return false;}
+    finally{
+      state.generating=false;
+      if(button)delete button.dataset.busy;
+      paintCount();
+    }
   }
 
   // Throws an Error with a merchant-readable message when the catalogue cannot be saved.

@@ -1,0 +1,26 @@
+---
+name: Catalogue form interactions
+description: Shared product classification layout, in-app confirmations and meaningful dirty-state tracking.
+---
+
+Keep Category and Subcategory immediately above Product type in the shared
+product form. Closing an Ann product or collection form must use an in-app
+discard confirmation, not a native browser confirmation.
+
+**Why:** The user explicitly requested this arrangement and rejected the native
+close prompt. Separating classification controls from variant setup made the
+available product types and required selections difficult to find.
+
+**How to apply:** Preserve the same arrangement in Ann's embedded form and the
+dashboard. Cancelling a discard or regeneration must retain the current form,
+SKU identities, prices and entered stock.
+
+Reference loading and status rendering are not merchant edits.
+
+**Why:** Treating every child-list mutation as an edit made freshly opened forms
+appear dirty when asynchronous category, type and option choices finished
+rendering.
+
+**How to apply:** Track actual inputs and meaningful catalogue/media changes.
+When replacing blocking browser confirmations with in-app dialogs, await the
+decision before modifying variants and prevent overlapping generation.

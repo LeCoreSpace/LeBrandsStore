@@ -1,3 +1,4 @@
+import {confirmCatalogueAction} from "./catalogue-confirm.js";
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const kinds=new Set(["collections","products"]);
 
@@ -25,14 +26,22 @@ export function isCatalogueMessage(event,frame,origin){
 // Native dialog owns focus and makes the underlying Ann session inert.
 // The frame runs the real dashboard form, controller and authenticated API.
 export function attachAnnCatalogue({root,readOnly=false,getDraft,getProductContext=()=>({}),onSaved=()=>{},onError=()=>{}}){
-  let dialog,frame,dirty=false,busy=false,loadingTimer,opener,kind;
+  let dialog,frame,dirty=false,busy=false,loadingTimer,opener,kind,closePending=false;
   function remove(){
     clearTimeout(loadingTimer);dialog?.close();dialog?.remove();dialog=null;frame=null;
     dirty=false;busy=false;opener?.focus();opener=null;
   }
-  function close(){
-    if(busy){dialog.querySelector("[data-modal-status]").textContent="Please wait for saving or uploading to finish.";return;}
-    if(dirty&&!window.confirm("Discard the unsaved changes in this form? Your Ann conversation and design will stay unchanged."))return;
+  async function close(){
+    if(!dialog||closePending)return;
+    if(busy){dialog.querySelector("[data-modal-status]").textContent="Finish the current action before closing this form.";return;}
+    if(dirty){
+      closePending=true;
+      let discard;
+      try{discard=await confirmCatalogueAction("Your unsaved changes in this form will be discarded. Your Ann conversation and saved store design will stay unchanged.",{title:"Discard unsaved changes?",confirmLabel:"Discard changes"});}
+      finally{closePending=false;}
+      if(!discard||!dialog)return;
+      if(busy){dialog.querySelector("[data-modal-status]").textContent="Finish the current action before closing this form.";return;}
+    }
     remove();
   }
   function open(nextKind,id="new"){
@@ -102,9 +111,11 @@ export function attachCatalogueEmbed({root,storeRoot}){
     dirty=true;state();
   };
   form.addEventListener("input",changed);form.addEventListener("change",changed);
-  // Dynamically added/removed media, options and product selections also count.
+  form.addEventListener("lebrands:catalogue-change",changed);
+  // Reference loading and status rendering are not merchant edits.
+  // Media changes have no native input event; catalogue state emits its own.
   const observer=new MutationObserver(changes=>{
-    if(changes.some(change=>change.type==="childList"&&form.contains(change.target))){dirty=true;}
+    if(changes.some(change=>change.type==="childList"&&form.contains(change.target)&&change.target.closest("[data-images],[data-cover-preview]"))){dirty=true;}
     state();
   });
   observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:["data-busy","data-upload-state"]});

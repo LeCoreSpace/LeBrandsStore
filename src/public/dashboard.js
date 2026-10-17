@@ -11,6 +11,7 @@ import "/assets/dashboard-navigation.js";
 import * as catalogueModel from "/assets/catalogue-model.js";
 import { initCatalogueForm, readCataloguePayload, initSearchPreview, readSearchFields, ensureProductSku } from "/assets/catalogue-form.js";
 import {attachCatalogueEmbed} from "/assets/catalogue-modal.js";
+import {confirmCatalogueAction} from "/assets/catalogue-confirm.js";
 
 const root = document.querySelector(".lb-app");
 const storeId = root?.dataset.storeId || "";
@@ -275,7 +276,7 @@ document.querySelectorAll("[data-product-form]").forEach(form => {
   form.addEventListener("input", () => updateGSTWarning(form));
   form.addEventListener("change", () => updateGSTWarning(form));
 });
-document.querySelectorAll("[data-product-form]").forEach(form => { ensureProductSku(form); initSearchPreview(form); initCatalogueForm(form, { model: catalogueModel, notify, confirm: message => window.confirm(message), referenceUrl: `${api}/ann/reference` }); });
+document.querySelectorAll("[data-product-form]").forEach(form => { ensureProductSku(form); initSearchPreview(form); initCatalogueForm(form, { model: catalogueModel, notify, confirm: message => confirmCatalogueAction(message,{title:"Update variants?",confirmLabel:"Generate variants",cancelLabel:"Keep current variants"}), referenceUrl: `${api}/ann/reference` }); });
 function isNewForm(form) { return form.dataset.new === "true"; }
 function updateSaveForUploads(form) {
   catalogueEmbed?.saving(pendingUploads>0);

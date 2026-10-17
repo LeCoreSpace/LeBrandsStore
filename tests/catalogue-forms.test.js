@@ -10,6 +10,10 @@ test("product type selection and loading feedback live with Variants, not a sepa
   assert.match(variants,/data-reference-status/);
   assert.match(variants,/data-reference-retry/);
   assert.equal((variants.match(/name="catalogue_product_type"/g)||[]).length,1);
+  assert.doesNotMatch(org,/name="catalogue_(category|subcategory)"/);
+  assert.ok(variants.indexOf('name="catalogue_category"')<variants.indexOf('name="catalogue_subcategory"'));
+  assert.ok(variants.indexOf('name="catalogue_subcategory"')<variants.indexOf('name="catalogue_product_type"'));
+  assert.ok(variants.indexOf("data-matrix-body")<variants.indexOf("data-descriptors-wrap"));
 });
 import test from "node:test";
 import assert from "node:assert/strict";

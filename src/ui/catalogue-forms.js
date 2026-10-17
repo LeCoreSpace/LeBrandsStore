@@ -27,9 +27,6 @@ export function renderCatalogueOrganisation({ enabled, product = {}, collections
   return `<section class="lb-side-box lb-catalogue-org" data-catalogue-org data-revision="${rev}" data-classification="${attrJson(cls)}" data-classification-reference="${attrJson(product.classification_reference && typeof product.classification_reference === 'object' ? product.classification_reference : null)}">
     <h2>Organisation</h2>
     <label class="lb-field">Vendor or maker<input name="catalogue_vendor" maxlength="80" value="${escapeHtml(cat.vendor || "")}" placeholder="Your brand or the maker"></label>
-    <label class="lb-field">Product category<select name="catalogue_category"><option value="${escapeHtml(cat.category || "")}">${escapeHtml(cat.category || "Choose a category")}</option></select></label>
-    <label class="lb-field">Subcategory<select name="catalogue_subcategory"><option value="${escapeHtml(cat.subcategory || "")}">${escapeHtml(cat.subcategory || "Choose a subcategory")}</option></select></label>
-    <small class="lb-field-note">Category is how you group products. It does not change tax. Tax comes from the HSN code and GST rate below.</small>
     <div class="lb-field"><span id="lb-cat-collections-label" class="lb-field-label">Collections</span>${picker}</div>
   </section>`;
 }
@@ -42,16 +39,19 @@ export function renderCatalogueOptions({ enabled, product = {}, maxAxes = 3, max
   const typeId=product.classification?.product_type_id?String(product.classification.product_type_id):"";
   return `<section id="buying-options" class="lb-side-box lb-catalogue-options" data-catalogue-options data-max-axes="${maxAxes}" data-max-variants="${maxVariants}" data-initial="${attrJson(initial)}">
     <div class="lb-options-head"><div><h2>Variants</h2><p>Choose from your product type's options and values. Optional, up to ${maxAxes} options and ${maxVariants} variants.</p></div></div>
+    <label class="lb-field">Product category<select name="catalogue_category"><option value="${escapeHtml(cat.category || "")}">${escapeHtml(cat.category || "Choose a category")}</option></select></label>
+    <label class="lb-field">Subcategory<select name="catalogue_subcategory"><option value="${escapeHtml(cat.subcategory || "")}">${escapeHtml(cat.subcategory || "Choose a subcategory")}</option></select></label>
     <label class="lb-field">Product type<select name="catalogue_product_type" aria-describedby="lb-product-type-status" data-initial-type="${escapeHtml(typeId)}" ${typeId?"":"disabled"}><option value="">Choose a product type</option>${typeId?`<option value="${escapeHtml(typeId)}" selected>${escapeHtml(product.classification_reference?.product_type_name||"Product type")} (saved)</option>`:""}</select></label>
+    <small class="lb-field-note">Classification does not change tax. Set the HSN code and GST rate in Tax (GST).</small>
     <p id="lb-product-type-status" class="lb-muted" data-reference-status role="status">Loading product types…</p>
     <button type="button" class="lb-text-button" data-reference-retry hidden>Retry loading product types</button>
     <p class="lb-classification-notice" data-classification-notice role="status" hidden></p>
     <p class="lb-draft-note" role="note"><strong>Variant inventory.</strong> Each combination has its own SKU, price and stock. Save changes to your draft, then publish them when ready. SKU checkout must be enabled before variants can go live.</p>
     <p class="lb-legacy-note" data-legacy-note role="status" hidden>These saved variants do not match the saved options. They are kept as they are and shown read only. Generate variants to replace them.</p>
-    <div class="lb-descriptors" data-descriptors-wrap hidden><h3>Product details</h3><p class="lb-field-note">Add the details that apply. These fields do not create variants or change stock. Use manufacturer information for ingredients, safety and warranty details.</p><div class="lb-descriptor-grid" data-descriptors></div></div>
     <p class="lb-muted" data-buying-status role="status">Loading product options…</p>
     <button type="button" class="lb-text-button" data-buying-retry hidden>Retry loading options</button>
     <h3 class="lb-options-subhead">Product options</h3>
+    <p class="lb-field-note">Select up to 3 options below, choose the values you sell for each, then generate variants.</p>
     <div class="lb-options-actions" data-available-axes role="group" aria-label="Available product options"></div>
     <div class="lb-axes" data-axes></div>
     <div class="lb-options-actions">
@@ -64,6 +64,7 @@ export function renderCatalogueOptions({ enabled, product = {}, maxAxes = 3, max
       <table class="lb-table lb-matrix"><thead><tr><th scope="col">Variant</th><th scope="col">Variant (SKU)</th><th scope="col">Stock</th><th scope="col">Price override (₹)</th></tr></thead><tbody data-matrix-body></tbody></table>
     </div>
     <p class="lb-muted" data-matrix-empty>No variants yet. This product is sold as a single version.</p>
+    <div class="lb-descriptors" data-descriptors-wrap hidden><h3>Product details</h3><p class="lb-field-note">Add the details that apply. These fields do not create variants or change stock. Use manufacturer information for ingredients, safety and warranty details.</p><div class="lb-descriptor-grid" data-descriptors></div></div>
   </section>`;
 }
 
