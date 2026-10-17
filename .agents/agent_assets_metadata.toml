@@ -630,3 +630,31 @@ mtime_ms = 1792243721691
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/d9b05dc7-0259-4e4f-b503-d0c977b6dd45/c154af70-ea8e-4058-b5bb-295258cb7f6b"
 storage_version_token = "1792243914361543"
 content_type = "text/csv"
+
+[[outputs]]
+id = "e5qPQiLJ0C_vgdbss5rX-"
+uri = "file://screenshots/white-hero-desktop.jpg"
+type = "image"
+title = "White hero · Desktop"
+description = "White hero background with the original animated dashboard kept dark."
+logical_id = "0cd55dd7-3a35-4fd4-8b53-d5aefbc75627"
+content_hash = "sha256:a87bf9c92b1134af6c1dfe278961b05bbd74ba9977eebdff26f2fc6441ef8750"
+size = 126477
+mtime_ms = 1792253908723
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/0cd55dd7-3a35-4fd4-8b53-d5aefbc75627/37154f8f-69ea-493d-ba7b-d80b331514f9"
+storage_version_token = "1792253944343025"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "TSS0CG2WEffhMAPBAWSAd"
+uri = "file://screenshots/white-hero-mobile.jpg"
+type = "image"
+title = "White hero · Mobile"
+description = "390px mobile preview of the white hero treatment."
+logical_id = "28ce9368-4836-484b-8b4b-4c75e5800b01"
+content_hash = "sha256:784928a92f21022615ba8807f6fd5eef6311cccf59509e683ed884b46b8b1c0e"
+size = 66396
+mtime_ms = 1792253910631
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/28ce9368-4836-484b-8b4b-4c75e5800b01/fac664ca-ae3c-4817-bf5a-0dcbfe03ee3a"
+storage_version_token = "1792253945650598"
+content_type = "image/jpeg"

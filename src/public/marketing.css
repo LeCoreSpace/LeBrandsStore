@@ -1141,6 +1141,31 @@ body.m-home-document .m-hero h1 { line-height: 1.06; }
 body.m-home-document :is(.m-step h3, .m-coming h2) { font-weight: 600; letter-spacing: normal; }
 body.m-home-document :is(.m-hero-line, .m-hs-copy strong, .m-hs-kpi b) { letter-spacing: normal; }
 
+/* White hero trial. Keep this override isolated so the dark treatment can
+   be restored without changing the animation or other homepage sections. */
+:root:root[data-theme] #top > section.m-hero {
+  --band-bg: #ffffff; --band-fg: #251d21; --band-muted: #71666c;
+  --band-line: rgba(74,38,52,.15); --m-accent: #842c49;
+  color-scheme: light; background: #ffffff; color: var(--band-fg);
+}
+body.m-home-document .m-nav:not(.is-solid) { color: #251d21; }
+body.m-home-document .m-nav:not(.is-solid) .m-logo-light { display: block; }
+body.m-home-document .m-nav:not(.is-solid) :is(.m-logo-dark,.m-logo-hero) { display: none; }
+.m-hero .m-hero-copy .m-kicker { color: #842c49; }
+.m-hero .m-hero-line { color: var(--band-fg); }
+.m-hero .m-hero-grid {
+  background-image: linear-gradient(rgba(74,38,52,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(74,38,52,.045) 1px,transparent 1px);
+}
+.m-hero .m-flow { stroke: rgba(132,44,73,.22); }
+.m-hero .m-orb-a { background: radial-gradient(circle,rgba(206,146,139,.12),transparent 66%); }
+.m-hero .m-orb-b { background: radial-gradient(circle,rgba(135,67,83,.08),transparent 66%); }
+/* Preserve the dark operational UI inside the animated dashboard surface. */
+.m-hero .m-hs {
+  --band-fg: #f3ebe2; --band-muted: #b9aeab; --band-line: rgba(243,235,226,.17);
+  --m-accent: #e0aaa0; --m-paper: #151517; color-scheme: dark; color: #f3ebe2;
+  box-shadow: 0 30px 65px rgba(55,28,40,.22),18px 18px 0 -1px rgba(132,44,73,.06),36px 36px 0 -1px rgba(132,44,73,.03);
+}
+
 /* Ann Builder two-tab screenshot viewer */
 .m-ann-viewer { grid-column: 1 / -1; height: auto; aspect-ratio: auto; }
 .m-ann-tablist { display: flex; flex-wrap: wrap; gap: 0; border-bottom: 1px solid var(--band-line); background: var(--m-paper); }
