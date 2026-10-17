@@ -9,6 +9,12 @@ test("modal destinations stay on the current store's existing form routes",()=>{
   const id="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
   assert.equal(catalogueFormURL(root,"collections",id,origin).pathname,`${root}/collections/${id}`);
   assert.equal(catalogueFormURL("/__ann-builder-preview/catalogue","products","new",origin).origin,origin);
+  const context={category_id:1,subcategory_id:2};
+  const url=catalogueFormURL(root,"products","new",origin,context);
+  assert.equal(url.searchParams.get("ann_category_id"),"1");
+  assert.equal(url.searchParams.get("ann_subcategory_id"),"2");
+  assert.equal(catalogueFormURL(root,"products",id,origin,context).searchParams.has("ann_subcategory_id"),false);
+  assert.equal(catalogueFormURL(root,"collections","new",origin,context).searchParams.has("ann_subcategory_id"),false);
   for(const invalid of ["https://foreign.invalid","//foreign.invalid","/../other","/x/%2e%2e","/x/./other"]){
     assert.throws(()=>catalogueFormURL(invalid,"products","new",origin));
   }

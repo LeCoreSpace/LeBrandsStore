@@ -189,10 +189,16 @@ dashboard forms. Their inputs stay inside the form, not Ann's chat composer.
 Buying-option selection belongs inside that shared product form only. Use the
 existing subcategory-specific attribute names and values exactly; let merchants
 choose their options and values rather than inventing a separate suggestion list.
+Ann's current category and subcategory must carry into a blank new-product form.
+Do not require the merchant to choose them again, and do not override an existing
+product's classification. Show loading, errors and available options inside the
+buying-options section, not only elsewhere in the form.
 
 **Why:** The user explicitly requested the exact variants and values for each
 subcategory in both Ann and Dashboard, then clarified that selection should move
 into the product form itself.
+They reported no options after selecting Womens Clothing in Ann; the modal had
+lost the selection and its disabled button's explanation was off-screen.
 
 Generate product and variant SKUs automatically and show them to the merchant,
 rather than requiring the merchant to create a SKU. Preserve existing saved SKUs.

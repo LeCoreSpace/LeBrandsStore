@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { attributeFor, findReference, referenceAxesAllowed, initCatalogueReference } from "../src/public/catalogue-reference.js";
+import { attributeFor, findReference, referenceAxesAllowed, initCatalogueReference, catalogueDefaultSelection } from "../src/public/catalogue-reference.js";
 import { renderCatalogueOrganisation } from "../src/ui/catalogue-forms.js";
 import { initCatalogueForm, ensureProductSku } from "../src/public/catalogue-form.js";
 import * as model from "../src/public/catalogue-model.js";
@@ -30,6 +30,16 @@ test("subcategory lookup uses its own ID, never its category ID", () => {
   assert.equal(findReference(rows, "1"), undefined);
   assert.equal(findReference(rows, "11"), rows[0]);
   assert.equal(findReference(rows, "clothing"), rows[0]);
+});
+test("Ann's selected Womens Clothing resolves to canonical product defaults, never another category", () => {
+  const reference = {
+    categories: [{category_id:1,name:"Fashion & Apparel"},{category_id:2,name:"Beauty"}],
+    subcategories: [{subcategory_id:2,category_id:1,name:"Womens Clothing"}],
+  };
+  assert.deepEqual(catalogueDefaultSelection(reference,{category_id:"1",subcategory_id:"2"}),{category:"Fashion & Apparel",subcategory:"Womens Clothing"});
+  assert.deepEqual(catalogueDefaultSelection(reference,{subcategory_id:"2"}),{category:"Fashion & Apparel",subcategory:"Womens Clothing"});
+  assert.deepEqual(catalogueDefaultSelection(reference,{category_id:"2",subcategory_id:"2"}),{});
+  assert.deepEqual(catalogueDefaultSelection(reference,{category_id:999,subcategory_id:999}),{});
 });
 test("reference loading discards a stale response after subcategory changes", async () => {
   const element = value => ({ value, listeners: {}, addEventListener(name, fn) { this.listeners[name] = fn; } });
@@ -81,6 +91,9 @@ test("the shared dashboard controller loads Ann's source; no comma-based free ty
   const controller = await readFile("src/public/catalogue-form.js", "utf8");
   const dashboard = await readFile("src/public/dashboard.js", "utf8");
   assert.match(controller, /data-axis-choice/);
+  assert.match(controller, /data-add-reference-axis/);
+  assert.match(controller, /scope\.dataset\.new === "true"/);
+  assert.match(controller, /data-buying-status/);
   assert.doesNotMatch(controller, /parseValues|data-axis-values/);
   assert.match(dashboard, /referenceUrl: `\$\{api\}\/ann\/reference`/);
   const ann = await readFile("src/public/ann-builder.js", "utf8");

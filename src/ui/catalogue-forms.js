@@ -39,10 +39,13 @@ export function renderCatalogueOptions({ enabled, product = {}, maxAxes = 3, max
   if (!enabled) return "";
   const cat = obj(product.catalogue);
   const initial = { axes: arr(cat.axes), variants: arr(product.variants) };
-  return `<section class="lb-side-box lb-catalogue-options" data-catalogue-options data-max-axes="${maxAxes}" data-max-variants="${maxVariants}" data-initial="${attrJson(initial)}">
+  return `<section id="buying-options" class="lb-side-box lb-catalogue-options" data-catalogue-options data-max-axes="${maxAxes}" data-max-variants="${maxVariants}" data-initial="${attrJson(initial)}">
     <div class="lb-options-head"><div><h2>Buying options</h2><p>Choose from your subcategory's options and values. Optional, up to ${maxAxes} options and ${maxVariants} combinations.</p></div></div>
     <p class="lb-draft-note" role="note"><strong>Draft preparation.</strong> Combinations are saved with the product as catalogue drafts. SKU-level checkout is not enabled yet, so products with buying options cannot be published to the live store.</p>
     <p class="lb-legacy-note" data-legacy-note role="status" hidden>These saved combinations do not match the saved options. They are kept as they are and shown read only. Generate combinations to replace them.</p>
+    <p class="lb-muted" data-buying-status role="status">Loading product options…</p>
+    <button type="button" class="lb-text-button" data-buying-retry hidden>Retry loading options</button>
+    <div class="lb-options-actions" data-available-axes role="group" aria-label="Available buying options"></div>
     <div class="lb-axes" data-axes></div>
     <div class="lb-options-actions">
       <button type="button" class="lb-button lb-button-outline lb-button-small" data-axis-add>Add option</button>

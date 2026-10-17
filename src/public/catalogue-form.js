@@ -88,8 +88,16 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     node.textContent = text;
     node.dataset.tone = problem || n > maxVariants ? "error" : stale ? "pending" : "ok";
     box.querySelector("[data-axis-add]").disabled = state.axes.length >= maxAxes || reference.status !== "ready" || !reference.attributes.some(a => !state.axes.some(p => p.name === a.name));
+    const generateButton = box.querySelector("[data-variants-generate]");
+    if (generateButton) generateButton.disabled = !state.rows.length && (!axes.length || !!problem || n > maxVariants);
+    box.querySelectorAll("[data-add-reference-axis]").forEach(button => {
+      button.disabled = state.axes.length >= maxAxes || state.axes.some(a => a.name === button.dataset.addReferenceAxis);
+    });
   }
   function paintAxes() {
+    const available = box.querySelector("[data-available-axes]");
+    if (available) available.innerHTML = reference.status === "ready" ? reference.attributes.map(a =>
+      `<button type="button" class="lb-button lb-button-outline" data-add-reference-axis="${esc(a.name)}">${esc(a.name)}</button>`).join("") : "";
     const host = box.querySelector("[data-axes]");
     host.innerHTML = state.axes.map((a, i) => {
       const current = attributeFor(reference.attributes, a.name);
@@ -136,7 +144,16 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     showError("");
   });
   box.addEventListener("click", event => {
-    if (event.target.closest("[data-axis-add]")) {
+    const suggested = event.target.closest("[data-add-reference-axis]");
+    if (suggested) {
+      const name = suggested.dataset.addReferenceAxis;
+      if (reference.status === "ready" && state.axes.length < maxAxes && attributeFor(reference.attributes, name) && !state.axes.some(a => a.name === name)) {
+        state.axes.push({ name, values: [] }); paintAxes();
+        box.querySelector(`[data-axis="${state.axes.length - 1}"] input`)?.focus();
+      }
+    } else if (event.target.closest("[data-buying-retry]")) {
+      scope.querySelector("[data-reference-retry]")?.click();
+    } else if (event.target.closest("[data-axis-add]")) {
       if (reference.status === "ready" && state.axes.length < maxAxes) { state.axes.push({ name: "", values: [] }); paintAxes(); box.querySelector(`[data-axis="${state.axes.length - 1}"] select`)?.focus(); }
     } else if (event.target.closest("[data-axis-remove]")) {
       state.axes.splice(Number(event.target.closest("[data-axis]").dataset.axis), 1); paintAxes();
@@ -204,7 +221,17 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   paint();
   const api = { payload, generate, state };
   instances.set(scope, api);
-  initCatalogueReference(scope, { url: referenceUrl, onChange(next) { reference = next; if (box) paintAxes(); } });
+  const params = new URLSearchParams(globalThis.location?.search || "");
+  const defaults = scope.dataset.new === "true" && params.get("ann_modal") === "1"
+    ? { category_id: params.get("ann_category_id"), subcategory_id: params.get("ann_subcategory_id") } : {};
+  initCatalogueReference(scope, { url: referenceUrl, defaults, onChange(next) {
+    reference = next;
+    const status = box.querySelector("[data-buying-status]");
+    if (status) status.textContent = next.message || "Choose a category and subcategory in Organisation to see buying options.";
+    const retry = box.querySelector("[data-buying-retry]");
+    if (retry) retry.hidden = next.status !== "error";
+    paintAxes();
+  } });
   return api;
 }
 

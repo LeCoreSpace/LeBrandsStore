@@ -16,7 +16,14 @@ function fill(select, rows, value, placeholder, keepSaved) {
     (value && !found && keepSaved ? `<option selected value="${esc(value)}">${esc(value)} (saved)</option>` : "") +
     rows.map(row => `<option value="${esc(found === row ? value : row.name)}"${found === row ? " selected" : ""}>${esc(row.name)}</option>`).join("");
 }
-export function initCatalogueReference(scope, { url, onChange, fetcher = globalThis.fetch } = {}) {
+export function catalogueDefaultSelection(reference, defaults = {}) {
+  const categoryId = Number(defaults.category_id), subcategoryId = Number(defaults.subcategory_id);
+  const sub = reference.subcategories.find(s => Number(s.subcategory_id) === subcategoryId);
+  const parent = reference.categories.find(c => Number(c.category_id) === (categoryId || Number(sub?.category_id)));
+  if (!parent || (sub && Number(sub.category_id) !== Number(parent.category_id))) return {};
+  return { category: parent.name, subcategory: sub?.name || "" };
+}
+export function initCatalogueReference(scope, { url, onChange, defaults = {}, fetcher = globalThis.fetch } = {}) {
   const category = scope.querySelector('[name="catalogue_category"]');
   const subcategory = scope.querySelector('[name="catalogue_subcategory"]');
   const status = scope.querySelector("[data-reference-status]");
@@ -27,7 +34,7 @@ export function initCatalogueReference(scope, { url, onChange, fetcher = globalT
   const emit = (state, message) => {
     if (status) status.textContent = message;
     if (retry) retry.hidden = state.status !== "error";
-    onChange(state);
+    onChange({ ...state, message });
   };
   async function get(path) {
     const response = await fetcher(path, { credentials: "same-origin" });
@@ -51,9 +58,9 @@ export function initCatalogueReference(scope, { url, onChange, fetcher = globalT
       if (attempt === token) emit({ status: "error", attributes: [] }, error.message);
     }
   }
-  function subs(keepSaved) {
+  function subs(keepSaved, value = subcategory.value) {
     const parent = findReference(reference.categories, category.value);
-    fill(subcategory, reference.subcategories.filter(s => Number(s.category_id) === Number(parent?.category_id)), subcategory.value, "Choose a subcategory", keepSaved);
+    fill(subcategory, reference.subcategories.filter(s => Number(s.category_id) === Number(parent?.category_id)), value, "Choose a subcategory", keepSaved);
     subcategory.disabled = !parent;
   }
   async function load() {
@@ -65,9 +72,10 @@ export function initCatalogueReference(scope, { url, onChange, fetcher = globalT
       if (attempt !== token) return;
       if (!Array.isArray(body.categories) || !Array.isArray(body.subcategories)) throw new Error("Product categories could not be loaded. Please retry.");
       reference = body;
-      fill(category, reference.categories, category.value, "Choose a category", true);
+      const selected = !category.value && !subcategory.value ? catalogueDefaultSelection(reference, defaults) : {};
+      fill(category, reference.categories, category.value || selected.category, "Choose a category", true);
       category.disabled = false;
-      subs(true);
+      subs(true, subcategory.value || selected.subcategory);
       await attributes();
     } catch (error) {
       if (attempt === token) emit({ status: "error", attributes: [] }, error.message);

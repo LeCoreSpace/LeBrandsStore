@@ -1,12 +1,18 @@
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const kinds=new Set(["collections","products"]);
 
-export function catalogueFormURL(root,kind,id="new",origin=location.origin){
+export function catalogueFormURL(root,kind,id="new",origin=location.origin,productContext={}){
   if(!kinds.has(kind)||!/^\/(?!\/)[A-Za-z0-9_/.-]+$/.test(root)||root.split("/").some(p=>p===".."||p==="."))throw Error("Invalid catalogue destination.");
   if(id!=="new"&&!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id))throw Error("Invalid catalogue record.");
   const url=new URL(`${root.replace(/\/$/,"")}/${kind}/${id}`,origin);
   if(url.origin!==origin)throw Error("Invalid catalogue origin.");
   url.searchParams.set("ann_modal","1");
+  if(kind==="products"&&id==="new"){
+    for(const key of ["category_id","subcategory_id"]){
+      const value=Number(productContext?.[key]);
+      if(Number.isSafeInteger(value)&&value>0)url.searchParams.set(`ann_${key}`,String(value));
+    }
+  }
   return url;
 }
 
@@ -18,7 +24,7 @@ export function isCatalogueMessage(event,frame,origin){
 
 // Native dialog owns focus and makes the underlying Ann session inert.
 // The frame runs the real dashboard form, controller and authenticated API.
-export function attachAnnCatalogue({root,readOnly=false,getDraft,onSaved=()=>{},onError=()=>{}}){
+export function attachAnnCatalogue({root,readOnly=false,getDraft,getProductContext=()=>({}),onSaved=()=>{},onError=()=>{}}){
   let dialog,frame,dirty=false,busy=false,loadingTimer,opener,kind;
   function remove(){
     clearTimeout(loadingTimer);dialog?.close();dialog?.remove();dialog=null;frame=null;
@@ -31,7 +37,7 @@ export function attachAnnCatalogue({root,readOnly=false,getDraft,onSaved=()=>{},
   }
   function open(nextKind,id="new"){
     if(readOnly||dialog)return false;
-    const url=catalogueFormURL(root,nextKind,id);
+    const url=catalogueFormURL(root,nextKind,id,location.origin,getProductContext());
     kind=nextKind;opener=document.activeElement;dirty=false;busy=false;
     dialog=document.createElement("dialog");dialog.className="ann-catalogue-modal";
     const title=`${id==="new"?"Add":"Edit"} ${kind==="products"?"product":"collection"}`;

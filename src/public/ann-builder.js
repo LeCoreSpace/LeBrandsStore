@@ -69,6 +69,7 @@ let previewSource = { store: boot.store, settings: boot.settings, products: boot
 let base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" });
 const catalogueUI=attachAnnCatalogue({
   root:boot.catalogueRoot||root,readOnly,getDraft:()=>previewSource,
+  getProductContext:()=>({category_id:answers.category_id,subcategory_id:answers.subcategory_id}),
   onSaved:async kind=>{
     refreshAnnDraft(await designUI.refreshCatalogue());
     readinessUI.onStoreChanged();drawKeep();workspaceUI?.refresh();
