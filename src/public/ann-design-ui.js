@@ -457,6 +457,14 @@ export function attachAnnDesign(o) {
     canSave:()=>!readOnly&&active()&&!busy&&!conflict&&(dirty()||Boolean(error)),
     canPublish:()=>!readOnly&&active()&&!busy&&!conflict,
     canUndo,undo,
+    isSavedStyle: style => active() && model.style === style,
+    resumeEditing() {
+      if (!active()) return false;
+      const plan = sameStyle() ? planPayload() : model.plan;
+      editMode = true; selected = null;
+      o.backToDesign?.(structuredClone(plan)); paint(true);
+      return true;
+    },
     requestCatalogue() { cataloguePrompt = true; catalogueAck = false; paint(true); el.scrollIntoView({ block: "nearest", behavior: "smooth" }); },
     save, publish, bindPreview, refresh: () => {paint();placePop();}, reload,
     /** Called by Ann when the plan answers change while a design is active. */

@@ -361,8 +361,7 @@ function def(p) {
     });
     case "style": return sel("Style", "Let's find your look! Tap a style and watch your store change. You can switch any time.",
       AURA_STYLES.map(s => ({ v: s.id, t: s.name, sub: s.description, c: s.settings.accent_color })), t.style_preset, v => {
-        const s = styleSettings(v); setPreviewMode("showcase");
-        for (const key of ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"]) if (s[key] !== undefined) answers[key] = s[key];
+        chooseStyle(v);
       }, { stack: true });
     case "bg": return sel("Background colour", "Which background makes your products stand out? Tap to try it.", ANN_PALETTES.map(v => ({ v, t: PALETTE_NAMES[v] || label(v) })), t.color_preset, setKey("color_preset"));
     case "accent": return { ...sel("Button colour", "Pick a colour for buttons and highlights, or choose your own.", uniqueAccents(), t.accent_color, setKey("accent_color")), kind: "accent", reply: t.accent_color, color: t.accent_color };
@@ -570,6 +569,15 @@ async function toPrompt(id) {
   } finally { navigating = false; }
 }
 function go(next) { const p = prompts().find(x => x.step === next); if (p) return toPrompt(p.id); }
+function chooseStyle(value) {
+  if (designUI?.isSavedStyle(value)) {
+    designUI.resumeEditing();
+    return;
+  }
+  const s = styleSettings(value);
+  setPreviewMode("showcase");
+  for (const key of ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"]) if (s[key] !== undefined) answers[key] = s[key];
+}
 function advance() {
   const ps = prompts(), i = curIdx(ps), ri = reachedIdx(ps);
   let n = i + 1;
@@ -700,7 +708,10 @@ document.addEventListener("click", e => {
   const t = e.target.closest("button, a"); if (!t || t.tagName === "A") return;
   const d = t.dataset;
   if (d.go) return go(d.go);
-  if ("wsToggle" in d) { workspaceUI.toggle(); return; }
+  if ("wsToggle" in d) {
+    if (previewMode === "showcase" && designUI?.isSavedStyle(config().theme.style_preset)) designUI.resumeEditing();
+    workspaceUI.toggle(); return;
+  }
   if (d.viewSwitch) { app.dataset.view = d.viewSwitch; syncSwitch(); if (d.viewSwitch === "canvas") setTimeout(fit, 0); return; }
   if (["showcase", "store"].includes(d.previewMode)) { if (d.previewMode === "store" && !designUI?.active() && !requestOwnProducts()) return; setPreviewMode(d.previewMode); return renderPreview(false); }
   if (d.device) { rememberScroll(); canvas.dataset.device = d.device; document.querySelectorAll("[data-device]").forEach(b => b.setAttribute("aria-pressed", String(b === t))); renderPreview(false); fit(); return; }
@@ -735,9 +746,7 @@ document.addEventListener("click", e => {
     editing = { kind, i: Number(i), field }; focusComposer = true; draw("active"); return drawComposer(true);
   }
   if (d.pickStyle) {
-    const s = styleSettings(d.pickStyle);
-    setPreviewMode("showcase");
-    return edit(() => { for (const k of ["style_preset", "color_preset", "font_preset", "accent_color", "button_style"]) if (s[k] !== undefined) answers[k] = s[k]; }, step !== "category");
+    return edit(() => chooseStyle(d.pickStyle), step !== "category");
   }
   if (d.palette) return edit(() => { answers.color_preset = d.palette; }, true);
   if (d.font) return edit(() => { answers.font_preset = d.font; }, true);

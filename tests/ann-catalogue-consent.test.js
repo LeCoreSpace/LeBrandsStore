@@ -39,6 +39,7 @@ function harness({ saved = true, readOnly = false, themeEditor = false, contextu
     getAnswers: () => answers,applyPlan:p=>{answers=structuredClone(p);},
     getPreviewMode: () => mode,
     onActivated: data => activations.push(data),
+    backToDesign: plan => { answers = structuredClone(plan); mode = "store"; },
     onCatalogueConfirmed: () => { confirmed++; mode = "store"; },
   });
   const change = (dataset, checked) => events.get("change")({ target: { dataset, checked } });
@@ -67,6 +68,22 @@ test("saved Ann designs load without automatically consenting to merchant catalo
     assert.equal(h.confirmed, 1);
     assert.equal(h.requests.length, 1, "preview confirmation never writes catalogue, draft or publications");
   } finally { h.close(); }
+});
+
+test("resuming an adopted style opens editing without reseeding, catalogue consent or lost local styling",async()=>{
+  const h=harness();
+  try{
+    await tick();
+    h.setPlan({accent_color:"#aabbcc"});
+    const calls=h.requests.length;
+    assert.equal(h.ui.isSavedStyle("editorial"),true);
+    assert.equal(h.ui.isSavedStyle("boutique"),false);
+    assert.equal(h.ui.resumeEditing(),true);
+    assert.equal(h.ui.editing(),true);
+    assert.equal(h.ui.previewDesign().plan.accent_color,"#aabbcc");
+    assert.equal(h.requests.length,calls,"returning to editing never reseeds or saves");
+    assert.equal(h.confirmed,0,"sample design does not require real-catalogue consent");
+  }finally{h.close();}
 });
 
 test("theme undo groups typing, reverses sections and optional/theme choices, and never writes automatically",async()=>{

@@ -22,6 +22,18 @@ test("Ann composer relocation excludes the local contextual inline editor",()=>{
   assert.match(source,/n\.closest\("#ann-composer, \.ann-ctx"\)/);
 });
 
+test("reselecting or keeping the adopted style resumes editing, and browser preview is outside More",()=>{
+  const source=readFileSync("src/public/ann-builder.js","utf8");
+  const choose=source.slice(source.indexOf("function chooseStyle("),source.indexOf("function advance("));
+  assert.match(choose,/isSavedStyle\(value\)/);
+  assert.ok(choose.indexOf("resumeEditing()")<choose.indexOf('setPreviewMode("showcase")'));
+  assert.match(source,/chooseStyle\(v\)/);
+  assert.match(source,/chooseStyle\(d\.pickStyle\)/);
+  assert.match(source,/if \("wsToggle" in d\)[^]*?isSavedStyle[^]*?resumeEditing\(\)/);
+  const html=readFileSync("src/ui/ann-builder.js","utf8");
+  assert.ok(html.indexOf('id="ann-open-browser"')<html.indexOf('<details class="ann-more"'));
+});
+
 test("section metadata is computed per page and orders sections", () => {
   const { meta, order } = sectionMeta(html, {}, "home");
   assert.equal(meta.size, order.length);

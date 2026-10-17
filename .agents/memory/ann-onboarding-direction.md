@@ -102,6 +102,11 @@ handoff, flatten the design into an image, or discard its sample content.
 Keep the original Style showcase read-only, separate from the merchant's
 editable design even when that design still contains sample products. Viewing
 that saved sample design must not require consent to use the real catalogue.
+Reselecting or keeping an already-adopted style must resume editing that
+merchant draft, not return to the read-only showcase or reset its custom styling.
+
+**Why:** The merchant reported missing inline editing after confirming their
+saved style because that interaction returned them to showcase mode.
 
 A saved Ann conversation is not permission to overwrite an existing design.
 If no design has been adopted, show the saved plan in the editor as a pending

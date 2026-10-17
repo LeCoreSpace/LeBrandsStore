@@ -44,7 +44,8 @@ ${accountHeader(user)}
         <div class="ann-bar-end">
           <div class="ann-device" role="group" aria-label="Preview viewport"><button type="button" data-device="desktop" aria-pressed="true">Desktop</button><button type="button" data-device="mobile" aria-pressed="false">Mobile</button></div>
           <button type="button" class="ann-btn alt sm" data-ws-toggle aria-pressed="false" aria-controls="ann-tools">Design tools</button>
-          <details class="ann-more"><summary aria-label="More preview options">More</summary><div class="ann-more-menu"><button type="button" class="ann-btn alt sm" id="ann-open-browser">Open browser preview</button><button type="button" class="ann-btn alt sm" data-edit-prompt="logo">Brand logo</button></div></details>
+          <button type="button" class="ann-btn alt sm" id="ann-open-browser">Open browser preview</button>
+          <details class="ann-more"><summary aria-label="More preview options">More</summary><div class="ann-more-menu"><button type="button" class="ann-btn alt sm" data-edit-prompt="logo">Brand logo</button></div></details>
         </div>
       </div>
       <div class="ann-subbar">
