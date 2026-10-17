@@ -68,9 +68,10 @@ reference population on 2026-10-17. Historical Phase 1 reports still say
 **Why:** Approval was given in conversation, not by rewriting the uploaded CSVs.
 
 **How to apply:** Consult the applied import manifest and current reference
-status rather than re-requesting approval of the same proposals. Missing
-memberships and attributes without an assigned role are distinct unresolved
-source gaps; approval does not supply those missing assignments.
+status rather than re-requesting approval of the same proposals. The user later
+separately authorised completing the missing functional product-type memberships.
+Do not treat historical missing-membership reports as a permanent approval block.
+Attributes without an assigned role remain a distinct scope.
 
 Use **Variants** as the universal merchant-facing term, including Ann, dashboard,
 pricing and comparison copy. Label the dimensions **Product options** rather than
@@ -92,3 +93,15 @@ merchant's catalogue edits must not alter another merchant's choices.
 **How to apply:** Keep shared masters read-only, retain typed applicability and
 tenant ownership on both reference reads and privileged writes. Profile coverage
 does not approve missing subcategory memberships or reclassify existing products.
+
+Functional category coverage must not imply unverified product claims. When the
+taxonomy only has a specialized branch (for example Luxury Watches), add an
+appropriate general branch rather than classifying every generic item that way.
+Previously approved associations are preserved unless separately reviewed.
+
+**Why:** Completing catalogue coverage exposes ambiguous source names and gaps in
+the original taxonomy; forcing a fit can mislabel ordinary merchant products.
+
+**How to apply:** Distinguish placement by function from material, certification,
+condition and legal sale eligibility. Cross-check ambiguous names against their
+actual meaning, not only their spelling or their older variant-profile family.

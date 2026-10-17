@@ -14,6 +14,20 @@ export function compilePageSchemaSnapshot(snapshot) {
   }]));
 }
 export async function preparePageMigration(filename, source) {
+  if (filename === "0027_d2c_food_profile_corrections.sql") {
+    const marker="__D2C_MEMBERSHIP_PROFILE_CORRECTIONS_V1__";
+    if(source.split(marker).length!==2)throw Error("Food profile correction marker must occur exactly once.");
+    const {d2cMembershipProfileCorrections}=await import("./d2c-membership-profile-corrections.js");
+    const {sql}=await d2cMembershipProfileCorrections();
+    return source.replace(marker,()=>sql);
+  }
+  if (filename === "0026_d2c_type_memberships.sql") {
+    const marker = "__D2C_TYPE_MEMBERSHIPS_V1__";
+    if (source.split(marker).length !== 2) throw Error("Type membership marker must occur exactly once.");
+    const { d2cTypeMembershipSeed } = await import("./d2c-type-memberships.js");
+    const { sql } = await d2cTypeMembershipSeed();
+    return source.replace(marker, () => sql);
+  }
   if (filename === "0023_d2c_variant_profiles.sql") {
     const marker="__D2C_VARIANT_PROFILES_V1__";
     if(source.split(marker).length!==2)throw Error("Variant profile marker must occur exactly once.");
