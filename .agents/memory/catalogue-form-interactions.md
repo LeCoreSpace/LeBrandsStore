@@ -15,6 +15,12 @@ available product types and required selections difficult to find.
 dashboard. Cancelling a discard or regeneration must retain the current form,
 SKU identities, prices and entered stock.
 
+Use dropdowns for listing status, vendor or maker, and country of origin.
+
+**Why:** The user explicitly requested selection controls instead of disabled status or free-text vendor/country fields.
+
+**How to apply:** Keep these controls consistent in Ann and the dashboard, and retain previously saved values rather than silently replacing them.
+
 Reference loading and status rendering are not merchant edits.
 
 **Why:** Treating every child-list mutation as an edit made freshly opened forms

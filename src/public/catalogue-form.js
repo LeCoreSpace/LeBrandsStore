@@ -73,7 +73,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
   state.generated = axesKey();
   const comboCount = axes => axes.reduce((n, a) => n * a.values.length, axes.length ? 1 : 0);
   const identity = () => ({
-    vendor: String(field("catalogue_vendor")?.value || "").trim(),
+    vendor: String(field("catalogue_vendor")?.value === "__add_vendor__" ? field("catalogue_new_vendor")?.value || "" : field("catalogue_vendor")?.value || "").trim(),
     category: String(field("catalogue_category")?.value || "").trim(),
     subcategory: String(field("catalogue_subcategory")?.value || "").trim(),
     seo_title: String(field("seo_title")?.value || "").trim(),
@@ -158,6 +158,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     paintCount();
   }
   function paintMatrix() {
+    syncStockTotal();
     const body = box.querySelector("[data-matrix-body]");
     const ro = state.legacy ? " disabled" : "";
     const note = box.querySelector("[data-legacy-note]");
@@ -170,6 +171,27 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
       <td><input data-v-price inputmode="decimal"${ro} value="${r.price_paise == null ? "" : esc((r.price_paise / 100).toFixed(2))}" placeholder="Base price" aria-label="Price override for ${esc((r.values || []).join(" "))}"></td></tr>`).join("");
   }
   const paint = () => { paintAxes(); paintMatrix(); };
+  function syncStockTotal() {
+    const stock=field("stock"),help=scope.querySelector("[data-stock-help]");
+    if(!stock)return;
+    if(state.rows.length&&!state.legacy){
+      if(!stock.readOnly)stock.dataset.simpleStock=stock.value;
+      stock.readOnly=true;
+      stock.value=state.rows.every(r=>Number.isInteger(r.stock)&&r.stock>=0)?String(state.rows.reduce((sum,r)=>sum+r.stock,0)):"";
+      if(help)help.textContent="Total of variant stock. Edit each variant's quantity below.";
+    }else{
+      if(stock.readOnly)stock.value=stock.dataset.simpleStock??stock.value;
+      stock.readOnly=false;
+      if(help)help.textContent="Leave blank to sell without stock tracking.";
+    }
+  }
+  const vendor=field("catalogue_vendor"),newVendor=field("catalogue_new_vendor");
+  vendor?.addEventListener("change",()=>{
+    const adding=vendor.value==="__add_vendor__";
+    const wrap=scope.querySelector("[data-new-vendor]");
+    if(wrap)wrap.hidden=!adding;
+    if(newVendor){newVendor.required=adding;if(adding)newVendor.focus();}
+  });
 
   box.addEventListener("input", event => {
     if (event.target.matches("[data-descriptor]")) { applyDescriptorInput(desc, event.target); showError(""); return; }
@@ -189,7 +211,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     if (!tr) return;
     const r = state.rows[Number(tr.dataset.row)];
     if (event.target.matches("[data-v-sku]")) { r.sku = event.target.value; r.isNew = false; }
-    if (event.target.matches("[data-v-stock]")) r.stock = event.target.value === "" ? NaN : Number(event.target.value);
+    if (event.target.matches("[data-v-stock]")) {r.stock = event.target.value === "" ? NaN : Number(event.target.value);syncStockTotal();}
     if (event.target.matches("[data-v-price]")) r.price_paise = rupeesToPaise(event.target.value);
     showError("");
   });

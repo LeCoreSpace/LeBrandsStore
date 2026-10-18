@@ -229,6 +229,7 @@ export async function saveProduct(tx, id, productId, patch, { returnDraft = true
   const [existing] = productId ? await tx`SELECT *, to_json(tags) AS tags FROM public.products
     WHERE store_id = ${id} AND id = ${productId}` : [];
   if (productId && !existing) throw missing();
+  if(existing?.status==="archived"&&patch.status&&patch.status!=="archived")throw badInput("Archived products cannot be restored using this form.");
   if (patch.gst_rate != null && !CURRENT_GST_RATES.includes(patch.gst_rate) &&
     (!existing || Number(existing.gst_rate) !== patch.gst_rate)) {
     throw badInput("Choose a current GST rate.",{gst_rate:"Choose 0%, 5%, 18% or 40%. A previously saved rate can be retained, but should be confirmed."});
@@ -252,11 +253,11 @@ export async function saveProduct(tx, id, productId, patch, { returnDraft = true
   if (existing) await tx`UPDATE public.products SET title = ${p.title}, description = ${p.description},
     price_paise = ${p.price_paise}, compare_at_price_paise = ${p.compare_at_paise},
     tags = ARRAY(SELECT jsonb_array_elements_text(${tx.json(p.tags)})), sku = ${sku}, stock = ${p.stock ?? 0}, track_inventory = ${p.stock != null},
-     hsn_code = ${p.hsn_code}, gst_rate = ${p.gst_rate ?? 0},slug=${slug},updated_at=now() WHERE store_id = ${id} AND id = ${uuid}`;
+     hsn_code = ${p.hsn_code}, gst_rate = ${p.gst_rate ?? 0},status=${p.status ?? existing.status},slug=${slug},updated_at=now() WHERE store_id = ${id} AND id = ${uuid}`;
   else await tx`INSERT INTO public.products
-    (id, store_id, title, slug, description, price_paise, compare_at_price_paise, tags, sku, stock, track_inventory, hsn_code, gst_rate)
+    (id, store_id, title, slug, description, price_paise, compare_at_price_paise, tags, sku, stock, track_inventory, hsn_code, gst_rate,status)
      VALUES (${uuid}, ${id}, ${p.title}, ${slug}, ${p.description}, ${p.price_paise}, ${p.compare_at_paise},
-      ARRAY(SELECT jsonb_array_elements_text(${tx.json(p.tags)})), ${sku}, ${p.stock ?? 0}, ${p.stock != null}, ${p.hsn_code}, ${p.gst_rate ?? 0})`;
+      ARRAY(SELECT jsonb_array_elements_text(${tx.json(p.tags)})), ${sku}, ${p.stock ?? 0}, ${p.stock != null}, ${p.hsn_code}, ${p.gst_rate ?? 0},${p.status??"draft"})`;
   if (patch.images) {
     for (const [order,image] of patch.images.entries()) {
       const [media] = await tx`SELECT id,upload_type FROM public.media m WHERE store_id = ${id}

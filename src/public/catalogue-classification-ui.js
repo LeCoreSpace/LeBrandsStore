@@ -3,6 +3,8 @@
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 const arr = v => Array.isArray(v) ? v : [];
 const posInt = v => Number.isInteger(Number(v)) && Number(v) > 0 && String(v).trim() !== "" ? Number(v) : null;
+const countryNames = new Intl.DisplayNames(["en"], {type:"region"});
+const originCountries = "AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW".split(" ").map(code=>countryNames.of(code)).sort((a,b)=>a.localeCompare(b));
 
 export const PENDING_NOTICE = "Product types for this subcategory are pending approval. Variants and product details open up once a type is approved. Your product still saves without them.";
 
@@ -75,6 +77,10 @@ export function renderDescriptors(descriptors, state, ref) {
     }
     if (d.input_type === "number") {
       return `<label class="lb-field lb-descriptor">${label}<input ${attrs} type="number" step="any" value="${esc(s.number)}"></label>`;
+    }
+    if(d.input_type==="text"&&String(d.name).toLowerCase()==="country of origin"){
+      const choices=originCountries.includes(s.text)||!s.text?originCountries:[s.text,...originCountries];
+      return `<label class="lb-field lb-descriptor">${label}<select ${attrs}><option value="">Choose a country</option>${choices.map(name=>`<option value="${esc(name)}"${s.text===name?" selected":""}>${esc(name)}</option>`).join("")}</select></label>`;
     }
     return `<label class="lb-field lb-descriptor">${label}<input ${attrs} type="text" maxlength="4000" value="${esc(s.text)}"></label>`;
   }).join("");

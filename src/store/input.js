@@ -75,6 +75,10 @@ export function productPatch(value) {
   if (!object(value)) throw badInput("Use the product form.");
   const result = {}, textFields = { title: 80, description: 2000, sku: 80, hsn_code: 8, slug:80 };
   for (const [key, val] of Object.entries(value)) {
+    if(key==="status"){
+      if(!["draft","active"].includes(val))throw badInput("Choose Draft or Active.",{status:"Choose a valid listing status."});
+      result.status=val;continue;
+    }
     if(key==="classification"){result.classification=validateClassification(val);continue;}
     if(key==="catalogue"){result.catalogue=validateCatalogue(val);continue;}
     if(key==="variants"){

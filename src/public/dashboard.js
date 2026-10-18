@@ -210,6 +210,7 @@ function productPayload(form) {
   }));
   return {
     publish_catalogue:true,
+    ...(fd.has("status") ? {status:String(fd.get("status"))} : {}),
     title: String(fd.get("title") || "").trim(),
     description: String(fd.get("description") || "").trim(),
     price_paise: price,

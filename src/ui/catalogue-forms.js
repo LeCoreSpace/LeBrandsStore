@@ -14,9 +14,10 @@ export function cataloguePrerequisiteNotice() {
 }
 
 // Vendor, category, subcategory and collection membership.
-export function renderCatalogueOrganisation({ enabled, product = {}, collections = [] } = {}) {
+export function renderCatalogueOrganisation({ enabled, product = {}, collections = [], vendors = [] } = {}) {
   if (!enabled) return cataloguePrerequisiteNotice();
   const cat = obj(product.catalogue);
+  const vendorChoices = [...new Set([cat.vendor, ...vendors].filter(v => typeof v === "string" && v.trim()).map(v => v.trim()))].sort((a,b)=>a.localeCompare(b));
   const selected = new Set(arr(product.collection_ids).map(String));
   const cols = arr(collections);
   const picker = cols.length
@@ -26,7 +27,8 @@ export function renderCatalogueOrganisation({ enabled, product = {}, collections
   const rev = Number.isInteger(Number(product.catalogue_revision)) ? Number(product.catalogue_revision) : 0;
   return `<section class="lb-side-box lb-catalogue-org" data-catalogue-org data-revision="${rev}" data-classification="${attrJson(cls)}" data-classification-reference="${attrJson(product.classification_reference && typeof product.classification_reference === 'object' ? product.classification_reference : null)}">
     <h2>Organisation</h2>
-    <label class="lb-field">Vendor or maker<input name="catalogue_vendor" maxlength="80" value="${escapeHtml(cat.vendor || "")}" placeholder="Your brand or the maker"></label>
+    <label class="lb-field">Vendor or maker<select name="catalogue_vendor"><option value="">Choose a vendor</option>${vendorChoices.map(v=>`<option value="${escapeHtml(v)}"${cat.vendor===v?" selected":""}>${escapeHtml(v)}</option>`).join("")}<option value="__add_vendor__">Add a new vendor</option></select></label>
+    <div data-new-vendor hidden><label class="lb-field">New vendor name<input name="catalogue_new_vendor" maxlength="80" placeholder="Your brand or the maker"></label></div>
     <div class="lb-field"><span id="lb-cat-collections-label" class="lb-field-label">Collections</span>${picker}</div>
   </section>`;
 }
