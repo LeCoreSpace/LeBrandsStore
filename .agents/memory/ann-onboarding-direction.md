@@ -8,11 +8,13 @@ from the app, while keeping the theme editor for subsequent design editing and
 publishing. Products and Collections should be separate dashboard menu entries.
 
 After a merchant reaches Style, disable Ann's Business and Store address steps,
-including their transcript Edit links and logo shortcut. Keep GST verification
-mandatory before reaching Style.
+including their transcript identity/address Edit links. Keep GST verification
+mandatory before reaching Style. Keep brand logo upload and change controls
+available in saved conversations, including after reaching Style.
 
 **Why:** The user explicitly requested the first two steps stop being editable
-once step 3 is reached.
+once Style is reached, but subsequently reported that logo upload must not
+disappear from an existing store's saved conversation.
 
 **How to apply:** Scope this navigation restriction to Ann. Do not treat it as
 permission to weaken the server's confirmed GST/invoice-identity lock or remove

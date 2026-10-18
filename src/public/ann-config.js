@@ -1,6 +1,19 @@
 import { STYLE_IDS, STYLE_THEME_KEYS, styleSettings } from "./aura-styles.js";
 export const ANN_REFERENCE_VERSION = "ann-v1";
 export const ANN_STEPS = Object.freeze(["category","style","palette","fonts","collections","products","story","selling","business","policies","domain","payments","shipping","review"]);
+
+// Presentation-only milestones. Persisted session step names stay unchanged.
+export function annNavigationSteps(steps, planAvailable) {
+  return [
+    ["store_name", "Store name", "Confirm your brand name"],
+    ...(planAvailable ? [["subscription", "Subscription", "Choose or review your store plan"]] : []),
+    ...steps,
+  ];
+}
+export function annNavigationKey(prompt) {
+  return prompt?.id === "store_name" ? "store_name"
+    : prompt?.id === "plan" ? "subscription" : prompt?.step;
+}
 export const ANN_PALETTES = Object.freeze(["white","ivory","stone","midnight"]);
 export const ANN_FONTS = Object.freeze(["modern","serif","classic"]);
 export const ANN_SECTION_LABELS = Object.freeze({

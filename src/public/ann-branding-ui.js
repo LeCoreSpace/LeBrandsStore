@@ -1,7 +1,7 @@
 import { safeImage } from "./aura-sections.js";
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
-export function attachAnnBranding({api,readOnly,initial={},onPreview,onSaved,onContinue}) {
+export function attachAnnBranding({api,readOnly,initial={},inConversationStep=()=>true,onPreview,onSaved,onContinue}) {
   let data=null,loading=false,busy=false,error="",note="",attempted=false;
   let savedId=initial.logo_media_id || "",selected=savedId;
   const known=new Map(savedId?[[savedId,{id:savedId,url:initial.logo_url,label:"Current brand logo"}]]:[]);
@@ -32,7 +32,7 @@ export function attachAnnBranding({api,readOnly,initial={},onPreview,onSaved,onC
       ${loading||busy?`<p class="ann-note" role="status">${loading?"Loading your logos":"Saving your logo"}...</p>`:""}
       ${error?`<p class="ann-error" role="alert">${esc(error)}</p>`:""}
       ${note?`<p class="ann-note" role="status">${esc(note)}</p>`:""}
-      <div class="ann-actions"><button type="button" class="ann-btn" data-brand="continue"${loading||busy?" disabled":""}>${dirty()?"Save logo and continue":selected?"Keep logo and continue":"Continue with brand name"}</button>
+      <div class="ann-actions"><button type="button" class="ann-btn" data-brand="continue"${loading||busy?" disabled":""}>${dirty()?(inConversationStep()?"Save logo and continue":"Save logo"):inConversationStep()?(selected?"Keep logo and continue":"Continue with brand name"):"Keep current branding"}</button>
       <button type="button" class="ann-btn alt" data-brand="refresh"${loading||busy?" disabled":""}>Refresh logo list</button>
       <button type="button" class="ann-link" data-brand="skip"${busy?" disabled":""}>Skip for now</button></div>
       <p class="ann-note">This changes your draft branding only. Your live store is unchanged. The same image is used for the browser tab icon.</p>`;

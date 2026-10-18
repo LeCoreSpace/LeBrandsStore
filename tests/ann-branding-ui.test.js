@@ -4,7 +4,7 @@ import {attachAnnBranding} from "../src/public/ann-branding-ui.js";
 const one="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",two="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const url=id=>`https://media.lebrands.store/stores/${one}/${id}.webp`;
 const flush=()=>new Promise(setImmediate);
-async function harness(readOnly=false) {
+async function harness(readOnly=false,options={}) {
   const old={document:globalThis.document,fetch:globalThis.fetch},events=new Map(),requests=[],previews=[];
   const slot={innerHTML:"",contains:()=>true};
   globalThis.document={querySelector:()=>slot,addEventListener:(name,fn)=>{
@@ -23,7 +23,7 @@ async function harness(readOnly=false) {
     }
     return Response.json(state());
   };
-  const ui=attachAnnBranding({api:"/sample/ann",readOnly,initial:{logo_media_id:one,logo_url:url(one)},
+  const ui=attachAnnBranding({api:"/sample/ann",readOnly,...options,initial:{logo_media_id:one,logo_url:url(one)},
     onPreview:logo=>previews.push({...logo}),onSaved:()=>saved++,onContinue:()=>continued++});
   ui.mount();await flush();
   const change=async(attribute,extra={})=>{
@@ -86,4 +86,18 @@ test("invalid uploads, skipping and readonly controls never change stored brandi
     await ro.change("data-brand-select",{value:two});await ro.click("continue");
     assert.ok(ro.requests.every(r=>r.method==="GET"));assert.equal(ro.saved,0);
   }finally{ro.close();}
+});
+
+test("historical logo controls offer an explicit save without promising to advance the chat",async()=>{
+  const h=await harness(false,{inConversationStep:()=>false});
+  try{
+    assert.match(h.ui.html(),/Upload a logo/);
+    assert.match(h.ui.html(),/Keep current branding/);
+    await h.change("data-brand-select",{value:two});
+    assert.match(h.ui.html(),/>Save logo<\/button>/);
+    assert.doesNotMatch(h.ui.html(),/Save logo and continue/);
+    await h.click("continue");
+    assert.equal(h.saved,1);
+    assert.equal(h.ui.hasUnsavedChanges(),false);
+  }finally{h.close();}
 });

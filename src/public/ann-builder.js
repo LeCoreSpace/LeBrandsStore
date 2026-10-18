@@ -1,5 +1,5 @@
 import { resolveShowcasePack } from "./aura-showcase-assets.js";
-import { ANN_STEPS, ANN_PALETTES, ANN_FONTS, ANN_EXTRA_SECTIONS, annPreviewConfiguration } from "./ann-config.js";
+import { ANN_STEPS, ANN_PALETTES, ANN_FONTS, ANN_EXTRA_SECTIONS, annPreviewConfiguration, annNavigationSteps, annNavigationKey } from "./ann-config.js";
 import { AURA_STYLES, styleSettings } from "./aura-styles.js";
 import { stylePreviewData, renderStylePreview, designPreviewData } from "./style-preview.js";
 import { attachAnnDesign } from "./ann-design-ui.js";
@@ -51,7 +51,8 @@ const planUI=attachAnnPlanSelection({
     if(!planUiReady)return;
     if(planUI.getState().response?.subscription)acknowledgePlan();
     $("#ann-app .ann-stage")?.toggleAttribute("inert",planLocked());
-    $("#ann-steps")?.toggleAttribute("inert",planLocked());
+    $("#ann-steps")?.removeAttribute("inert");
+    drawSteps();
   }),
   onAccepted:()=>acknowledgePlan(),
 });
@@ -123,13 +124,14 @@ const readinessUI = attachAnnReadiness({api,root,readOnly,
   onSaved:result=>refreshAnnDraft(result.draft),
 });
 const brandingUI=attachAnnBranding({api,readOnly,initial:boot.settings,
+  inConversationStep:()=>cur().id==="logo",
   onPreview:logo=>{
     const settings={logo_media_id:logo.id || null,logo_url:logo.url || ""};
     Object.assign(boot.settings,settings);Object.assign(previewSource.settings,settings);
     base=stylePreviewData(previewSource,{showcase:previewMode==="showcase"});renderPreview(false);
   },
   onSaved:()=>{readinessUI.onStoreChanged();drawKeep();},
-  onContinue:()=>advance(),
+  onContinue:()=>{if(cur().id==="logo")advance();else drawKeep();},
 });
 const essentialsUI = attachStoreEssentials({api,storeId:boot.store.store_id});
 // Onboarding controllers: brand and address write the REAL draft; gstin verifies explicitly.
@@ -505,7 +507,8 @@ function timeline() {
   let out = "", last = "";
   ps.slice(0, ri + 1).forEach((p, i) => {
     const d = def(p), active = i === ci;
-    if (p.step !== last) { last = p.step; const n = UI_STEPS.findIndex(s => s[0] === p.step); out += `<p class="ann-mark"><span>${n + 1} of ${UI_STEPS.length}</span>${esc(UI_STEPS[n][1])}</p>`; }
+    const stages=annNavigationSteps(UI_STEPS,planAccess.available),displayKey=annNavigationKey(p);
+    if (displayKey !== last) { last = displayKey; const n = stages.findIndex(s => s[0] === displayKey); out += `<p class="ann-mark"><span>${n + 1} of ${stages.length}</span>${esc(stages[n][1])}</p>`; }
     if (p.id === "review") {
       if (active) out += `<span id="ann-review-start"></span>${reviewStep()}`;
       return;
@@ -518,6 +521,8 @@ function timeline() {
     if (active && editing) out += annBubble(editQ());
     if (active) out += inlineControls(p, d);
     else if(d.kind==="business-documents")out+=`<div class="ann-comp-row"><button type="button" class="ann-btn alt" data-business-open>Open business documents</button></div>`;
+    else if(d.kind==="plan")out+=`<div class="ann-comp-row"><button type="button" class="ann-btn alt" data-ann-plan-open>Choose or review subscription</button></div>`;
+    else if(d.kind==="logo")out+=`<details class="ann-card"><summary>Upload or change brand logo</summary><div id="ann-branding-slot">${brandingUI.html()}</div></details>`;
   });
   return out;
 }
@@ -623,10 +628,14 @@ function drawSteps() {
   if(previewSource.products?.some(product=>product.status!=="archived"))answered.add("products");
   if (obDone.brand) answered.add("business"); if (obDone.address) answered.add("selling");
   if (setupStepsLocked) { answered.add("business"); answered.add("selling"); }
-  const doneN = answered.size, total = UI_STEPS.filter(([k]) => !["domain","payments","shipping","review"].includes(k)).length;
+  const stages=annNavigationSteps(UI_STEPS,planAccess.available),current=annNavigationKey(cur());
+  if(planAccess.name_confirmed)answered.add("store_name");
+  if(planAccess.enforced&&planAccess.allowed||planUI.getState().response?.subscription)answered.add("subscription");
+  const counted=stages.filter(([k])=>!["domain","payments","shipping","review"].includes(k));
+  const doneN = counted.filter(([k])=>answered.has(k)).length, total = counted.length;
   const state = isDirty() ? "Unsaved changes" : designUI?.active() ? "Design saved to draft" : session ? "Plan saved" : "Nothing saved yet";
-  $("#ann-steps").innerHTML = `<div class="ann-rail">${UI_STEPS.map(([k, n], i) => { const st = k === step ? "current" : answered.has(k) ? "done" : "todo";
-    return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === step ? "step" : "false"}"${isSetupStepLocked(k)&&!(k==="business"&&requiredBusinessPrompt()) ? ' disabled aria-disabled="true" title="Completed. Setup is locked after reaching Style."' : ""}><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
+  $("#ann-steps").innerHTML = `<div class="ann-rail">${stages.map(([k, n], i) => { const st = k === current ? "current" : answered.has(k) ? "done" : "todo";
+    return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === current ? "step" : "false"}"${(isSetupStepLocked(k)||k==="store_name"&&setupStepsLocked)&&!(k==="business"&&requiredBusinessPrompt()) ? ' disabled aria-disabled="true" title="Completed. Setup is locked after reaching Style."' : ""}><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
     <div class="ann-meter" role="progressbar" aria-label="Planning progress" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${doneN}"><i style="transform:scaleX(${doneN / total})"></i></div>
     <p class="ann-meter-t">${doneN} of ${total} design areas filled. ${esc(state)}. Publishing checks are separate.</p>`;
   const logoButton = document.querySelector('[data-edit-prompt="logo"]');
@@ -664,7 +673,7 @@ function draw(mode = "keep") {
     const planButton=$("#ann-store-plan [data-ann-plan-open]");
     if(planButton)planButton.disabled=planLocked()&&!planAccess.name_confirmed;
     $("#ann-app .ann-stage")?.toggleAttribute("inert",planLocked());
-    $("#ann-steps")?.toggleAttribute("inert",planLocked());
+    $("#ann-steps")?.removeAttribute("inert");
     if(planLocked()&&planAccess.name_confirmed&&promptId==="plan"&&!planAutoOpened){
       planAutoOpened=true;queueMicrotask(()=>{if(!planUI.getState().opened)planUI.open();});
     }
@@ -704,7 +713,12 @@ async function toPrompt(id) {
     if (saveAfterTransition) void save(step, undefined, { automatic: true });
   } finally { navigating = false; }
 }
-function go(next) { const p = prompts().find(x => x.id===(next==="business"?requiredBusinessPrompt():null))||prompts().find(x => x.step === next); if (p) return toPrompt(p.id); }
+function go(next) {
+  if(next==="subscription"){planUI.open();return;}
+  if(next==="store_name")return toPrompt("store_name");
+  const p = prompts().find(x => x.id===(next==="business"?requiredBusinessPrompt():null))||prompts().find(x => x.step === next);
+  if (p) return toPrompt(p.id);
+}
 function chooseStyle(value) {
   if (designUI?.isSavedStyle(value)) {
     designUI.resumeEditing();
