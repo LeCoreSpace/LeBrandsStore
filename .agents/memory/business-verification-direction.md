@@ -61,8 +61,20 @@ replacement evidence through dashboard Settings for verification again.
 
 **How to apply:** Separate pending review from rejection; do not require manual
 approval merely to continue store creation. Keep the authenticated document
-replacement route available to a suspended merchant. This direction does not,
-by itself, decide publication or subscription eligibility while review is pending.
+replacement route available to a suspended merchant.
+
+The user explicitly chose: "Allow building only; require approval before going
+live". Pending-review merchants may build and save drafts, but manual business
+approval is required before publication.
+
+**Why:** The user confirmed the distinction between store creation and accepting
+live orders while documents await review.
+
+**How to apply:** Enforce approval at the server-side publication boundary, not
+just through a disabled button. Approval must not bypass GST, checkout or other
+publication safeguards. Provide a working restricted staff approval path before
+activating a gate that otherwise nobody can clear. Subscription billing remains
+a separate implementation concern.
 
 Private business evidence forms must own their native text inputs rather than
 moving the entered details into Ann's shared chat composer.
