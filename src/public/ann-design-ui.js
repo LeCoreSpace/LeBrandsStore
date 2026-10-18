@@ -32,7 +32,9 @@ const styleName = id => AURA_STYLES.find(s => s.id === id)?.name || id;
 const MAX_UPLOAD = 8 * 1024 * 1024;
 
 export function attachAnnDesign(o) {
-  const { api, root, readOnly, mount, say } = o;
+  const { api, root, mount, say } = o;
+  const memberReadOnly=o.readOnly;
+  let readOnly=memberReadOnly||o.businessAllowed===false;
   const el = document.createElement("section");
   el.id = "ann-design"; el.className = "ann-design"; el.setAttribute("aria-label", "Your design");
   mount.parentNode.insertBefore(el, mount);
@@ -329,7 +331,7 @@ export function attachAnnDesign(o) {
       <div class="ann-actions"><button type="button" class="ann-btn" data-design-act="use" ${readOnly || !ack || busy ? "disabled" : ""}>${busy === "use" ? "Creating" : "Use this design"}</button>
       ${active() && !sameStyle() ? `<button type="button" class="ann-btn alt" data-design-act="back">Back to my design</button>` : ""}
       ${active() && sameStyle() ? `<button type="button" class="ann-btn alt" data-design-act="mine">View my design</button>` : ""}</div>
-      ${readOnly ? `<p class="ann-note">Only an owner or admin can create a design.</p>` : ""}</div>` : "";
+      ${readOnly ? `<p class="ann-note">${memberReadOnly?"Only an owner or admin can create a design.":"Complete your business verification in Ann before creating a design."}</p>` : ""}</div>` : "";
     const err = error ? `<div class="ann-callout" role="alert"><p>${esc(error)}</p>${conflict ? `<button type="button" class="ann-btn alt sm" data-design-act="reload">Reload the latest draft</button>` : ""}</div>` : "";
     if (cataloguePrompt) return catalogueChoice + err;
     if (browsing || !active()) return catalogueChoice + use + err;
@@ -337,10 +339,10 @@ export function attachAnnDesign(o) {
       <div class="ann-design-head"><div><p class="ann-design-title">Your design: ${esc(styleName(model.style))}</p><p class="ann-note" data-design-state></p></div>
       <div class="ann-actions">
         <button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>${editMode?"Editing on":"Editing off"}</button>
-        ${o.themeEditor?"":'<button type="button" class="ann-btn alt sm" data-design-act="theme">Open theme editor</button>'}
+        ${o.themeEditor?"":`<button type="button" class="ann-btn alt sm" data-design-act="theme"${readOnly?" disabled":""}>Open theme editor</button>`}
         <button type="button" class="ann-btn alt sm" data-design-act="save" data-design-save>Save draft</button>
         <button type="button" class="ann-btn sm" data-design-act="publish" data-design-publish>Review and publish</button></div></div>
-      ${readOnly ? `<p class="ann-note">You can look around. Only an owner or admin can edit this design.</p>` : editMode ? (selected ? (o.contextual ? ctxPanel() : panel()) : `<p class="ann-note${o.themeEditor?" ae-design-hint":""}">${o.themeEditor?"Click any text or photo on the page to edit it.":"Select any text or photo on the page to change it. Changes show instantly and are saved when you choose Save draft."}</p>`) : ""}
+      ${readOnly ? `<p class="ann-note">${memberReadOnly?"You can look around. Only an owner or admin can edit this design.":"Your saved design is unchanged. Complete business verification in Ann to resume editing."}</p>` : editMode ? (selected ? (o.contextual ? ctxPanel() : panel()) : `<p class="ann-note${o.themeEditor?" ae-design-hint":""}">${o.themeEditor?"Click any text or photo on the page to edit it.":"Select any text or photo on the page to change it. Changes show instantly and are saved when you choose Save draft."}</p>`) : ""}
       <p class="ann-note">${model.catalogue_mode==="sample"?(o.themeEditor?"Sample products shown. Choose your own before publishing.":"This draft preview uses sample products and illustrative prices. Add your real products and explicitly choose them before publishing."):"Products come from your catalogue."} <a href="${root}/products">Edit products</a></p></div>${err}`;
   }
   function ctxPanel() {
@@ -457,6 +459,7 @@ export function attachAnnDesign(o) {
   load();
 
   return {
+    setBusinessAccess(allowed){readOnly=memberReadOnly||!allowed;if(readOnly){editMode=false;selected=null;}paint(true);},
     active, editing, hasUnsavedChanges: () => dirty() || busy === "save" || busy === "use",
     canSave:()=>!readOnly&&active()&&!busy&&!conflict&&!menuDraftError&&(dirty()||Boolean(error)),
     canPublish:()=>!readOnly&&active()&&!busy&&!conflict&&!menuDraftError,

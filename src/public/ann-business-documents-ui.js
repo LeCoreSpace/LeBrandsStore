@@ -3,7 +3,7 @@ const MIMES = ["application/pdf", "image/jpeg", "image/png"];
 const STATUS = { pending_review: "Pending business review", changes_requested: "Changes requested", approved: "Approved" };
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 
-export function attachAnnBusinessDocuments({ api, readOnly, onError } = {}) {
+export function attachAnnBusinessDocuments({ api, readOnly, onError, onSubmitted } = {}) {
   let dlg = null, data = null, loading = false, busy = false, loadError = "", opener = null;
   let errors = {}, formError = "", success = "", dirty = false, discarding = false, file = null;
   let form = { country_code: "", legal_name: "", registration_type: "", registration_number: "", explanation: "", document_type: "" };
@@ -19,7 +19,7 @@ export function attachAnnBusinessDocuments({ api, readOnly, onError } = {}) {
   function seed() {
     const v = data?.verification;
     form = {
-      country_code: v?.country_code || data?.account_country || "",
+      country_code: data?.business_country || v?.country_code || data?.account_country || "",
       legal_name: v?.legal_name || "", registration_type: v?.registration_type || "",
       registration_number: v?.registration_number || "", explanation: v?.explanation || "",
       document_type: v?.documents?.[0]?.document_type || "",
@@ -86,6 +86,7 @@ export function attachAnnBusinessDocuments({ api, readOnly, onError } = {}) {
       } else {
         data = body; file = null; dirty = false; errors = {}; formError = ""; seed();
         success = "Submitted. Status: " + (STATUS[body.verification?.status] || "received") + ".";
+        onSubmitted?.(body);
       }
     } catch { formError = "The network failed. Your entries are kept. Try again."; report(formError); }
     busy = false; draw();
@@ -108,6 +109,10 @@ export function attachAnnBusinessDocuments({ api, readOnly, onError } = {}) {
     if (v?.status === "approved") h += `<p class="abd-note">This record is approved and read only.</p>`;
     if (v?.feedback) h += `<p class="abd-warn"><strong>Reviewer feedback:</strong> ${esc(v.feedback)}</p>`;
     if (v?.status === "pending_review") h += `<p class="abd-note">Your submission is waiting for review. You may submit a corrected version.</p>`;
+    if(data.business_access?.enforced&&!data.business_country)
+      h+=`<p class="abd-warn">Confirm your business country in Ann before submitting evidence.</p>`;
+    else if(data.business_access?.enforced)
+      h+=`<p class="abd-hint">Business country is managed in Ann. Submitted evidence and confirmed invoice details cannot be relabelled here.</p>`;
     h += `<div class="abd-field"><label for="abd-country_code">Business country</label><select ${attrs("country_code")}><option value="">Choose a country</option>${(data.countries || []).map(c => `<option value="${esc(c.code)}"${c.code === form.country_code ? " selected" : ""}>${esc(c.name)}</option>`).join("")}</select><span class="abd-hint">${data.account_country ? "Your account country is only a suggestion, not proof." : "Choose where your business is registered."}</span>${errors.country_code ? `<p class="abd-field-error" role="alert">${esc(errors.country_code)}</p>` : ""}</div>`;
     if (!r) return h;
     h += ind ? `<p class="abd-note">${esc(r.label)}: ${esc(r.description)}</p>` : `<p class="abd-note">${esc(r.label)}: ${esc(r.description)} This country is assessed manually. Submitting makes no claim about legal tax compliance.</p>`;
@@ -146,13 +151,17 @@ export function attachAnnBusinessDocuments({ api, readOnly, onError } = {}) {
         ${formError ? `<p class="abd-alert" role="alert">${esc(formError)}</p>` : ""}${success ? `<p class="abd-note" role="status">${esc(success)}</p>` : ""}
         ${busy ? `<p class="abd-hint" role="status">Uploading and submitting. Please wait.</p>` : ""}`;
     }
-    const canSend = data && data.retention_days && !locked() && !busy && !discarding && reqFor(form.country_code);
+    const canSend = data && data.retention_days && (!data.business_access?.enforced||data.business_country) && !locked() && !busy && !discarding && reqFor(form.country_code);
     dlg.innerHTML = `<div class="abd-head"><div><h2 id="abd-title">Business documents</h2></div><button type="button" class="abd-btn alt" data-a="close"${busy ? " disabled" : ""}>Close</button></div>
       <div class="abd-body" aria-busy="${loading || busy}">${discarding ? `<div class="abd-discard" role="alertdialog" aria-labelledby="abd-dt"><strong id="abd-dt">Discard your unsaved entries?</strong><div class="abd-foot" style="padding:0;border:0;justify-content:flex-start"><button type="button" class="abd-btn" data-a="discard">Discard</button><button type="button" class="abd-btn alt" data-a="keep">Keep editing</button></div></div>` : ""}${data && !data.retention_days ? `<p class="abd-warn">Business submissions are paused until the platform configures its document retention review policy.</p>` : ""}<div${discarding ? " inert" : ""}>${body}</div></div>
       <div class="abd-foot">${!data && !loading ? `<button type="button" class="abd-btn alt" data-a="retry">Retry</button>` : ""}${data && !readOnly && !approved() ? `<button type="button" class="abd-btn" data-a="submit"${canSend ? "" : " disabled"}>${busy ? "Submitting..." : data.verification ? "Resubmit for review" : "Submit for review"}</button>` : ""}</div>`;
     const picker = dlg.querySelector('input[type="file"]');
     if (file && picker && typeof DataTransfer === "function") {
       const selection = new DataTransfer(); selection.items.add(file); picker.files = selection.files;
+    }
+    if(data?.business_access?.enforced){
+      const country=dlg.querySelector('[data-f="country_code"]');
+      if(country)country.disabled=true;
     }
     if (keep) dlg.querySelector("#" + CSS.escape(keep))?.focus();
     else if (discarding) dlg.querySelector("[data-a=keep]")?.focus();

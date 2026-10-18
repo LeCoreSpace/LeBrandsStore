@@ -22,6 +22,8 @@ import {mapGSTINResponse} from "./gstin/provider.js";
 import {handleGSTINRoutes} from "./gstin/routes.js";
 import {handleStoreRoutes} from "./store/routes.js";
 import {handleBusinessDocumentRoutes} from "./store/business-document-routes.js";
+import {businessEditorAccess} from "./store/business-access.js";
+import {REGISTRATION_COUNTRIES} from "./public/registration-validation.js";
 import {renderDashboard} from "./ui/dashboard.js";
 import {handleDashboard} from "./dashboard/routes.js";
 
@@ -53,7 +55,7 @@ const fixtureMedia={
   async put(key,bytes,options){memoryMedia.set(key,{bytes:new Uint8Array(bytes),type:options.httpMetadata.contentType});},
   async delete(key){memoryMedia.delete(key);},
 };
-export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false,verifiedBusiness=false,businessDocuments=false,catalogueMasters=true,catalogueApi=false,sampleClassification=false,catalogueCustomValues=false}={}) {
+export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false,verifiedBusiness=false,businessDocuments=false,businessAccess=false,catalogueMasters=true,catalogueApi=false,sampleClassification=false,catalogueCustomValues=false}={}) {
   const pg = new PGlite();
   try {
     await pg.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
@@ -113,13 +115,18 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
       if(!response.ok)throw new Error("Synthetic GST invoice identity could not be confirmed.");
     }
     if(businessDocuments){
-      if(!verifiedBusiness)throw new Error("Business documents fixture requires synthetic GST evidence.");
+      if(!verifiedBusiness)await pg.exec(await readFile(new URL("../db/staged/0011_gstin_approval.sql",import.meta.url),"utf8"));
       await pg.exec(await readFile(new URL("../db/staged/0030_registration_contact.sql",import.meta.url),"utf8"));
       // Mirror the migration runner's record of the actual DDL applied above.
       for(const file of ["0011_gstin_approval.sql","0017_ann_launch_setup.sql","0030_registration_contact.sql"])
         await pg.query("INSERT INTO public.schema_migrations(filename,checksum) VALUES($1,'isolated fixture')",[file]);
       await pg.exec(await readFile(new URL("../db/staged/0031_business_documents.sql",import.meta.url),"utf8"));
       await pg.query("UPDATE public.users SET country_code='IN',phone='+919876543210' WHERE id=$1",[ownerId]);
+    }
+    if(businessAccess){
+      if(!businessDocuments)throw new Error("Business access requires the document schema.");
+      await pg.query("INSERT INTO public.schema_migrations(filename,checksum) VALUES('0031_business_documents.sql','isolated fixture')");
+      await pg.exec(await readFile(new URL("../db/staged/0032_business_editor_access.sql",import.meta.url),"utf8"));
     }
     if(sampleClassification){
       if(!catalogueApi)throw new Error("Sample classification requires the catalogue API fixture.");
@@ -129,7 +136,7 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
     return pg;
   } catch (error) { await pg.close(); throw error; }
 }
-const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true,sampleCatalogue:true,verifiedBusiness:true,businessDocuments:true,catalogueApi:true,sampleClassification:true,catalogueCustomValues:true}).catch(error => { database = null; throw error; });
+const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true,sampleCatalogue:true,verifiedBusiness:true,businessDocuments:true,businessAccess:true,catalogueApi:true,sampleClassification:true,catalogueCustomValues:true}).catch(error => { database = null; throw error; });
 export function annFixtureAdapter(pg) {
   return { withMemberStore: async (id, hash, fn) => {
     if (id !== storeId || !["a".repeat(64), "b".repeat(64)].includes(hash))
@@ -240,7 +247,8 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       const options = await db.withMemberStore(storeId, hash, async tx => ({
         reference: await annReference(tx),
         sessionResponse: await annSessionResponse(tx, storeId, await loadAnnSession(tx, storeId)),
-        draft: await loadDraft(tx, storeId),
+        draft: {...await loadDraft(tx, storeId),business_access:await businessEditorAccess(tx,storeId,hash),
+          business_countries:REGISTRATION_COUNTRIES.map(({code,name})=>({code,name}))},
         apiRoot: prefix + (readonly ? "/read-only-api" : "/api"), readOnly: readonly,
       }));
       // Screenshot controls affect only this response clone, never a stored
@@ -342,7 +350,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       response = new Response(req.method === "HEAD" ? null : html,
       { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" } });
     } else {
-      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness|media|design|launch|onboarding)$/);
+      const match = url.pathname.match(/^\/__ann-builder-preview\/(?:api|read-only-api)\/(reference|session|application|readiness|media|design|launch|onboarding|country)$/);
       if (!match) response = new Response("Not found", { status: 404 });
       else {
         url.pathname = `/api/stores/${storeId}/ann/${match[1]}`;

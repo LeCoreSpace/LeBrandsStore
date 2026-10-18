@@ -1,4 +1,5 @@
 import { renderDashboard } from "../ui/dashboard.js";
+import {businessEditorAccess,protectedEditorLinks} from "../store/business-access.js";
 import { renderInvoice } from "../ui/invoice.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import {catalogueFrameHeaders} from "./catalogue-frame-headers.js";
@@ -56,7 +57,9 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
         if(shipping&&!verification.ready)throw commerceError("Verify and confirm the active Regular GSTIN in Settings, then republish, before issuing an invoice.",undefined,409);
       }
     }
+    let editorAccess;
     const result = await db.withMemberStore(id,tokenHash,async (tx) => {
+      if(!api)editorAccess=await businessEditorAccess(tx,id,tokenHash);
       const role = await dashboardAccess(tx,id,user.id,!read && section === "orders",section === "exports");
       if(section==="inventory"){
         if(read&&child==="alerts")return inventoryAlerts(tx,id);
@@ -125,7 +128,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
       "content-type":"text/csv; charset=utf-8","content-disposition":`attachment; filename="${section}-${child}.csv"`}});
     if (api) return json(result);
     const view = section === "collections" && child ? child === "new" ? "collection-new" : "collection" : section === "products" && child ? child === "new" ? "product-new" : "product" : section === "orders" && child ? "order" : section === "customers" && child ? "customer" : section;
-    return new Response(request.method === "HEAD" ? null : result.invoice ? renderInvoice(result.invoice,`/stores/${id}/orders`) : renderDashboard(view,result,user),
+    return new Response(request.method === "HEAD" ? null : result.invoice ? renderInvoice(result.invoice,`/stores/${id}/orders`) : protectedEditorLinks(renderDashboard(view,{...result,business_access:editorAccess},user),id,editorAccess),
       {headers:{...catalogueFrameHeaders(request,view,headers),"content-type":"text/html; charset=utf-8"}});
   } catch (error) {
     console.error("Dashboard request failed",{code:/^[A-Z0-9]{5}$/.test(error.code || "") ? error.code : error.status ? "REQUEST_REJECTED" : "DASHBOARD_UNAVAILABLE"});

@@ -145,17 +145,50 @@ subscription or invoice privileges.
 
 ## Phase 3: Ann and editor access
 
-- Show GSTIN prompts only for Indian businesses, using explicit business country.
-- India: unlock editor after provider verification, address confirmation and
-  required document submission.
-- Other supported countries: unlock after required business details and evidence
-  submission (or a defined exception decision).
-- Design work remains available while manual document review is pending.
-- Protect dashboard/Ann links, direct editor routes and editing APIs consistently.
-- Define a safe path for legacy accounts without a country or submission; never
-  assume India or silently lock every existing store.
-- Leave existing financial and publication safeguards intact until their
-  country-specific replacements have been deliberately implemented.
+Implemented with staged `0032_business_editor_access.sql`:
+
+- **At the user's explicit request, every store existing when this migration
+  runs is assigned business country India.** This is not a user-account country
+  update or verification decision. Old documents, account contacts, saved
+  designs, GST evidence and invoices are not relabelled or rewritten.
+- Newly created stores get an empty business country through a trigger. Ann
+  asks the merchant to explicitly confirm the business jurisdiction; no country
+  is inferred from the account or phone.
+- India shows GSTIN verification and registered-address confirmation before
+  private GST certificate submission. Other countries skip Ann's GST prompt.
+- Standard clean evidence in pending review or approved state enables design
+  editing. Changes requested locks it until resubmission. A not-registered
+  exception requires an approved exception decision; the staff interface is
+  still deferred, so this path explicitly tells the merchant it needs review.
+- Country changes are locked once documents or a confirmed invoice identity
+  exist. A previous non-Indian submission on a store newly assigned India is
+  retained as history, not silently converted to Indian evidence; new matching
+  Indian evidence is needed.
+- Dashboard/Ann theme links, direct editor/style routes, Ann design mutations,
+  page layout APIs, theme fields in setup and legacy AI design mutations use
+  the same access calculation. Product/collection forms and ordinary business
+  details remain available. Read-only members never gain writing privileges.
+- All existing financial, checkout, GST invoice and publication protections
+  remain unchanged. Non-Indian design access is not international commerce or
+  country-specific tax support.
+
+### Migration and activation order
+
+**Do not apply this gate migration until Phase 2's real private storage, scanner
+and retention policy are operational.** It intentionally applies the rules to
+existing stores too; missing evidence will lock theme editing. A missing scanner
+must not leave merchants unable to complete a newly enforced requirement.
+
+Review the migration and run personally:
+
+    pnpm run db:migrate -- --staged-business-editor-access
+
+It requires 0031 already recorded. Prepare/provision Phase 2 dependencies and
+deploy this code in a coordinated rollout. Until 0032 is applied, the code
+reports `rollout_pending` and retains pre-existing editor rules; that is explicit
+staged compatibility, not a fallback after database or permission failures.
+Once applied, a missing access record fails closed. No live migration or
+deployment is performed automatically.
 
 ## Phase 4: Staff review and subscription eligibility (later)
 

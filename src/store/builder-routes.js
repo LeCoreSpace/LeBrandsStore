@@ -5,6 +5,8 @@ import { renderBuilderChoice } from "../ui/builder-choice.js";
 import { renderAnnBuilder } from "../ui/ann-builder.js";
 import { annReady, annReference, loadAnnSession, annSessionResponse } from "./ann-repository.js";
 import { UUID } from "../public/validation.js";
+import {businessEditorAccess,protectedEditorLinks} from "./business-access.js";
+import {REGISTRATION_COUNTRIES} from "../public/registration-validation.js";
 
 // The guided planning UI is available only when its database is ready.
 // It never applies a theme, creates inventory or bypasses publication checks.
@@ -49,6 +51,8 @@ export async function handleBuilderRoutes(request, env, db, user, tokenHash) {
     const data = await db.withMemberStore(id, tokenHash, async tx => {
       const role = await dashboardAccess(tx, id, user.id);
       const data = { ...await loadDraft(tx, id), role };
+      data.business_access=await businessEditorAccess(tx,id,tokenHash);
+      data.business_countries=REGISTRATION_COUNTRIES.map(({code,name})=>({code,name}));
       if (annBuilderEnabled(env)) {
         try {
           await annReady(tx);
@@ -75,7 +79,7 @@ export async function handleBuilderRoutes(request, env, db, user, tokenHash) {
         annEnabled: data.annAvailable === true,
         error: data.annUnavailable,
       });
-    return new Response(request.method === "HEAD" ? null : html, {
+    return new Response(request.method === "HEAD" ? null : protectedEditorLinks(html,id,data.business_access), {
       headers: { ...SECURITY_HEADERS, "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
     });
   } catch (error) {

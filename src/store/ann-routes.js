@@ -2,7 +2,8 @@ import { SECURITY_HEADERS, isValidOrigin } from "../auth/security.js";
 import { UUID } from "../public/validation.js";
 import { dashboardAccess } from "../dashboard/repository.js";
 import { readJson } from "./input.js";
-import { prepareAnnOnboarding, saveAnnOnboarding, requireAnnGSTIN } from "./ann-onboarding.js";
+import { prepareAnnOnboarding, saveAnnOnboarding, requireAnnBusiness,saveAnnCountry } from "./ann-onboarding.js";
+import {requireBusinessEditorAccess} from "./business-access.js";
 import { validateAnnSave, mergeAnnAnswers, validateAnnAnswers } from "./ann-input.js";
 import { annReady, annReference, loadAnnSession, annSessionResponse } from "./ann-repository.js";
 import { prepareAnnApplication, applyAnnApplication } from "./ann-application.js";
@@ -11,7 +12,7 @@ import { handleStoreRoutes } from "./routes.js";
 import { prepareAnnDesign, saveAnnDesign } from "./ann-design.js";
 import { prepareAnnLaunch, saveAnnLaunch } from "./ann-launch.js";
 import { catalogueReference } from "./catalogue-classification.js";
-const pattern = /^\/api\/stores\/([a-f0-9-]{36})\/ann\/(reference|session|application|readiness|media|design|launch|onboarding)$/i;
+const pattern = /^\/api\/stores\/([a-f0-9-]{36})\/ann\/(reference|session|application|readiness|media|design|launch|onboarding|country)$/i;
 export const isAnnRoute = path => pattern.test(path);
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status, headers: { ...SECURITY_HEADERS, "content-type": "application/json", "cache-control": "no-store" },
@@ -21,7 +22,7 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
   if (!match || !UUID.test(match[1])) return json({ error: "Page not found." }, 404);
   if (!user || user.must_change_password) return json({ error: "Sign in and complete any required password change first." }, 401);
   const [, storeId, action] = match, writing = request.method === "PATCH" || request.method === "POST";
-  if (!(action==="media" ? request.method==="POST" : ["GET","HEAD"].includes(request.method) || (request.method === "PATCH" && ["session","readiness","design","launch","onboarding"].includes(action)) || (request.method === "POST" && ["application","design"].includes(action)))) return json({ error: "Method not allowed." }, 405);
+  if (!(action==="country"?request.method==="PATCH":action==="media" ? request.method==="POST" : ["GET","HEAD"].includes(request.method) || (request.method === "PATCH" && ["session","readiness","design","launch","onboarding"].includes(action)) || (request.method === "POST" && ["application","design"].includes(action)))) return json({ error: "Method not allowed." }, 405);
   if (["application","readiness","media","design","launch","onboarding"].includes(action) && env.ANN_BUILDER_ENABLED === "false") return json({ error: "Ann is temporarily paused. Your existing store is unchanged." }, 503);
   if (writing && !isValidOrigin(request)) return json({ error: "This request did not come from the account website." }, 403);
   try {
@@ -38,11 +39,13 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
     }
     const data = await db.withMemberStore(storeId, tokenHash, async tx => {
       await dashboardAccess(tx, storeId, user.id, writing);
+      if(writing&&["design","application"].includes(action))await requireBusinessEditorAccess(tx,storeId,tokenHash);
       if (action === "design") return writing
         ? saveAnnDesign(tx, storeId, user.id, await readJson(request), request.method === "POST")
         : prepareAnnDesign(tx, storeId);
       await annReady(tx);
-      if(action==="onboarding")return writing?saveAnnOnboarding(tx,storeId,user.id,await readJson(request)):prepareAnnOnboarding(tx,storeId);
+      if(action==="country")return saveAnnCountry(tx,storeId,tokenHash,await readJson(request));
+      if(action==="onboarding")return writing?saveAnnOnboarding(tx,storeId,user.id,await readJson(request),tokenHash):prepareAnnOnboarding(tx,storeId,tokenHash);
       if (action === "launch") return writing
         ? saveAnnLaunch(tx, storeId, user.id, env, await readJson(request))
         : prepareAnnLaunch(tx, storeId, user.id, env);
@@ -72,7 +75,8 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
       }
       if (!writing) return annSessionResponse(tx, storeId, session);
       const body = validateAnnSave(await readJson(request));
-      if(body.current_step!=="business"&&(body.current_step==="selling"||session?.current_step==="business"))await requireAnnGSTIN(tx,storeId);
+      if(body.current_step!=="business"&&(body.current_step==="selling"||session?.current_step==="business"))await requireAnnBusiness(tx,storeId,tokenHash);
+      if(!["business","selling"].includes(body.current_step))await requireBusinessEditorAccess(tx,storeId,tokenHash);
       if ((session?.revision || 0) !== body.expected_revision) return { conflict: true };
       const merged = mergeAnnAnswers(session?.answers, body.answers);
       const reference = await annReference(tx, Number.isSafeInteger(merged.answers.subcategory_id) ? merged.answers.subcategory_id : null);
@@ -88,6 +92,7 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
     if (data.conflict) return json({ error: "Ann progress changed in another tab. Reload your progress before saving." }, 409);
     return request.method === "HEAD" ? new Response(null, { headers: json({}).headers }) : json(data);
   } catch (error) {
+    if(error.code==="22023"&&action==="country")return json({error:"Business country is locked by submitted evidence or a confirmed invoice identity."},409);
     if (["42501","FORBIDDEN"].includes(error.code) || error.status === 403) return json({ error: "You do not have permission for this action." }, 403);
     if (["40001","23505"].includes(error.code)) return json({ error: "Ann progress changed in another tab. Reload your progress before saving." }, 409);
     if ([400,404,409,429,502,503].includes(error.status)) return json({ error: error.message,

@@ -2,6 +2,7 @@ import { SECURITY_HEADERS, isValidOrigin } from "../auth/security.js";
 import { dashboardAccess } from "../dashboard/repository.js";
 import { gstinEnabled, verificationState } from "../gstin/service.js";
 import { REGISTRATION_COUNTRIES } from "../public/registration-validation.js";
+import {businessEditorAccess} from "./business-access.js";
 
 const ROOT = /^\/api\/stores\/([a-f0-9-]{36})\/business-verification(?:\/documents\/([a-f0-9-]{36}))?$/i;
 const MAX_FILE = 5 * 1024 * 1024;
@@ -121,10 +122,12 @@ function uploadPolicy(env) {
 async function state(tx, id, tokenHash, env) {
   const [row] = await tx`SELECT public.business_document_state(${id},${tokenHash}) AS data`;
   const data = decode(row.data);
+  const access=await businessEditorAccess(tx,id,tokenHash);
   if (data.verification?.documents) for (const doc of data.verification.documents) {
     doc.download_url = `/api/stores/${id}/business-verification/documents/${doc.id}`;
   }
-  return { available: true, ...data, countries: REGISTRATION_COUNTRIES.map(({code,name}) => ({code,name})),
+  return { available: true, ...data,business_access:access,business_country:access.business_country,
+    countries: REGISTRATION_COUNTRIES.map(({code,name}) => ({code,name})),
     gst: await gstState(tx, id), ...uploadPolicy(env) };
 }
 
@@ -177,6 +180,8 @@ export async function handleBusinessDocumentRoutes(request, env, db, user, token
     let raw;
     try { raw = JSON.parse(form.get("details")); } catch { throw fail("Check the business details."); }
     const details = validateDetails(raw, current.gst);
+    if(current.business_access?.enforced&&details.country!==current.business_country)
+      throw fail("Use the business country confirmed in Ann before submitting documents.",409,"country_code");
     if (current.verification?.status === "approved") throw fail("Approved documents cannot be replaced.", 409);
     if (details.revision !== (current.verification?.revision || 0))
       throw fail("Business details changed in another tab. Reload before submitting.", 409);

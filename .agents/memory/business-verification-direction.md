@@ -50,3 +50,15 @@ details should stay inside the dedicated private submission flow.
 **How to apply:** Keep modal form fields independent of conversation input
 enhancements and test non-Indian free-text/exception paths as well as Indian
 read-only GST details.
+
+The user explicitly requested: "make all existing stores to india".
+Assign India to business country for all stores present at the country/access
+rollout, without changing account countries, historic invoices or evidence.
+New stores still need an explicit business-country choice.
+
+**Why:** The user replaced the previously proposed legacy-country exemption
+with an explicit assignment for existing stores.
+
+**How to apply:** Stage the data change for the user to run personally. Explain
+that editor gating will apply to existing stores too; make private evidence
+collection operational before activating a gate that merchants cannot complete.

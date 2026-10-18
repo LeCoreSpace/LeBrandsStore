@@ -6,6 +6,7 @@ import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
 import { handlePageRoutes, isPageRoute } from "../store/page-routes.js";
 import {handleGSTINRoutes,isGSTINRoute} from "../gstin/routes.js";
 import {handleBusinessDocumentRoutes,isBusinessDocumentRoute} from "../store/business-document-routes.js";
+import {requireBusinessEditorAccess} from "../store/business-access.js";
 import {renderEditor} from "../ui/editor.js";
 import {isAiRoute,handleAiRoutes} from "../ai/routes.js";
 import {aiEnabled} from "../ai/repository.js";
@@ -39,7 +40,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
   const editorMatch=path.match(/^\/stores\/([0-9a-f-]{36})\/editor$/i);
-  const storeRoute = isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isBusinessDocumentRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";
+  const storeRoute = isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isBusinessDocumentRoute(path) || isAnnRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";
   const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password", "/reset-password":"forgot-password","/invite":"forgot-password" };
   if (!["GET", "POST", "HEAD", ...(storeRoute ? ["PATCH", "PUT", "DELETE"] : [])].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
   if (!["GET", "HEAD"].includes(request.method) && !isValidOrigin(request)) {
@@ -107,7 +108,9 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     }
     if(editorMatch){
       if(request.method!=="GET")return html("error",{error:"Method not allowed."},405);
-      const data=await db.withMemberStore(editorMatch[1],tokenHash,async tx=>{
+      let data;
+      try{data=await db.withMemberStore(editorMatch[1],tokenHash,async tx=>{
+        await requireBusinessEditorAccess(tx,editorMatch[1],tokenHash);
         const draft=await loadEditorDraft(tx,editorMatch[1]);
         draft.ai_builder_enabled=await aiEnabled(tx);
         if(draft.ai_builder_enabled)await tx`UPDATE public.ai_generation_jobs SET previewed_at=now()
@@ -115,6 +118,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
         const[member]=await tx`SELECT role FROM public.store_members WHERE store_id=${editorMatch[1]} AND user_id=${user.id}`;
         return{...draft,role:member?.role};
       });
+      }catch(error){if(error.businessAccess)return redirect(`/stores/${editorMatch[1]}/build/ann?business=1`);throw error;}
       return new Response(renderEditor(data,user),{headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
     }
     if (isDashboardPath(path,request.method)) return await handleDashboard(request,db,user,tokenHash,env);

@@ -31,6 +31,7 @@ function database({ ready = true, role = "owner" } = {}) {
   const state = { writes: 0, preference: null };
   const tx = async (strings, ...values) => {
     const sql = strings.join("?");
+    if(sql.includes("business_access_definition"))return [{business_access_definition:null}];
     if (sql.includes("SELECT role")) return [{ role }];
     if (sql.includes("to_regclass")) return [{ ready }];
     if (sql.includes("FROM public.aura_library_categories")) return [{ category_id: "1", name: "Fashion", slug: "fashion-and-apparel" }];

@@ -5,6 +5,7 @@ import { SECURITY_HEADERS } from "../auth/security.js";
 import { UUID } from "../public/validation.js";
 import { AI_PAGE_KEYS as PAGE_KEYS } from "../public/aura-layout.js";
 import { audit } from "../dashboard/repository.js";
+import {requireBusinessEditorAccess} from "./business-access.js";
 export const isPageRoute = path => /^\/api\/stores\/[^/]+\/pages(?:\/|$)/.test(path);
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { ...SECURITY_HEADERS, "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 export async function handlePageRoutes(request, env, db, user, tokenHash) {
@@ -19,6 +20,7 @@ export async function handlePageRoutes(request, env, db, user, tokenHash) {
     // Account routing has already applied the same exact-origin and session
     // protection used by the existing wizard API.
     const result = await db.withMemberStore(id, tokenHash, async tx => {
+      await requireBusinessEditorAccess(tx,id,tokenHash);
       if (!await pagesEnabled(tx)) throw Object.assign(new Error("The page architecture migration has not been applied."), { status: 503 });
       if (read && action === "history") return pageHistory(tx, id, page);
       const data = await loadDraft(tx, id);

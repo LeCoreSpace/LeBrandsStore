@@ -3,10 +3,30 @@ import { draftFingerprint } from "./ann-application.js";
 import { settingsPatch, badInput } from "./input.js";
 import { gstinEnabled, verificationState } from "../gstin/service.js";
 import { audit } from "../dashboard/repository.js";
-export async function prepareAnnOnboarding(tx,id) {
+import {businessEditorAccess} from "./business-access.js";
+import {REGISTRATION_COUNTRIES} from "../public/registration-validation.js";
+export async function prepareAnnOnboarding(tx,id,tokenHash) {
   const draft=await loadDraft(tx,id);
   return {expected_draft:await draftFingerprint(draft),draft,store:draft.store,settings:draft.settings,
-    verification:await gstinEnabled(tx)?await verificationState(tx,id,draft.settings):{enabled:false,state:"unverified"}};
+    verification:await gstinEnabled(tx)?await verificationState(tx,id,draft.settings):{enabled:false,state:"unverified"},
+    business_access:await businessEditorAccess(tx,id,tokenHash),
+    business_countries:REGISTRATION_COUNTRIES.map(({code,name})=>({code,name}))};
+}
+export async function requireAnnBusiness(tx,id,tokenHash){
+  const access=await businessEditorAccess(tx,id,tokenHash);
+  if(!access.available)return requireAnnGSTIN(tx,id);
+  if(!access.business_country)throw Object.assign(new Error("Confirm your business country in Ann first."),{status:409});
+  if(access.business_country==="IN")await requireAnnGSTIN(tx,id);
+}
+export async function saveAnnCountry(tx,id,tokenHash,body){
+  if(!body||Object.keys(body).some(k=>!["country_code","expected_revision","confirm"].includes(k))||
+    body.confirm!==true||!Number.isInteger(body.expected_revision)||
+    !REGISTRATION_COUNTRIES.some(c=>c.code===body.country_code))
+    throw badInput("Choose and confirm your business country.");
+  const access=await businessEditorAccess(tx,id,tokenHash);
+  if(!access.available)throw Object.assign(new Error("Business-country database update is required first."),{status:503});
+  await tx`SELECT public.business_set_country(${id},${tokenHash},${body.country_code},${body.expected_revision})`;
+  return prepareAnnOnboarding(tx,id,tokenHash);
 }
 export async function requireAnnGSTIN(tx,id){
   if(!await gstinEnabled(tx))throw Object.assign(new Error("GST verification needs a platform database update before onboarding can continue."),{status:503});
@@ -14,7 +34,7 @@ export async function requireAnnGSTIN(tx,id){
   if(state.state!=="verified"||!state.confirmed||draft.settings.gstin_invoice_identity_locked!==true)
     throw Object.assign(new Error("Verify your GSTIN and confirm the registered invoice address before continuing."),{status:409});
 }
-export async function saveAnnOnboarding(tx,id,userId,body) {
+export async function saveAnnOnboarding(tx,id,userId,body,tokenHash) {
   if(!body||typeof body!=="object"||Array.isArray(body)||Object.keys(body).some(k=>!["expected_draft","confirm","brand_name","subdomain"].includes(k))||
     body.confirm!==true||!/^[a-f0-9]{64}$/.test(body.expected_draft||"")||
     !["brand_name","subdomain"].some(k=>Object.hasOwn(body,k)))throw badInput("Confirm your brand name or included store address.");
@@ -28,5 +48,5 @@ export async function saveAnnOnboarding(tx,id,userId,body) {
   const settings=settingsPatch(values);
   await saveSetup(tx,id,settings,undefined,{confirmAddress:"subdomain"in values});
   await audit(tx,id,userId,"ann.onboarding_saved","store",id,{fields:Object.keys(values)});
-  return prepareAnnOnboarding(tx,id);
+  return prepareAnnOnboarding(tx,id,tokenHash);
 }

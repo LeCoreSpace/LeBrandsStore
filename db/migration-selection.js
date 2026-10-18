@@ -6,6 +6,9 @@ export function migrationSelection(args) {
   if(values.length===1&&values[0]==="--staged-business-documents"){
     return {staged:true,filename:"0031_business_documents.sql",requires:"0030_registration_contact.sql"};
   }
+  if(values.length===1&&values[0]==="--staged-business-editor-access"){
+    return {staged:true,filename:"0032_business_editor_access.sql",requires:"0031_business_documents.sql"};
+  }
   if(values.length===1&&values[0]==="--staged-sku-checkout"){
     return {staged:true,filename:"0029_sku_checkout.sql",requires:"0028_d2c_descriptor_coverage.sql"};
   }

@@ -1,3 +1,4 @@
+import {requireBusinessEditorAccess} from "../store/business-access.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import { sha256,randomToken } from "../auth/passwords.js";
 import { dashboardAccess } from "../dashboard/repository.js";
@@ -70,6 +71,7 @@ export async function handleAiRoutes(request,env,db,user,hash){
     if(request.method!=="POST"||!["start","verify","generate","approve","image","retry","cancel","complete","preview"].includes(action))return json({error:"Method not available."},405);
     const body=await readJson(request);
     const result=await db.withMemberStore(storeId,hash,async tx=>{
+      await requireBusinessEditorAccess(tx,storeId,hash);
       await dashboardAccess(tx,storeId,user.id,true);
       if(action==="start")throw aiError("The previous AI builder has been retired. Continue in Build your store.",410);
       if(!await aiEnabled(tx))throw aiError("Apply the reviewed AI-builder migration before using this feature.",409);

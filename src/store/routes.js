@@ -1,5 +1,6 @@
 import { renderWizard } from "../ui/wizard.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
+import {requireBusinessEditorAccess} from "./business-access.js";
 import { UUID, validateProduct } from "../public/validation.js";
 import { settingsPatch, progressPatch, productPatch, readJson, readBody, badInput } from "./input.js";
 import { validateUpload } from "./media.js";
@@ -88,6 +89,9 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
       }
       if (route === "PATCH setup") {
         const body = await readJson(request);
+        const businessFields=new Set(["brand_name","subdomain","legal_name","gstin","address","business_state","business_line1","business_line2","business_city","business_pincode","support_email","notification_email","support_phone","invoice_prefix","logo_media_id","signature_media_id"]);
+        if(Object.keys(body?.settings||{}).some(key=>!businessFields.has(key)))
+          await requireBusinessEditorAccess(tx,id,tokenHash);
         fieldNames = setupFieldNames(body);
         if (!Object.keys(body).length || Object.keys(body).some((k) => !["settings", "progress"].includes(k))) throw badInput("Use the setup form.");
         const parsedSettings=body.settings===undefined?undefined:settingsPatch(body.settings,{storeId:id});
