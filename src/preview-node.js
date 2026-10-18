@@ -10,13 +10,14 @@ import {businessReviewPreview} from "./business-review-preview-fixture.js";
 import {skuCheckoutPreview} from "./sku-checkout-preview-fixture.js";
 import {inventoryPreview} from "./inventory-preview-fixture.js";
 import {annPlanPreview} from "./ann-plan-preview-fixture.js";
+import {billingPreview} from "./billing-preview-fixture.js";
 
 const types = { js:"text/javascript; charset=utf-8", css:"text/css; charset=utf-8",
   svg:"image/svg+xml", png:"image/png", jpg:"image/jpeg", jpeg:"image/jpeg",
   webp:"image/webp", avif:"image/avif", ico:"image/x-icon",
   woff2:"font/woff2", ttf:"font/ttf", json:"application/json" };
 const accountPath = path => ["/__database-status","/signup","/login","/forgot-password","/account",
-  "/logout","/dashboard","/stores/new","/api/subdomain-check","/editor"].includes(path) ||
+  "/logout","/dashboard","/stores/new","/api/subdomain-check","/editor","/plans"].includes(path) ||
   path.startsWith("/api/stores/") || /^\/stores\/[^/]+(?:\/|$)/.test(path);
 
 export function createNativePreview(root, runtime = process.env) {
@@ -48,6 +49,7 @@ export function createNativePreview(root, runtime = process.env) {
     [method,async (...args)=>(await bucket())[method](...args)]));
 
   const middleware = async (req, res, next) => {
+    if(await billingPreview(req,res))return;
     if(await annPlanPreview(req,res))return;
     if(await inventoryPreview(req,res,env.REPLIT_DEV_DOMAIN?`https://${env.REPLIT_DEV_DOMAIN}`:undefined))return;
     if(await skuCheckoutPreview(req,res,env.REPLIT_DEV_DOMAIN?`https://${env.REPLIT_DEV_DOMAIN}`:undefined))return;

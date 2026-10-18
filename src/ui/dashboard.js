@@ -1,3 +1,4 @@
+import {renderPlanBillingContent} from "./plan-billing.js";
 import { escapeHtml, layout } from "./layout.js";
 import { LE_BRANDS_LOGO, LE_BRANDS_MARK } from "./brand.js";
 import { validateProduct } from "../public/validation.js";
@@ -346,7 +347,7 @@ function normalizeView(view) {
   if (["inventory","stock"].includes(v)) return "inventory";
   if (["collections", "collection-new", "collection"].includes(v)) return v;
   if (["customer-detail", "customer"].includes(v)) return "customer";
-  if (["orders", "products", "customers", "invoices", "settings"].includes(v)) return v;
+  if (["orders", "products", "customers", "invoices", "settings","billing"].includes(v)) return v;
   return "overview";
 }
 
@@ -435,6 +436,7 @@ export function renderDashboard(view, data = {}, user = {}) {
     case "customers": body = customersPage(data); break;
     case "customer": body = customerDetail(data); break;
     case "invoices": body = invoicesPage(data); break;
+    case "billing": body = renderPlanBillingContent(data); break;
     case "settings": body = data.connectionKind ? connectionSettingsPage(data) : settingsPage(data); break;
     default: body = overview(data);
   }

@@ -4,6 +4,8 @@ import { accountRepository } from "./repository.js";
 import { validateRegistration } from "../public/registration-validation.js";
 import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
 import {handleBillingRoutes,isBillingRoute} from "../billing/routes.js";
+import {handleBillingPages} from "../billing/pages.js";
+import {isBillingPagePath,billingContinuation} from "../billing/entry.js";
 import { handlePageRoutes, isPageRoute } from "../store/page-routes.js";
 import {handleGSTINRoutes,isGSTINRoute} from "../gstin/routes.js";
 import {handleBusinessDocumentRoutes,isBusinessDocumentRoute} from "../store/business-document-routes.js";
@@ -42,7 +44,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
   const editorMatch=path.match(/^\/stores\/([0-9a-f-]{36})\/editor$/i);
-  const storeRoute = isBusinessReviewRoute(path)||isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isBusinessDocumentRoute(path) || isAnnRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";
+  const storeRoute = isBillingPagePath(path)||isBusinessReviewRoute(path)||isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isBusinessDocumentRoute(path) || isAnnRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";
   const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password", "/reset-password":"forgot-password","/invite":"forgot-password" };
   if (!["GET", "POST", "HEAD", ...(storeRoute ? ["PATCH", "PUT", "DELETE"] : [])].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
   if (!["GET", "HEAD"].includes(request.method) && !isValidOrigin(request)) {
@@ -51,6 +53,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const token = readSessionToken(request);
   if ((request.method === "GET" || request.method === "HEAD") && publicViews[path] && !token && !isEmailAccountPath(path)) {
     return html(publicViews[path], {
+      next:billingContinuation(url.searchParams.get("next")),
       notice: path === "/login" && url.searchParams.get("notice") === "signup"
         ? "Your request has been processed. Sign in to continue, or contact support if you need help." : undefined,
     });
@@ -59,7 +62,8 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     return path.startsWith("/api/") ? json({ available: false, error: "Sign in to check an address." }, 401) : redirect("/login");
   }
   if (!token && storeRoute) {
-    return path.startsWith("/api/") ? json({ error: "Sign in to manage your store." }, 401) : redirect("/login");
+    return path.startsWith("/api/") ? json({ error: "Sign in to manage your store." }, 401)
+      :redirect(isBillingPagePath(path)?`/login?next=${encodeURIComponent(billingContinuation(path+url.search)||"/plans")}`:"/login");
   }
   if (!storeRoute && !["/", "/account", "/stores/new", "/api/subdomain-check", "/logout", "/verify-email", ...Object.keys(publicViews)].includes(path)) {
     return html("error", { error: "Page not found." }, 404);
@@ -91,12 +95,14 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     if(inviteRoute)return await handleStaffInvitation(request,env,db,user,tokenHash,inviteRoute[1]);
     if (token && !session && !publicViews[path]) {
       return path.startsWith("/api/") ? json({ available: false, error: "Sign in again." }, 401)
-        : redirect("/login", sessionCookie("", true));
+        : redirect(isBillingPagePath(path)?`/login?next=${encodeURIComponent(billingContinuation(path+url.search)||"/plans")}`:"/login", sessionCookie("", true));
     }
     if (user?.must_change_password && path !== "/account" && path !== "/logout") {
-      return path.startsWith("/api/") ? json({ available: false, error: "Change your password first." }, 403) : redirect("/account");
+      const next=billingContinuation(url.searchParams.get("next"))||billingContinuation(path+url.search);
+      return path.startsWith("/api/") ? json({ available: false, error: "Change your password first." }, 403) : redirect(`/account${next?`?next=${encodeURIComponent(next)}`:""}`);
     }
     if (isBillingRoute(path)) return await handleBillingRoutes(request,db,user,tokenHash);
+    if(isBillingPagePath(path))return await handleBillingPages(request,db,user,tokenHash,session.stores);
     if (isBusinessReviewRoute(path)) return await handleBusinessReview(request,env,db,user,tokenHash);
     if (isPageRoute(path)) return await handlePageRoutes(request, env, db, user, tokenHash);
     if (isGSTINRoute(path)) return await handleGSTINRoutes(request,env,db,user,tokenHash);
@@ -141,33 +147,34 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
         }
         return json({ available: await repo.availability(name) });
       }
-      if (publicViews[path]) return user ? redirect("/") : html(publicViews[path]);
+      if (publicViews[path]) return user ? redirect(billingContinuation(url.searchParams.get("next"))||"/") : html(publicViews[path],{next:billingContinuation(url.searchParams.get("next"))});
       if (path === "/") return html("dashboard", { user, stores: session.stores });
       if (path === "/stores/new") return html("new-store", { user });
-      if (path === "/account") return html("account", { user });
+      if (path === "/account") return html("account", { user,next:billingContinuation(url.searchParams.get("next")) });
       // GET must never log a user out; show the dashboard's POST sign-out form.
       return html("dashboard", { user, stores: session.stores, notice: "Use Sign out to end this session." });
     }
 
     const form = await readForm(request);
+    const authNext=billingContinuation(form.get("next"));
     if (path === "/signup") {
       await assertPasswordPepper(env);
-      if (user) return redirect("/");
+      if (user) return redirect(authNext||"/");
       const password = form.get("password");
       const { errors, data } = validateRegistration(Object.fromEntries(form));
       const values = { name: form.get("name"), email: form.get("email"), country: form.get("country"), phone: form.get("phone"), terms: form.get("terms") };
-      if (Object.keys(errors).length) return html("signup", { error: "Check the highlighted fields.", errors, values }, 400);
+      if (Object.keys(errors).length) return html("signup", { error: "Check the highlighted fields.", errors, values,next:authNext }, 400);
       await repo.register(data.email, data.name, await hashPassword(password, env), { country: data.country, phone: data.phone });
       // Never disclose whether the email already existed. Both cases are identical.
-      return redirect("/login?notice=signup");
+      return redirect(`/login?notice=signup${authNext?`&next=${encodeURIComponent(authNext)}`:""}`);
     }
     if (path === "/login") {
       await assertPasswordPepper(env);
-      if (user) return redirect("/");
+      if (user) return redirect(authNext||"/");
       const email = normalizeEmail(form.get("email"));
       const password = form.get("password") ?? "";
       if (!email || new TextEncoder().encode(password).length > 1024) {
-        return html("login", { error: GENERIC_LOGIN_ERROR }, 400);
+        return html("login", { error: GENERIC_LOGIN_ERROR,next:authNext }, 400);
       }
       const ip = await ipHash(request, env.SESSION_SECRET);
       const result = await repo.login(email, ip, async (record) => {
@@ -178,10 +185,10 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
           upgrade: needsPasswordRehash(record, env) ? await hashPassword(password, env) : null,
           userAgent: request.headers.get("user-agent") ?? "" };
       });
-      if (!result) return html("login", { error: GENERIC_LOGIN_ERROR, values: { email } }, 400);
+      if (!result) return html("login", { error: GENERIC_LOGIN_ERROR, values: { email },next:authNext }, 400);
       const current = await repo.session(result.tokenHash);
       if (!current) throw Object.assign(new Error("New session was unavailable."), { code: "SESSION_UNAVAILABLE" });
-      return redirect(current.must_change_password ? "/account" : "/", sessionCookie(result.token));
+      return redirect(current.must_change_password ? `/account${authNext?`?next=${encodeURIComponent(authNext)}`:""}` : authNext||"/", sessionCookie(result.token));
     }
     if (!user) return redirect("/login", sessionCookie("", true));
     if (path === "/logout") {
@@ -211,10 +218,10 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       await assertPasswordPepper(env);
       const password = form.get("password");
       const error = password !== form.get("confirm") ? "Your passwords do not match." : validatePassword(password);
-      if (error) return html("account", { user, error }, 400);
+      if (error) return html("account", { user, error,next:authNext }, 400);
       const old = await repo.getPassword(user.email);
       if (!await verifyPassword(form.get("current_password") ?? "", old, env)) {
-        return html("account", { user, error: GENERIC_LOGIN_ERROR }, 400);
+        return html("account", { user, error: GENERIC_LOGIN_ERROR,next:authNext }, 400);
       }
       if (await verifyPassword(password, old, env)) {
         return html("account", { user, error: "Choose a new password, different from your current password." }, 400);
@@ -222,7 +229,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       if (!await repo.changePassword(tokenHash, await hashPassword(password, env))) {
         return redirect("/login", sessionCookie("", true));
       }
-      return html("account", { user: { ...user, must_change_password: false }, notice: "Password changed. Other sessions have been signed out." });
+      return html("account", { user: { ...user, must_change_password: false },next:authNext, notice: "Password changed. Other sessions have been signed out." });
     }
     return html("error", { error: "Method not allowed." }, 405);
   } catch (error) {

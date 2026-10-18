@@ -14,3 +14,14 @@ real database. Passing permission tests alone does not prove compatibility.
 database before testing new foreign keys and functions. Keep unrelated
 stubs explicit and do not treat them as verification of the production
 schema. Do not run migrations against the user's database to test a fix.
+
+For authenticated journeys, establish a complete valid synthetic credential
+record and exercise persisted session creation with a cheap HTTP check before
+launching browser coverage.
+
+**Why:** A successful injected password-verification callback alone does not
+prove that database credential and session prerequisites are satisfied.
+
+**How to apply:** Keep authentication fixtures consistent with real persistence
+contracts, not just renderer or verifier stubs; do not weaken constraints to
+make the fixture pass.

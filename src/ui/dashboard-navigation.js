@@ -51,7 +51,8 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
         planned("Marketing connections"),
         live("Dispatch preferences", `${settings}/checkout`),
         live("People & access", `${root}/team`),
-        planned("Plan & usage"), planned("Activity history"),
+        role==="owner"?live("Plan & billing",`${root}/billing`,["billing"]):{label:"Plan & billing",href:null,kind:"owner",views:[]},
+        planned("Activity history"),
         role === "owner" ? live("Data exports", `${settings}#exports`) : { label: "Data exports", href: null, kind: "owner", hint: "Owner only", views: [] }] },
     ],
   };

@@ -21,6 +21,7 @@ async function create(){
   await f.pg.query("UPDATE public.stores SET billing_enrolment_required=true WHERE store_id=$1",[f.store]);
   return f;
 }
+export function getAnnPlanFixture(){fixture ||=create();return fixture;}
 export async function annPlanPreview(req,res){
   const url=new URL(req.url||"/","http://local");
   if(!url.pathname.startsWith("/__ann-plan-preview"))return false;

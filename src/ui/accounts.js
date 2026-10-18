@@ -1,3 +1,4 @@
+import {billingContinuation} from "../billing/entry.js";
 import { escapeHtml, layout, brandMark, accountHeader, footer } from "./layout.js";
 import { REGISTRATION_COUNTRIES } from "../public/registration-validation.js";
 
@@ -59,6 +60,7 @@ function signup(data) {
       .registration-phone input{min-width:0;flex:1;border:0}.registration-phone input:focus{outline:none}
     </style>`,
     form: `${alertBlock(data.error, data.notice)}<form id="registration-form" method="post" action="/signup" autocomplete="on">
+      ${billingContinuation(data.next)?`<input type="hidden" name="next" value="${escapeHtml(billingContinuation(data.next))}">`:""}
       <div class="form-control"><label for="name">Your name</label><input id="name" name="name" type="text" autocomplete="name" required maxlength="120" aria-describedby="name-error"${invalid("name")} value="${escapeHtml(values.name || "")}" placeholder="Aarav Mehta">${error("name")}</div>
       <div class="form-control"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254" aria-describedby="email-error"${invalid("email")} value="${escapeHtml(values.email || "")}" placeholder="you@yourbrand.in">${error("email")}</div>
       <div class="form-control"><label for="country">Country</label><select id="country" name="country" autocomplete="country" required aria-describedby="country-help country-error"${invalid("country")}><option value="">Choose your country</option>${REGISTRATION_COUNTRIES.map(item => `<option value="${item.code}"${country?.code === item.code ? " selected" : ""}>${escapeHtml(item.name)} (${item.callingCode})</option>`).join("")}</select><span id="country-help" class="form-help">Your account country. Business registration details are collected separately in Ann.</span>${error("country")}</div>
@@ -68,7 +70,7 @@ function signup(data) {
       <label class="checkbox-row"><input type="checkbox" name="terms" value="yes" required aria-describedby="terms-error"${invalid("terms")}${values.terms === "yes" ? " checked" : ""}><span>I agree to the <a class="inline-link" href="https://lebrands.store/terms">Terms</a> and <a class="inline-link" href="https://lebrands.store/privacy">Privacy Policy</a>.</span></label>${error("terms")}
       <button class="button" type="submit">Create account <span aria-hidden="true">↗</span></button>
     </form>`,
-    after: `<div class="form-foot">Already have an account? <a href="/login">Sign in</a></div>`,
+    after: `<div class="form-foot">Already have an account? <a href="/login${billingContinuation(data.next)?`?next=${encodeURIComponent(billingContinuation(data.next))}`:""}">Sign in</a></div>`,
   });
 }
 
@@ -82,11 +84,12 @@ function login(data) {
     title: "Sign in",
     description: "Use the email and password for your LeBrands.Store account.",
     form: `${alertBlock(data.error, data.notice)}<form method="post" action="/login" autocomplete="on">
+      ${billingContinuation(data.next)?`<input type="hidden" name="next" value="${escapeHtml(billingContinuation(data.next))}">`:""}
       <div class="form-control"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254" value="${escapeHtml(values.email || "")}" placeholder="you@yourbrand.in"></div>
       <div class="form-control"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required placeholder="Your password"></div>
       <button class="button" type="submit">Sign in <span aria-hidden="true">↗</span></button>
     </form>`,
-    after: `<div class="form-foot"><a href="/forgot-password">Forgot your password?</a>${mustChange ? '<br><span class="form-help">A password reset is required before continuing.</span>' : ""}</div><div class="form-foot">New to LeBrands? <a href="/signup">Create an account</a></div>`,
+    after: `<div class="form-foot"><a href="/forgot-password">Forgot your password?</a>${mustChange ? '<br><span class="form-help">A password reset is required before continuing.</span>' : ""}</div><div class="form-foot">New to LeBrands? <a href="/signup${billingContinuation(data.next)?`?next=${encodeURIComponent(billingContinuation(data.next))}`:""}">Create an account</a></div>`,
   });
 }
 
@@ -157,12 +160,13 @@ function account(data) {
     title: "Change password",
     description: "Enter your current password, then choose a new one.",
     form: `${alertBlock(data.error, data.notice)}<form method="post" action="/account" autocomplete="on">
+      ${billingContinuation(data.next)?`<input type="hidden" name="next" value="${escapeHtml(billingContinuation(data.next))}">`:""}
       <div class="form-control"><label for="current_password">Current password</label><input id="current_password" name="current_password" type="password" autocomplete="current-password" required placeholder="Current password"></div>
       <div class="form-control"><label for="password">New password</label><input id="password" name="password" type="password" autocomplete="new-password" required minlength="10" placeholder="At least 10 characters"><span class="form-help">Use at least 10 characters.</span></div>
       <div class="form-control"><label for="confirm">Confirm new password</label><input id="confirm" name="confirm" type="password" autocomplete="new-password" required minlength="10" placeholder="Enter it again"></div>
       <button class="button" type="submit">Update password</button>
     </form>`,
-    after: mustChange ? "" : `<div class="form-foot"><a href="/">Back to your stores</a></div>`,
+    after: mustChange ? "" : `<div class="form-foot">${billingContinuation(data.next)?`<a href="${escapeHtml(billingContinuation(data.next))}">Continue to Plan &amp; billing</a><br>`:""}<a href="/">Back to your stores</a></div>`,
   });
 }
 

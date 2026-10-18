@@ -122,7 +122,7 @@ function planCard(p, i) {
     <div><dt>Support</dt><dd>${p.support}</dd></div>
     <div><dt>Custom domain with SSL</dt><dd>Included</dd></div>
   </dl>
-  <a class="m-pr-btn" href="${mail(p.name)}">Discuss ${p.name}<span class="m-pr-sr"> plan by email</span></a>
+  <a class="m-pr-btn" href="https://app.lebrands.store/plans?plan=${encodeURIComponent(p.name.toLowerCase())}">View ${p.name} plan</a>
 </article>`;
 }
 
@@ -164,11 +164,11 @@ export function pricingMain() {
             <li>Custom domain integration is available on paid plans only.</li>
           </ul>
           <p class="m-pr-note">Each sellable combination counts as one SKU. A product without variations counts as one.</p>
-          <p class="m-pr-note"><strong>Planned offer:</strong> catalogue limits, the publication-based timer and expiry controls are not implemented yet.</p>
+          <p class="m-pr-note">Free enrolment is available. Your live period starts with your first successful publication. Catalogue-limit enforcement and expiry controls are being introduced in later phases.</p>
         </div>
         <div class="m-pr-free-action">
           <p class="m-pr-price"><b>₹0</b><span>for 30 days</span></p>
-          <a class="m-pr-btn" href="https://app.lebrands.store/signup">Start free for 30 days</a>
+          <a class="m-pr-btn" href="https://app.lebrands.store/plans?plan=free">Start free for 30 days</a>
           <p class="m-pr-note">Choose a paid plan to continue after 30 days.</p>
         </div>
       </article>
