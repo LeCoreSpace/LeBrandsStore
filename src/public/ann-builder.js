@@ -45,6 +45,7 @@ const planLocked=()=>planAccess.enforced===true&&planAccess.allowed!==true;
 let planUiReady=false,planAutoOpened=false;
 const planUI=attachAnnPlanSelection({
   endpoint:boot.subscriptionEndpoint||`${api.replace(/\/ann$/,"")}/subscription`,
+  billingUrl:`${root}/billing`,
   role:boot.role,getStoreName:()=>boot.store.name,
   onStateChange:()=>queueMicrotask(()=>{
     if(!planUiReady)return;
@@ -88,7 +89,7 @@ if (launchStep) location.replace(connectionHref(boot.store.store_id, launchStep)
 let step = new URL(location.href).searchParams.get("logo") === "1" ? "story" :
   (UI_STEPS.some(s => s[0] === session?.current_step) ? session.current_step : session ? "review" : "business");
 let touched = false, saving = false, conflict = false, notice = "", page = "product", productId, collectionId, policyKind;
-let queue = Promise.resolve(), lastSavedAt = session ? "Saved plan restored." : "";
+let queue = Promise.resolve(), lastSavedAt = session ? "Saved plan restored." : planAccess.name_confirmed ? "Confirmed store details restored." : "";
 const notes = [];
 let autosavePaused = false, saveProblem = "", logMarkup = "";
 const attrState = new Map(); let attrToken = 0;
@@ -402,7 +403,7 @@ const DETAIL_STEPS = ["collections", "products", "story"];
 
 function prompts() {
   const list = [{ id: "store_name", step: "business" },
-    ...(planAccess.enforced?[{id:"plan",step:"business"}]:[]),
+    ...(planAccess.available?[{id:"plan",step:"business"}]:[]),
     ...(editorAccess.available?[{id:"business_country",step:"business"}]:[]),
     ...(!editorAccess.available||editorAccess.business_country==="IN"?[{id:"gstin",step:"business"}]:[]),
     ...(editorAccess.available?[{id:"business_documents",step:"business"}]:[]),
@@ -421,7 +422,10 @@ function curIdx(ps = prompts()) {
   return i;
 }
 const reachedIdx = ps => Math.max(curIdx(ps), ps.findIndex(p => p.id === reached));
-promptId = !setupStepsLocked && new URL(location.href).searchParams.get("logo") === "1" ? "logo" : prompts().find(p => p.step === step)?.id || "category"; reached = promptId;
+promptId = !setupStepsLocked && new URL(location.href).searchParams.get("logo") === "1" ? "logo"
+  : step === "business" && planAccess.name_confirmed ? requiredBusinessPrompt() || "logo"
+  : prompts().find(p => p.step === step)?.id || "category";
+reached = promptId;
 
 const cur = ps => (ps || prompts())[curIdx(ps)];
 const uniqueAccents = () => [...new Map(AURA_STYLES.map(s => [s.settings.accent_color.toLowerCase(), s.name])).entries()].map(([v, n]) => ({ v, t: `${n} accent` }));
@@ -461,7 +465,11 @@ function def(p) {
       return { kind: "list", list: "idea", label: "Product idea", q: `What goes in ${col?.name || "this collection"}? Pick up to five products, or type your own.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50, sugg: suggestions() };
     }
     case "store_name": return { kind: "onboard", mode: "brand", label: "Store name", q: "Hi, I'm Ann! Let's bring your store to life. What's your brand name?", max: 40, ph: "Type your brand name", reply: brandUI.summary() };
-    case "plan": return {kind:"plan",label:"Store plan",q:"Choose your Free plan before we continue. Your 30 live days begin only when your store is first published.",reply:planAccess.allowed?"Free plan selected":""};
+    case "plan": return {kind:"plan",label:"Store plan",
+      q:planAccess.enforced
+        ?"Choose your Free plan before we continue. Your 30 live days begin only when your store is first published."
+        :"Review your store plan here. Your existing access stays unchanged; reviewing plans does not start a trial.",
+      reply:planAccess.allowed?(planAccess.enforced?"Plan accepted":"Existing store access preserved"):""};
     case "business_country":return {kind:"business-country",label:"Business country",q:"Which country is your business registered in? This decides the registration evidence you need. It does not change your account country or past invoices.",reply:businessCountries.find(c=>c.code===editorAccess.business_country)?.name||""};
     case "business_documents":return {kind:"business-documents",label:"Business documents",q:editorAccess.allowed
       ?editorAccess.status==="approved"?"Your business documents are approved. You can continue designing.":"Your evidence is submitted. You can continue designing while the standard document review is pending."
@@ -536,7 +544,7 @@ function inlineControls(p, d) {
   const tail=detailLink+(p.step==="products"&&p.id!=="catalogue"&&answers.product_ideas?.length?`<div class="ann-comp-row"><button type="button" class="ann-btn" data-go-prompt="catalogue"${dis}>Set prices and save products</button><p class="ann-note">Ready with your first product? Confirm its price, tax and stock next. You can add more products and details later.</p></div>`:"");
   let body = "", name = d.label;
   if(d.kind==="plan"){
-    body=`<div class="ann-comp-row"><button type="button" class="ann-btn" data-ann-plan-open>${planAccess.allowed?"View your plan":"Choose your Free plan"}</button>${planAccess.allowed?'<button type="button" class="ann-btn alt" data-ann-plan-continue>Continue with Ann</button>':""}<p class="ann-note">${boot.role==="owner"?"No card or automatic charge. Closing the window does not accept the plan.":"Only the store owner can choose a plan."}</p></div>`;
+    body=`<div class="ann-comp-row"><button type="button" class="ann-btn" data-ann-plan-open>${planAccess.allowed?"Review store plan":"Choose your Free plan"}</button>${planAccess.allowed?'<button type="button" class="ann-btn alt" data-ann-plan-continue>Continue with Ann</button>':""}<p class="ann-note">${boot.role==="owner"?"No card or automatic charge. Closing the window does not accept the plan.":"Only the store owner can choose a plan."}</p></div>`;
   }else if(d.kind==="business-country"){
     body=`<label>Business country<select data-ann-business-country aria-label="Business country"${readOnly||countrySaving||editorAccess.country_locked?" disabled":""}><option value="">Choose your business country</option>${businessCountries.map(c=>`<option value="${esc(c.code)}"${businessCountryChoice===c.code?" selected":""}>${esc(c.name)}</option>`).join("")}</select></label><p class="ann-note">Country is locked after evidence submission or invoice-address confirmation.</p><button type="button" class="ann-btn" data-confirm-business-country${readOnly||countrySaving||!businessCountryChoice?" disabled":""}>${countrySaving?"Saving...":"Confirm country and continue"}</button>`;
   }else if(d.kind==="business-documents"){
@@ -653,6 +661,8 @@ function draw(mode = "keep") {
   if (markup !== logMarkup) { log.innerHTML = markup; logMarkup = markup; }
   drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); essentialsUI.mount(); brandingUI.mount(); Object.values(obUIs).forEach(u => u.mount());
   if(planUiReady){
+    const planButton=$("#ann-store-plan [data-ann-plan-open]");
+    if(planButton)planButton.disabled=planLocked()&&!planAccess.name_confirmed;
     $("#ann-app .ann-stage")?.toggleAttribute("inert",planLocked());
     $("#ann-steps")?.toggleAttribute("inert",planLocked());
     if(planLocked()&&planAccess.name_confirmed&&promptId==="plan"&&!planAutoOpened){
@@ -707,7 +717,7 @@ function chooseStyle(value) {
 function advance() {
   const ps = prompts(), i = curIdx(ps), ri = reachedIdx(ps);
   let n = i + 1;
-  if(ps[n]?.id==="plan"&&planAccess.allowed)n++;
+  if(ps[n]?.id==="plan"&&planAccess.enforced&&planAccess.allowed)n++;
   if (i < ri) while (n < ri && def(ps[n]).reply) n++;
   return toPrompt(ps[Math.min(n, ps.length - 1)].id);
 }
@@ -1014,4 +1024,6 @@ if (answers.subcategory_id && step === "products") loadAttrs(answers.subcategory
 foot.innerHTML = `<div id="ann-composer"></div><div id="ann-savebar"></div>`;
 planUiReady=true;
 draw("active"); syncSwitch(); renderPreview(false); fit();
-say(session ? "Your saved plan is restored." : "Ann is ready. Nothing is saved until you save the plan or finish a stage.");
+say(session ? "Your saved plan is restored." : planAccess.name_confirmed
+  ? "Your confirmed store details are restored. Continue with the next business step."
+  : "Ann is ready. Nothing is saved until you save the plan or finish a stage.");

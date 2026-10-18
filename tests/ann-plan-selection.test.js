@@ -92,6 +92,18 @@ test("Ann gates new-store building after confirmed name without locking legacy s
       assert.match(ui,/planAccess:data\.business_access\?\.plan_access/);
       assert.match(client,/attachAnnPlanSelection/);
       assert.match(client,/data-ann-plan-open/);
+      assert.match(client,/planAccess\.available\?\[\{id:"plan",step:"business"\}\]/,
+        "the plan stage must also be visible to legacy stores without changing their enrolment requirement");
+      assert.match(client,/billingUrl:`\$\{root\}\/billing`/,
+        "Ann must link its plan modal to this store's plan cards and test checkout");
+      assert.match(client,/planButton\.disabled=planLocked\(\)&&!planAccess\.name_confirmed/,
+        "the persistent plan action must unlock as soon as name confirmation is saved");
+      assert.match(client,/step === "business" && planAccess\.name_confirmed \? requiredBusinessPrompt\(\) \|\| "logo"/,
+        "accepted onboarding must resume at the outstanding business requirement rather than asking for the store name again");
+      assert.match(ui,/id="ann-store-plan"/,
+        "stores that already passed Business must still be able to open the plan modal");
+      assert.match(modal,/View plan cards and test checkout/);
+      assert.doesNotMatch(modal,/Paid plans will be offered here later/);
       assert.match(client,/if\(planLocked\(\)\)\{promptId=requiredBusinessPrompt\(\);step="business"/,
         "reload must restore the plan stage even if the saved chat cursor is at the earlier name stage");
       assert.match(modal,/showModal/);

@@ -11,13 +11,18 @@ const REASONS = {
 };
 const num = n => Number.isFinite(n) ? new Intl.NumberFormat("en-IN").format(n) : String(n);
 
-export function attachAnnPlanSelection({ endpoint, role, getStoreName, onStateChange, onAccepted } = {}) {
+export function attachAnnPlanSelection({ endpoint, billingUrl, role, getStoreName, onStateChange, onAccepted } = {}) {
   let dlg = null, opener = null, ctl = null, seq = 0;
   let loading = false, busy = false, error = "", response = null, opened = false;
   let agreed = false, accepted = false, note = "";
   const isOwner = () => role === "owner";
   const emit = () => { try { onStateChange?.(); } catch { /* host error */ } };
   const reduced = () => window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  // Only local account routes supplied by the host, never a return URL from
+  // the server response or user-provided free text.
+  const plansHref = /^\/stores\/[a-f0-9-]{36}\/billing$/i.test(billingUrl || "") ? billingUrl : null;
+  const comparePlans = () => plansHref
+    ? `<section class="ann-plan-card"><h3>Compare plans</h3><p class="ann-plan-note">See Monthly and Yearly plan cards, features and prices. Paid checkout is in Razorpay test mode only, after Free acceptance and business-document approval. A test payment does not activate a paid plan.</p><a class="ann-btn alt" href="${esc(plansHref)}">View plan cards and test checkout</a><p class="ann-plan-note">Use Continue in Ann on Plan &amp; billing to return to your saved store.</p></section>` : "";
 
   async function request(url, method, body) {
     ctl?.abort();
@@ -111,7 +116,7 @@ export function attachAnnPlanSelection({ endpoint, role, getStoreName, onStateCh
       h += subCard(r.subscription);
       if (!accepted) h += `<p class="ann-plan-note">This store already has a plan, so no second plan can be added. Nothing was changed.</p>`;
       else h += `<p class="ann-plan-note">The Free live period starts at your first successful publication. Nothing was charged.</p>`;
-      return h;
+      return h + comparePlans();
     }
     if (canAccept()) {
       h += planCard();
@@ -122,7 +127,7 @@ export function attachAnnPlanSelection({ endpoint, role, getStoreName, onStateCh
       if (!isOwner() && r.reason === "available") h += `<p class="ann-plan-note">Only the store owner can choose a plan. Ask the owner to continue.</p>`;
       else h += `<p class="ann-plan-callout" role="status">${esc(msg)} No changes were made.</p>`;
     }
-    h += `<p class="ann-plan-later">Paid plans will be offered here later. Nothing paid can be bought today.</p>`;
+    h += plansHref ? comparePlans() : `<p class="ann-plan-later">Live paid plans are not available yet. No automatic charges are enabled.</p>`;
     return h;
   }
   function draw() {
