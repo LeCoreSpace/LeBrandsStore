@@ -1,0 +1,144 @@
+{
+  "document_type": "commercial_proposal_not_runtime_configuration",
+  "approval_status": "awaiting_owner_approval",
+  "billing_enabled": false,
+  "live_charges_enabled": false,
+  "launch_market": {
+    "country_code": "IN",
+    "currency": "INR",
+    "currency_minor_unit_exponent": 2,
+    "additional_markets_enabled": false,
+    "automatic_fx_conversion": false
+  },
+  "tax": {
+    "proposed_price_display": "exclusive",
+    "rate_basis_points": null,
+    "review_required_before_charging": true
+  },
+  "plans": [
+    {
+      "code": "free",
+      "monthly_amount_minor": 0,
+      "annual_amount_minor": null,
+      "published_products": 100,
+      "published_skus": 1000,
+      "additional_staff_seats": 0,
+      "monthly_order_soft_band": null,
+      "public_media_bytes": 536870912,
+      "custom_domain": false,
+      "live_days": 30,
+      "timer_starts": "first_successful_publication",
+      "payment_mandate_required": false
+    },
+    {
+      "code": "launch",
+      "monthly_amount_minor": 149900,
+      "annual_amount_minor": 1499000,
+      "published_products": 500,
+      "published_skus": 5000,
+      "additional_staff_seats": 2,
+      "monthly_order_soft_band": 300,
+      "public_media_bytes": 5368709120,
+      "custom_domain": true
+    },
+    {
+      "code": "grow",
+      "monthly_amount_minor": 349900,
+      "annual_amount_minor": 3499000,
+      "published_products": 2500,
+      "published_skus": 25000,
+      "additional_staff_seats": 5,
+      "monthly_order_soft_band": 1500,
+      "public_media_bytes": 21474836480,
+      "custom_domain": true
+    },
+    {
+      "code": "scale",
+      "monthly_amount_minor": 799900,
+      "annual_amount_minor": 7999000,
+      "published_products": 10000,
+      "published_skus": 100000,
+      "additional_staff_seats": 15,
+      "monthly_order_soft_band": 7500,
+      "public_media_bytes": 107374182400,
+      "custom_domain": true
+    },
+    {
+      "code": "flagship",
+      "price_kind": "accepted_quote_required",
+      "advertised_monthly_from_minor": 1999900,
+      "self_service_amount_minor": null,
+      "allowance_source": "accepted_contract",
+      "checkout_enabled": false
+    }
+  ],
+  "common_rules": {
+    "subscription_scope": "store",
+    "variant_option_types_per_product": 3,
+    "variants_per_product": 200,
+    "platform_commission_basis_points": 0,
+    "order_band_blocks_checkout": false,
+    "order_band_upgrade_prompt_after_consecutive_months": 2,
+    "automatic_overage_charges": false,
+    "owner_counts_as_additional_staff": false,
+    "unexpired_pending_invitations_consume_seats": true,
+    "plan_modal_position": "ann_after_store_name_confirmation",
+    "explicit_free_activation_required": true,
+    "paid_upgrade_requires_business_approval": true,
+    "subscription_does_not_override_business_restrictions": true,
+    "upgrades_reset_ai_allowance": false,
+    "ai_policy": "preserve_existing_per_store_limits_and_global_spend_controls",
+    "included_paid_marketing_message_credits": 0,
+    "partner_fees_included": false,
+    "founding_discount_enabled": false,
+    "automatic_addon_charges_enabled": false
+  },
+  "proposed_lifecycle": {
+    "paid_period_starts": "verified_successful_payment",
+    "same_interval_upgrade": "positive_prorated_difference_after_verified_authorisation",
+    "proration_basis": "actual_remaining_utc_seconds",
+    "proration_rounding": "half_up_to_currency_minor_unit",
+    "interval_or_currency_change": "next_period_with_new_quote_and_authorisation",
+    "downgrade": "period_end_after_usage_remediation",
+    "cancellation": "stop_future_renewal_retain_paid_period_access",
+    "automatic_cancellation_refund": false,
+    "mandatory_legal_rights_preserved": true,
+    "free_expiry": "pause_new_order_taking_preserve_existing_orders_and_fulfilment",
+    "paid_failure_grace_days": 7,
+    "design_read_only_from_overdue_day": 8,
+    "new_order_pause_from_overdue_day": 15,
+    "ordinary_store_data_preserved_for_at_least_days_after_pause": 90,
+    "automatic_deletion_authorised": false,
+    "unpublished_inactivity_notice_days": 60,
+    "unpublished_inactive_state_days": 90
+  },
+  "proposed_legacy_transition": {
+    "notice_days_before_enforcement": 14,
+    "explicit_activation_required": true,
+    "unpublished_store_timer_starts": "first_successful_publication",
+    "already_live_store_concession_days": 30,
+    "already_live_concession_starts": "explicit_legacy_free_activation",
+    "rewrite_historical_publication_dates": false,
+    "concession_repeatable": false,
+    "automatic_data_archival_or_deletion": false,
+    "automatic_business_approval": false
+  },
+  "provider": {
+    "user_requested": "razorpay",
+    "approved": null,
+    "supported_new_connection_options": ["stripe", "whop"],
+    "existing_merchant_checkout_unchanged": true,
+    "account_eligibility_verified": false,
+    "recurring_currency_and_mandate_support_verified": false
+  },
+  "paid_launch_blockers": [
+    "owner_approval_of_commercial_proposal",
+    "approved_provider_and_verified_platform_account_eligibility",
+    "tax_and_legal_review",
+    "operational_and_cross_product_benefits_fulfilment_confirmation",
+    "honest_available_vs_planned_public_feature_presentation",
+    "billing_and_quota_implementation",
+    "capacity_verification_for_proposed_limits",
+    "test_mode_and_controlled_release_verification"
+  ]
+}
