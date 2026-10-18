@@ -65,6 +65,59 @@ approval, not existing billing enforcement or capacity guarantees.
 - No automatic extra-store, extra-seat, storage or order-overage charges.
   Add-ons and founding-member discounts remain unavailable until separately approved.
 
+### Core feature entitlements
+
+The owner requires the following capabilities to appear as explicit plan features,
+not merely as audit notes. Proposed distribution: include this core set in Free,
+Launch, Grow, Scale and Flagship, subject to each plan's duration and allowances.
+Tier distribution remains part of the commercial proposal awaiting approval.
+
+| Plan feature | Free | Launch | Grow | Scale | Flagship |
+| --- | --- | --- | --- | --- | --- |
+| LeBrands.Space placement | Included; Free package to confirm | Starter placement | Premium placement | Freedom placement | Freedom plus contracted extras |
+| Ann and theme editor, including five Ann conversation languages | Included | Included | Included | Included | Included |
+| Fully branded, customisable checkout | Included | Included | Included | Included | Included |
+| Per-page SEO titles and descriptions | Included | Included | Included | Included | Included |
+| Transactional order emails | Included | Included | Included | Included | Included |
+| Brand's own payment-partner integration | Included | Included | Included | Included | Included |
+| Delivery-partner integration | Included | Included | Included | Included | Included |
+| Native conversion-section library | Included | Included | Included | Included | Included |
+| Data export | Included | Included | Included | Included | Included |
+
+“Included” records the intended entitlement, not proof that every part is live:
+
+- **LeBrands.Space placement:** preserve the paid Starter/Premium/Freedom mapping.
+  Confirm the Free exposure/package and fulfilment/provisioning process before
+  making activation promises. Store and Space entitlements move together.
+- **Branded checkout:** the feature includes the brand's identity and supported
+  design/content controls. Complete the customisation acceptance checks before
+  presenting the full claim as available. Server-owned payment/security fields
+  remain protected; this does not promise arbitrary checkout scripts.
+- **SEO per page:** provide title and description controls for eligible public
+  pages, not just one store-wide title or product SEO. Retain noindex/privacy
+  protection on checkout, cart, account and private order pages.
+- **Transactional emails:** order confirmations and supported payment, shipping,
+  cancellation and refund/credit-note notifications, with correct brand identity.
+  Verify templates and event delivery; marketing campaigns are a different feature.
+- **Partner integration:** connect the brand's own payment account and a supported
+  delivery partner. Provider approval, configuration, serviceability and partner
+  charges still apply. This does not include unlimited simultaneous partners.
+- **Conversion sections:** announcement/offer areas, hero, featured products and
+  collections, product galleries/details, trust content, review/testimonial layouts,
+  FAQ, size guide, specifications, care/how-to-use, delivery information,
+  related products/collections, lookbook, founder/craft/press content, collection
+  discovery tools and cart/checkout sections. Include the registered native section
+  library in plan entitlements. Review layouts are not verified-purchase review
+  collection; showcase bundles/upsells are not live commercial engines.
+- **Data export:** include customer, order and product CSV exports and available
+  media references. A downloadable media-file archive remains a separate
+  implementation gap, not a claimed existing ZIP export.
+
+The companion JSON explicitly maps the shared core feature set to every plan and
+records implementation readiness separately. Add further sellable entitlements
+when their implementation is complete; do not use future proposals as current
+paid benefits.
+
 ## 3. Free plan and Ann modal
 
 1. Confirm the store name, then open the plan-selection modal inside Ann.
@@ -255,6 +308,8 @@ https://razorpay.com/docs/payments/subscriptions/faqs/
 
 ## 10. Approval record
 
+- Required core feature list: **confirmed by owner**. Tier distribution, package
+  details and implementation readiness remain explicit in the proposal.
 - Commercial matrix: **awaiting owner approval**.
 - India-only launch and tax-exclusive display: **recommended, not approved**.
 - Paid SKU/product/staff/media limits: **recommended, not approved**.

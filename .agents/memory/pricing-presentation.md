@@ -55,3 +55,17 @@ masters, and separate subscription and payment records.
 **How to apply:** Free enrolment must not require a payment transaction. Keep
 platform subscriptions separate from shoppers paying a brand for products.
 Preserve business-verification and publication approval requirements.
+
+## Required plan-feature coverage
+
+The plan features must explicitly include LeBrands.Space placement, fully branded
+customisable checkout, SEO titles per page, transactional emails, payment and
+delivery partner integration, all top-end conversion sections, and data export.
+Add more features when implemented later.
+
+**Why:** The user pointed out that these were omitted from the commercial feature
+matrix; mentioning them only in an implementation audit did not meet the request.
+
+**How to apply:** Record explicit feature entitlements, not only usage limits or
+audit notes. Keep implementation readiness separate from inclusion, and do not
+treat this correction as approval of unrelated prices, quotas or policies.

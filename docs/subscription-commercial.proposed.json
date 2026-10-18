@@ -15,9 +15,98 @@
     "rate_basis_points": null,
     "review_required_before_charging": true
   },
+  "core_feature_inclusion_status": "required_by_owner",
+  "core_feature_plan_distribution_status": "proposed_for_all_plans",
+  "feature_sets": {
+    "store_core": [
+      "lebrands_space_placement",
+      "ann_and_theme_editor",
+      "branded_customisable_checkout",
+      "per_page_seo_metadata",
+      "transactional_emails",
+      "payment_partner_integration",
+      "delivery_partner_integration",
+      "conversion_section_library",
+      "data_export"
+    ]
+  },
+  "feature_catalog": [
+    {
+      "key": "lebrands_space_placement",
+      "label": "LeBrands.Space placement",
+      "implementation_readiness": "cross_product_fulfilment_confirmation_required",
+      "free_package": "to_be_confirmed"
+    },
+    {
+      "key": "ann_and_theme_editor",
+      "label": "Ann and theme editor",
+      "implementation_readiness": "implemented_paths_subject_to_release_verification",
+      "ann_conversation_languages": ["en", "hi", "ta", "mr", "te"]
+    },
+    {
+      "key": "branded_customisable_checkout",
+      "label": "Fully branded, customisable checkout",
+      "implementation_readiness": "branding_exists_full_customisation_acceptance_required",
+      "server_owned_payment_and_security_controls_remain_protected": true
+    },
+    {
+      "key": "per_page_seo_metadata",
+      "label": "SEO titles and descriptions per public page",
+      "implementation_readiness": "seo_paths_exist_per_page_control_coverage_requires_verification",
+      "preserve_private_and_commerce_page_noindex": true
+    },
+    {
+      "key": "transactional_emails",
+      "label": "Transactional emails",
+      "implementation_readiness": "email_jobs_exist_template_event_and_delivery_verification_required",
+      "marketing_campaign_credits_included": false
+    },
+    {
+      "key": "payment_partner_integration",
+      "label": "Integration with the brand's own payment account",
+      "implementation_readiness": "conditional_on_brand_account_approval_and_connection",
+      "partner_fees_included": false
+    },
+    {
+      "key": "delivery_partner_integration",
+      "label": "Delivery-partner integration",
+      "implementation_readiness": "conditional_on_supported_partner_connection_and_serviceability",
+      "simultaneous_supported_partners": 1,
+      "partner_fees_included": false
+    },
+    {
+      "key": "conversion_section_library",
+      "label": "Native conversion-section library",
+      "implementation_readiness": "registered_native_sections_exist",
+      "native_section_types": [
+        "announcement", "hero", "statement", "featured-collection",
+        "featured-products", "spotlight", "lookbook", "gallery", "founder",
+        "craft", "press", "trust", "reviews", "faq", "product-details",
+        "product-specs", "material-care", "size-guide", "how-to-use",
+        "shipping-info", "related-products", "product-grid", "collection-nav",
+        "collection-tools", "collection-pagination", "related-collections", "commerce"
+      ],
+      "review_layout_implies_verified_purchase_collection": false,
+      "showcase_implies_live_discount_or_upsell_engine": false
+    },
+    {
+      "key": "data_export",
+      "label": "Data export",
+      "implementation_readiness": "csv_exports_exist_media_archive_not_implemented",
+      "implemented_export_formats": {
+        "customers": "csv",
+        "orders": "csv",
+        "products": "csv",
+        "media": "references_in_product_export"
+      },
+      "downloadable_media_archive_available": false
+    }
+  ],
   "plans": [
     {
       "code": "free",
+      "core_feature_set": "store_core",
+      "lebrands_space_package": "to_be_confirmed",
       "monthly_amount_minor": 0,
       "annual_amount_minor": null,
       "published_products": 100,
@@ -32,6 +121,8 @@
     },
     {
       "code": "launch",
+      "core_feature_set": "store_core",
+      "lebrands_space_package": "starter",
       "monthly_amount_minor": 149900,
       "annual_amount_minor": 1499000,
       "published_products": 500,
@@ -43,6 +134,8 @@
     },
     {
       "code": "grow",
+      "core_feature_set": "store_core",
+      "lebrands_space_package": "premium",
       "monthly_amount_minor": 349900,
       "annual_amount_minor": 3499000,
       "published_products": 2500,
@@ -54,6 +147,8 @@
     },
     {
       "code": "scale",
+      "core_feature_set": "store_core",
+      "lebrands_space_package": "freedom",
       "monthly_amount_minor": 799900,
       "annual_amount_minor": 7999000,
       "published_products": 10000,
@@ -65,6 +160,8 @@
     },
     {
       "code": "flagship",
+      "core_feature_set": "store_core",
+      "lebrands_space_package": "freedom_with_contracted_extras",
       "price_kind": "accepted_quote_required",
       "advertised_monthly_from_minor": 1999900,
       "self_service_amount_minor": null,
@@ -91,7 +188,8 @@
     "included_paid_marketing_message_credits": 0,
     "partner_fees_included": false,
     "founding_discount_enabled": false,
-    "automatic_addon_charges_enabled": false
+    "automatic_addon_charges_enabled": false,
+    "add_further_sellable_features_only_after_implementation": true
   },
   "proposed_lifecycle": {
     "paid_period_starts": "verified_successful_payment",
