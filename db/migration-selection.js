@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-billing-test-checkout"){
+    return {staged:true,filename:"0040_billing_test_checkout.sql",requires:"0039_ann_plan_selection.sql"};
+  }
   if(values.length===1&&values[0]==="--staged-ann-plan-selection"){
     return {staged:true,filename:"0039_ann_plan_selection.sql",requires:"0038_free_subscriptions.sql"};
   }

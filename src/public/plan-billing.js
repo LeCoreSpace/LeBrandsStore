@@ -1,10 +1,12 @@
 import { attachAnnPlanSelection } from "./ann-plan-ui.js";
+import {attachTestCheckout} from "./billing-test.js";
 
 function boot() {
   let cfg = {};
   try { cfg = JSON.parse(document.getElementById("plan-billing-data")?.textContent || "{}"); } catch { cfg = {}; }
   const status = document.querySelector("[data-billing-status]");
   const say = (t) => { if (status) status.textContent = t; };
+  attachTestCheckout(cfg);
 
   // Read-only refresh: a plain reload, never an acceptance.
   document.addEventListener("click", (e) => {

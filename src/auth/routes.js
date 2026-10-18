@@ -101,7 +101,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       const next=billingContinuation(url.searchParams.get("next"))||billingContinuation(path+url.search);
       return path.startsWith("/api/") ? json({ available: false, error: "Change your password first." }, 403) : redirect(`/account${next?`?next=${encodeURIComponent(next)}`:""}`);
     }
-    if (isBillingRoute(path)) return await handleBillingRoutes(request,db,user,tokenHash);
+    if (isBillingRoute(path)) return await handleBillingRoutes(request,db,user,tokenHash,env,dependencies.billing);
     if(isBillingPagePath(path))return await handleBillingPages(request,db,user,tokenHash,session.stores);
     if (isBusinessReviewRoute(path)) return await handleBusinessReview(request,env,db,user,tokenHash);
     if (isPageRoute(path)) return await handlePageRoutes(request, env, db, user, tokenHash);

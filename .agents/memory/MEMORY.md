@@ -12,6 +12,7 @@
 - [GSTIN transaction boundary](gstin-transaction-boundary.md) — approve/invoice published suppliers; commit paid lookup evidence before a financial transaction can fail.
 - [Document numbering boundary](document-numbering-boundary.md) — short new-document serials, DB prefix locks and overflow rejection; never renumber historical documents.
 - [Platform approval boundary](platform-approval-boundary.md) — business-document approval now gates go-live; preserve independent GST authority and revocation controls.
+- [Platform billing test mode](billing-test-mode.md) — captured sandbox payments are evidence only, never authority for a live paid plan or tax invoice.
 - [Dashboard visual boundary](dashboard-design-boundary.md) — professional commerce admin is separate from Aura; visual-only work must not invent backend capabilities.
 - [Long-page screenshots](long-page-screenshots.md) — an image-limit error can still leave a complete saved capture; inspect its dimensions and crops before retrying.
 - [Browser video capture](browser-video-capture.md) — remote native recording may lack FFmpeg; actual CDP screencast frames can be encoded locally.

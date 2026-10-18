@@ -13,7 +13,7 @@
     "BUSINESS_DOCUMENT_SCAN_PROVIDER": "cloudmersive",
     "BUSINESS_DOCUMENT_SCAN_PROCESSOR_APPROVED": "true" },
   "secrets": {
-    "required": ["SUPABASE_APP_DB_URL", "PASSWORD_PEPPER", "SESSION_SECRET", "GSTIN_KEY", "REPLIT_DEV_DOMAIN", "CLOUDMERSIVE_API_KEY"]
+    "required": ["SUPABASE_APP_DB_URL", "PASSWORD_PEPPER", "SESSION_SECRET", "GSTIN_KEY", "REPLIT_DEV_DOMAIN", "CLOUDMERSIVE_API_KEY", "RAZORPAY_KEY_ID", "RAZORPAY_KEY_SECRET"]
   },
   "assets": { "directory": "./generated-artifacts/public", "binding": "ASSETS", "run_worker_first": true },
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "lebrands-store-media" },

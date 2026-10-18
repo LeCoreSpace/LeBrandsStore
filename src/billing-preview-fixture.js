@@ -4,11 +4,13 @@ import {getAnnPlanFixture} from "./ann-plan-preview-fixture.js";
 import {handleAccounts} from "./auth/routes.js";
 import {hashPassword} from "./auth/passwords.js";
 import {sessionCookie} from "./auth/security.js";
+import {prepareCheckoutFixture,TEST_BILLING_ENV} from "./billing-checkout-preview-fixture.js";
 const prefix="/__billing-preview",fixtureCookie="__Host-lb_billing_fixture";
 const realCookie=sessionCookie("f".repeat(64)).split("=")[0];
 const environment={PASSWORD_PEPPER:Buffer.alloc(32,0x42).toString("base64"),
   SESSION_SECRET:"public-local-fixture-session-secret-not-for-production"};
 let ready;
+let checkoutReady;
 async function setup(){
   const f=await getAnnPlanFixture();
   const password=await hashPassword("Billing preview password 73!",environment);
@@ -40,13 +42,24 @@ async function setup(){
 }
 export async function billingPreview(req,res){
   const local=new URL(req.url||"/","http://local");
-  if(!local.pathname.startsWith(prefix))return false;
+  const testMode=local.pathname.startsWith("/__billing-test-preview");
+  const activePrefix=testMode?"/__billing-test-preview":prefix;
+  if(!local.pathname.startsWith(activePrefix))return false;
   try{
-    if(local.pathname===prefix||local.pathname===`${prefix}/`){
-      res.writeHead(303,{location:`${prefix}/plans?plan=grow&interval=annual`,"cache-control":"no-store"});res.end();return true;
+    if(local.pathname===activePrefix||local.pathname===`${activePrefix}/`){
+      res.writeHead(303,{location:`${activePrefix}/plans?plan=grow&interval=annual`,"cache-control":"no-store"});res.end();return true;
     }
     ready ||=setup();
-    const {db,repository}=await ready;
+    const {f,db,repository}=await ready;
+    const simulation=testMode?await (checkoutReady ||=prepareCheckoutFixture(f)):null;
+    if(testMode&&local.pathname===`${activePrefix}/provider-capture`){
+      // This route exists only in the local, in-memory provider simulator.
+      // No user documents or real account/provider credentials are reachable.
+      const chunks=[];let n=0;for await(const chunk of req){n+=chunk.length;if(n>1024)throw Error("Large fixture input");chunks.push(chunk);}
+      const id=JSON.parse(Buffer.concat(chunks).toString()).order_id;
+      const result=simulation.provider.capture(id);
+      res.writeHead(200,{"content-type":"application/json","cache-control":"no-store"});res.end(JSON.stringify(result));return true;
+    }
     const headers=new Headers({"content-type":req.headers["content-type"]||"application/x-www-form-urlencoded"});
     const cookie=String(req.headers.cookie||"").split(";").map(x=>x.trim()).find(x=>x.startsWith(`${fixtureCookie}=`));
     if(cookie)headers.set("cookie",cookie.replace(`${fixtureCookie}=`,`${realCookie}=`));
@@ -55,20 +68,20 @@ export async function billingPreview(req,res){
     if(!["GET","HEAD"].includes(req.method))for await(const chunk of req){
       size+=chunk.length;if(size>1024*1024)throw new Error("Fixture request too large");chunks.push(chunk);
     }
-    const request=new Request(`https://app.lebrands.store${local.pathname.slice(prefix.length)}${local.search}`,{
+    const request=new Request(`https://app.lebrands.store${local.pathname.slice(activePrefix.length)}${local.search}`,{
       method:req.method,headers,...(!["GET","HEAD"].includes(req.method)?{body:Buffer.concat(chunks)}:{})
     });
-    const response=await handleAccounts(request,environment,{},{
-      createDb:()=>db,repository
+    const response=await handleAccounts(request,{...environment,...(testMode?TEST_BILLING_ENV:{})},{},{
+      createDb:()=>db,repository,...(testMode?{billing:{fetcher:simulation.provider.fetcher}}:{})
     });
     const outgoing=Object.fromEntries(response.headers);
     if(outgoing["set-cookie"])outgoing["set-cookie"]=outgoing["set-cookie"].replace(`${realCookie}=`,`${fixtureCookie}=`);
-    if(outgoing.location?.startsWith("/"))outgoing.location=prefix+outgoing.location;
+    if(outgoing.location?.startsWith("/"))outgoing.location=activePrefix+outgoing.location;
     outgoing["cache-control"]="no-store";
     let body=await response.text();
     if(outgoing["content-type"]?.includes("text/html")){
-      body=body.replace(/\b(href|action)="(\/(?:plans|login|signup|account|stores\/[a-f0-9-]{36}(?:\/[^"]*)?)(?:\?[^"]*)?)"/gi,(_all,attr,path)=>`${attr}="${prefix}${path}"`)
-        .replace(/"(endpoint|apiRoot|catalogueRoot)":\s*"(\/(?:api\/)?stores\/[^"]*)"/g,(_all,key,path)=>`"${key}":"${prefix}${path}"`);
+      body=body.replace(/\b(href|action)="(\/(?:plans|login|signup|account|stores\/[a-f0-9-]{36}(?:\/[^"]*)?)(?:\?[^"]*)?)"/gi,(_all,attr,path)=>`${attr}="${activePrefix}${path}"`)
+        .replace(/"(endpoint|apiRoot|catalogueRoot)":\s*"(\/(?:api\/)?stores\/[^"]*)"/g,(_all,key,path)=>`"${key}":"${activePrefix}${path}"`);
     }
     res.writeHead(response.status,outgoing);res.end(body);
   }catch(error){

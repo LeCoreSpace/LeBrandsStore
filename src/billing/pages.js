@@ -3,12 +3,17 @@ import {dashboardAccess} from "../dashboard/repository.js";
 import {businessEditorAccess,protectedEditorLinks} from "../store/business-access.js";
 import {annPlanAccess} from "./build-access.js";
 import {freeSubscriptionState} from "./free.js";
+import {testBillingState} from "./checkout.js";
 import {billingSelection,billingDestination,isBillingPagePath} from "./entry.js";
 import {renderDashboard} from "../ui/dashboard.js";
 import {renderAccount} from "../ui/accounts.js";
 import {renderPlanStorePicker} from "../ui/plan-billing.js";
 const decode=v=>typeof v==="string"?JSON.parse(v):v;
-const headers={...SECURITY_HEADERS,"cache-control":"no-store","content-type":"text/html; charset=utf-8","x-robots-tag":"noindex, nofollow","referrer-policy":"no-referrer"};
+const headers={...SECURITY_HEADERS,"cache-control":"no-store","content-type":"text/html; charset=utf-8","x-robots-tag":"noindex, nofollow","referrer-policy":"no-referrer",
+  "content-security-policy":SECURITY_HEADERS["content-security-policy"]
+    .replace("script-src 'self' 'unsafe-inline'","script-src 'self' 'unsafe-inline' https://checkout.razorpay.com")
+    .replace("connect-src 'self'","connect-src 'self' https://api.razorpay.com https://lumberjack.razorpay.com")
+    .replace("frame-src 'self'","frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com")};
 const html=(request,body,status=200)=>new Response(request.method==="HEAD"?null:body,{status,headers});
 
 export async function billingPageData(tx,id,user,tokenHash,selection={}){
@@ -20,6 +25,7 @@ export async function billingPageData(tx,id,user,tokenHash,selection={}){
   try{
     const state=await freeSubscriptionState(tx,id,tokenHash);
     const access=await annPlanAccess(tx,id,tokenHash);
+    const testCheckout=await testBillingState(tx,id,tokenHash);
     const plans=await tx`SELECT p.code,p.name,p.offer_state,p.contract_required,p.free_live_days,
       coalesce((SELECT jsonb_agg(jsonb_build_object(
         'id',x.id,'country_code',x.country_code,'currency',x.currency,'currency_exponent',x.currency_exponent,
@@ -42,7 +48,7 @@ export async function billingPageData(tx,id,user,tokenHash,selection={}){
       FROM public.billing_invoices WHERE store_id=${id} AND status IN ('issued','void')
       ORDER BY created_at DESC,id DESC LIMIT 50`;
     billing={state,access,catalogue:plans.map(p=>({...p,prices:decode(p.prices),features:decode(p.features)})),
-      payments,invoices,requestedPlan:selection.plan,requestedInterval:selection.interval};
+      payments,invoices,testCheckout,requestedPlan:selection.plan,requestedInterval:selection.interval};
   }catch(error){
     // Expected staged deployment only. A present but failing DB function never
     // becomes an invented empty subscription or a synthetic Free offer.

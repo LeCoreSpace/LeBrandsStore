@@ -1,4 +1,5 @@
 import { escapeHtml, layout, accountHeader, footer } from "./layout.js";
+import {renderBillingTest} from "./billing-test.js";
 
 const esc = escapeHtml;
 const obj = (v) => (v && typeof v === "object" ? v : {});
@@ -181,6 +182,7 @@ export function renderPlanBillingContent(data) {
     parts.push(offerCard(st));
   }
   parts.push(catalogue(b.catalogue, b.requestedPlan, b.requestedInterval));
+  parts.push(renderBillingTest(b));
   parts.push(history(b.payments, b.invoices, sub));
   return `<div class="pb-page" data-plan-billing>${head}${parts.join("")}${status}${tail}</div>`;
 }
