@@ -221,6 +221,10 @@ export async function annPreviewFixture(req, res, previewOrigin) {
           document.download_url=`${prefix}/catalogue/api/business-verification/documents/${document.id}`;
         response=new Response(JSON.stringify(body),{status:response.status,headers:response.headers});
       }
+      if(response.headers.get("content-type")?.includes("application/json")){
+        const body=(await response.text()).replaceAll(`https://media.lebrands.store/stores/${storeId}/`,`${prefix}/media/`);
+        response=new Response(body,{status:response.status,headers:response.headers});
+      }
     }else if(url.pathname.startsWith(`${prefix}/catalogue/`)&&["GET","HEAD"].includes(req.method)){
       const match=url.pathname.slice(`${prefix}/catalogue/`.length).match(/^(products|collections|settings)(?:\/(new|[a-f0-9-]{36}))?$/);
       if(!match||(match[1]==="settings"&&match[2]))response=new Response("Unknown isolated catalogue page.",{status:404});
@@ -234,6 +238,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
           .replace('class="lb-app"',`class="lb-app" data-api-root="${root}/api" data-store-root="${root}" data-ann-href="${prefix}?business=1"`)
           .replaceAll(`href="/stores/${storeId}`,`href="${root}`)
           .replaceAll(`action="/stores/${storeId}`,`action="${root}`);
+        html=html.replaceAll(`https://media.lebrands.store/stores/${storeId}/`,`${prefix}/media/`);
         response=new Response(html,{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
       }
     }else if(url.pathname===`${prefix}/review`&&["GET","HEAD"].includes(req.method)){

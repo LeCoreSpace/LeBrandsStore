@@ -58,7 +58,8 @@ export function validateProduct(p = {}) {
   if (!Number.isSafeInteger(p.price_paise) || p.price_paise <= 0 || p.price_paise > 10000000000) errors.price_paise = "Enter a price greater than ₹0, with at most two decimal places.";
   if (p.compare_at_paise != null && (!Number.isSafeInteger(p.compare_at_paise) || p.compare_at_paise < p.price_paise || p.compare_at_paise > 10000000000)) errors.compare_at_paise = "Compare-at price must be at least the selling price.";
   if (length(p.description) < 30 || length(p.description) > 2000) errors.description = "Describe the product in 30 to 2,000 characters.";
-  if (!Array.isArray(p.images) || p.images.length < 1 || p.images.length > 8 || p.images.some((m) => !UUID.test(m.id ?? ""))) errors.images = "Add 1 to 8 product images.";
+  if (!Array.isArray(p.images) || p.images.length < 1 || p.images.length > 8 || p.images.some((m) => !UUID.test(m.id ?? ""))) errors.images = "Add 1 to 8 product images or videos.";
+  else if(p.images[0]?.type==="video")errors.images="Choose an image as the product cover. Videos can follow it.";
   if (!Array.isArray(p.tags ?? []) || (p.tags ?? []).length > 10 || (p.tags ?? []).some((v) => typeof v !== "string" || length(v) < 1 || length(v) > 40)) errors.tags = "Use up to 10 tags, each within 40 characters.";
   if (p.sku && (length(p.sku) > 80 || typeof p.sku !== "string")) errors.sku = "Keep the SKU within 80 characters.";
   if (p.stock != null && (!Number.isInteger(p.stock) || p.stock < 0 || p.stock > 2147483647)) errors.stock = "Enter a whole stock quantity, or leave it blank for always in stock.";

@@ -102,9 +102,9 @@ export function productPatch(value) {
       result[key] = val.map((tag) => string(tag, 40, "tags")).filter(Boolean); continue;
     }
     if (key === "images") {
-      if (!Array.isArray(val) || val.length > 8 || new Set(val.map((v) => v?.id)).size !== val.length) throw badInput("Use up to 8 different product images.");
+      if (!Array.isArray(val) || val.length > 8 || new Set(val.map((v) => v?.id)).size !== val.length) throw badInput("Use up to 8 different product images or videos.");
       result[key] = val.map((m) => {
-        if (!object(m) || !UUID.test(m.id ?? "") || Object.keys(m).some((k) => !["id", "alt"].includes(k))) throw badInput("Choose uploaded product images.");
+        if (!object(m) || !UUID.test(m.id ?? "") || Object.keys(m).some((k) => !["id", "alt"].includes(k))) throw badInput("Choose uploaded product images or videos.");
         return { id: m.id, alt: string(m.alt ?? "", 200, "image alt text") };
       }); continue;
     }

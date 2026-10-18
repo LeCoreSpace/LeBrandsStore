@@ -4,7 +4,7 @@
  * layouts outside the saved Ann design renderer never pass through this module.
  */
 import { SHOWCASE_MEDIA, isShowcaseImage, resolveShowcasePack } from "./aura-showcase-assets.js";
-import { safeImage } from "./aura-sections.js";
+import { safeImage, productVideo } from "./aura-sections.js";
 import { homeRich, productRich, collectionRich } from "./aura-showcase-sections.js";
 import { RICH_CSS } from "./aura-showcase-rich-css.js";
 import { showcaseProfile, renderNicheSections, NICHE_SECTION_CSS, profileGuidance } from "./aura-showcase-profiles.js";
@@ -270,7 +270,7 @@ function collectionPage(x) {
 function productPageLive(x) {
   const p = x.products.find(i => String(i.id) === String(x.options.productId)) || x.products[0];
   if (!p) return `<section class="sc-chead"><h1>Product not found</h1><p><a class="sc-btn" href="/collections/all">Browse the range</a></p></section>`;
-  const pics = (p.images || []).slice(0, 6).map((im, i) => img(im, p.title).replace("<img ", `<img data-gallery-image="${i}" `)).filter(Boolean);
+  const pics = (p.images || []).slice(0, 8).map((im, i) => im.type==="video"?productVideo(im,p.title):img(im, p.title).replace("<img ", `<img data-gallery-image="${i}" `)).filter(Boolean);
   const own = String(p.id) === String(x.options.productId) && productDetailRows(p).length;
   const features = (own ? productFeatureRows(p) : (p.content?.features || [])).map(f => `<li><span>${esc(f.label)}</span>${esc(f.value)}</li>`).join("");
   const rest = x.products.filter(i => i.id !== p.id).slice(0, 4), o = x.options;

@@ -12,6 +12,7 @@ import "/assets/dashboard-navigation.js";
 import * as catalogueModel from "/assets/catalogue-model.js";
 import { initCatalogueForm, readCataloguePayload, initSearchPreview, readSearchFields, ensureProductSku } from "/assets/catalogue-form.js";
 import {attachCatalogueEmbed} from "/assets/catalogue-modal.js";
+import {attachProductMediaEditor} from "/assets/product-media-editor.js";
 import {confirmCatalogueAction} from "/assets/catalogue-confirm.js";
 
 const root = document.querySelector(".lb-app");
@@ -292,7 +293,7 @@ document.querySelector("[data-product-form]")?.addEventListener("submit", async 
   event.preventDefault();
   const form = event.currentTarget;
   const button = event.submitter || form.querySelector('button[type="submit"]');
-  if (pendingUploads > 0) { notify("Wait for product images to finish uploading before saving.", true); return; }
+  if (pendingUploads > 0) { notify("Finish, retry or discard pending media before saving.", true); return; }
   let payload;
   try { payload = productPayload(form); } catch (error) { const node = form.querySelector("[data-form-error]"); if (node) { node.textContent = error.message; node.hidden = false; } notify(error.message, true); return; }
   const errorNode = form.querySelector("[data-form-error]");
@@ -321,44 +322,10 @@ document.querySelector("[data-product-form]")?.addEventListener("submit", async 
   finally{catalogueEmbed?.saving(false);}
 });
 
-document.querySelector("[data-image-upload]")?.addEventListener("change", async event => {
-  const input = event.currentTarget;
-  const files = [...(input.files || [])];
-  const grid = document.querySelector("[data-images]");
-  if (!grid || !files.length) return;
-  const existing = grid.querySelectorAll("[data-image-id]").length;
-  if (existing + files.length > 8) { notify("A product can have up to 8 images.", true); input.value = ""; return; }
-  const label = input.closest("label");
-  pendingUploads += 1;
-  const productForm = document.querySelector("[data-product-form]");
-  updateSaveForUploads(productForm);
-  label?.classList.add("is-busy");
-  try {
-    for (const file of files) {
-      const form = new FormData();
-      form.append("file", file); form.append("type", "image"); form.append("alt", file.name.replace(/\.[^.]+$/, ""));
-      const result = await request(`${api}/media`, { method: "POST", body: form });
-      const image = result.media;
-      if (!image?.id || !image?.url) throw new Error("The image upload did not return usable media.");
-      const figure = document.createElement("figure");
-      figure.className = "lb-image-card";
-      figure.dataset.imageId = image.id;
-      figure.innerHTML = `<img src="${esc(image.url)}" alt="${esc(image.alt || "")}"><figcaption><label>Alt text<input value="${esc(image.alt || "")}" maxlength="200" data-image-alt></label><button type="button" class="lb-text-button" data-image-remove>Remove</button></figcaption>`;
-      grid.append(figure);
-    }
-    notify("Image upload complete.");
-  } catch (error) { notify(error.message || "Image upload failed.", true); }
-  finally {
-    pendingUploads = Math.max(0, pendingUploads - 1);
-    label?.classList.remove("is-busy");
-    input.value = "";
-    updateSaveForUploads(productForm);
-  }
-});
-document.addEventListener("click", event => {
-  const remove = event.target.closest("[data-image-remove]");
-  if (remove) remove.closest("[data-image-id]")?.remove();
-});
+{
+  const mediaForm = document.querySelector("[data-product-form]");
+  if (mediaForm) attachProductMediaEditor({ form: mediaForm, api, request, notify, onPendingChange: count => { pendingUploads = Number(count) || 0; updateSaveForUploads(mediaForm); } });
+}
 
 document.querySelector("[data-archive]")?.addEventListener("click", async event => {
   const button = event.currentTarget;

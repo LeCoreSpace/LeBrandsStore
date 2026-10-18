@@ -16,7 +16,7 @@
 - [Billing onboarding placement](billing-onboarding-placement.md) — plan selection must be in Ann after store naming; dashboard billing is an additional entry point.
 - [Dashboard visual boundary](dashboard-design-boundary.md) — professional commerce admin is separate from Aura; visual-only work must not invent backend capabilities.
 - [Long-page screenshots](long-page-screenshots.md) — an image-limit error can still leave a complete saved capture; inspect its dimensions and crops before retrying.
-- [Browser video capture](browser-video-capture.md) — remote native recording may lack FFmpeg; actual CDP screencast frames can be encoded locally.
+- [Browser video capture](browser-video-capture.md) — remote recording may lack FFmpeg or MP4 decoding; use supported fixtures and actual CDP capture.
 - [Homepage showcase boundary](homepage-showcase-boundary.md) — use Ann Modern Boutique skincare for hero/preview/Crafted details; preserve operational visuals and live stores.
 - [Mobile animation viewport](mobile-animation-viewport.md) — off-screen transforms can inflate Chromium's mobile viewport; compare against the requested width, not only scroll width.
 - [3D dashboard compositing](3d-dashboard-compositing.md) — flatten dashboard content; animate the whole surface to avoid hiding amounts behind its background.
@@ -46,4 +46,4 @@
 - [Business verification direction](business-verification-direction.md) — country-aware registration and private evidence; restricted review is approved, broader admin tooling remains later.
 - [Cloudflare scanner runtime](cloudflare-scanner-runtime.md) — use manual redirects and fail closed; Node probes cannot catch Workers rejecting redirect:error.
 - [Ann translation coverage](ann-translation-coverage.md) — conditional prompts and system replies need coverage; never translate merchant-entered records.
-- [Product media direction](product-media-direction.md) — Cloudinary product uploads and crop previews are approved; AI credits are later and OpenAI generation is excluded.
+- [Product media direction](product-media-direction.md) — existing Cloudflare R2 for product uploads and crop previews; AI credits are later and OpenAI generation is excluded.

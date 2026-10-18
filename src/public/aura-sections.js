@@ -11,6 +11,12 @@ export const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&a
 const UU = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
 const MEDIA = new RegExp(`^https://media\\.lebrands\\.store/stores/${UU}/${UU}\\.(?:png|jpe?g|svg|webp)$`, "i");
 export const safeImage = (u) => (MEDIA.test(String(u || "")) || /^\/assets\/img\/[\w./-]+\.(?:jpg|jpeg|png|webp|avif)$/i.test(String(u || ""))) ? String(u) : "";
+const PRODUCT_VIDEO = new RegExp(`^https://media\\.lebrands\\.store/stores/${UU}/${UU}\\.(?:mp4|webm)$`, "i");
+export function productVideo(media,label="Product video") {
+  if(media?.type!=="video"||!PRODUCT_VIDEO.test(String(media.url||"")))return "";
+  const mime=/\.webm$/i.test(media.url)?"video/webm":"video/mp4";
+  return `<video class="au-product-video" controls playsinline preload="metadata" aria-label="${esc(media.alt||label)}" style="display:block;width:100%;aspect-ratio:4/5;object-fit:contain;background:#f5f5f5"><source src="${esc(media.url)}" type="${mime}">Your browser cannot play this video. <a href="${esc(media.url)}">Open product video</a></video>`;
+}
 export const money = (p) => `₹${(Math.max(0, Number(p) || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 export const policyTitle = (k) => ({ privacy: "Privacy", terms: "Terms & Conditions", shipping: "Shipping", "cancellation-refund": "Cancellation & Refund", contact: "Contact", pricing: "Pricing" })[k] || "Policy";
 const POLICIES = ["privacy", "terms", "shipping", "cancellation-refund", "pricing"];
@@ -219,7 +225,7 @@ export const SECTION_RENDERERS = {
     const p = c.product;
     if (!p) return "";
     const o = c.options;
-    const imgs = (p.images || []).map((im, i) => img(im, { eager: i === 0, label: p.title }).replace("<img ", `<img data-gallery-image="${i}" `)).join("");
+    const imgs = (p.images || []).map((im, i) => im.type==="video"?productVideo(im,p.title):img(im, { eager: i === 0, label: p.title }).replace("<img ", `<img data-gallery-image="${i}" `)).join("");
     const vo = hasOptions(p);
     const buy = vo && o.commerce && !o.readOnly ? renderOptionBuy(p, { esc, money })
       : o.commerce && !o.readOnly

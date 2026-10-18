@@ -258,12 +258,13 @@ export async function saveProduct(tx, id, productId, patch, { returnDraft = true
      VALUES (${uuid}, ${id}, ${p.title}, ${slug}, ${p.description}, ${p.price_paise}, ${p.compare_at_paise},
       ARRAY(SELECT jsonb_array_elements_text(${tx.json(p.tags)})), ${sku}, ${p.stock ?? 0}, ${p.stock != null}, ${p.hsn_code}, ${p.gst_rate ?? 0})`;
   if (patch.images) {
-    for (const image of patch.images) {
-      const [media] = await tx`SELECT id FROM public.media m WHERE store_id = ${id}
-        AND id = ${image.id} AND upload_type = 'image' AND kind = 'image'
+    for (const [order,image] of patch.images.entries()) {
+      const [media] = await tx`SELECT id,upload_type FROM public.media m WHERE store_id = ${id}
+        AND id = ${image.id} AND ((upload_type = 'image' AND kind = 'image') OR (upload_type = 'video' AND kind = 'video'))
         AND COALESCE(to_jsonb(m)->>'approval_status','approved')='approved'`;
-      if (!media) throw badInput("Choose product images uploaded to this store.");
-      if (!preserveMediaAlt) await tx`UPDATE public.media SET alt_text = ${image.alt || p.title || "Product image"}
+      if (!media) throw badInput("Choose approved product images or videos uploaded to this store.");
+      if (order===0&&media.upload_type!=="image") throw badInput("Use an image as the first product media item. Videos can follow it.");
+      if (!preserveMediaAlt) await tx`UPDATE public.media SET alt_text = ${image.alt || p.title || "Product media"}
         WHERE store_id = ${id} AND id = ${image.id}`;
     }
     await tx`DELETE FROM public.product_media WHERE store_id = ${id} AND product_id = ${uuid}`;

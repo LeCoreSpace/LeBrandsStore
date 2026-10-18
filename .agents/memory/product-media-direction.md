@@ -4,8 +4,12 @@ description: Approved product-media scope and distinction between uploads, agent
 ---
 
 The user approved professional product image/video uploads, a 4:5 framing preview
-with a non-cropping fit option, optimised WebP images and WebM video with an MP4
-fallback, Cloudinary storage and database-backed media associations.
+with a non-cropping fit option, optimised WebP images, WebM conversion where
+supported, an original MP4 upload option and database-backed media associations.
+Use the existing Cloudflare R2 storage, not Cloudinary.
+
+**Why:** After the Cloudinary credentials request was dismissed, the user explicitly
+changed the storage direction: “we can save the images in cloudflare.”
 
 AI credits and recharge billing are deferred. The user requested image generation
 by the agent, not the earlier OpenAI setup. Do not silently introduce an OpenAI

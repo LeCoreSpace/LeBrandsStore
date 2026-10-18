@@ -1,3 +1,4 @@
+import {productVideo} from "./aura-sections.js";
 /**
  * Product-page-first showcase styles: Social Pop, Creator Feed, Proof & Detail.
  * Each is a whole-store composition (home, collection, product, about, cart and
@@ -112,7 +113,7 @@ export function buildConversion(h) {
     return `<div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button" class="au-btn"${ok ? ` data-add-product="${esc(p.id)}"` : ' disabled aria-disabled="true"'}>${ok ? word : "Sold out"}</button></div>`;
   };
   const gallery = (x, p) => {
-    const pics = (p.images || []).slice(0, 8).map((im, i) => img(im, p.title).replace("<img ", `<img data-gallery-image="${i}" `)).filter(Boolean);
+    const pics = (p.images || []).slice(0, 8).map((im, i) => im.type==="video"?productVideo(im,p.title):img(im, p.title).replace("<img ", `<img data-gallery-image="${i}" `)).filter(Boolean);
     if (!live()) { const a = img(x.media.lifestyle, "Styling reference"), b = img(x.media.hero, "Campaign reference"); if (a) pics.push(a); if (b) pics.push(b); }
     return pics;
   };

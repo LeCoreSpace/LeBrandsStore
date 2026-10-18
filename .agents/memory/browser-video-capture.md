@@ -1,6 +1,6 @@
 ---
 name: Browser video capture
-description: Native video recording can fail on the remote capture browser despite local FFmpeg being available
+description: Remote capture-browser encoder and decoder limitations differ from the local workspace
 ---
 The remote capture browser may lack Playwright's bundled FFmpeg executable.
 The workspace's working FFmpeg does not prove native remote `recordVideo` will work.
@@ -23,3 +23,14 @@ internal-path import failed even though the package and encoding support existed
 **How to apply:** Check the installed package's exports before reusing an older
 capture utility. Do not assume a missing internal file means the library needs
 to be reinstalled.
+
+The remote testing browser may support VP8/Opus WebM but not H.264/AAC MP4.
+Check its codec capabilities before interpreting a video-preview failure.
+
+**Why:** A valid MP4 confirmed by local FFprobe could not be decoded remotely;
+the remote browser reported no MP4 codec support but did support WebM.
+
+**How to apply:** Use a supported WebM source when testing browser transcoding.
+Also verify the honest original-upload path for an unsupported decoder. Do not
+reject valid merchant MP4 uploads or weaken server-side file validation merely
+to accommodate the testing browser.

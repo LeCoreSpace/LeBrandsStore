@@ -155,13 +155,13 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
           ["file", "type", "alt"].some((key) => form.getAll(key).length > 1)) throw badInput("Upload one file at a time.");
         const file = form.get("file"), type = form.get("type"), alt = form.get("alt") ?? "";
         if(type==="video"&&!await pagesEnabled(tx))throw badInput("Video uploads require the store-page migration first.");
-        if (!file || typeof file.arrayBuffer !== "function" || typeof alt !== "string" || alt.length > 200) throw badInput("Choose an image and keep its alt text within 200 characters.");
+        if (!file || typeof file.arrayBuffer !== "function" || typeof alt !== "string" || alt.length > 200) throw badInput("Choose an image or video and keep its description within 200 characters.");
         const data = new Uint8Array(await file.arrayBuffer()), metadata = validateUpload(data, type);
         uploadedKey = `stores/${id}/${crypto.randomUUID()}.${metadata.ext}`;
         await env.MEDIA.put(uploadedKey, data, {
           httpMetadata: { contentType: metadata.contentType, cacheControl: "public, max-age=31536000, immutable" },
         });
-        return { media: await insertMedia(tx, id, uploadedKey, type, data.length, metadata, alt.trim() || (type === "logo" ? `${user.name || "Brand"} logo` : "Product image")) };
+        return { media: await insertMedia(tx, id, uploadedKey, type, data.length, metadata, alt.trim() || (type === "logo" ? `${user.name || "Brand"} logo` : type==="video"?"Product video":"Product image")) };
       }
       if (route === "POST policies/child") {
         const result = await regeneratePolicies(tx,id);
