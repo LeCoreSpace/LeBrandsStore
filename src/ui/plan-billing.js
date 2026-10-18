@@ -1,5 +1,6 @@
 import { escapeHtml, layout, accountHeader, footer } from "./layout.js";
 import {renderBillingTest} from "./billing-test.js";
+import {renderPlanCards} from "./billing-plan-cards.js";
 
 const esc = escapeHtml;
 const obj = (v) => (v && typeof v === "object" ? v : {});
@@ -92,9 +93,7 @@ function noSubscription(state, access, id) {
   if (state.can_enrol && reason === "available") {
     const o = obj(state.offer);
     const live = Number.isFinite(o.live_days) ? o.live_days : 30;
-    const primary = access.enforced === true
-      ? link(`/stores/${eid}/build/ann`, "Choose Free in Ann")
-      : `<button type="button" class="pb-btn" data-billing-choose-free>Review and choose Free</button>`;
+    const primary = link("#plans", "Compare plans");
     return `<section class="pb-card pb-current" aria-labelledby="pb-current-title" data-state="none">
       <div class="pb-card-head"><div><p class="pb-kicker">Current plan</p><h2 id="pb-current-title">No plan chosen yet</h2></div><span class="pb-badge" data-s="none">Not started</span></div>
       <p>Free is available for this store: ${num(live)} live days at no cost, counted from your first successful publication. No card is needed.${access.enforced === true ? " Ann will ask you to choose it right after you name your store." : " Nothing starts until you review the terms and accept."}</p>
@@ -175,13 +174,11 @@ export function renderPlanBillingContent(data) {
   if (access.available === false) parts.push(`<p class="pb-callout" role="status">Plan gating is not available for this store yet, so plan limits are not applied.</p>`);
   if (sub) {
     parts.push(subscriptionCard(sub, id, access));
-    parts.push(`<section class="pb-card" aria-labelledby="pb-ent-title"><h2 id="pb-ent-title">Limits and features</h2>${entRows(sub.entitlements)}</section>`);
-    parts.push(usageCard());
+    parts.push(`<details class="pb-card"><summary>Current plan limits and features</summary>${entRows(sub.entitlements)}</details>`);
   } else {
     parts.push(noSubscription(st, access, id));
-    parts.push(offerCard(st));
   }
-  parts.push(catalogue(b.catalogue, b.requestedPlan, b.requestedInterval));
+  parts.push(renderPlanCards(b, st, access, id, !sub && st.can_enrol && st.reason === "available"));
   parts.push(renderBillingTest(b));
   parts.push(history(b.payments, b.invoices, sub));
   return `<div class="pb-page" data-plan-billing>${head}${parts.join("")}${status}${tail}</div>`;

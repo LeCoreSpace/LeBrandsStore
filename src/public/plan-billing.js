@@ -18,6 +18,20 @@ function boot() {
     location.reload();
   });
 
+  const tg = [...document.querySelectorAll("[data-billing-interval]")];
+  const setInt = (iv, focus) => {
+    tg.forEach((b) => { const on = b.dataset.billingInterval === iv; b.setAttribute("aria-pressed", String(on)); if (on && focus) b.focus(); });
+    document.querySelectorAll("[data-plan-interval]").forEach((p) => { p.hidden = p.dataset.planInterval !== iv; });
+    say(iv === "annual" ? "Showing yearly totals." : "Showing monthly totals.");
+  };
+  tg.forEach((b, i) => {
+    b.addEventListener("click", () => setInt(b.dataset.billingInterval));
+    b.addEventListener("keydown", (e) => {
+      if (!["ArrowLeft", "ArrowRight"].includes(e.key)) return;
+      e.preventDefault(); const n = tg[(i + (e.key === "ArrowRight" ? 1 : tg.length - 1)) % tg.length]; setInt(n.dataset.billingInterval, true);
+    });
+  });
+
   const choose = document.querySelector("[data-billing-choose-free]");
   if (!choose || !cfg.endpoint) return;
   const ctl = attachAnnPlanSelection({
