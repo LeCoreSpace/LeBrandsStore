@@ -9,7 +9,8 @@ Do not mention Aura or Bazaar themes on pricing; describe Ann and the theme edit
 
 **Why:** The user explicitly requested this arrangement and provider-neutral
 integration wording, then asked to remove Aura and Bazaar from pricing.
-Payment subscription implementation is deferred.
+Pricing-only changes must not enable billing; subscriptions require a separate
+explicit implementation scope.
 
 **How to apply:** Preserve this separation during pricing updates. Do not treat
 publishing a proposed feature comparison as permission to enable billing or as
@@ -40,3 +41,16 @@ backgrounds with white; it does not change merchant theme presets.
 **Why:** The user asked to remember these billing terms, then chose a complete-store 30-day experience rather than a 50-SKU restriction and explicitly asked to put the proposal on pricing for later implementation.
 
 **How to apply:** Preserve these terms when implementing billing later. Pricing copy is a proposal, not enforcement: the publication-based timer, catalogue quotas and expiry controls still require implementation. The founding-member discount remains to be decided.
+
+## Subscription entry points
+
+Brands must subscribe to the Free plan before starting to build with Ann.
+Subscriptions must be available from the pricing page after login and from a
+new dashboard menu. The user requested country-wise plan amounts, plan-feature
+masters, and separate subscription and payment records.
+
+**Why:** The user explicitly requested these platform-billing flows.
+
+**How to apply:** Free enrolment must not require a payment transaction. Keep
+platform subscriptions separate from shoppers paying a brand for products.
+Preserve business-verification and publication approval requirements.
