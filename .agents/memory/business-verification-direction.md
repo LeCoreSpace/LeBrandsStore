@@ -133,3 +133,13 @@ and then lost it when their saved Ann progress was restored.
 **How to apply:** Treat verification recovery separately from normal completed
 setup locks. Never label required unsubmitted documents as skipped, discard a
 private upload form during chat refresh, or reset a saved design to recover access.
+
+The user approved country-only contact updates for the two pre-existing legacy
+accounts with empty phones. This exception must not extend to new registrations,
+and must end once a valid phone is provided.
+
+**Why:** The user explicitly chose to retain unknown legacy phone numbers rather
+than invent contact details or block an approved country backfill.
+
+**How to apply:** Preserve strict new-account contact validation. Do not grant
+further legacy exceptions without explicit authorization.

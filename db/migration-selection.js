@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-legacy-user-country"){
+    return {staged:true,filename:"0036_legacy_user_country.sql",requires:"0030_registration_contact.sql"};
+  }
   if(values.length===1&&values[0]==="--staged-business-document-review"){
     return {staged:true,filename:"0035_business_document_review.sql",requires:"0034_business_document_scanning.sql"};
   }
