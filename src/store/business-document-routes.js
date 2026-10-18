@@ -3,6 +3,7 @@ import { dashboardAccess } from "../dashboard/repository.js";
 import { gstinEnabled, verificationState } from "../gstin/service.js";
 import { REGISTRATION_COUNTRIES } from "../public/registration-validation.js";
 import {businessEditorAccess} from "./business-access.js";
+import {businessDocumentRetention,businessDocumentUploadPolicy} from "./business-document-policy.js";
 
 const ROOT = /^\/api\/stores\/([a-f0-9-]{36})\/business-verification(?:\/documents\/([a-f0-9-]{36}))?$/i;
 const MAX_FILE = 5 * 1024 * 1024;
@@ -111,14 +112,6 @@ async function gstState(tx, id) {
     gstin: settings.gstin || "", legal_name: settings.legal_name || "" };
 }
 
-function uploadPolicy(env) {
-  const days = Number(env.BUSINESS_DOCUMENT_RETENTION_DAYS);
-  const retentionDays = Number.isInteger(days) && days >= 30 && days <= 365 ? days : null;
-  const available = Boolean(env.BUSINESS_DOCUMENTS?.put && env.BUSINESS_DOCUMENT_SCANNER?.fetch && retentionDays);
-  return { uploads_available: available, retention_days: retentionDays, max_file_bytes: MAX_FILE,
-    upload_message: available ? "" : "Private storage, security screening and retention review must be configured before document uploads can open." };
-}
-
 async function state(tx, id, tokenHash, env) {
   const [row] = await tx`SELECT public.business_document_state(${id},${tokenHash}) AS data`;
   const data = decode(row.data);
@@ -128,7 +121,7 @@ async function state(tx, id, tokenHash, env) {
   }
   return { available: true, ...data,business_access:access,business_country:access.business_country,
     countries: REGISTRATION_COUNTRIES.map(({code,name}) => ({code,name})),
-    gst: await gstState(tx, id), ...uploadPolicy(env) };
+    gst: await gstState(tx, id), ...businessDocumentUploadPolicy(env,await businessDocumentRetention(tx)) };
 }
 
 async function download(db, env, id, tokenHash, docId, request) {
@@ -170,7 +163,7 @@ export async function handleBusinessDocumentRoutes(request, env, db, user, token
       await dashboardAccess(tx, storeId, user.id, true);
       return state(tx, storeId, tokenHash, env);
     }, { lockStore: false });
-    if (!current.retention_days) throw fail("Document retention review policy must be configured before business submissions can open.", 503);
+    if (!current.retention.configured) throw fail(current.upload_message, 503);
     if (!/^multipart\/form-data;\s*boundary=/i.test(request.headers.get("content-type") || ""))
       throw fail("Choose a document and submit the form.");
     const bytes = await limitedBody(request);
@@ -215,7 +208,7 @@ export async function handleBusinessDocumentRoutes(request, env, db, user, token
         await tx`SELECT public.business_document_submit(${storeId},${tokenHash},${details.revision},
           ${details.country},${details.name},${details.type},${details.number || null},
           ${details.explanation || null},${documentId},${details.documentType},${objectKey},
-          ${filename},${mime},${fileBytes?.length || null},${digest},${current.retention_days}) AS revision`;
+          ${filename},${mime},${fileBytes?.length || null},${digest},${null}) AS revision`;
         return state(tx, storeId, tokenHash, env);
       });
       return respond(result, 201);

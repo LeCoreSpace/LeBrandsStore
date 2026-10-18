@@ -1,5 +1,45 @@
 # Registration and business verification rollout
 
+## Current retention update: subscription duration
+
+The user's revised policy supersedes the former fixed-days setting:
+retain documents during onboarding and throughout the brand's subscription,
+including earlier submissions. Post-cancellation retention and legal holds are
+not yet decided. This update introduces **no automatic deletion** and does not
+implement a billing/subscription lifecycle that does not yet exist.
+
+Prepared `0033_business_document_retention.sql`, requiring 0031:
+
+    pnpm run db:migrate -- --staged-business-document-retention
+
+The user runs this personally; it has not been applied to live data by the agent.
+The migration adds a named retention policy to existing/new file records,
+preserves all evidence and legacy review dates as history, and removes the
+fixed-date requirement for new files. It replaces the submit function in place
+without changing its callable identity or grants. Old prepared callers remain
+compatible, but their old day argument no longer establishes a deadline.
+
+`BUSINESS_DOCUMENT_RETENTION_DAYS` is no longer required or used by the new
+application code. The form displays subscription-duration retention and reports
+a missing migration separately from missing private storage or security screening.
+Do not configure R2 lifecycle expiration for the business-evidence prefix; a
+database retention label cannot prevent an independent bucket-expiration rule.
+No scheduled cleanup may use the preserved legacy review dates as deletion dates.
+
+**Still blocked:** production file upload requires a real approved private
+scanner behind `BUSINESS_DOCUMENT_SCANNER`. No provider is connected, no real
+documents have been sent to a new processor, and the fixture's mock remains
+isolated. Do not use public/shared malware-submission services for tax documents.
+Cloudflare's WAF malicious-upload detection is a separate Enterprise add-on,
+not a ready-to-use implementation of this Worker service-binding contract.
+
+This is the first part of the revised workflow, not completion of all phases.
+The merchant Settings recovery flow, admin document decisions, manual approval
+before publishing, suspension and notifications remain later work. Pending
+review must allow draft creation, while final go-live requires manual approval.
+Do not activate a new manual-approval publishing gate without a working staff
+review path.
+
 Complete and confirm each phase before proceeding. Do not treat the roadmap
 as already-enforced behaviour.
 
@@ -117,11 +157,10 @@ are unchanged.
    accepted; timeouts, malformed responses and non-clean results are rejected.
    A signature-only echo service is not a security scanner and must not be used.
    The mock scanner exists only inside the isolated synthetic preview fixture.
-3. Set `BUSINESS_DOCUMENT_RETENTION_DAYS` only after deciding an appropriate
-   policy, as an integer from 30 to 365. All submissions are paused without it.
-   This sets **retention review due dates**, not guaranteed deletion dates.
-   Automated deletion, legal holds and orphan reconciliation require a separately
-   reviewed operational policy; this phase never deletes prior submitted evidence.
+3. Apply the subscription-duration retention update described above after 0031.
+   It replaces the original fixed-days setting. Retain evidence during onboarding
+   and throughout the subscription; do not enable automatic deletion. Historical
+   review dates remain history only, not cleanup instructions.
 4. Apply the staged migration, then deploy the Worker through the established
    process. Validate the private bucket and actual scanner with a synthetic file
    before accepting business documents.

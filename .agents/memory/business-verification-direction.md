@@ -40,6 +40,17 @@ create a privacy and reviewer-safety risk.
 production uploads, substitute an echo scanner, or infer legal requirements for
 unreviewed countries.
 
+Do not send registration documents to public/shared malware-intelligence
+submission services. Obtain approval before introducing an external document
+processor, and verify its privacy/retention terms.
+
+**Why:** Business evidence is private; choosing an antivirus service must not
+silently expose it to additional parties or public sample sharing.
+
+**How to apply:** Prefer the approved private processing boundary. If no scanner
+is configured, retain the explicit upload block instead of claiming signature
+checks or a mock are genuine malware screening.
+
 The user specified retention "for ever till the brands subscription is with us
 (for compliance)". Retain business evidence throughout the brand's subscription,
 not on an arbitrary 30–365-day deletion schedule. Post-cancellation retention

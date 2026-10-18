@@ -143,17 +143,16 @@ export function attachAnnBusinessDocuments({ api, readOnly, onError, onSubmitted
     if (loading && !data) body = `<div class="abd-skel"></div><div class="abd-skel"></div><div class="abd-skel"></div>`;
     else if (!data) body = `<p class="abd-alert" role="alert">${esc(loadError || "Business documents are not available.")}</p>`;
     else {
-      const days = data.retention_days;
       body = `${loadError ? `<p class="abd-alert" role="alert">${esc(loadError)}</p>` : ""}<p>Submit your business registration details for manual review. Ann's conversation language does not affect this form.</p>
-        <p class="abd-note">Documents are private files${days ? `. Retention is scheduled for review after ${days} days` : ""}. A deletion schedule must be confirmed separately.</p>
+        <p class="abd-note">Documents are private. We keep them during onboarding and throughout your brand's subscription, including earlier submissions. No automatic deletion date is set. Retention after cancellation requires a separate policy.</p>
         <p class="abd-note">Document review does not enable subscription payments or change your tax or invoice status.</p>
         ${formHtml()}${docsHtml()}
         ${formError ? `<p class="abd-alert" role="alert">${esc(formError)}</p>` : ""}${success ? `<p class="abd-note" role="status">${esc(success)}</p>` : ""}
         ${busy ? `<p class="abd-hint" role="status">Uploading and submitting. Please wait.</p>` : ""}`;
     }
-    const canSend = data && data.retention_days && (!data.business_access?.enforced||data.business_country) && !locked() && !busy && !discarding && reqFor(form.country_code);
+    const canSend = data && data.retention?.configured && (form.registration_type==="not_registered"||data.uploads_available) && (!data.business_access?.enforced||data.business_country) && !locked() && !busy && !discarding && reqFor(form.country_code);
     dlg.innerHTML = `<div class="abd-head"><div><h2 id="abd-title">Business documents</h2></div><button type="button" class="abd-btn alt" data-a="close"${busy ? " disabled" : ""}>Close</button></div>
-      <div class="abd-body" aria-busy="${loading || busy}">${discarding ? `<div class="abd-discard" role="alertdialog" aria-labelledby="abd-dt"><strong id="abd-dt">Discard your unsaved entries?</strong><div class="abd-foot" style="padding:0;border:0;justify-content:flex-start"><button type="button" class="abd-btn" data-a="discard">Discard</button><button type="button" class="abd-btn alt" data-a="keep">Keep editing</button></div></div>` : ""}${data && !data.retention_days ? `<p class="abd-warn">Business submissions are paused until the platform configures its document retention review policy.</p>` : ""}<div${discarding ? " inert" : ""}>${body}</div></div>
+      <div class="abd-body" aria-busy="${loading || busy}">${discarding ? `<div class="abd-discard" role="alertdialog" aria-labelledby="abd-dt"><strong id="abd-dt">Discard your unsaved entries?</strong><div class="abd-foot" style="padding:0;border:0;justify-content:flex-start"><button type="button" class="abd-btn" data-a="discard">Discard</button><button type="button" class="abd-btn alt" data-a="keep">Keep editing</button></div></div>` : ""}${data && !data.retention?.configured ? `<p class="abd-warn">The subscription-duration retention database update is required before submissions can open.</p>` : ""}<div${discarding ? " inert" : ""}>${body}</div></div>
       <div class="abd-foot">${!data && !loading ? `<button type="button" class="abd-btn alt" data-a="retry">Retry</button>` : ""}${data && !readOnly && !approved() ? `<button type="button" class="abd-btn" data-a="submit"${canSend ? "" : " disabled"}>${busy ? "Submitting..." : data.verification ? "Resubmit for review" : "Submit for review"}</button>` : ""}</div>`;
     const picker = dlg.querySelector('input[type="file"]');
     if (file && picker && typeof DataTransfer === "function") {

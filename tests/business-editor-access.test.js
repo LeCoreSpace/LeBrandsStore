@@ -35,7 +35,7 @@ test("migration assigns every existing store India without rewriting accounts, e
     await pg.query("UPDATE public.users SET country_code='GB',phone='+447911123456' WHERE id=$1",[owner.id]);
     const oid=(await pg.query("SELECT 'public.ann_save_session(uuid,text,integer,text,jsonb)'::regprocedure::oid AS oid")).rows[0].oid;
     const before=JSON.stringify((await pg.query("SELECT settings FROM store_setup WHERE store_id=$1",[store])).rows[0]);
-    await pg.exec("INSERT INTO schema_migrations(filename,checksum) VALUES('0031_business_documents.sql','isolated fixture')");
+    await pg.exec("INSERT INTO schema_migrations(filename,checksum) VALUES('0031_business_documents.sql','isolated fixture') ON CONFLICT(filename) DO NOTHING");
     await pg.exec(await readFile(new URL("../db/staged/0032_business_editor_access.sql",import.meta.url),"utf8"));
     assert.equal((await pg.query("SELECT count(*)::int AS n FROM stores s LEFT JOIN store_business_access a USING(store_id) WHERE a.business_country IS DISTINCT FROM 'IN'")).rows[0].n,0);
     assert.equal((await pg.query("SELECT country_code FROM users WHERE id=$1",[owner.id])).rows[0].country_code,"GB");

@@ -55,7 +55,7 @@ const fixtureMedia={
   async put(key,bytes,options){memoryMedia.set(key,{bytes:new Uint8Array(bytes),type:options.httpMetadata.contentType});},
   async delete(key){memoryMedia.delete(key);},
 };
-export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false,verifiedBusiness=false,businessDocuments=false,businessAccess=false,catalogueMasters=true,catalogueApi=false,sampleClassification=false,catalogueCustomValues=false}={}) {
+export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false,verifiedBusiness=false,businessDocuments=false,businessAccess=false,businessRetention=businessDocuments,catalogueMasters=true,catalogueApi=false,sampleClassification=false,catalogueCustomValues=false}={}) {
   const pg = new PGlite();
   try {
     await pg.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
@@ -123,9 +123,14 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
       await pg.exec(await readFile(new URL("../db/staged/0031_business_documents.sql",import.meta.url),"utf8"));
       await pg.query("UPDATE public.users SET country_code='IN',phone='+919876543210' WHERE id=$1",[ownerId]);
     }
+    if(businessRetention){
+      if(!businessDocuments)throw new Error("Business retention requires the document schema.");
+      await pg.query("INSERT INTO public.schema_migrations(filename,checksum) VALUES('0031_business_documents.sql','isolated fixture') ON CONFLICT(filename) DO NOTHING");
+      await pg.exec(await readFile(new URL("../db/staged/0033_business_document_retention.sql",import.meta.url),"utf8"));
+    }
     if(businessAccess){
       if(!businessDocuments)throw new Error("Business access requires the document schema.");
-      await pg.query("INSERT INTO public.schema_migrations(filename,checksum) VALUES('0031_business_documents.sql','isolated fixture')");
+      await pg.query("INSERT INTO public.schema_migrations(filename,checksum) VALUES('0031_business_documents.sql','isolated fixture') ON CONFLICT(filename) DO NOTHING");
       await pg.exec(await readFile(new URL("../db/staged/0032_business_editor_access.sql",import.meta.url),"utf8"));
     }
     if(sampleClassification){
@@ -201,7 +206,6 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       const request=new Request(target,init);
       response=target.pathname.includes("/business-verification")
         ?await handleBusinessDocumentRoutes(request,{BUSINESS_DOCUMENTS:fixtureBusinessStorage,
-          BUSINESS_DOCUMENT_RETENTION_DAYS:"90",
           // Only synthetic fixture bytes. Never exposed or configured in production.
           BUSINESS_DOCUMENT_SCANNER:{async fetch(){return Response.json({clean:true,engine:"configured"});}}},db,user,hash)
         :target.pathname.endsWith("/orders")&&req.method==="GET"

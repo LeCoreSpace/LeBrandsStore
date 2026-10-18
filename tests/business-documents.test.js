@@ -22,7 +22,7 @@ const storage = () => {
   };
 };
 const envFor = bucket => ({
-  BUSINESS_DOCUMENTS: bucket, BUSINESS_DOCUMENT_RETENTION_DAYS: "90",
+  BUSINESS_DOCUMENTS: bucket,
   BUSINESS_DOCUMENT_SCANNER: { async fetch() { return Response.json({ clean: true, engine: "configured" }); } },
 });
 const request = (url, method, values, file) => {
@@ -74,6 +74,9 @@ test("isolated Ann business-document journey is tenant-checked, screened, revisi
     assert.ok(initial.gst.gstin);
     assert.ok(initial.gst.legal_name);
     assert.equal(initial.uploads_available, true);
+    assert.equal(initial.retention.key,"subscription_lifetime_v1");
+    assert.equal(initial.retention.automatic_deletion,false);
+    assert.equal(initial.retention_days,undefined);
     assert.equal(initial.verification, null);
     assert.deepEqual(initial.requirements.map(r => r.country_code).sort(), ["*", "IN"]);
     assert.doesNotMatch(JSON.stringify(initial), /object_key|business-verifications\/aaaaaaaa/);
@@ -131,7 +134,7 @@ test("isolated Ann business-document journey is tenant-checked, screened, revisi
     const exception = { ...india, expected_revision: 1, country_code: "GB",
       legal_name: "Example British Business", registration_type: "not_registered",
       registration_number: "", document_type: "", explanation: "Local registration is not applicable to this example business; please assess manually." };
-    const exceptionResult = await handle(pg, { BUSINESS_DOCUMENT_RETENTION_DAYS: "90" },
+    const exceptionResult = await handle(pg, {},
       request(root, "POST", exception));
     assert.equal(exceptionResult.status, 201, await exceptionResult.clone().text());
     const exceptBody = await exceptionResult.json();
