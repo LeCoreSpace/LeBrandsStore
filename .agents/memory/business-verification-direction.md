@@ -28,7 +28,7 @@ define exceptions and reviewed jurisdiction requirements before collection.
 Complete and confirm one phase before proceeding, as requested earlier.
 
 Private evidence collection must fail closed until a real security scanner and
-retention review policy are configured. Signature checks and the isolated
+the agreed retention policy are configured. Signature checks and the isolated
 preview's mock scanner are not production malware screening. Keep evidence in
 a separate private bucket, not the public product-media bucket.
 
@@ -36,10 +36,33 @@ a separate private bucket, not the public product-media bucket.
 through public media or presenting unconfigured scanning as protection would
 create a privacy and reviewer-safety risk.
 
-**How to apply:** Keep missing-configuration messages explicit. Distinguish
-retention review dates from a deletion guarantee. Do not silently enable
+**How to apply:** Keep missing-configuration messages explicit. Do not silently enable
 production uploads, substitute an echo scanner, or infer legal requirements for
 unreviewed countries.
+
+The user specified retention "for ever till the brands subscription is with us
+(for compliance)". Retain business evidence throughout the brand's subscription,
+not on an arbitrary 30–365-day deletion schedule. Post-cancellation retention
+and applicable legal holds have not been decided.
+
+**Why:** The user stated the subscription-duration retention requirement for
+compliance; this is a product policy, not a verified statement of statutory law.
+
+**How to apply:** Keep files private and retain submission/replacement history.
+Do not invent a post-cancellation deletion deadline or claim retention alone
+satisfies all jurisdiction-specific compliance obligations.
+
+Approval is manual through the planned admin dashboard. After document
+submission, the merchant should be able to continue store creation. If manual
+verification fails, suspend the store and notify the merchant to upload
+replacement evidence through dashboard Settings for verification again.
+
+**Why:** The user explicitly confirmed this review and recovery workflow.
+
+**How to apply:** Separate pending review from rejection; do not require manual
+approval merely to continue store creation. Keep the authenticated document
+replacement route available to a suspended merchant. This direction does not,
+by itself, decide publication or subscription eligibility while review is pending.
 
 Private business evidence forms must own their native text inputs rather than
 moving the entered details into Ann's shared chat composer.
