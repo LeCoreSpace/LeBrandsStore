@@ -9,6 +9,7 @@ import { attachAuraSearch, attachAuraCatalog } from "./aura-ui.js";
 import { attachAuraMotion } from "./aura-motion.js";
 import { attachAnnApplication } from "./ann-application-ui.js";
 import { attachAnnOnboarding } from "./ann-onboarding-ui.js";
+import {attachAnnPlanSelection} from "./ann-plan-ui.js";
 import { attachAnnReplyFields } from "./ann-reply-fields.js";
 import {attachAnnLanguage} from "./ann-language.js";
 import {attachAnnCatalogue} from "./catalogue-modal.js";
@@ -39,6 +40,27 @@ const businessDocuments = attachAnnBusinessDocuments({
 $("#ann-business-documents")?.addEventListener("click", () => businessDocuments.open());
 const api = boot.apiRoot || `/api/stores/${storeId}/ann`;
 const root = `/stores/${storeId}`;
+let planAccess=boot.planAccess||{available:false,enforced:false,allowed:true,name_confirmed:false};
+const planLocked=()=>planAccess.enforced===true&&planAccess.allowed!==true;
+let planUiReady=false,planAutoOpened=false;
+const planUI=attachAnnPlanSelection({
+  endpoint:boot.subscriptionEndpoint||`${api.replace(/\/ann$/,"")}/subscription`,
+  role:boot.role,getStoreName:()=>boot.store.name,
+  onStateChange:()=>queueMicrotask(()=>{
+    if(!planUiReady)return;
+    if(planUI.getState().response?.subscription)acknowledgePlan();
+    $("#ann-app .ann-stage")?.toggleAttribute("inert",planLocked());
+    $("#ann-steps")?.toggleAttribute("inert",planLocked());
+  }),
+  onAccepted:()=>acknowledgePlan(),
+});
+function acknowledgePlan(){
+    if(!planLocked())return;
+    planAccess={...planAccess,allowed:true};
+    void brandUI.refresh().then(()=>{
+      if(promptId==="plan")advance();else drawKeep();
+    }).catch(error=>say(error.message||"Plan saved. Reload Ann to continue."));
+}
 
 const UI_STEPS = [
   ["business", "Business", "Your business registration and logo"], ["selling", "Store address", "Your included store address"],
@@ -120,6 +142,7 @@ function onboardingDraft(env, { initial = false } = {}) {
   Object.assign(boot.settings, env.settings || {});
   previewSource.settings = { ...previewSource.settings, ...(env.settings || {}) };
   obDone.brand = !!name && !/^my store$/i.test(name);
+  if(env.settings?.ann_store_name_confirmed===true)planAccess.name_confirmed=true;
   obDone.gst = env.verification?.state==="verified"&&env.verification?.confirmed===true&&env.settings?.gstin_invoice_identity_locked===true;
   gstChecked=!!env.verification;
   // Brand and GST writes refresh the preview source only. Sample or own products consent is untouched.
@@ -130,7 +153,10 @@ function onboardingDraft(env, { initial = false } = {}) {
 const obCommon = { api, storeId, readOnly, onDraft: onboardingDraft, onContinue: () => advance(),
   onStateChange:()=>queueMicrotask(()=>drawComposer(true)),
   onPreview: ({ brand_name }) => { previewSource.settings = { ...previewSource.settings, brand_name }; base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" }); renderPreview(false); } };
-const brandUI = attachAnnOnboarding({ ...obCommon, mode: "brand" });
+const brandUI = attachAnnOnboarding({ ...obCommon, mode: "brand",onContinue:()=>{
+  if(planLocked()){planAutoOpened=true;promptId="plan";step="business";draw("active");planUI.open();return;}
+  advance();
+} });
 const gstUI = attachAnnOnboarding({ ...obCommon, mode: "gstin" });
 queueMicrotask(()=>{void gstUI.refresh();});
 const addressUI = attachAnnOnboarding({ ...obCommon, mode: "address", onContinue: () => { obDone.address = true; advance(); } });
@@ -147,9 +173,18 @@ $("#ann-open-browser")?.addEventListener("click",()=>{
 const app = $("#ann-app");
 const say = t => { statusEl.textContent = t; };
 function updateBusinessAccess(access){
+  if(access?.plan_access)planAccess=access.plan_access;
   editorAccess=access;businessCountryChoice=access.business_country||businessCountryChoice;
   const note=$("#ann-business-access");
   if(note){note.hidden=access.allowed;const text=access.message||"Complete your business setup in Ann.";if(note.firstChild?.nodeType===3)note.firstChild.textContent=text+" ";}
+  const recoveryButton=note?.querySelector("button");
+  if(recoveryButton){
+    const choosing=access.reason==="plan_required";
+    recoveryButton.toggleAttribute("data-ann-plan-open",choosing);
+    recoveryButton.toggleAttribute("data-business-open",!choosing);
+    recoveryButton.disabled=choosing&&!planAccess.name_confirmed;
+    recoveryButton.textContent=choosing?"Choose your Free plan":"Open business documents";
+  }
   for(const a of document.querySelectorAll('a[data-editor-href],a[href$="/editor"],a[href$="/styles"]')){
     const href=a.dataset.editorHref||a.getAttribute("href");if(!href)continue;a.dataset.editorHref=href;
     if(access.allowed){a.setAttribute("href",href);a.removeAttribute("aria-disabled");a.removeAttribute("data-editor-locked");a.removeAttribute("title");}
@@ -360,11 +395,14 @@ const composerDrafts = new Map(), composerOriginals = new Map();
 let editing = null, detail = false, navigating = false, focusComposer = false, composerKey = "";
 let promptId = "category", reached = "category";
 let businessResume=null;
-const requiredBusinessPrompt=()=>requiredAnnBusinessPrompt(editorAccess,{readOnly,gstVerified:gstChecked?obDone.gst:undefined});
+const requiredBusinessPrompt=()=>planLocked()
+  ?planAccess.name_confirmed?"plan":"store_name"
+  :requiredAnnBusinessPrompt(editorAccess,{readOnly,gstVerified:gstChecked?obDone.gst:undefined});
 const DETAIL_STEPS = ["collections", "products", "story"];
 
 function prompts() {
   const list = [{ id: "store_name", step: "business" },
+    ...(planAccess.enforced?[{id:"plan",step:"business"}]:[]),
     ...(editorAccess.available?[{id:"business_country",step:"business"}]:[]),
     ...(!editorAccess.available||editorAccess.business_country==="IN"?[{id:"gstin",step:"business"}]:[]),
     ...(editorAccess.available?[{id:"business_documents",step:"business"}]:[]),
@@ -423,6 +461,7 @@ function def(p) {
       return { kind: "list", list: "idea", label: "Product idea", q: `What goes in ${col?.name || "this collection"}? Pick up to five products, or type your own.`, ph: "For example, Soft cotton tote", max: 120, items, col: p.col, reply: items.map(([x]) => x.name).join(", "), full: items.length >= 5 || (a.product_ideas || []).length >= 50, sugg: suggestions() };
     }
     case "store_name": return { kind: "onboard", mode: "brand", label: "Store name", q: "Hi, I'm Ann! Let's bring your store to life. What's your brand name?", max: 40, ph: "Type your brand name", reply: brandUI.summary() };
+    case "plan": return {kind:"plan",label:"Store plan",q:"Choose your Free plan before we continue. Your 30 live days begin only when your store is first published.",reply:planAccess.allowed?"Free plan selected":""};
     case "business_country":return {kind:"business-country",label:"Business country",q:"Which country is your business registered in? This decides the registration evidence you need. It does not change your account country or past invoices.",reply:businessCountries.find(c=>c.code===editorAccess.business_country)?.name||""};
     case "business_documents":return {kind:"business-documents",label:"Business documents",q:editorAccess.allowed
       ?editorAccess.status==="approved"?"Your business documents are approved. You can continue designing.":"Your evidence is submitted. You can continue designing while the standard document review is pending."
@@ -496,7 +535,9 @@ function inlineControls(p, d) {
   const detailLink = DETAIL_STEPS.includes(p.step) && d.kind !== "info" ? `<button type="button" class="ann-link" data-toggle-detail aria-expanded="${detail}">${planning ? detail ? "Close planning notes" : "Edit planning notes" : detail ? "Close detailed editor" : "Open detailed editor"}</button>` : "";
   const tail=detailLink+(p.step==="products"&&p.id!=="catalogue"&&answers.product_ideas?.length?`<div class="ann-comp-row"><button type="button" class="ann-btn" data-go-prompt="catalogue"${dis}>Set prices and save products</button><p class="ann-note">Ready with your first product? Confirm its price, tax and stock next. You can add more products and details later.</p></div>`:"");
   let body = "", name = d.label;
-  if(d.kind==="business-country"){
+  if(d.kind==="plan"){
+    body=`<div class="ann-comp-row"><button type="button" class="ann-btn" data-ann-plan-open>${planAccess.allowed?"View your plan":"Choose your Free plan"}</button>${planAccess.allowed?'<button type="button" class="ann-btn alt" data-ann-plan-continue>Continue with Ann</button>':""}<p class="ann-note">${boot.role==="owner"?"No card or automatic charge. Closing the window does not accept the plan.":"Only the store owner can choose a plan."}</p></div>`;
+  }else if(d.kind==="business-country"){
     body=`<label>Business country<select data-ann-business-country aria-label="Business country"${readOnly||countrySaving||editorAccess.country_locked?" disabled":""}><option value="">Choose your business country</option>${businessCountries.map(c=>`<option value="${esc(c.code)}"${businessCountryChoice===c.code?" selected":""}>${esc(c.name)}</option>`).join("")}</select></label><p class="ann-note">Country is locked after evidence submission or invoice-address confirmation.</p><button type="button" class="ann-btn" data-confirm-business-country${readOnly||countrySaving||!businessCountryChoice?" disabled":""}>${countrySaving?"Saving...":"Confirm country and continue"}</button>`;
   }else if(d.kind==="business-documents"){
     body=`<div class="ann-comp-row"><button type="button" class="ann-btn" data-business-open>Open business documents</button><button type="button" class="ann-btn alt" data-continue${!editorAccess.allowed&&!readOnly?" disabled":""}>Continue</button></div>`;
@@ -548,8 +589,8 @@ function drawComposer(force) {
   const val = composerDrafts.get(key) ?? original;
   const area = linked ? linked.area : !choiceLike && (editing ? field === "description" : d.area);
   const full = !editing && d.kind === "list" && d.full;
-  const idle = !linked&&!onboarding&&["info", "review", "sections", "catalogue", "launch", "logo","business-country","business-documents"].includes(d.kind);
-  const off = readOnly || full || idle || linked?.disabled || onboarding?.disabled;
+  const idle = !linked&&!onboarding&&["info", "review", "sections", "catalogue", "launch", "logo","business-country","business-documents","plan"].includes(d.kind);
+  const off = readOnly || full || idle || (planLocked()&&d.mode!=="brand") || linked?.disabled || onboarding?.disabled;
   const ph = readOnly ? "Viewing only" : linked ? linked.placeholder : onboarding ? onboarding.placeholder : full ? "Limit reached" : idle ? "Choose an option above to continue" : choiceLike ? `Type your ${d.label.toLowerCase()} choice` : editing ? (editing.follow ? "Type a note, or skip it above" : "Type your change") : d.ph || "Type your answer";
   const lab = linked?.label || onboarding?.label || (editing ? (editing.follow ? "Optional note" : editing.field === "name" ? "New name" : "New note") : d.label);
   box.innerHTML = `<form class="ann-form ann-compose" data-composer novalidate><label class="ann-sr" id="ann-cq" for="ann-input">Reply to Ann: ${esc(lab)}</label>
@@ -602,6 +643,7 @@ function scrollActive() {
   log.scrollTo({ top: log.scrollHeight, behavior });
 }
 function draw(mode = "keep") {
+  if(planLocked()){promptId=requiredBusinessPrompt();step="business";editing=null;detail=false;}
   const position=annBusinessPosition({promptId,step,resume:businessResume},prompts(),requiredBusinessPrompt(),{setupLocked:setupStepsLocked});
   if(position.promptId!==promptId){editing=null;detail=false;}
   ({promptId,step}=position);businessResume=position.resume;
@@ -610,11 +652,23 @@ function draw(mode = "keep") {
   const markup = timeline() + (detail && DETAIL_STEPS.includes(step) ? detailHtml() : "");
   if (markup !== logMarkup) { log.innerHTML = markup; logMarkup = markup; }
   drawSteps(); drawFoot(); drawComposer(false); applicationUI.mount(); readinessUI.mount(); essentialsUI.mount(); brandingUI.mount(); Object.values(obUIs).forEach(u => u.mount());
+  if(planUiReady){
+    $("#ann-app .ann-stage")?.toggleAttribute("inert",planLocked());
+    $("#ann-steps")?.toggleAttribute("inert",planLocked());
+    if(planLocked()&&planAccess.name_confirmed&&promptId==="plan"&&!planAutoOpened){
+      planAutoOpened=true;queueMicrotask(()=>{if(!planUI.getState().opened)planUI.open();});
+    }
+  }
   if (mode === "active") scrollActive(); else log.scrollTop = y;
 }
 const drawKeep = () => draw("keep");
 async function toPrompt(id) {
   if (navigating) return;
+  if(planLocked()){
+    planAutoOpened=true;
+    promptId=planAccess.name_confirmed?"plan":"store_name";step="business";editing=null;detail=false;
+    draw("active");if(promptId==="plan")planUI.open();return false;
+  }
   let ps = prompts(); const ci = curIdx(ps);
   let ti = ps.findIndex(p => p.id === id); if (ti < 0) return;
   if (isSetupStepLocked(ps[ti].step)&&id!==requiredBusinessPrompt()) { say("Business and store address are complete. Continue customising your store from Style."); return; }
@@ -653,11 +707,12 @@ function chooseStyle(value) {
 function advance() {
   const ps = prompts(), i = curIdx(ps), ri = reachedIdx(ps);
   let n = i + 1;
+  if(ps[n]?.id==="plan"&&planAccess.allowed)n++;
   if (i < ri) while (n < ri && def(ps[n]).reply) n++;
   return toPrompt(ps[Math.min(n, ps.length - 1)].id);
 }
 function edit(mutator, redraw = false) {
-  if (readOnly) return;
+  if (readOnly||planLocked()) return;
   mutator(); touched = !designUI?.active(); designUI?.planChanged(); schedule();
   drawFoot(); drawSteps();
   if (redraw) drawKeep();
@@ -773,6 +828,8 @@ function reviewStep() {
 
 /* ---------- events ---------- */
 document.addEventListener("click", e => {
+  if(e.target.closest?.("[data-ann-plan-continue]")){e.preventDefault();if(!planLocked())advance();return;}
+  if(e.target.closest?.("[data-ann-plan-open]")){e.preventDefault();planUI.open();return;}
   const t = e.target.closest("button, a"); if (!t || t.tagName === "A") return;
   const d = t.dataset;
   if("businessOpen"in d)return businessDocuments.open();
@@ -899,6 +956,7 @@ async function send(patch, nextStep, expected) {
   return { res, body };
 }
 function save(nextStep = step, forceRevision, { automatic = false } = {}) {
+  if(planLocked())return Promise.resolve(false);
   const attempt = () => automatic && (autosavePaused || conflict) ? false : doSave(nextStep, forceRevision);
   const run = queue.then(attempt, attempt);
   queue = run.catch(() => false);
@@ -946,7 +1004,7 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || businessDocuments.hasUnsavedChanges() || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || Object.values(obUIs).some(u => u.hasUnsavedChanges()) || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || planUI.hasUnsavedChanges() || businessDocuments.hasUnsavedChanges() || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || Object.values(obUIs).some(u => u.hasUnsavedChanges()) || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
 const replyFields=attachAnnReplyFields({onChange:()=>drawComposer(true)});
@@ -954,5 +1012,6 @@ if ((window.innerWidth || 1280) < 700) { canvas.dataset.device = "mobile"; docum
 if (clearedNote.length) notice = "Some earlier choices were cleared because they no longer matched.";
 if (answers.subcategory_id && step === "products") loadAttrs(answers.subcategory_id);
 foot.innerHTML = `<div id="ann-composer"></div><div id="ann-savebar"></div>`;
+planUiReady=true;
 draw("active"); syncSwitch(); renderPreview(false); fit();
 say(session ? "Your saved plan is restored." : "Ann is ready. Nothing is saved until you save the plan or finish a stage.");

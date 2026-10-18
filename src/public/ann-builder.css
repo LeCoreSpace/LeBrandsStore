@@ -413,3 +413,50 @@ body.ann-browser-shell{margin:0;height:100dvh;display:flex;flex-direction:column
   .ann .ann-pagebar{padding:0 12px;gap:10px}
   .ann .ann-pagebar .ann-tab{min-height:44px}
 }
+
+/* Plan selection modal */
+.ann-plan-dialog{--ink:#38282b;--muted:#6f5f62;--line:#d8d1c4;--a:#6b1735;width:min(560px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:0;border:1px solid #d8d2cf;border-radius:18px;background:#fff;color:var(--ink);box-shadow:0 24px 70px rgba(56,40,43,.28);overflow:hidden;font:14px/1.5 system-ui,sans-serif;animation:annPlanIn .22s ease both}
+.ann-plan-dialog[open]{display:flex;flex-direction:column}
+.ann-plan-dialog::backdrop{background:rgba(32,22,30,.5);backdrop-filter:blur(3px)}
+.ann-plan-dialog *{box-sizing:border-box}
+.ann-plan-dialog:focus{outline:0}
+@keyframes annPlanIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.ann-plan-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 22px 14px;border-bottom:1px solid var(--line)}
+.ann-plan-head h2{margin:2px 0 0;font:500 24px/1.15 Georgia,serif;letter-spacing:-.02em;overflow-wrap:anywhere}
+.ann-plan-kicker{margin:0;font:700 11px system-ui,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.ann-plan-x{flex:none;width:40px;height:40px;border:1px solid var(--line);border-radius:50%;background:#fff;color:var(--ink);font-size:22px;line-height:1;cursor:pointer;transition:background .15s,border-color .15s}
+.ann-plan-x:hover:not(:disabled){background:#f7f4f5;border-color:var(--a)}
+.ann-plan-x:disabled{opacity:.45;cursor:not-allowed}
+.ann-plan-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:18px 22px;display:grid;gap:14px;align-content:start}
+.ann-plan-card{border:1px solid var(--line);border-radius:16px;padding:16px;background:#fcfaf9;display:grid;gap:12px}
+.ann-plan-cardhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.ann-plan-card h3{margin:2px 0 0;font:500 28px/1 Georgia,serif}
+.ann-plan-price{margin:0;display:grid;text-align:right}.ann-plan-price strong{font:600 22px Georgia,serif}.ann-plan-price span{font-size:12px;color:var(--muted)}
+.ann-plan-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ann-plan-ent{display:flex;gap:10px;align-items:flex-start;font-size:13px}
+.ann-plan-mark{flex:none;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font:700 13px system-ui,sans-serif;background:var(--a);color:#fff}
+.ann-plan-ent[data-on=no]{color:var(--muted)}.ann-plan-ent[data-on=no] .ann-plan-mark{background:#ece6e8;color:var(--muted)}
+.ann-plan-badge{margin:0;padding:4px 12px;border-radius:999px;background:#eaf4ee;color:#1f5a3b;font:700 12px system-ui,sans-serif;text-transform:capitalize}
+.ann-plan-badge:not([data-s=active]):not([data-s=trialing]){background:#fff7ed;color:#7c3a06}
+.ann-plan-dl{margin:0;display:grid}.ann-plan-dl div{display:grid;grid-template-columns:140px 1fr;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+.ann-plan-dl dt{font:700 11px system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.ann-plan-dl dd{margin:0;overflow-wrap:anywhere}
+.ann-plan-agree{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid var(--line);border-radius:14px;cursor:pointer;font-size:13px;transition:border-color .15s,background .15s}
+.ann-plan-agree:hover{border-color:var(--a);background:#f7f4f5}
+.ann-plan-agree input{width:20px;height:20px;margin:0;flex:none;accent-color:var(--a)}
+.ann-plan-agree:has(input:focus-visible){outline:3px solid var(--a);outline-offset:2px}
+.ann-plan-error,.ann-plan-callout,.ann-plan-ok{margin:0;padding:10px 12px;border-left:3px solid #a02020;border-radius:0 10px 10px 0;background:#fdf1f1;color:#7a1818;font-size:13px}
+.ann-plan-callout{border-color:#b45309;background:#fff7ed;color:#7c3a06}
+.ann-plan-ok{border-color:#1f7a4d;background:#eaf4ee;color:#1f5a3b}
+.ann-plan-note,.ann-plan-later{margin:0;font-size:12px;color:var(--muted)}
+.ann-plan-later{padding-top:10px;border-top:1px solid var(--line)}
+.ann-plan-foot{display:flex;justify-content:space-between;align-items:center;gap:10px 16px;flex-wrap:wrap;padding:12px 22px 16px;border-top:1px solid var(--line);background:#fff}
+.ann-plan-state{margin:0;font-size:12px;color:var(--muted);flex:1;min-width:140px}
+.ann-plan-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.ann-plan-dialog .ann-btn{border-radius:999px;justify-content:center;transition:background .15s,border-color .15s,transform .15s}
+.ann-plan-dialog .ann-btn:not(.alt){background:var(--a);border-color:var(--a)}
+.ann-plan-dialog .ann-btn.alt:hover:not(:disabled){background:#f7f4f5;border-color:var(--a)}
+.ann-plan-dialog .ann-btn:active:not(:disabled){transform:scale(.97)}
+.ann-plan-dialog :is(button,input,a):focus-visible{outline:3px solid var(--a);outline-offset:2px}
+.ann-plan-skel{display:grid;gap:10px}.ann-plan-skel i{display:block;height:56px;border-radius:12px;background:linear-gradient(90deg,#f1efef,#f8f6f6,#f1efef);background-size:200% 100%;animation:annSk 1.2s linear infinite}
+@media(max-width:600px){.ann-plan-dialog{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border:0;border-radius:0}.ann-plan-head,.ann-plan-body,.ann-plan-foot{padding-inline:16px}.ann-plan-btns{width:100%}.ann-plan-btns .ann-btn{flex:1}.ann-plan-dl div{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){.ann-plan-dialog,.ann-plan-skel i{animation:none}.ann-plan-dialog .ann-btn,.ann-plan-agree,.ann-plan-x{transition:none}}

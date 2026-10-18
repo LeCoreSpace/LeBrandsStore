@@ -9,6 +9,7 @@ import { annPreviewFixture } from "./ann-preview-fixture.js";
 import {businessReviewPreview} from "./business-review-preview-fixture.js";
 import {skuCheckoutPreview} from "./sku-checkout-preview-fixture.js";
 import {inventoryPreview} from "./inventory-preview-fixture.js";
+import {annPlanPreview} from "./ann-plan-preview-fixture.js";
 
 const types = { js:"text/javascript; charset=utf-8", css:"text/css; charset=utf-8",
   svg:"image/svg+xml", png:"image/png", jpg:"image/jpeg", jpeg:"image/jpeg",
@@ -47,6 +48,7 @@ export function createNativePreview(root, runtime = process.env) {
     [method,async (...args)=>(await bucket())[method](...args)]));
 
   const middleware = async (req, res, next) => {
+    if(await annPlanPreview(req,res))return;
     if(await inventoryPreview(req,res,env.REPLIT_DEV_DOMAIN?`https://${env.REPLIT_DEV_DOMAIN}`:undefined))return;
     if(await skuCheckoutPreview(req,res,env.REPLIT_DEV_DOMAIN?`https://${env.REPLIT_DEV_DOMAIN}`:undefined))return;
     if(await businessReviewPreview(req,res))return;

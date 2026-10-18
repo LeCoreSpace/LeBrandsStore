@@ -13,7 +13,8 @@ const messages={
   "22023":[400,"Accept the current Free plan terms before continuing."],
   PBF01:[409,"The Free offer is not available for this store or country. No subscription was created."],
   PBF02:[409,"This previously published store needs the existing-store transition. Its current service is unchanged."],
-  PBF03:[409,"The plan offer changed. Reload it before accepting."]
+  PBF03:[409,"The plan offer changed. Reload it before accepting."],
+  PBF04:[409,"Confirm your store name in Ann before choosing a plan."]
 };
 export async function handleBillingRoutes(request,db,user,tokenHash) {
   const match=new URL(request.url).pathname.match(pattern);

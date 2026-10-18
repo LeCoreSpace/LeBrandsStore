@@ -1,4 +1,5 @@
 import { verificationState } from "../gstin/service.js";
+import {annPlanAccess,PLAN_REQUIRED_MESSAGE} from "../billing/build-access.js";
 export const ACCESS_MESSAGES = {
   country_required: "Confirm your business country in Ann before editing your store.",
   gst_required: "Verify your GSTIN and confirm the registered invoice address in Ann before editing your store.",
@@ -21,7 +22,9 @@ export async function businessEditorAccess(tx,id,tokenHash) {
     if(gst.state!=="verified"||!gst.confirmed||settings.gstin_invoice_identity_locked!==true)
       Object.assign(access,{allowed:false,reason:"gst_required"});
   }
-  return {...access,message:ACCESS_MESSAGES[access.reason]||""};
+  const plan=await annPlanAccess(tx,id,tokenHash);
+  return {...access,...(!plan.allowed?{allowed:false,reason:"plan_required"}:{}),
+    plan_access:plan,message:!plan.allowed?PLAN_REQUIRED_MESSAGE:ACCESS_MESSAGES[access.reason]||""};
 }
 export async function requireBusinessEditorAccess(tx,id,tokenHash) {
   const access=await businessEditorAccess(tx,id,tokenHash);

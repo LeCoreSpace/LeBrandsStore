@@ -1,3 +1,4 @@
+import {requireAnnPlan} from "../billing/build-access.js";
 import { loadDraft, saveSetup } from "./repository.js";
 import { draftFingerprint } from "./ann-application.js";
 import { settingsPatch, badInput } from "./input.js";
@@ -39,6 +40,7 @@ export async function saveAnnOnboarding(tx,id,userId,body,tokenHash) {
     body.confirm!==true||!/^[a-f0-9]{64}$/.test(body.expected_draft||"")||
     !["brand_name","subdomain"].some(k=>Object.hasOwn(body,k)))throw badInput("Confirm your brand name or included store address.");
   await tx`SELECT store_id FROM public.stores WHERE store_id=${id} FOR UPDATE`;
+  if("subdomain"in body)await requireAnnPlan(tx,id,tokenHash);
   await tx`SELECT store_id FROM public.store_setup WHERE store_id=${id} FOR UPDATE`;
   const current=await loadDraft(tx,id);
   if(await draftFingerprint(current)!==body.expected_draft)throw Object.assign(new Error("Your draft changed in another window. Reload it before saving. Your entry is kept."),{status:409});
@@ -46,6 +48,8 @@ export async function saveAnnOnboarding(tx,id,userId,body,tokenHash) {
   if("brand_name"in values&&(typeof values.brand_name!=="string"||values.brand_name.trim().length<2||values.brand_name.trim().length>40))
     throw badInput("Enter a brand name from 2 to 40 characters.");
   const settings=settingsPatch(values);
+  // A real persisted confirmation, not a name inferred from a default label.
+  if("brand_name"in values)settings.ann_store_name_confirmed=true;
   await saveSetup(tx,id,settings,undefined,{confirmAddress:"subdomain"in values});
   await audit(tx,id,userId,"ann.onboarding_saved","store",id,{fields:Object.keys(values)});
   return prepareAnnOnboarding(tx,id,tokenHash);

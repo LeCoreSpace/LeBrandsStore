@@ -17,6 +17,7 @@ export function renderAnnBuilder(data = {}, user = null, options = {}) {
     aura_skeleton_enabled: data.aura_skeleton_enabled === true, aura_starter_enabled: data.aura_starter_enabled === true,
     role: data.role || "", canWrite,
     businessAccess:data.business_access||null,businessCountries:data.business_countries||[],
+    planAccess:data.business_access?.plan_access||null,
     apiRoot: typeof options.apiRoot === "string" && /^\/[A-Za-z0-9_\/.%-]*$/.test(options.apiRoot) ? options.apiRoot.replace(/\/+$/, "") : `/api/stores/${id}/ann`,
     catalogueRoot: typeof options.catalogueRoot === "string" && /^\/[A-Za-z0-9_\/.%-]*$/.test(options.catalogueRoot) ? options.catalogueRoot.replace(/\/+$/, "") : `/stores/${id}`,
     sessionResponse: options.sessionResponse || { session: null, preview: null, cleared_fields: [] },
@@ -31,7 +32,7 @@ ${accountHeader(user)}
     <div><p class="ann-eyebrow">Your store, built with Ann</p><h1>Build ${esc(store.name || "your store")} with Ann</h1></div>
     <nav class="ann-links" aria-label="Store builder"><button type="button" id="ann-business-documents">Business documents</button><a href="${root}">Dashboard</a><a href="${root}/editor">Theme editor</a><a href="${root}/build/ann?launch=1">Store connections</a></nav>
   </header>
-  <aside id="ann-business-access" class="ann-note" role="status"${data.business_access?.allowed===false?"":" hidden"}>${esc(data.business_access?.message||"")} <button type="button" class="ann-link" data-business-open>Open business documents</button></aside>
+  <aside id="ann-business-access" class="ann-note" role="status"${data.business_access?.allowed===false?"":" hidden"}>${esc(data.business_access?.message||"")} ${data.business_access?.reason==="plan_required"?`<button type="button" class="ann-link" data-ann-plan-open${data.business_access?.plan_access?.name_confirmed?"":" disabled"}>Choose your Free plan</button>`:'<button type="button" class="ann-link" data-business-open>Open business documents</button>'}</aside>
   <div class="ann-switch" role="group" aria-label="Show">
     <button type="button" data-view-switch="chat" aria-pressed="true">Conversation</button>
     <button type="button" data-view-switch="canvas" aria-pressed="false">Store preview</button>

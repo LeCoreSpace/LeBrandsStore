@@ -1,6 +1,7 @@
 import { renderWizard } from "../ui/wizard.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import {requireBusinessEditorAccess} from "./business-access.js";
+import {requireAnnPlan} from "../billing/build-access.js";
 import { UUID, validateProduct } from "../public/validation.js";
 import { settingsPatch, progressPatch, productPatch, readJson, readBody, badInput } from "./input.js";
 import { validateUpload } from "./media.js";
@@ -52,6 +53,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
       (action === "policies" && verb === "POST" && child !== "generate")) return json({ error: "Method or page not available." }, 405);
     // Authorize before reading or storing an upload. No bytes reach R2 for outsiders.
     const result = await db.withMemberStore(id, tokenHash, async (tx) => {
+      if(verb!=="GET"&&verb!=="HEAD")await requireAnnPlan(tx,id,tokenHash);
       if(action==="catalogue"){
         await dashboardAccess(tx,id,user.id,true);
         return addStoreVariantValue(tx,id,tokenHash,await readJson(request));

@@ -9,6 +9,7 @@ import { annReady, annReference, loadAnnSession, annSessionResponse } from "./an
 import { prepareAnnApplication, applyAnnApplication } from "./ann-application.js";
 import { prepareAnnReadiness, saveAnnReadiness } from "./ann-readiness.js";
 import { handleStoreRoutes } from "./routes.js";
+import {requireAnnPlan} from "../billing/build-access.js";
 import { prepareAnnDesign, saveAnnDesign } from "./ann-design.js";
 import { prepareAnnLaunch, saveAnnLaunch } from "./ann-launch.js";
 import { catalogueReference } from "./catalogue-classification.js";
@@ -39,6 +40,7 @@ export async function handleAnnRoutes(request, env, db, user, tokenHash) {
     }
     const data = await db.withMemberStore(storeId, tokenHash, async tx => {
       await dashboardAccess(tx, storeId, user.id, writing);
+      if(writing&&!["onboarding","country"].includes(action))await requireAnnPlan(tx,storeId,tokenHash);
       if(writing&&["design","application"].includes(action))await requireBusinessEditorAccess(tx,storeId,tokenHash);
       if (action === "design") return writing
         ? saveAnnDesign(tx, storeId, user.id, await readJson(request), request.method === "POST")

@@ -73,7 +73,7 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
     if (off() || !env) return;
     const problem = nameProblem(); if (problem) { error = problem; draw(); return; }
     const n = displayName().trim();
-    if (n === env.store?.name) { note = "Name saved."; return void onContinue?.(); }
+    if (n === env.store?.name && env.settings?.ann_store_name_confirmed === true) { note = "Name saved."; return void onContinue?.(); }
     busy = "brand"; error = ""; draw();
     try {
       const { res, result } = await call(url, "PATCH", { expected_draft: env.expected_draft, confirm: true, brand_name: n });
