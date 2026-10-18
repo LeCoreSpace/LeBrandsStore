@@ -14,28 +14,36 @@ export function attachShowcaseInteractions(doc, catalogue, bag, navigate) {
   const win = doc.defaultView;
   const reduced = Boolean(win?.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
   const cleanup = [];
+  // Cover sections without existing reveal annotations, without nesting
+  // transforms around already-animated content or inline editing overlays.
+  doc.querySelectorAll(".sc-main > section,.sc-main > main > section").forEach(section => {
+    if (!section.hasAttribute("data-showcase-reveal") && !section.querySelector("[data-showcase-reveal]")) {
+      section.setAttribute("data-showcase-reveal", "");
+      section.dataset.revealKind = "rise";
+    }
+  });
   const targets = [...doc.querySelectorAll("[data-showcase-reveal]")];
   if (!reduced && win?.IntersectionObserver && targets.length) {
     try {
       const observer = new win.IntersectionObserver(entries => {
-        for (const entry of entries) if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
-          // Fully clipping a target before observing it removes its intersection
-          // area. Start the clip reveal only AFTER entry, never while waiting.
-          if (entry.target.dataset.revealKind === "clip") {
-            try {
-              entry.target.animate?.(
-                [{ clipPath: "inset(0 0 100% 0)" }, { clipPath: "inset(0 0 0 0)" }],
-                { duration: 900, easing: "cubic-bezier(.2,.7,.2,1)" },
-              );
-            } catch { /* The already-visible fallback remains readable. */ }
+        for (const entry of entries) {
+          // Do not hide an active field when its section crosses the viewport.
+          const focused = entry.target.contains?.(doc.activeElement);
+          if (!entry.isIntersecting && !focused) {
+            entry.target.classList.remove("is-visible");
+            continue;
           }
+          entry.target.classList.add("is-visible");
+          // One CSS transition owns each target. A second clip/WAAPI animation
+          // would double the movement and clip inline selection outlines.
         }
-      }, { threshold: 0.08, rootMargin: "0px 0px -3% 0px" });
+      }, { threshold: 0, rootMargin: "0px 0px -24px 0px" });
       for (const target of targets) observer.observe(target);
       doc.body.classList.add("sc-motion-ready");
       cleanup.push(() => observer.disconnect());
+      doc.addEventListener?.("focusin", event => {
+        event.target.closest?.("[data-showcase-reveal]")?.classList.add("is-visible");
+      });
     } catch {
       // Failed enhancement must not hide content.
       doc.body.classList.remove("sc-motion-ready");

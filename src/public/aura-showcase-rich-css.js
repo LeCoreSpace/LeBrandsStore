@@ -19,10 +19,10 @@ export const RICH_CSS = `
 /* compact product-page blocks */
 .sc-prod-extra .sc-sec{padding-inline:0}.sc-p-product .sc-sec{padding-inline:1.5rem}.sc-p-product .sc-info .sc-sec{padding:0}.sc-p-product .sc-info .sc-offers{grid-template-columns:1fr}
 /* reveal: content is visible by default; hidden only once the trusted parent adds .sc-motion-ready */
-.sc-motion-ready [data-showcase-reveal]{opacity:0;transition:opacity .9s cubic-bezier(.2,.7,.2,1),translate .9s cubic-bezier(.2,.7,.2,1),scale .9s cubic-bezier(.2,.7,.2,1),clip-path 1.1s cubic-bezier(.2,.7,.2,1);transition-delay:calc(var(--i,0)*80ms);translate:0 22px}
-.sc-motion-ready [data-showcase-reveal][data-reveal-kind=clip]{clip-path:none}.sc-motion-ready [data-showcase-reveal][data-reveal-kind=pop]{translate:0 12px;scale:.93}.sc-motion-ready [data-showcase-reveal][data-reveal-kind=slide]{translate:-48px 0}.sc-motion-ready [data-showcase-reveal][data-reveal-kind=fade]{translate:0 0;transition-duration:1.6s}.sc-motion-ready [data-showcase-reveal][data-reveal-kind=drop]{translate:0 -14px}
-.sc-motion-ready [data-showcase-reveal].is-visible{opacity:1;translate:0 0;scale:1;clip-path:inset(-60px)}
-.sc-architectural.sc-motion-ready [data-showcase-reveal]{transition-timing-function:steps(6,end)}
+.sc-motion-ready [data-showcase-reveal]{opacity:0;transition:opacity .85s cubic-bezier(.22,1,.36,1),translate .85s cubic-bezier(.22,1,.36,1),scale .85s cubic-bezier(.22,1,.36,1);transition-delay:clamp(0ms,calc(var(--i,0)*55ms),165ms);translate:0 24px}
+.sc-motion-ready [data-showcase-reveal][data-reveal-kind=clip]{clip-path:none}.sc-motion-ready [data-showcase-reveal][data-reveal-kind=pop]{translate:0 18px;scale:.985}.sc-motion-ready [data-showcase-reveal][data-reveal-kind=slide]{translate:-24px 0}.sc-motion-ready [data-showcase-reveal][data-reveal-kind=fade]{translate:0 12px}.sc-motion-ready [data-showcase-reveal][data-reveal-kind=drop]{translate:0 -18px}
+.sc-motion-ready [data-showcase-reveal].is-visible,.sc-motion-ready [data-showcase-reveal]:focus-within{opacity:1;translate:0 0;scale:1;clip-path:none}
+.sc-motion-ready [data-showcase-reveal]:focus-within{transition:none}
 /* hero entrance (time based, safe without observers) and ambient motion */
 @media (prefers-reduced-motion:no-preference){.sc-p-home>section:first-child>*{animation:var(--rv,sc-rise) 1.1s cubic-bezier(.2,.7,.2,1) both}.sc-p-home>section:first-child>*:nth-child(2){animation-delay:.12s}.sc-p-home>section:first-child>*:nth-child(3){animation-delay:.24s}
 .sc-ticker:hover div,.sc-ticker:focus-within div,.bq-float:hover,.bq-float:focus-visible{animation-play-state:paused}

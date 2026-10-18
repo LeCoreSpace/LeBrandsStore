@@ -119,8 +119,7 @@ test("trusted controls operate carousels, exact-ID bundles and comparison slider
 test("reveal enhancement is progressive, idempotent and disconnects cleanly", () => {
   let reveal, disposed = false, cleanup;
   const target = node({ revealKind: "clip" }), body = node();
-  let clipAnimation;
-  target.animate = frames => { clipAnimation = frames; };
+  target.animate = () => { throw new Error("Do not stack a second animation over CSS reveals"); };
   body.dataset = { showcase: "editorial" };
   const doc = { body, querySelectorAll: selector => selector === "[data-showcase-reveal]" ? [target] : [],
     defaultView: {
@@ -138,7 +137,10 @@ test("reveal enhancement is progressive, idempotent and disconnects cleanly", ()
   assert.ok(body.classList.names.has("sc-motion-ready"));
   reveal([{ isIntersecting: true, target }]);
   assert.ok(target.classList.names.has("is-visible"));
-  assert.equal(clipAnimation[0].clipPath, "inset(0 0 100% 0)");
+  reveal([{ isIntersecting: false, target }]);
+  assert.ok(!target.classList.names.has("is-visible"));
+  reveal([{ isIntersecting: true, target }]);
+  assert.ok(target.classList.names.has("is-visible"), "scrolling back reveals the section again");
   cleanup();
   assert.equal(disposed, true);
 });
