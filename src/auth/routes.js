@@ -3,6 +3,7 @@ import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
 import { validateRegistration } from "../public/registration-validation.js";
 import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
+import {handleBillingRoutes,isBillingRoute} from "../billing/routes.js";
 import { handlePageRoutes, isPageRoute } from "../store/page-routes.js";
 import {handleGSTINRoutes,isGSTINRoute} from "../gstin/routes.js";
 import {handleBusinessDocumentRoutes,isBusinessDocumentRoute} from "../store/business-document-routes.js";
@@ -95,6 +96,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     if (user?.must_change_password && path !== "/account" && path !== "/logout") {
       return path.startsWith("/api/") ? json({ available: false, error: "Change your password first." }, 403) : redirect("/account");
     }
+    if (isBillingRoute(path)) return await handleBillingRoutes(request,db,user,tokenHash);
     if (isBusinessReviewRoute(path)) return await handleBusinessReview(request,env,db,user,tokenHash);
     if (isPageRoute(path)) return await handlePageRoutes(request, env, db, user, tokenHash);
     if (isGSTINRoute(path)) return await handleGSTINRoutes(request,env,db,user,tokenHash);
