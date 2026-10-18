@@ -1,9 +1,11 @@
-# LeBrands.Store subscription commercial proposal
+# LeBrands.Store subscription commercial baseline
 
-**Status: draft for owner approval. No prices, entitlements, migrations, subscriptions or charges are enabled by this document.**
+**Status: confirmed for implementation planning, following the owner's instruction
+to proceed with Phase 1. The baseline is finalised with the open items below.
+This is not authorisation to enable live offers, migrations, subscriptions or charges.**
 
-This is the Phase 1 proposal. The companion JSON records the same proposed
-commercial values, but is documentation only and is not imported by the app.
+This is the Phase 1 commercial baseline. The companion JSON records the same
+planning values, but is documentation only and is not imported by the app.
 “Implemented” below means code was found during a static audit, not that a
 production journey or a merchant's external account has been verified.
 
@@ -28,9 +30,9 @@ The Free plan needs neither a payment mandate nor a provider transaction.
 
 ## 2. Proposed India price and allowance matrix
 
-Prices are the existing proposed public prices. All limits in the following
-table other than the previously agreed Free allowance are recommendations for
-approval, not existing billing enforcement or capacity guarantees.
+Prices match the existing proposed public prices. The following values form the
+implementation-planning baseline, not existing billing enforcement, a live offer
+or capacity guarantees. Capacity verification remains required before selling them.
 
 | Commercial item | Free | Launch | Grow | Scale | Flagship |
 | --- | --- | --- | --- | --- | --- |
@@ -68,9 +70,9 @@ approval, not existing billing enforcement or capacity guarantees.
 ### Core feature entitlements
 
 The owner requires the following capabilities to appear as explicit plan features,
-not merely as audit notes. Proposed distribution: include this core set in Free,
+not merely as audit notes. Planning baseline: include this core set in Free,
 Launch, Grow, Scale and Flagship, subject to each plan's duration and allowances.
-Tier distribution remains part of the commercial proposal awaiting approval.
+Implementation readiness and the exact Free LeBrands.Space package remain separate.
 
 | Plan feature | Free | Launch | Grow | Scale | Flagship |
 | --- | --- | --- | --- | --- | --- |
@@ -308,15 +310,29 @@ https://razorpay.com/docs/payments/subscriptions/faqs/
 
 ## 10. Approval record
 
-- Required core feature list: **confirmed by owner**. Tier distribution, package
-  details and implementation readiness remain explicit in the proposal.
-- Commercial matrix: **awaiting owner approval**.
-- India-only launch and tax-exclusive display: **recommended, not approved**.
-- Paid SKU/product/staff/media limits: **recommended, not approved**.
-- Exact upgrade/refund/non-payment and legacy-transition rules: **recommended, not approved**.
-- Provider: **unresolved**.
+- Required core feature list and all-plan distribution: **confirmed for implementation planning**.
+- Commercial matrix: **confirmed as the Phase 1 planning baseline**.
+- India-only launch and tax-exclusive display: **planning baseline; live offer not authorised**.
+- Paid SKU/product/staff/media limits: **planning baseline; capacity and enforcement not verified**.
+- Upgrade/refund/non-payment and legacy-transition rules: **planning baseline; legal and release review required before activation**.
+- Free LeBrands.Space package: **unresolved; placement itself is a required feature**.
+- Provider: **Razorpay remains the user's requested provider; new platform-subscription setup is unresolved**.
 - Tax/legal and operational fulfilment checks: **required before live charges**.
 - Billing enabled: **no**.
 
 Approval of commercial terms does not approve publication, a database migration,
 provider connection, live payment or automatic acceptance on behalf of brands.
+
+### Open decisions and handoff
+
+1. Confirm whether Free receives basic LeBrands.Space placement or Starter benefits
+   for its live period. Do not invent the package or omit placement.
+2. Resolve the new platform subscription-provider setup. Do not change the requested
+   provider to Stripe/Whop without approval, and do not treat merchant checkout as
+   a working platform recurring-billing connection.
+3. Complete tax/legal, operational-benefit and capacity checks before activating
+   any live offer. Planning confirmation is not a substitute for these checks.
+
+These unresolved items do not require changing the provider-neutral table design,
+but full Phase 1 decision closure and paid activation must not be reported as
+complete while they remain open. No Phase 2 migration is part of this deliverable.

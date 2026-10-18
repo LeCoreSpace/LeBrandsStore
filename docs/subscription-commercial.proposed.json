@@ -1,8 +1,15 @@
 {
   "document_type": "commercial_proposal_not_runtime_configuration",
-  "approval_status": "awaiting_owner_approval",
+  "approval_status": "confirmed_for_implementation_planning",
+  "phase_1_status": "baseline_finalised_with_open_items",
+  "live_offer_authorised": false,
   "billing_enabled": false,
   "live_charges_enabled": false,
+  "open_items": [
+    "free_lebrands_space_package",
+    "platform_subscription_provider_setup",
+    "tax_legal_and_operational_release_review"
+  ],
   "launch_market": {
     "country_code": "IN",
     "currency": "INR",
@@ -16,7 +23,7 @@
     "review_required_before_charging": true
   },
   "core_feature_inclusion_status": "required_by_owner",
-  "core_feature_plan_distribution_status": "proposed_for_all_plans",
+  "core_feature_plan_distribution_status": "confirmed_for_planning_across_all_plans",
   "feature_sets": {
     "store_core": [
       "lebrands_space_placement",
@@ -230,7 +237,7 @@
     "recurring_currency_and_mandate_support_verified": false
   },
   "paid_launch_blockers": [
-    "owner_approval_of_commercial_proposal",
+    "explicit_live_offer_and_payment_activation_approval",
     "approved_provider_and_verified_platform_account_eligibility",
     "tax_and_legal_review",
     "operational_and_cross_product_benefits_fulfilment_confirmation",

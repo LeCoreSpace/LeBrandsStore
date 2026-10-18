@@ -30,7 +30,7 @@ backgrounds with white; it does not change merchant theme presets.
 
 - Free plan: 30 live days beginning with the first successful publication, not store preparation. Included store address only; custom domains require a paid plan. Up to 100 published products and 1,000 published SKUs store-wide, with up to 3 buying-option types and 200 variants per product within that allowance. This replaces the discussed 10-product/50-SKU restriction.
 - SKU counting: each sellable combination counts once; a no-variation product counts as one. Do not add the parent again or count multiple collection placements. Published out-of-stock variants count; drafts, archived variants and sample previews do not.
-- Paid SKU allowances remain undecided, but the entry paid plan must accommodate at least 1,000 SKUs so upgrading does not require shrinking the Free catalogue.
+- Paid SKU allowances follow the commercial planning baseline, not live enforcement. The entry paid plan must accommodate at least 1,000 SKUs so upgrading never requires shrinking the Free catalogue.
 - Free expiry: show usage/remaining days and advance reminders; preserve designs, products, media and URLs on upgrade. Without an upgrade, pause new order-taking after expiry but preserve access to existing orders and fulfilment. Draft inactivity/retention and separate AI/media/messaging allowances must be disclosed before activation; partner costs remain separate.
 - Founding members: discounted price for the first brands (to decide).
 - Billing: one GST invoice from LeBrandsSpace Digital Pvt Ltd, e.g. "Grow plan (includes LeBrands.Space Premium)".
