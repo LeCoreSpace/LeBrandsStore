@@ -204,8 +204,8 @@ function memoryRepository() {
   let current;
   let next = 1;
   return {
-    async register(email, name, record) {
-      if (!users.has(email)) users.set(email, { user_id: String(next++), email, name, ...record, must_change_password: false, stores: [] });
+    async register(email, name, record, contact) {
+      if (!users.has(email)) users.set(email, { user_id: String(next++), email, name, ...record, ...contact, must_change_password: false, stores: [] });
     },
     async login(email, ip, fn) {
       const result = await fn(users.get(email));
@@ -246,12 +246,14 @@ test("offline account journey: generic signup, login, draft creation, forced res
     ...(form ? { body: new URLSearchParams(form) } : {}),
   }), env, null, deps);
   const password = "A distinctly better password 73!";
-  const fields = { name: "Brand Owner", email: "OWNER@example.com", password, confirm: password, terms: "yes" };
+  const fields = { name: "Brand Owner", email: "OWNER@example.com", country: "IN", phone: "9876543210", password, confirm: password, terms: "yes" };
   const signup = await call("/signup", fields);
   const duplicate = await call("/signup", fields);
   assert.equal(signup.status, 303);
   assert.equal(duplicate.headers.get("location"), signup.headers.get("location"));
   assert.equal(repo.users.size, 1);
+  assert.equal(repo.users.get("owner@example.com").country, "IN");
+  assert.equal(repo.users.get("owner@example.com").phone, "+919876543210");
   const invalid = await call("/login", { email: fields.email, password: "Wrong password 88!" });
   assert.match(await invalid.text(), /Email or password is incorrect/);
   Object.assign(repo.users.get("owner@example.com"), lowerWorkFactorRecord(password, TEST_ENV));
@@ -265,7 +267,7 @@ test("offline account journey: generic signup, login, draft creation, forced res
   });
   const created = await call("/stores/new", { brand_name: "My Brand", subdomain: "my-brand" });
   assert.equal(created.status, 303);
-  assert.equal(created.headers.get("location"), "/stores/44444444-4444-4444-8444-444444444444/build");
+  assert.equal(created.headers.get("location"), "/stores/44444444-4444-4444-8444-444444444444/build/ann");
   assert.match(await (await call("/")).text(), /My Brand/);
   repo.users.get("owner@example.com").must_change_password = true;
   assert.equal((await call("/")).headers.get("location"), "/account");

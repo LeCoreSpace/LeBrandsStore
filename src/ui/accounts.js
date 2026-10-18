@@ -1,4 +1,5 @@
 import { escapeHtml, layout, brandMark, accountHeader, footer } from "./layout.js";
+import { REGISTRATION_COUNTRIES } from "../public/registration-validation.js";
 
 const APP_ORIGIN = "https://app.lebrands.store";
 
@@ -26,29 +27,45 @@ function alertBlock(error, notice) {
   return `${error ? `<div class="form-alert" role="alert">${escapeHtml(error)}</div>` : ""}${notice ? `<div class="form-notice" role="status">${escapeHtml(notice)}</div>` : ""}`;
 }
 
-function authFrame({ eyebrow, heading, intro, title, description, form, after, user }) {
+function authFrame({ eyebrow, heading, intro, title, description, form, after, user, extraHead = "" }) {
   return accountDoc(title, `${accountHeader(user)}<main class="wrap auth-shell">
     <section class="auth-intro"><div class="eyebrow">${escapeHtml(eyebrow)}</div><h1>${escapeHtml(heading)}</h1><p>${escapeHtml(intro)}</p>
       <div class="auth-stamp"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#f1e5ea"/><path d="M12 20h16M20 12v16" stroke="#6b1735" stroke-width="1.5"/></svg><span>Built for independent Indian brands</span></div>
     </section>
     <section class="auth-card"><h2>${escapeHtml(title)}</h2><p>${escapeHtml(description)}</p>${form}${after || ""}</section>
-  </main>`);
+  </main>`, extraHead);
 }
 
 function signup(data) {
   const values = data.values || {};
+  const errors = data.errors || {};
+  const country = REGISTRATION_COUNTRIES.find(item => item.code === values.country);
+  const invalid = field => errors[field] ? ' aria-invalid="true"' : "";
+  const error = field => `<span id="${field}-error" class="registration-error"${errors[field] ? "" : " hidden"}>${escapeHtml(errors[field] || "")}</span>`;
   return authFrame({
     eyebrow: "A good place to begin",
     heading: "Your brand deserves its own address.",
     intro: "Make a home for your products, your customers and the next version of your business.",
     title: "Create your account",
     description: "A few details, then you can claim your store name.",
-    form: `${alertBlock(data.error, data.notice)}<form method="post" action="/signup" autocomplete="on">
-      <div class="form-control"><label for="name">Your name</label><input id="name" name="name" type="text" autocomplete="name" required maxlength="120" value="${escapeHtml(values.name || "")}" placeholder="Aarav Mehta"></div>
-      <div class="form-control"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254" value="${escapeHtml(values.email || "")}" placeholder="you@yourbrand.in"></div>
-      <div class="form-control"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="new-password" required minlength="10" placeholder="At least 10 characters"><span class="form-help">Use at least 10 characters.</span></div>
-      <div class="form-control"><label for="confirm">Confirm password</label><input id="confirm" name="confirm" type="password" autocomplete="new-password" required minlength="10" placeholder="Enter it again"></div>
-      <label class="checkbox-row"><input type="checkbox" name="terms" value="yes" required><span>I agree to the <a class="inline-link" href="https://lebrands.store/terms">Terms</a> and <a class="inline-link" href="https://lebrands.store/privacy">Privacy Policy</a>.</span></label>
+    extraHead: `<script type="module" src="/assets/registration.js"></script><style>
+      .registration-error{font-size:12px;color:#9b193c;line-height:1.5}.registration-error[hidden]{display:none}
+      #registration-form [aria-invalid=true]{border-color:#9b193c}
+      #registration-form select{width:100%;min-width:0;min-height:48px;border:1px solid var(--line,#d8d2d4);background:var(--paper,#fff);color:inherit;font:inherit;padding:11px 12px}
+      #registration-form select:focus-visible{outline:2px solid #6b1735;outline-offset:2px}
+      .registration-phone{display:flex;align-items:stretch;border:1px solid var(--line,#d8d2d4);background:var(--paper,#fff)}
+      .registration-phone:focus-within{outline:2px solid #6b1735;outline-offset:2px}
+      .registration-phone #phone-code{display:flex;align-items:center;padding:0 14px;border-right:1px solid var(--line,#d8d2d4);font-variant-numeric:tabular-nums;white-space:nowrap}
+      .registration-phone input{min-width:0;flex:1;border:0}.registration-phone input:focus{outline:none}
+    </style>`,
+    form: `${alertBlock(data.error, data.notice)}<form id="registration-form" method="post" action="/signup" autocomplete="on">
+      <div class="form-control"><label for="name">Your name</label><input id="name" name="name" type="text" autocomplete="name" required maxlength="120" aria-describedby="name-error"${invalid("name")} value="${escapeHtml(values.name || "")}" placeholder="Aarav Mehta">${error("name")}</div>
+      <div class="form-control"><label for="email">Email address</label><input id="email" name="email" type="email" autocomplete="email" required maxlength="254" aria-describedby="email-error"${invalid("email")} value="${escapeHtml(values.email || "")}" placeholder="you@yourbrand.in">${error("email")}</div>
+      <div class="form-control"><label for="country">Country</label><select id="country" name="country" autocomplete="country" required aria-describedby="country-help country-error"${invalid("country")}><option value="">Choose your country</option>${REGISTRATION_COUNTRIES.map(item => `<option value="${item.code}"${country?.code === item.code ? " selected" : ""}>${escapeHtml(item.name)} (${item.callingCode})</option>`).join("")}</select><span id="country-help" class="form-help">Your account country. Business registration details are collected separately in Ann.</span>${error("country")}</div>
+      <div class="form-control"><label for="phone">Phone number</label><div class="registration-phone"><span id="phone-code" aria-hidden="true">${country?.callingCode || "+"}</span><input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" required maxlength="64" aria-describedby="phone-help phone-error"${invalid("phone")} value="${escapeHtml(values.phone || "")}" placeholder="Your phone number"></div><span id="phone-help" class="form-help">${country ? `Enter a valid ${escapeHtml(country.name)} phone number (${country.callingCode}).` : "Choose your country, then enter your phone number."}</span>${error("phone")}</div>
+      <div class="form-control"><label for="password">Password</label><input id="password" name="password" type="password" autocomplete="new-password" required minlength="10" aria-describedby="password-help password-error"${invalid("password")} placeholder="At least 10 characters"><span id="password-help" class="form-help">Use at least 10 characters. Avoid common passwords.</span>${error("password")}</div>
+      <div class="form-control"><label for="confirm">Confirm password</label><input id="confirm" name="confirm" type="password" autocomplete="new-password" required minlength="10" aria-describedby="confirm-error"${invalid("confirm")} placeholder="Enter it again">${error("confirm")}</div>
+      <label class="checkbox-row"><input type="checkbox" name="terms" value="yes" required aria-describedby="terms-error"${invalid("terms")}${values.terms === "yes" ? " checked" : ""}><span>I agree to the <a class="inline-link" href="https://lebrands.store/terms">Terms</a> and <a class="inline-link" href="https://lebrands.store/privacy">Privacy Policy</a>.</span></label>${error("terms")}
       <button class="button" type="submit">Create account <span aria-hidden="true">↗</span></button>
     </form>`,
     after: `<div class="form-foot">Already have an account? <a href="/login">Sign in</a></div>`,

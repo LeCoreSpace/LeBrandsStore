@@ -1,6 +1,6 @@
 // Shared build/runtime registry. Never allow arbitrary generated paths through
 // the public asset gate, and never cache unversioned entry URLs immutably.
-export const BROWSER_JS_ENTRIES=["ann-builder","editor","dashboard","inventory","settings-connections","aura"];
+export const BROWSER_JS_ENTRIES=["ann-builder","editor","dashboard","inventory","settings-connections","aura","registration"];
 export const BROWSER_CSS_ENTRIES=["ann-builder","ann-workspace","editor","dashboard","inventory","aura","aura-styles","aura-extra-styles","style-studio"];
 export function isBrowserBundle(filename){
   const match=/^bundles\/([a-z-]+)-[A-Z0-9]{8}\.(js|css)$/.exec(filename);

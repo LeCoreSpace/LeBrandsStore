@@ -41,3 +41,4 @@
 - [Browser module delivery](browser-module-delivery.md) — blocked transitive modules can leave Ann blank; verify the actual Worker asset gate, not just uploaded files.
 - [Browser bundle lifecycle](browser-bundle-lifecycle.md) — safe public caching, cross-deployment editor sessions, and custom-build working directories.
 - [Navigation performance boundary](navigation-performance-boundary.md) — keep private data fresh and drafts coherent; audit GET side effects before relaxing read coordination.
+- [Business verification direction](business-verification-direction.md) — country-aware registration, private tax/business evidence and phased rollout; admin review dashboard comes later.

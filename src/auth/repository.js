@@ -5,9 +5,9 @@ export function accountRepository(db) {
       const [record] = await tx`SELECT * FROM public.get_password_record(${email})`;
       return record ?? null;
     }),
-    register: (email, name, record) => db.account((tx) => tx`
-      SELECT public.register_user(${email}, ${name}, ${record.password_hash},
-        ${record.password_algo}, ${record.password_iterations}, ${record.password_salt})
+    register: (email, name, record, contact) => db.account((tx) => tx`
+      SELECT public.register_user_with_contact(${email}, ${name}, ${record.password_hash},
+        ${record.password_algo}, ${record.password_iterations}, ${record.password_salt}, ${contact.phone}, ${contact.country})
     `),
     // Serialize per-email AND per-IP attempts, not just a racy pre-check.
     login: (email, ip, attempt) => db.account(async (tx) => {

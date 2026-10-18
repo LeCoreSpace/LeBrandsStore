@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-registration-contact"){
+    return {staged:true,filename:"0030_registration_contact.sql",requires:"0004_password_pepper.sql"};
+  }
   if(values.length===1&&values[0]==="--staged-sku-checkout"){
     return {staged:true,filename:"0029_sku_checkout.sql",requires:"0028_d2c_descriptor_coverage.sql"};
   }
@@ -58,5 +61,5 @@ export function migrationSelection(args) {
   if (values.length === 1 && values[0] === "--staged-starters") {
     return { staged: true, filename: "0015_aura_starter_library.sql", requires: "0012_aura_skeleton_sections.sql" };
   }
-  throw new Error("Use no arguments for regular migrations, --staged-gstin, --staged-aura, --staged-ai, --staged-email, --staged-starters, --staged-ann, --staged-launch, --staged-commerce, --staged-catalogue, --staged-catalogue-masters, --staged-catalogue-api, --staged-catalogue-references, --staged-d2c-variants, --staged-store-variant-values, --staged-catalogue-writer-identity, --staged-d2c-memberships, --staged-d2c-food-profiles or --staged-d2c-descriptors.");
+  throw new Error("Use no arguments for regular migrations, --staged-registration-contact, --staged-gstin, --staged-aura, --staged-ai, --staged-email, --staged-starters, --staged-ann, --staged-launch, --staged-commerce, --staged-catalogue, --staged-catalogue-masters, --staged-catalogue-api, --staged-catalogue-references, --staged-d2c-variants, --staged-store-variant-values, --staged-catalogue-writer-identity, --staged-d2c-memberships, --staged-d2c-food-profiles or --staged-d2c-descriptors.");
 }

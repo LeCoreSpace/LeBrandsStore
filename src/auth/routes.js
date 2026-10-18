@@ -1,6 +1,7 @@
 import { createDb } from "../db.js";
 import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
+import { validateRegistration } from "../public/registration-validation.js";
 import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
 import { handlePageRoutes, isPageRoute } from "../store/page-routes.js";
 import {handleGSTINRoutes,isGSTINRoute} from "../gstin/routes.js";
@@ -142,15 +143,11 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     if (path === "/signup") {
       await assertPasswordPepper(env);
       if (user) return redirect("/");
-      const email = normalizeEmail(form.get("email"));
-      const name = nameValue(form.get("name"));
       const password = form.get("password");
-      const values = { name: form.get("name"), email: form.get("email") };
-      const error = !name ? "Enter your name." : !email ? "Enter a valid email address."
-        : form.get("terms") !== "yes" ? "Accept the terms to continue."
-          : password !== form.get("confirm") ? "Your passwords do not match." : validatePassword(password);
-      if (error) return html("signup", { error, values }, 400);
-      await repo.register(email, name, await hashPassword(password, env));
+      const { errors, data } = validateRegistration(Object.fromEntries(form));
+      const values = { name: form.get("name"), email: form.get("email"), country: form.get("country"), phone: form.get("phone"), terms: form.get("terms") };
+      if (Object.keys(errors).length) return html("signup", { error: "Check the highlighted fields.", errors, values }, 400);
+      await repo.register(data.email, data.name, await hashPassword(password, env), { country: data.country, phone: data.phone });
       // Never disclose whether the email already existed. Both cases are identical.
       return redirect("/login?notice=signup");
     }

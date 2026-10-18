@@ -41,6 +41,14 @@ test("built browser graphs pass the actual Worker gate, reduce requests, and cac
       return {requests:visited.size,bytes};
     }
     for(const entry of BROWSER_JS_ENTRIES){
+      // Registration imports npm telephone metadata and is intentionally
+      // bundle-only; its raw modules are not browser-public entry points.
+      if(entry==="registration"){
+        const after=await graph(entry,generated);
+        assert.ok(after.requests<=12,entry);
+        assert.ok(after.bytes>0);
+        continue;
+      }
       const before=await graph(entry,original),after=await graph(entry,generated);
       console.log("Browser graph:",entry,{before,after});
       if(["ann-builder","editor","dashboard","aura"].includes(entry))

@@ -2,22 +2,11 @@ export const PASSWORD_ALGO = "pbkdf2-sha256";
 // Production Cloudflare Workers reject PBKDF2 above 100,000; local workerd does not.
 export const PASSWORD_ITERATIONS = 100000;
 export const PASSWORD_FORMAT_VERSION = "v1";
-const COMMON = new Set([
-  "password", "password1", "password123", "password1234", "password12345",
-  "1234567890", "12345678901", "123456789012", "qwerty12345", "qwertyuiop",
-  "abcdefghij", "letmein1234", "welcome123", "welcome1234", "admin12345",
-  "iloveyou123", "changeme123", "lebrands123", "0000000000",
-]);
+export { validatePassword } from "../public/password-policy.js";
+import { validatePassword } from "../public/password-policy.js";
 const encoder = new TextEncoder();
 export const hex = (bytes) => [...new Uint8Array(bytes)].map((value) => value.toString(16).padStart(2, "0")).join("");
 const bytes = (value) => Uint8Array.from(value.match(/../g), (part) => parseInt(part, 16));
-
-export function validatePassword(password) {
-  if (typeof password !== "string" || [...password].length < 10) return "Use at least 10 characters.";
-  if (encoder.encode(password).length > 1024) return "Use a password shorter than 1,024 bytes.";
-  if (COMMON.has(password.toLowerCase().trim())) return "Choose a less common password.";
-  return null;
-}
 
 export function constantTimeEqual(left, right) {
   if (left.length !== right.length) return false;
