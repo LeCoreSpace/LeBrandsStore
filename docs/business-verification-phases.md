@@ -26,12 +26,13 @@ Do not configure R2 lifecycle expiration for the business-evidence prefix; a
 database retention label cannot prevent an independent bucket-expiration rule.
 No scheduled cleanup may use the preserved legacy review dates as deletion dates.
 
-**Still blocked:** production file upload requires a real approved private
-scanner behind `BUSINESS_DOCUMENT_SCANNER`. No provider is connected, no real
-documents have been sent to a new processor, and the fixture's mock remains
-isolated. Do not use public/shared malware-submission services for tax documents.
-Cloudflare's WAF malicious-upload detection is a separate Enterprise add-on,
-not a ready-to-use implementation of this Worker service-binding contract.
+**Managed scanning prepared, not activated:** the user chose managed private
+scanning. The Cloudmersive advanced adapter and durable scan-attempt budgets are
+implemented; see [managed-scanning setup](business-document-scanning.md).
+Named-provider/region approval, an appropriate provider account, credentials and
+the staged scanning migration are still required. No real documents have been
+sent to a new processor; the preview mock remains isolated. Do not use public/
+shared malware-submission services for tax documents.
 
 This is the first part of the revised workflow, not completion of all phases.
 The merchant Settings recovery flow, admin document decisions, manual approval
@@ -149,14 +150,11 @@ are unchanged.
    The `BUSINESS_DOCUMENTS` binding is prepared in production/preview configuration.
    Keep public access, r2.dev, custom public domains and public CORS disabled.
    Do not point this binding at the existing public media bucket.
-2. Deploy an approved private malware/document scanner and configure a Workers
-   service binding named `BUSINESS_DOCUMENT_SCANNER` to it. The scanner service
-   itself and any external vendor agreement are **not** supplied by this phase.
-   The Worker POSTs raw document bytes to `/scan` with its MIME and size. Only a
-   successful JSON response `{ "clean": true, "engine": "configured" } is
-   accepted; timeouts, malformed responses and non-clean results are rejected.
-   A signature-only echo service is not a security scanner and must not be used.
-   The mock scanner exists only inside the isolated synthetic preview fixture.
+2. Follow [managed-scanning setup](business-document-scanning.md) for the chosen
+   managed approach. This uses server-side HTTPS, not a separate scanner Worker.
+   The older `BUSINESS_DOCUMENT_SCANNER` service-binding contract is supported
+   only for an explicitly selected, approved private scanner; do not add an echo
+   service or use the isolated fixture mock in production.
 3. Apply the subscription-duration retention update described above after 0031.
    It replaces the original fixed-days setting. Retain evidence during onboarding
    and throughout the subscription; do not enable automatic deletion. Historical

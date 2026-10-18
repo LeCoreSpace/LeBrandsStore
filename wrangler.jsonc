@@ -13,7 +13,9 @@
 	"vars": {
 "TURNSTILE_SITE_KEY": "0x4AAAAAAFPIugBBD4F7Xgfb",
 "CUSTOM_DOMAIN_CNAME_TARGET": "brands.lebrands.store",
-"CLOUDFLARE_WORKER_NAME": "lebrands-store"
+"CLOUDFLARE_WORKER_NAME": "lebrands-store",
+"BUSINESS_DOCUMENT_SCAN_PROVIDER": "cloudmersive",
+"BUSINESS_DOCUMENT_SCAN_PROCESSOR_APPROVED": "false"
 	},
 	"assets": {
 "directory": "./generated-artifacts/public",

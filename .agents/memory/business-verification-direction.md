@@ -51,6 +51,16 @@ silently expose it to additional parties or public sample sharing.
 is configured, retain the explicit upload block instead of claiming signature
 checks or a mock are genuine malware screening.
 
+Use a managed private scanning service rather than provisioning self-hosted
+ClamAV for this project.
+
+**Why:** The user selected “Managed private scanning service (recommended)”.
+
+**How to apply:** Prepare the managed integration, but obtain named-provider and
+processing-location approval before sending business documents. Selection of a
+managed approach alone does not establish India-only residency or approve a
+particular vendor's contractual terms.
+
 The user specified retention "for ever till the brands subscription is with us
 (for compliance)". Retain business evidence throughout the brand's subscription,
 not on an arbitrary 30–365-day deletion schedule. Post-cancellation retention

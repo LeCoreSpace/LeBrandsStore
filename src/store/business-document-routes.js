@@ -4,6 +4,7 @@ import { gstinEnabled, verificationState } from "../gstin/service.js";
 import { REGISTRATION_COUNTRIES } from "../public/registration-validation.js";
 import {businessEditorAccess} from "./business-access.js";
 import {businessDocumentRetention,businessDocumentUploadPolicy} from "./business-document-policy.js";
+import {scanBusinessDocument,businessDocumentScanBudgetReady,reserveBusinessDocumentScan} from "./business-document-scanner.js";
 
 const ROOT = /^\/api\/stores\/([a-f0-9-]{36})\/business-verification(?:\/documents\/([a-f0-9-]{36}))?$/i;
 const MAX_FILE = 5 * 1024 * 1024;
@@ -57,20 +58,6 @@ export function validateBusinessFile(file, bytes) {
   return mime;
 }
 
-async function scan(env, bytes, mime) {
-  if (!env.BUSINESS_DOCUMENT_SCANNER?.fetch) throw fail("Security screening is not configured. Document uploads are paused.", 503);
-  let response, verdict;
-  try {
-    response = await env.BUSINESS_DOCUMENT_SCANNER.fetch("https://scanner.internal/scan", {
-      method: "POST", headers: { "content-type": mime, "x-document-size": String(bytes.length) },
-      body: bytes, signal: AbortSignal.timeout(12000),
-    });
-    verdict = response.ok && await response.json();
-  } catch { throw fail("Security screening is unavailable. No document was submitted.", 503); }
-  if (!verdict || verdict.clean !== true || verdict.engine !== "configured")
-    throw fail("Document did not pass security screening. No document was submitted.", 400, "file");
-}
-
 function validateDetails(value, gst) {
   if (!value || typeof value !== "object" || Array.isArray(value) ||
     Object.keys(value).some(k => !["expected_revision","country_code","legal_name","registration_type","registration_number","explanation","document_type"].includes(k)))
@@ -121,7 +108,9 @@ async function state(tx, id, tokenHash, env) {
   }
   return { available: true, ...data,business_access:access,business_country:access.business_country,
     countries: REGISTRATION_COUNTRIES.map(({code,name}) => ({code,name})),
-    gst: await gstState(tx, id), ...businessDocumentUploadPolicy(env,await businessDocumentRetention(tx)) };
+    gst: await gstState(tx, id), ...businessDocumentUploadPolicy(env,await businessDocumentRetention(tx),{
+      managedBudgetAvailable:env.BUSINESS_DOCUMENT_SCAN_PROVIDER==="cloudmersive"&&await businessDocumentScanBudgetReady(tx),
+    }) };
 }
 
 async function download(db, env, id, tokenHash, docId, request) {
@@ -179,7 +168,7 @@ export async function handleBusinessDocumentRoutes(request, env, db, user, token
     if (details.revision !== (current.verification?.revision || 0))
       throw fail("Business details changed in another tab. Reload before submitting.", 409);
     const file = form.get("file");
-    let documentId = null, objectKey = null, mime = null, digest = null, fileBytes = null, filename = null;
+    let documentId = null, objectKey = null, mime = null, digest = null, fileBytes = null, filename = null, screening = null;
     if (details.type === "not_registered") {
       if (file) throw fail("Do not attach a file for manual assessment.", 400, "file");
     } else {
@@ -190,14 +179,22 @@ export async function handleBusinessDocumentRoutes(request, env, db, user, token
       fileBytes = new Uint8Array(await file.arrayBuffer());
       mime = validateBusinessFile(file, fileBytes);
       filename = String(file.name || "business-document").split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f<>]/gu, "").slice(0, 150) || "business-document";
-      await scan(env, fileBytes, mime);
+      if(current.screening_provider==="cloudmersive"){
+        // Commit before the paid request, separately from document submission.
+        await db.withMemberStore(storeId,tokenHash,tx=>reserveBusinessDocumentScan(tx,storeId,tokenHash),{lockStore:false});
+      }
+      screening=await scanBusinessDocument(env,fileBytes,mime);
       documentId = crypto.randomUUID();
       objectKey = `business-verifications/${storeId}/${documentId}`;
       digest = [...new Uint8Array(await crypto.subtle.digest("SHA-256", fileBytes))]
         .map(x => x.toString(16).padStart(2, "0")).join("");
     }
     if (objectKey) {
-      try { await env.BUSINESS_DOCUMENTS.put(objectKey, fileBytes, { httpMetadata: { contentType: "application/octet-stream" } }); }
+      try { await env.BUSINESS_DOCUMENTS.put(objectKey, fileBytes, {
+        httpMetadata: { contentType: "application/octet-stream" },
+        customMetadata: {scanProvider:screening.provider,scanEngine:screening.engine,
+          scannedAt:screening.scanned_at,sha256:digest},
+      }); }
       catch { throw fail("Private storage is unavailable. No document was submitted.", 503); }
     }
     try {
@@ -221,7 +218,7 @@ export async function handleBusinessDocumentRoutes(request, env, db, user, token
     if (["42501","FORBIDDEN"].includes(error.code) || error.status === 403) return respond({ error: "You do not have permission." }, 403);
     if (["40001","23505"].includes(error.code)) return respond({ error: "Business details changed in another tab. Reload before submitting." }, 409);
     if (error.code === "42P01" || error.code === "42883") return respond({ available: false, error: "Business-document database update is required first." }, 503);
-    if ([400,404,409,413,503].includes(error.status)) return respond({ error: error.message, ...(error.errors ? { errors: error.errors } : {}) }, error.status);
+    if ([400,404,409,413,429,503].includes(error.status)) return respond({ error: error.message, ...(error.errors ? { errors: error.errors } : {}) }, error.status);
     // Never log content, keys, names, tokens, file bytes or SQL.
     console.error("Business document request unavailable", { code: /^[A-Z0-9_]{1,10}$/.test(error.code || "") ? error.code : "UNAVAILABLE" });
     return respond({ error: "Business documents are temporarily unavailable. No changes were saved." }, 503);

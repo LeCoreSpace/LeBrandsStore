@@ -145,6 +145,7 @@ export function attachAnnBusinessDocuments({ api, readOnly, onError, onSubmitted
     else {
       body = `${loadError ? `<p class="abd-alert" role="alert">${esc(loadError)}</p>` : ""}<p>Submit your business registration details for manual review. Ann's conversation language does not affect this form.</p>
         <p class="abd-note">Documents are private. We keep them during onboarding and throughout your brand's subscription, including earlier submissions. No automatic deletion date is set. Retention after cancellation requires a separate policy.</p>
+        ${data.screening_provider==="cloudmersive"?'<p class="abd-note">Cloudmersive processes uploaded files for security screening before private storage. Security screening is separate from manual business approval.</p>':""}
         <p class="abd-note">Document review does not enable subscription payments or change your tax or invoice status.</p>
         ${formHtml()}${docsHtml()}
         ${formError ? `<p class="abd-alert" role="alert">${esc(formError)}</p>` : ""}${success ? `<p class="abd-note" role="status">${esc(success)}</p>` : ""}
