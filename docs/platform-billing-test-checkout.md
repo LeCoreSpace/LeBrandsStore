@@ -74,8 +74,8 @@ manual redirect mode, with bounded network timeouts.
 
 ## Apply and enable test checkout
 
-The agent has **not** run these commands against the external database or
-published the Worker.
+Apply the staged migration and explicitly enable test checkout against the
+intended external database. These steps do not publish the Worker:
 
 ```sh
 pnpm run db:migrate -- --staged-billing-test-checkout
