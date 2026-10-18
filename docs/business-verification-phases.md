@@ -229,9 +229,25 @@ staged compatibility, not a fallback after database or permission failures.
 Once applied, a missing access record fails closed. No live migration or
 deployment is performed automatically.
 
-## Phase 4: Staff review and subscription eligibility (later)
+## Merchant Settings document recovery
 
-The admin dashboard is deliberately deferred.
+Dashboard Settings now includes a Business documents section for owners and
+administrators, with initial/pending/changes-requested/approved status, reviewer
+feedback, current clean-file private downloads, refresh/retry and a shared
+Ann submission modal for initial evidence or replacements. Editors cannot read
+the protected API or see document controls. Approved submissions remain read only.
+Status refreshes on page load, explicit refresh and return to the browser tab;
+successful replacements update the section immediately without losing modal edits.
+
+This phase reuses the existing staged schema and security-screened API. No new
+database migration is required. Original evidence and submission events remain
+retained, but merchants can download only their current submission. A replacement
+returns to pending review and does not reinstate a suspended storefront.
+
+The admin dashboard, publication approval enforcement, suspension and notification
+automation remain deferred to their agreed following phases.
+
+## Phase 4: Staff review and subscription eligibility (later)
 
 Build a staff-only review queue, protected document access, changes requested,
 approval and audit history. States: not_submitted, pending_review,

@@ -53,7 +53,7 @@ export function documentPage(view, data, user, body) {
     description: `${title} workspace for ${store.name || "your store"}.`,
     canonical: `https://app.lebrands.store/stores/${encodeURIComponent(storeId)}/${view === "overview" ? "" : view === "builder" ? "build" : view}`,
     noindex: true,
-    extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>' + (view === "inventory" ? '<link rel="stylesheet" href="/assets/inventory.css"><script type="module" src="/assets/inventory.js"></script>' : "") + (connectionKind ? '<link rel="stylesheet" href="/assets/ann-builder.css"><script type="module" src="/assets/settings-connections.js"></script>' : ""),
+    extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>' + (view === "settings" && !connectionKind ? '<link rel="stylesheet" href="/assets/ann-business-documents.css">' : "") + (view === "inventory" ? '<link rel="stylesheet" href="/assets/inventory.css"><script type="module" src="/assets/inventory.js"></script>' : "") + (connectionKind ? '<link rel="stylesheet" href="/assets/ann-builder.css"><script type="module" src="/assets/settings-connections.js"></script>' : ""),
     body: `<div class="lb-app" data-store-id="${esc(storeId)}" data-role="${esc(data.role || "editor")}">
       ${header(data, user, view)}
        <main class="lb-main"><div class="lb-content">${store.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline; your data is unchanged. ${esc(store.approval_revocation_note || "")}${store.status === "awaiting_approval" ? " Your renewed approval request is awaiting review." : ""}</p>` : store.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is offline until a LeBrands reviewer approves it.</p>' : ""}${body}</div></main></div></div>
@@ -321,11 +321,14 @@ function settingsPage(data) {
     </fieldset></form>`;
   return `${pageHeading("", "Settings", "",`<button class="lb-button" type="submit" form="lb-business-form" ${["owner","admin"].includes(data.role)?"":"disabled"}>Save business details</button>`)}${actionError(data)}
     <div class="lb-settings-layout"><nav class="lb-settings-index" aria-label="Settings sections">
-      <a href="#store-details">Store details</a><a href="#business-gst">Business &amp; GST</a><a href="#policies">Policies</a>
+      <a href="#store-details">Store details</a><a href="#business-gst">Business &amp; GST</a><a href="#business-documents">Business documents</a><a href="#policies">Policies</a>
       <a href="${`/stores/${id}/settings/checkout`}">Checkout</a><a href="/stores/${id}/settings?connection=domain">Store connections</a><span>Users <small>Unavailable</small></span>
     </nav><div class="lb-settings-panels">
       <div id="store-details">${card("Store details", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Store address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status === "awaiting_approval" ? "Awaiting approval" : store.status || "Setup in progress")}</dd></div><div><dt>Store setup</dt><dd><a class="lb-inline-link" href="/stores/${id}/setup">Open store setup</a></dd></div></dl>`)}</div>
       <div id="business-gst">${card("Business & GST", taxForm)}</div>
+      <div id="business-documents">${card("Business documents", ["owner","admin"].includes(data.role)
+        ? '<div data-business-documents-panel aria-busy="true"><p role="status" data-business-documents-loading>Loading business verification status…</p></div>'
+        : '<p class="lb-muted">Only store owners and administrators can view or submit private business documents.</p>')}</div>
       <div id="policies">${card("Policies", `${policyMarkup}<p class="lb-settings-note">Review, publish and unpublish controls are managed in store setup.</p><div class="lb-export-buttons"><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/setup">Review policies and publishing</a></div>`)}</div>
       <div id="checkout">${card("Checkout", `<p>Checkout and delivery settings are available in the existing checkout settings screen.</p><div class="lb-export-buttons"><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/settings/checkout">Open checkout settings</a></div><small>${esc(checkoutSettings.store_state ? `Registered state: ${stateName(checkoutSettings.store_state)}` : "Checkout configuration is not included in this dashboard view.")}</small>`)}</div>
       <div id="exports">${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}</div>

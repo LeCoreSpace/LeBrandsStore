@@ -43,6 +43,7 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
         planned("Customer insights"), planned("Shopping journey")] },
       { key: "settings", label: "Settings", icon: "settings", views: ["settings"], items: [
         live("Business & invoice identity", `${settings}#business-gst`),
+        ...(role === "owner" || role === "admin" ? [live("Business documents", `${settings}#business-documents`)] : []),
         live("Store address & domains", `${settings}?connection=domain`),
         live("Payment connections", `${settings}?connection=payments`),
         live("Delivery connections", `${settings}?connection=delivery`),

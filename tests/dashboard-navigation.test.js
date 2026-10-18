@@ -32,7 +32,7 @@ test("live routes map to real pages and planned items have no href", () => {
   assert.equal(byLabel["Delivery connections"].href, `${r}/settings?connection=delivery`);
   assert.equal(byLabel["Store address & domains"].href, `${r}/settings?connection=domain`);
   assert.equal(byLabel["Refunds"].hint, "In orders");
-  assert.equal(byLabel["Stock & SKUs"].hint, "In products");
+  assert.equal(byLabel["Stock & SKUs"].href, `${r}/inventory`);
   for (const i of all.filter(i => i.kind === "planned")) assert.equal(i.href, null);
   const html = nav();
   assert.equal((html.match(/is-planned/g) || []).length, all.filter(i => i.kind === "planned").length);

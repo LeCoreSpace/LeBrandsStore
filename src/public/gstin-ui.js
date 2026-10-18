@@ -17,7 +17,7 @@ export function observeGSTINForms(root,storeId,options={}){
   if(!pane.isConnected)input.parentElement.after(pane);
   let enabled=false,busy=false,typingTimer,retryTimer,registration;
   const api=async(action,body)=>{
-   const response=await fetch(`/api/stores/${storeId}/gstin/${action}`,{method:body?"POST":"GET",credentials:"same-origin",
+   const response=await fetch(`${options.apiRoot||`/api/stores/${storeId}`}/gstin/${action}`,{method:body?"POST":"GET",credentials:"same-origin",
     headers:body?{"content-type":"application/json"}:undefined,body:body?JSON.stringify(body):undefined});
    const data=await response.json();
    if(!response.ok)throw Object.assign(new Error(data.error||"Verification could not complete."),{retry_after:data.retry_after});

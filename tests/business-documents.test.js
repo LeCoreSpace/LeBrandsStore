@@ -157,3 +157,43 @@ test("isolated Ann business-document journey is tenant-checked, screened, revisi
     await pg.exec("RESET ROLE");
   } finally { await pg.close(); }
 });
+
+test("Settings recovery stays available on paused stores and replacements preserve evidence without approving or reinstating", async () => {
+  const pg=await setupAnnFixtureDatabase({verifiedBusiness:true,businessDocuments:true});
+  const bucket=storage(),env=envFor(bucket);
+  try {
+    const initial=await (await handle(pg,env,request(root,"GET"))).json();
+    const details={expected_revision:0,country_code:"IN",legal_name:initial.gst.legal_name,
+      registration_type:"gst_registered",registration_number:initial.gst.gstin,document_type:"gst_certificate",explanation:""};
+    const first=await handle(pg,env,request(root,"POST",details,{bytes:pdf}));
+    assert.equal(first.status,201);
+    const old=(await first.json()).verification.documents[0];
+    // Simulate the future staff decision with a fixture administrator only.
+    await pg.query("UPDATE public.store_business_verifications SET status='changes_requested',feedback='Upload a legible certificate',revision=revision+1 WHERE store_id=$1",[store]);
+    await pg.query("UPDATE public.stores SET status='paused' WHERE store_id=$1",[store]);
+    const rejected=await handle(pg,env,request(root,"GET"));
+    assert.equal(rejected.status,200);
+    const current=await rejected.json();
+    assert.equal(current.verification.feedback,"Upload a legible certificate");
+    assert.equal(current.verification.status,"changes_requested");
+    const replaced=await handle(pg,env,request(root,"POST",{...details,expected_revision:current.verification.revision},{bytes:pdf,name:"corrected.pdf"}));
+    assert.equal(replaced.status,201,await replaced.clone().text());
+    const saved=(await replaced.json()).verification;
+    assert.equal(saved.status,"pending_review");
+    assert.equal(saved.feedback,"");
+    assert.equal(saved.documents.length,1);
+    assert.equal(saved.documents[0].filename,"corrected.pdf");
+    assert.notEqual(saved.documents[0].id,old.id);
+    assert.equal(bucket.files.size,2,"original and replacement private files remain retained");
+    assert.equal((await pg.query("SELECT status FROM public.stores WHERE store_id=$1",[store])).rows[0].status,"paused");
+    assert.equal((await handle(pg,env,request(`https://app.lebrands.store${old.download_url}`,"GET"))).status,404);
+    const reloaded=await (await handle(pg,env,request(root,"GET"))).json();
+    assert.equal(reloaded.verification.documents[0].filename,"corrected.pdf");
+    await pg.query("UPDATE public.store_business_verifications SET status='approved',revision=revision+1 WHERE store_id=$1",[store]);
+    const approved=await (await handle(pg,env,request(root,"GET"))).json();
+    const blocked=await handle(pg,env,request(root,"POST",{...details,expected_revision:approved.verification.revision},{bytes:pdf}));
+    assert.equal(blocked.status,409,"merchant cannot replace an approved record");
+    assert.equal(bucket.files.size,2);
+    assert.equal((await handle(pg,env,request(root,"GET"),editor,editorHash)).status,403);
+  } finally {await pg.close();}
+});

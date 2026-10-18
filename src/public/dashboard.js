@@ -1,4 +1,5 @@
 import {mountTodayStock} from "./today-stock.js";
+import {mountSettingsBusinessDocuments} from "./settings-business-documents.js";
 mountTodayStock();
 import "./settings-connections.js";
 import { validateProduct, productGSTWarning } from "/assets/validation.js";
@@ -16,9 +17,10 @@ import {confirmCatalogueAction} from "/assets/catalogue-confirm.js";
 const root = document.querySelector(".lb-app");
 const storeId = root?.dataset.storeId || "";
 const role = root?.dataset.role || "editor";
-observeGSTINForms(root,storeId,{readOnly:!["owner","admin"].includes(role)});
 const api = root?.dataset.apiRoot || `/api/stores/${encodeURIComponent(storeId)}`;
 const storeRoot = root?.dataset.storeRoot || `/stores/${encodeURIComponent(storeId)}`;
+observeGSTINForms(root,storeId,{readOnly:!["owner","admin"].includes(role),apiRoot:api});
+mountSettingsBusinessDocuments({root,role,api,storeRoot});
 let catalogueEmbed=null;
 const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" })[c]);
 const moneyToPaise = value => {

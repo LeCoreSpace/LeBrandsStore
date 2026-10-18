@@ -208,6 +208,8 @@ export async function annPreviewFixture(req, res, previewOrigin) {
         ?await handleBusinessDocumentRoutes(request,{BUSINESS_DOCUMENTS:fixtureBusinessStorage,
           // Only synthetic fixture bytes. Never exposed or configured in production.
           BUSINESS_DOCUMENT_SCANNER:{async fetch(){return Response.json({clean:true,engine:"configured"});}}},db,user,hash)
+        :target.pathname.endsWith("/gstin/state")&&req.method==="GET"
+        ?await handleGSTINRoutes(request,{},db,user,hash)
         :target.pathname.endsWith("/orders")&&req.method==="GET"
         ?await handleDashboard(request,db,user,hash,{MEDIA:fixtureMedia})
         :target.pathname.endsWith("/ann/reference")
@@ -220,8 +222,8 @@ export async function annPreviewFixture(req, res, previewOrigin) {
         response=new Response(JSON.stringify(body),{status:response.status,headers:response.headers});
       }
     }else if(url.pathname.startsWith(`${prefix}/catalogue/`)&&["GET","HEAD"].includes(req.method)){
-      const match=url.pathname.slice(`${prefix}/catalogue/`.length).match(/^(products|collections)(?:\/(new|[a-f0-9-]{36}))?$/);
-      if(!match)response=new Response("Unknown isolated catalogue page.",{status:404});
+      const match=url.pathname.slice(`${prefix}/catalogue/`.length).match(/^(products|collections|settings)(?:\/(new|[a-f0-9-]{36}))?$/);
+      if(!match||(match[1]==="settings"&&match[2]))response=new Response("Unknown isolated catalogue page.",{status:404});
       else{
         const draft=await db.withMemberStore(storeId,hash,tx=>loadDraft(tx,storeId));
         const [kind,child]=match.slice(1),single=kind==="products"?"product":"collection";
@@ -229,7 +231,7 @@ export async function annPreviewFixture(req, res, previewOrigin) {
         const data={...draft,draft,role:readonly?"editor":"owner",product_id:child,collection_id:child,product:draft.products.find(p=>p.id===child)};
         const root=`${prefix}/catalogue`;
         let html=renderDashboard(view,data,user)
-          .replace('class="lb-app"',`class="lb-app" data-api-root="${root}/api" data-store-root="${root}"`)
+          .replace('class="lb-app"',`class="lb-app" data-api-root="${root}/api" data-store-root="${root}" data-ann-href="${prefix}?business=1"`)
           .replaceAll(`href="/stores/${storeId}`,`href="${root}`)
           .replaceAll(`action="/stores/${storeId}`,`action="${root}`);
         response=new Response(html,{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
