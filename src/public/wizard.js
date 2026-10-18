@@ -661,7 +661,7 @@ async function flushPolicies(){
 async function submitPublish(){
   if(visualOnly){showReadOnly("publish a store");return}
   if(uploadBusy)return;
-  if(!window.confirm(data.store?.approval_enabled && (!data.store?.approved_at || data.store?.approval_revoked_at)
+  if(!window.confirm(!data.business_review?.enforced && data.store?.approval_enabled && (!data.store?.approved_at || data.store?.approval_revoked_at)
     ?"Submit your store for LeBrands approval? It will remain offline until approved."
     :"Publish your store? It will be available at your LeBrands.Store address."))return;
   busy=true;formErrors={};renderPanel();setStatus("saving","Publishing");

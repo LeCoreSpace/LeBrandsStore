@@ -7,6 +7,7 @@ import { handlePageRoutes, isPageRoute } from "../store/page-routes.js";
 import {handleGSTINRoutes,isGSTINRoute} from "../gstin/routes.js";
 import {handleBusinessDocumentRoutes,isBusinessDocumentRoute} from "../store/business-document-routes.js";
 import {requireBusinessEditorAccess} from "../store/business-access.js";
+import {handleBusinessReview,isBusinessReviewRoute} from "../admin/business-review-routes.js";
 import {renderEditor} from "../ui/editor.js";
 import {isAiRoute,handleAiRoutes} from "../ai/routes.js";
 import {aiEnabled} from "../ai/repository.js";
@@ -40,7 +41,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
   const editorMatch=path.match(/^\/stores\/([0-9a-f-]{36})\/editor$/i);
-  const storeRoute = isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isBusinessDocumentRoute(path) || isAnnRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";
+  const storeRoute = isBusinessReviewRoute(path)||isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isBusinessDocumentRoute(path) || isAnnRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";
   const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password", "/reset-password":"forgot-password","/invite":"forgot-password" };
   if (!["GET", "POST", "HEAD", ...(storeRoute ? ["PATCH", "PUT", "DELETE"] : [])].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
   if (!["GET", "HEAD"].includes(request.method) && !isValidOrigin(request)) {
@@ -94,6 +95,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     if (user?.must_change_password && path !== "/account" && path !== "/logout") {
       return path.startsWith("/api/") ? json({ available: false, error: "Change your password first." }, 403) : redirect("/account");
     }
+    if (isBusinessReviewRoute(path)) return await handleBusinessReview(request,env,db,user,tokenHash);
     if (isPageRoute(path)) return await handlePageRoutes(request, env, db, user, tokenHash);
     if (isGSTINRoute(path)) return await handleGSTINRoutes(request,env,db,user,tokenHash);
     if (isBusinessDocumentRoute(path)) return await handleBusinessDocumentRoutes(request,env,db,user,tokenHash);

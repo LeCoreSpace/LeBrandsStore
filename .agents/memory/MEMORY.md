@@ -11,7 +11,7 @@
 - [Invoice permission boundary](invoice-privilege-boundary.md) — APP financial writes must use tenant-checked functions; preserve strict 42501 isolation denials.
 - [GSTIN transaction boundary](gstin-transaction-boundary.md) — approve/invoice published suppliers; commit paid lookup evidence before a financial transaction can fail.
 - [Document numbering boundary](document-numbering-boundary.md) — short new-document serials, DB prefix locks and overflow rejection; never renumber historical documents.
-- [Platform approval boundary](platform-approval-boundary.md) — staff-only script reviews every first go-live; manual review does not grant invoice verification.
+- [Platform approval boundary](platform-approval-boundary.md) — business-document approval now gates go-live; preserve independent GST authority and revocation controls.
 - [Dashboard visual boundary](dashboard-design-boundary.md) — professional commerce admin is separate from Aura; visual-only work must not invent backend capabilities.
 - [Long-page screenshots](long-page-screenshots.md) — an image-limit error can still leave a complete saved capture; inspect its dimensions and crops before retrying.
 - [Browser video capture](browser-video-capture.md) — remote native recording may lack FFmpeg; actual CDP screencast frames can be encoded locally.
@@ -41,4 +41,4 @@
 - [Browser module delivery](browser-module-delivery.md) — blocked transitive modules can leave Ann blank; verify the actual Worker asset gate, not just uploaded files.
 - [Browser bundle lifecycle](browser-bundle-lifecycle.md) — safe public caching, cross-deployment editor sessions, and custom-build working directories.
 - [Navigation performance boundary](navigation-performance-boundary.md) — keep private data fresh and drafts coherent; audit GET side effects before relaxing read coordination.
-- [Business verification direction](business-verification-direction.md) — country-aware registration, private tax/business evidence and phased rollout; admin review dashboard comes later.
+- [Business verification direction](business-verification-direction.md) — country-aware registration and private evidence; restricted review is approved, broader admin tooling remains later.

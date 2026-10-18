@@ -55,10 +55,12 @@ export async function prepareAnnReadiness(tx,id,userId) {
       {label:"Cash on Delivery or verified online checkout enabled",complete:s.checkout.cod_enabled===true||online},
       ...(data.store.approval_enabled ? [
         {label:"Verified GST registration and supplier details confirmed",complete:data.gstinVerification?.state==="verified"&&data.gstinVerification?.confirmed===true},
-        {label:"Platform approval is current",complete:!!data.store.approved_at&&!data.store.approval_revoked_at},
+        ...(!data.business_review?.enforced?[{label:"Platform approval is current",complete:!!data.store.approved_at&&!data.store.approval_revoked_at}]:[]),
       ]:[])],
     store:{status:data.store.status,subdomain:data.store.subdomain,requested_subdomain:data.settings.subdomain,
-      approval_enabled:data.store.approval_enabled===true,approval_status:data.store.approved_at&&!data.store.approval_revoked_at ? "Approved" : "Not approved"},
+      approval_enabled:data.store.approval_enabled===true,approval_status:data.business_review?.enforced
+        ? data.business_review.approved?"Business documents approved":"Business documents awaiting approval"
+        : data.store.approved_at&&!data.store.approval_revoked_at ? "Approved" : "Not approved"},
     supplier_locked:data.gstinVerification?.confirmed===true || data.gstinVerification?.state==="confirmed",
     draft:{...data,checkout_settings:s.checkout},
   };

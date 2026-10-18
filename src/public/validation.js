@@ -75,6 +75,7 @@ export function productGSTWarning(product = {}) {
 export function publishChecklist(data) {
   const products = data.products ?? [], policies = data.policies ?? [];
   return [
+    ...(data.business_review?.enforced?[{label:"Business documents approved",complete:data.business_review.approved===true}]:[]),
     { label: "Brand basics and contact details complete", complete: Object.keys(validateBasics(data.settings)).length === 0 && data.settings.subdomain === data.store?.subdomain },
     { label: "Store design ready", complete: Object.keys(validateTheme(data.settings)).length === 0 },
     ...(data.settings?.ann_design?.catalogue_mode==="sample"?[{label:"Select your real products instead of the sample catalogue before publishing",complete:false}]:[]),

@@ -15,8 +15,9 @@ to change tax or publication rules.
 
 Indian businesses should upload their GST registration certificate after GSTIN
 verification. Non-Indian businesses should submit applicable country-specific
-tax/business evidence for review before subscription. The admin dashboard is
-explicitly deferred.
+tax/business evidence for review before subscription. The broad admin dashboard
+remains deferred; the user has now authorized its restricted document-review
+section and approval-before-publication controls.
 
 **Why:** The user requested supporting documents for both groups, country-based
 verification before subscription, and phased implementation with database changes.

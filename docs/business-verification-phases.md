@@ -247,14 +247,20 @@ returns to pending review and does not reinstate a suspended storefront.
 The admin dashboard, publication approval enforcement, suspension and notification
 automation remain deferred to their agreed following phases.
 
-## Phase 4: Staff review and subscription eligibility (later)
+## Restricted business review and publication approval
 
-Build a staff-only review queue, protected document access, changes requested,
-approval and audit history. States: not_submitted, pending_review,
-changes_requested, approved. A new submission must retain the previous evidence
-and review history.
+Implemented as staged `0035_business_document_review.sql`, with a dedicated
+platform reviewer registry, restricted queue/detail/download/decision routes,
+revision-checked atomic audit history, and server/database publication guards.
+See [business document review rollout](business-document-review.md) for the
+required deployment-first order, reviewer enrollment and exact migration command.
 
-Only activate manual approval as a subscription requirement once a working
-staff review process exists. Until then, do not enforce a review gate that
-nobody can clear. Business approval is separate from GST verification, Indian
-invoice permissions, store publication and provider connection status.
+Brand admins never gain reviewer authority from their store role. Pending review
+does not prevent draft building. Approval does not publish, enable billing,
+change GST/invoice authority, or clear independent revocation.
+
+## Later: subscription eligibility, rejection suspension and recovery
+
+Subscription billing remains a separate implementation concern. Request changes
+currently records feedback and allows corrected evidence; automated suspension,
+notification delivery and reviewed reinstatement are the following phase.

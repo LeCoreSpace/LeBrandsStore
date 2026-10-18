@@ -26,3 +26,16 @@ The user subsequently corrected the public setup FAQ: "there is no platform appr
 **Why:** The user's latest stated policy supersedes the earlier product direction.
 
 **How to apply:** Public setup explanations should describe required setup checks and merchant-led publication. The FAQ correction alone does not authorize removing database or publishing safeguards; inspect those separately before changing enforcement.
+
+The user later explicitly approved manual business-document review and approval
+before going live through a restricted platform admin workspace. This is distinct
+from the obsolete separate first-publication approval flag.
+
+**Why:** The user confirmed "Allow building only; require approval before going
+live" and then authorized implementing admin review and approval.
+
+**How to apply:** Business approval must not automatically publish, resume a
+suspended store, replace GST verification or enable invoices/billing. Keep
+platform reviewers separate from brand roles and prevent affiliated-store review.
+Preserve independent revocation controls when replacing the obsolete first-live
+flag. Do not auto-approve existing stores or take them offline during rollout.

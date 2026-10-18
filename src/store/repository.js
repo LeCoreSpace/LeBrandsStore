@@ -14,6 +14,7 @@ import {loadClassifications,writeClassification} from "./catalogue-classificatio
 import { storefrontProduct } from "../public/product-details.js";
 import {requireSkuCheckout} from "../checkout/sku-inventory.js";
 import {validateVariants} from "../public/catalogue-model.js";
+import {requireBusinessPublication} from "./business-publication-access.js";
 
 export const DEFAULT_SETTINGS = {
   tagline: "", description: "", legal_name: "", address: "",
@@ -33,6 +34,7 @@ async function loadStoreHeader(tx,storeId){
   // to_jsonb is compatible both before and after the staged approval migration.
   const [store] = await tx`SELECT store_id, name, subdomain, status, subdomain_changed_at,
     to_jsonb(s) ? 'approved_at' AS approval_enabled,
+    to_regprocedure('public.business_publication_access(uuid)') IS NOT NULL AS business_review_enabled,
     to_jsonb(s)->>'approved_at' AS approved_at,
     to_jsonb(s)->>'approved_by' AS approved_by,
     to_jsonb(s)->>'approval_revoked_at' AS approval_revoked_at,
@@ -99,6 +101,10 @@ export async function loadDraft(tx, storeId, { includeArchived = false, includeD
     policies: policies.map((p) => ({ kind: p.slug, title: p.title, body: p.content, reviewed: p.reviewed_at != null })),
     progress: { step: setup?.step ?? 1, completed: setup?.completed ?? [] },
   };
+  if(store.business_review_enabled){
+    const [review]=await tx`SELECT public.business_publication_access(${storeId}) AS approved`;
+    data.business_review={enforced:true,approved:review?.approved===true};
+  }
   data.progress.completed = completion(data, data.progress);
   if (await pagesEnabled(tx)) {
     if(includeDesign){
@@ -321,6 +327,7 @@ export async function publish(tx, id, live) {
   await ensureSetup(tx, id);
   let status = "draft";
   if (live) {
+    const review=await requireBusinessPublication(tx,id);
     const [aiSchema]=await tx`SELECT to_regclass('public.ai_generation_jobs') IS NOT NULL AS enabled`;
     if(aiSchema?.enabled){
       const[unseen]=await tx`SELECT id FROM public.ai_generation_jobs WHERE store_id=${id} AND status='completed' AND previewed_at IS NULL LIMIT 1`;
@@ -344,9 +351,9 @@ export async function publish(tx, id, live) {
     // omitted it; an explicitly edited draft prefix still wins and is guarded.
     const [publication] = await tx`SELECT snapshot FROM public.store_publications WHERE store_id = ${id}`;
     data.settings = { ...publication?.snapshot?.settings, ...data.settings };
-    // Before 0011 is applied, keep the existing workflow intact. After 0011,
-    // every first go-live awaits a platform-only approval, never a brand action.
-    status = data.store.approval_enabled && (!data.store.approved_at || data.store.approval_revoked_at)
+    // Keep the staged legacy workflow until business review is installed.
+    // Its independent document gate then replaces the obsolete first-live flag.
+    status = !review.enforced && data.store.approval_enabled && (!data.store.approved_at || data.store.approval_revoked_at)
       ? "awaiting_approval" : "live";
     data.store.status = status;
     data.progress = { step: 4, completed: [1, 2, 3, 4] };
@@ -355,7 +362,7 @@ export async function publish(tx, id, live) {
         productIds: new Set(data.products.map(product => product.id)), collectionIds: new Set((data.collections || []).map(collection => collection.id)) });
       await tx`SELECT set_config('app.publish_pages','true',true)`;
     }
-    const { layouts, page_versions, gstinVerification, published_settings, ...publicationData } = data;
+    const { layouts, page_versions, gstinVerification, published_settings, business_review, ...publicationData } = data;
     // Entity content is already resolved into public products/collections.
     // Do not copy archived/deleted draft entity maps into the public snapshot.
     const { aura_content, ...publicSettings } = publicationData.settings;
