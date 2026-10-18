@@ -121,3 +121,15 @@ with an explicit assignment for existing stores.
 **How to apply:** Stage the data change for the user to run personally. Explain
 that editor gating will apply to existing stores too; make private evidence
 collection operational before activating a gate that merchants cannot complete.
+
+Completed onboarding progress must not hide a newly required business-evidence
+step for returning merchants. Keep required recovery reachable after saved-plan
+and asynchronous verification restoration, then resume the merchant's previous
+design position once submission permits building.
+
+**Why:** The user reported that existing merchants briefly saw document upload
+and then lost it when their saved Ann progress was restored.
+
+**How to apply:** Treat verification recovery separately from normal completed
+setup locks. Never label required unsubmitted documents as skipped, discard a
+private upload form during chat refresh, or reset a saved design to recover access.

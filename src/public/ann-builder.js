@@ -13,6 +13,7 @@ import { attachAnnReplyFields } from "./ann-reply-fields.js";
 import {attachAnnLanguage} from "./ann-language.js";
 import {attachAnnCatalogue} from "./catalogue-modal.js";
 import {attachAnnBusinessDocuments} from "./ann-business-documents-ui.js";
+import {requiredAnnBusinessPrompt,annBusinessPosition} from "./ann-business-gate.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { attachStoreEssentials, connectionHref } from "./store-essentials.js";
 import { openAnnBrowserPreview,browserPreviewLocation } from "./ann-browser-preview.js";
@@ -109,7 +110,7 @@ const brandingUI=attachAnnBranding({api,readOnly,initial:boot.settings,
 });
 const essentialsUI = attachStoreEssentials({api,storeId:boot.store.store_id});
 // Onboarding controllers: brand and address write the REAL draft; gstin verifies explicitly.
-let obDone = { brand: false, gst: false, address: false };
+let obDone = { brand: false, gst: false, address: false },gstChecked=false;
 function refreshAnnDraft(draft){if(!draft)return;previewSource=structuredClone(draft);boot.settings={...draft.settings};boot.store={...boot.store,...draft.store};base=stylePreviewData(previewSource,{showcase:previewMode==="showcase"});renderPreview(false);}
 function onboardingDraft(env, { initial = false } = {}) {
   if(env.business_access)updateBusinessAccess(env.business_access);
@@ -120,12 +121,11 @@ function onboardingDraft(env, { initial = false } = {}) {
   previewSource.settings = { ...previewSource.settings, ...(env.settings || {}) };
   obDone.brand = !!name && !/^my store$/i.test(name);
   obDone.gst = env.verification?.state==="verified"&&env.verification?.confirmed===true&&env.settings?.gstin_invoice_identity_locked===true;
-  const gstIndex=prompts().findIndex(p=>p.id==="gstin");
-  if(!readOnly&&!obDone.gst&&gstIndex>=0&&curIdx(prompts())>gstIndex){promptId="gstin";step="business";editing=null;detail=false;}
+  gstChecked=!!env.verification;
   // Brand and GST writes refresh the preview source only. Sample or own products consent is untouched.
   base = stylePreviewData(previewSource, { showcase: previewMode === "showcase" });
   if (!initial && obDone.brand && !readOnly && answers.store_name !== name) edit(() => { answers.store_name = name.slice(0, 120); });
-  renderPreview(false); readinessUI.onStoreChanged(); if (initial) drawKeep();
+  renderPreview(false); readinessUI.onStoreChanged(); drawKeep();
 }
 const obCommon = { api, storeId, readOnly, onDraft: onboardingDraft, onContinue: () => advance(),
   onStateChange:()=>queueMicrotask(()=>drawComposer(true)),
@@ -359,6 +359,8 @@ const feeds = {};
 const composerDrafts = new Map(), composerOriginals = new Map();
 let editing = null, detail = false, navigating = false, focusComposer = false, composerKey = "";
 let promptId = "category", reached = "category";
+let businessResume=null;
+const requiredBusinessPrompt=()=>requiredAnnBusinessPrompt(editorAccess,{readOnly,gstVerified:gstChecked?obDone.gst:undefined});
 const DETAIL_STEPS = ["collections", "products", "story"];
 
 function prompts() {
@@ -422,7 +424,10 @@ function def(p) {
     }
     case "store_name": return { kind: "onboard", mode: "brand", label: "Store name", q: "Hi, I'm Ann! Let's bring your store to life. What's your brand name?", max: 40, ph: "Type your brand name", reply: brandUI.summary() };
     case "business_country":return {kind:"business-country",label:"Business country",q:"Which country is your business registered in? This decides the registration evidence you need. It does not change your account country or past invoices.",reply:businessCountries.find(c=>c.code===editorAccess.business_country)?.name||""};
-    case "business_documents":return {kind:"business-documents",label:"Business documents",q:editorAccess.allowed?"Your evidence is submitted. You can continue designing while the standard document review is pending.":editorAccess.message||"Submit your registration evidence privately before editing your design.",reply:editorAccess.status||""};
+    case "business_documents":return {kind:"business-documents",label:"Business documents",q:editorAccess.allowed
+      ?editorAccess.status==="approved"?"Your business documents are approved. You can continue designing.":"Your evidence is submitted. You can continue designing while the standard document review is pending."
+      :editorAccess.message||"Submit your registration evidence privately before editing your design.",
+      reply:({pending_review:"Pending business review",approved:"Approved",changes_requested:"Changes requested"})[editorAccess.status]||"Not submitted"};
     case "gstin": return { kind: "onboard", mode: "gstin", label: "GST details", q: "Type your GSTIN to find your registered name and address. These go on your invoices and cannot change after confirmation.", reply: gstUI.summary() };
     case "included_address": return { kind: "onboard", mode: "address", label: "Store address", q: "Here's your store's web address. Keep it, or type a new name below. You can connect your own domain later in Settings.", reply: addressUI.summary() };
     case "catalogue": return { kind: "catalogue", label: "Create products", q: "Ready to create draft products? Check each price, HSN, GST rate and stock. You can also do this later.", reply: "" };
@@ -465,6 +470,7 @@ function timeline() {
     if (feeds[p.id]) out += feedHtml(feeds[p.id]);
     if (active && editing) out += annBubble(editQ());
     if (active) out += inlineControls(p, d);
+    else if(d.kind==="business-documents")out+=`<div class="ann-comp-row"><button type="button" class="ann-btn alt" data-business-open>Open business documents</button></div>`;
   });
   return out;
 }
@@ -571,7 +577,7 @@ function drawSteps() {
   const doneN = answered.size, total = UI_STEPS.filter(([k]) => !["domain","payments","shipping","review"].includes(k)).length;
   const state = isDirty() ? "Unsaved changes" : designUI?.active() ? "Design saved to draft" : session ? "Plan saved" : "Nothing saved yet";
   $("#ann-steps").innerHTML = `<div class="ann-rail">${UI_STEPS.map(([k, n], i) => { const st = k === step ? "current" : answered.has(k) ? "done" : "todo";
-    return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === step ? "step" : "false"}"${isSetupStepLocked(k) ? ' disabled aria-disabled="true" title="Completed. Setup is locked after reaching Style."' : ""}><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
+    return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === step ? "step" : "false"}"${isSetupStepLocked(k)&&!(k==="business"&&requiredBusinessPrompt()) ? ' disabled aria-disabled="true" title="Completed. Setup is locked after reaching Style."' : ""}><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
     <div class="ann-meter" role="progressbar" aria-label="Planning progress" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${doneN}"><i style="transform:scaleX(${doneN / total})"></i></div>
     <p class="ann-meter-t">${doneN} of ${total} design areas filled. ${esc(state)}. Publishing checks are separate.</p>`;
   const logoButton = document.querySelector('[data-edit-prompt="logo"]');
@@ -596,6 +602,9 @@ function scrollActive() {
   log.scrollTo({ top: log.scrollHeight, behavior });
 }
 function draw(mode = "keep") {
+  const position=annBusinessPosition({promptId,step,resume:businessResume},prompts(),requiredBusinessPrompt(),{setupLocked:setupStepsLocked});
+  if(position.promptId!==promptId){editing=null;detail=false;}
+  ({promptId,step}=position);businessResume=position.resume;
   curIdx();
   const y = log.scrollTop;
   const markup = timeline() + (detail && DETAIL_STEPS.includes(step) ? detailHtml() : "");
@@ -608,7 +617,7 @@ async function toPrompt(id) {
   if (navigating) return;
   let ps = prompts(); const ci = curIdx(ps);
   let ti = ps.findIndex(p => p.id === id); if (ti < 0) return;
-  if (isSetupStepLocked(ps[ti].step)) { say("Business and store address are complete. Continue customising your store from Style."); return; }
+  if (isSetupStepLocked(ps[ti].step)&&id!==requiredBusinessPrompt()) { say("Business and store address are complete. Continue customising your store from Style."); return; }
   const gstIndex=ps.findIndex(p=>p.id==="gstin");
   if(!readOnly&&!obDone.gst&&gstIndex>=0&&ti>gstIndex){promptId="gstin";step="business";editing=null;detail=false;draw("active");say("Verify your GSTIN and confirm the registered invoice address before continuing.");return;}
   const countryIndex=ps.findIndex(p=>p.id==="business_country"),documentIndex=ps.findIndex(p=>p.id==="business_documents");
@@ -631,7 +640,7 @@ async function toPrompt(id) {
     if (saveAfterTransition) void save(step, undefined, { automatic: true });
   } finally { navigating = false; }
 }
-function go(next) { const p = prompts().find(x => x.step === next); if (p) return toPrompt(p.id); }
+function go(next) { const p = prompts().find(x => x.id===(next==="business"?requiredBusinessPrompt():null))||prompts().find(x => x.step === next); if (p) return toPrompt(p.id); }
 function chooseStyle(value) {
   if (designUI?.isSavedStyle(value)) {
     designUI.resumeEditing();
