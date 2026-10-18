@@ -45,7 +45,7 @@ backgrounds with white; it does not change merchant theme presets.
 ## Subscription entry points
 
 Brands must subscribe to the Free plan before starting to build with Ann.
-Place the plan section inside Ann Builder immediately after store name selection.
+Show plan selection as a modal inside Ann Builder immediately after store name selection.
 Subscriptions must be available from the pricing page after login and from a
 new dashboard menu. The user requested country-wise plan amounts, plan-feature
 masters, and separate subscription and payment records.

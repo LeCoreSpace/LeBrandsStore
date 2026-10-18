@@ -1,0 +1,56 @@
+ubscription flow
+The recommended flow is:
+
+Register → claim store → select Free plan → build with Ann → complete business verification → publish or upgrade
+
+Free enrolment requires an explicit Activate Free plan action, but no payment details or payment-provider transaction.
+Preserve the agreed offer: 30 free live days starting at first successful publication, not while preparing the store.
+Free enrolment does not bypass GST/document verification.
+Paid upgrades require business approval, as previously agreed.
+Enforce these rules on the server, including direct Ann/editor links and APIs.
+If someone selects a paid plan before completing verification, remember their selection and guide them through setup rather than charging them immediately.
+
+2. Proposed tables
+Table	Purpose and key information
+billing_plans	Plan code, version, name, availability and display order. Published versions are preserved rather than overwritten.
+billing_plan_prices	Plan version, country, currency, monthly/yearly interval, amount in minor units, tax treatment and effective dates.
+billing_features	Feature key, description, value type, unit and whether the feature is actually available.
+billing_plan_features	Features included in each plan version, with limits or entitlement values.
+billing_accounts	Store, billing contact, legal business details, billing country and tax identity.
+billing_subscriptions	Store, selected plan/price, status, free-period dates, paid-period dates, cancellation and provider references.
+billing_subscription_events	History of activation, upgrades, renewals, cancellation, expiry and administrative changes.
+billing_checkout_sessions	Payment initiation, quoted amount/currency, expiry, provider references and duplicate-request protection.
+billing_payments	Individual payment attempts and outcomes, provider payment ID, amount, currency and test/live mode.
+billing_invoices	Platform subscription invoices with an immutable snapshot of billing details, totals and tax.
+billing_invoice_lines	Subscription period, plan description, quantity, amount and tax breakdown.
+billing_webhook_events	Verified provider events, duplicate-event protection, processing state and retry information.
+One current subscription per store, not per user. A person owning two brands can manage a separate plan for each.
+
+Prices and invoice amounts should use integers, such as paise for INR, never floating-point money. A later price change must not rewrite existing invoices.
+
+3. Starting India prices
+These are the amounts already displayed on your pricing page, proposed for confirmation:
+
+Plan	Monthly	Annual
+Free	₹0 for 30 live days	Not applicable
+Launch	₹1,499	₹14,990
+Grow	₹3,499	₹34,990
+Scale	₹7,999	₹79,990
+Flagship	From ₹19,999	Custom quote
+For other countries, create explicit country/currency price records. Do not automatically convert INR prices using exchange rates. Tax-inclusive versus tax-exclusive presentation must also be agreed before checkout goes live.
+
+The feature records should preserve the agreed Free allowance of 100 published products and 1,000 published SKUs. We still need to settle paid SKU allowances and distinguish implemented features from future proposals.
+
+4. Where users subscribe
+Pricing page: select a plan, sign in if necessary, then choose the store being subscribed.
+Dashboard: add Plan & billing, showing the current plan, free days remaining, usage, upgrades, payments and invoices.
+Both entry points use the same billing service and prices.
+Only authorised store owners/billing administrators can initiate payments.
+Payment success must be verified server-side. A browser success message alone must never activate a paid plan.
+Existing stores need an explicit transition rule so the new subscription gate does not unexpectedly lock an already-live brand.
+
+5. Implementation phases
+Schema and approved price/feature seeds.
+Free enrolment, Ann access gate and dashboard menu.
+Paid checkout in test mode, verified payment events and invoices.
+Renewals, upgrades/downgrades, expiry, reminders and grace-period enforcement.
