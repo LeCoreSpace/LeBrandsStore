@@ -70,6 +70,24 @@ test("managed scanning rejects malicious, contradictory, malformed, oversized, r
   }
 });
 
+test("screening distinguishes provider failures without exposing upstream bodies or transport details",async()=>{
+  for(const [status,code] of [[401,"SCANNER_AUTHENTICATION"],[403,"SCANNER_AUTHENTICATION"],
+    [402,"SCANNER_RATE_LIMIT"],[429,"SCANNER_RATE_LIMIT"],[413,"SCANNER_FILE_LIMIT"],[500,"SCANNER_PROVIDER_ERROR"]]){
+    await assert.rejects(scanBusinessDocument(managed,pdf,"application/pdf",{
+      fetchImpl:async()=>new Response("private-provider-body synthetic-test-key",{status}),
+    }),e=>e.status===503&&e.screeningCode===code&&e.providerStatus===status&&!/private-provider-body|synthetic-test-key/.test(e.message));
+  }
+  for(const [error,code] of [[new DOMException("private-timeout","TimeoutError"),"SCANNER_TIMEOUT"],
+    [new TypeError("private-network-address"),"SCANNER_NETWORK"]]){
+    await assert.rejects(scanBusinessDocument(managed,pdf,"application/pdf",{
+      fetchImpl:async()=>{throw error;},
+    }),e=>e.screeningCode===code&&!/private/.test(e.message));
+  }
+  await assert.rejects(scanBusinessDocument(managed,pdf,"application/pdf",{
+    fetchImpl:async()=>Response.json({CleanResult:"unknown",FoundViruses:[]}),
+  }),e=>e.screeningCode==="SCANNER_RESPONSE");
+});
+
 test("managed upload uses committed durable budgets, scan-before-storage and private provenance (mock provider)",async t=>{
   assert.deepEqual(migrationSelection(["--staged-business-document-scanning"]),{
     staged:true,filename:"0034_business_document_scanning.sql",requires:"0033_business_document_retention.sql",
@@ -109,7 +127,9 @@ test("managed upload uses committed durable budgets, scan-before-storage and pri
     };
     assert.equal((await api(request(),{...env,BUSINESS_DOCUMENT_SCAN_PROCESSOR_APPROVED:"false"})).status,503);
     assert.equal(await used(),0);assert.equal(scans,0);
-    assert.equal((await api(request())).status,503);assert.equal(await used(),1);assert.equal(files.size,0);
+    const failed=await api(request());
+    assert.equal(failed.status,503);assert.equal((await failed.json()).screening_code,"SCANNER_NETWORK");
+    assert.equal(await used(),1);assert.equal(files.size,0);
     provider=()=>Response.json({CleanResult:false,FoundViruses:[{FileName:"private",VirusName:"private"}]});
     const blocked=await api(request());assert.equal(blocked.status,400);
     assert.doesNotMatch(await blocked.text(),/VirusName|FileName|synthetic-test-key/);

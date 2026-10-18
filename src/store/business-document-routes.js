@@ -216,10 +216,17 @@ export async function handleBusinessDocumentRoutes(request, env, db, user, token
       throw error;
     }
   } catch (error) {
+    if(error.screeningCode){
+      // Adapter-owned codes/status only. Never log provider bodies, file
+      // content, names, credentials, URLs or business identifiers.
+      console.warn("Business document screening failed",{
+        code:error.screeningCode,provider_status:error.providerStatus,
+      });
+    }
     if (["42501","FORBIDDEN"].includes(error.code) || error.status === 403) return respond({ error: "You do not have permission." }, 403);
     if (["40001","23505"].includes(error.code)) return respond({ error: "Business details changed in another tab. Reload before submitting." }, 409);
     if (error.code === "42P01" || error.code === "42883") return respond({ available: false, error: "Business-document database update is required first." }, 503);
-    if ([400,404,409,413,429,503].includes(error.status)) return respond({ error: error.message, ...(error.errors ? { errors: error.errors } : {}) }, error.status);
+    if ([400,404,409,413,429,503].includes(error.status)) return respond({ error: error.message, ...(error.screeningCode?{screening_code:error.screeningCode}:{}), ...(error.errors ? { errors: error.errors } : {}) }, error.status);
     // Never log content, keys, names, tokens, file bytes or SQL.
     console.error("Business document request unavailable", { code: /^[A-Z0-9_]{1,10}$/.test(error.code || "") ? error.code : "UNAVAILABLE" });
     return respond({ error: "Business documents are temporarily unavailable. No changes were saved." }, 503);

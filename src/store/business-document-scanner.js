@@ -3,7 +3,24 @@
 import {BUSINESS_DOCUMENT_MAX_BYTES} from "./business-document-limits.js";
 const ENDPOINT="https://api.cloudmersive.com/virus/scan/file/advanced";
 const MAX_VERDICT=64*1024;
-const unavailable=()=>Object.assign(new Error("Security screening is unavailable. No document was submitted."),{status:503});
+const SCREENING_ERRORS={
+  SCANNER_CONFIGURATION:"Security screening is not configured. Please contact support.",
+  SCANNER_AUTHENTICATION:"Security screening could not authenticate with its provider. Please contact support to check the scanner credentials.",
+  SCANNER_RATE_LIMIT:"The security screening provider's request limit has been reached. Please try again later.",
+  SCANNER_FILE_LIMIT:"The security screening provider could not accept this file's size. Please use a smaller document.",
+  SCANNER_TIMEOUT:"Security screening timed out. Please try again shortly.",
+  SCANNER_NETWORK:"The security screening provider could not be reached. Please try again shortly.",
+  SCANNER_RESPONSE:"Security screening returned an unreadable or incomplete result. Please contact support if this continues.",
+  SCANNER_PROVIDER_ERROR:"The security screening provider is unavailable. Please try again later.",
+};
+class ScannerUnavailable extends Error{
+  constructor(code="SCANNER_RESPONSE",providerStatus=null){
+    super(`${SCREENING_ERRORS[code]} No document was submitted.`);
+    this.status=503;this.screeningCode=code;
+    this.providerStatus=providerStatus;
+  }
+}
+const unavailable=(code,providerStatus)=>new ScannerUnavailable(code,providerStatus);
 const rejected=()=>{
   const message="Document did not pass security screening. Use an unencrypted PDF, JPEG or PNG.";
   return Object.assign(new Error(message),{status:400,errors:{file:message}});
@@ -27,7 +44,14 @@ export function businessDocumentScannerStatus(env){
 }
 
 export async function readBusinessDocumentScanVerdict(response){
-  if(!response.ok||!response.body||
+  if(!response.ok){
+    const status=response.status;
+    await response.body?.cancel().catch(()=>{});
+    throw unavailable([401,403].includes(status)?"SCANNER_AUTHENTICATION":
+      [402,429].includes(status)?"SCANNER_RATE_LIMIT":
+      status===413?"SCANNER_FILE_LIMIT":"SCANNER_PROVIDER_ERROR",status);
+  }
+  if(!response.body||
     !/^(?:application\/json|text\/json)(?:\s*;|$)/i.test(response.headers.get("content-type")||"")||
     Number(response.headers.get("content-length"))>MAX_VERDICT){
     await response.body?.cancel().catch(()=>{});
@@ -53,7 +77,7 @@ export async function readBusinessDocumentScanVerdict(response){
 
 export async function scanBusinessDocument(env,bytes,mime,{fetchImpl=globalThis.fetch}={}){
   const status=businessDocumentScannerStatus(env);
-  if(!status.available)throw unavailable();
+  if(!status.available)throw unavailable("SCANNER_CONFIGURATION");
   const extension={"application/pdf":"pdf","image/png":"png","image/jpeg":"jpg"}[mime];
   if(!(bytes instanceof Uint8Array)||!bytes.length||bytes.length>BUSINESS_DOCUMENT_MAX_BYTES||!extension)throw rejected();
   let verdict;
@@ -74,7 +98,10 @@ export async function scanBusinessDocument(env,bytes,mime,{fetchImpl=globalThis.
         body:bytes,signal,redirect:"error",
       }));
     }
-  }catch{throw unavailable();}
+  }catch(error){
+    if(error instanceof ScannerUnavailable)throw error;
+    throw unavailable(["TimeoutError","AbortError"].includes(error?.name)?"SCANNER_TIMEOUT":"SCANNER_NETWORK");
+  }
   if(status.provider==="cloudmersive"){
     if(typeof verdict.CleanResult!=="boolean"||
       !(verdict.FoundViruses===null||Array.isArray(verdict.FoundViruses))||

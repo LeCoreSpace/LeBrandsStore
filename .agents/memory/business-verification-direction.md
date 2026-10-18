@@ -143,3 +143,15 @@ than invent contact details or block an approved country backfill.
 
 **How to apply:** Preserve strict new-account contact validation. Do not grant
 further legacy exceptions without explicit authorization.
+
+Successful synthetic scans using the Replit secret do not prove that the
+separately deployed Cloudflare Worker has the same secret value. Cloudflare
+binding metadata confirms presence, not equality.
+
+**Why:** A production submission reported an opaque scanner outage while local
+synthetic clean files, near-limit PDFs and antivirus test detection all worked.
+The production credential mismatch was not confirmed.
+
+**How to apply:** Use bounded synthetic probes rather than re-sending merchant
+documents. Distinguish provider authentication, quota, network, timeout and
+invalid-verdict failures without logging provider bodies, credentials or files.
