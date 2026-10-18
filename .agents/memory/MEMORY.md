@@ -46,3 +46,4 @@
 - [Business verification direction](business-verification-direction.md) — country-aware registration and private evidence; restricted review is approved, broader admin tooling remains later.
 - [Cloudflare scanner runtime](cloudflare-scanner-runtime.md) — use manual redirects and fail closed; Node probes cannot catch Workers rejecting redirect:error.
 - [Ann translation coverage](ann-translation-coverage.md) — conditional prompts and system replies need coverage; never translate merchant-entered records.
+- [Product media direction](product-media-direction.md) — Cloudinary product uploads and crop previews are approved; AI credits are later and OpenAI generation is excluded.
