@@ -26,13 +26,14 @@ Do not configure R2 lifecycle expiration for the business-evidence prefix; a
 database retention label cannot prevent an independent bucket-expiration rule.
 No scheduled cleanup may use the preserved legacy review dates as deletion dates.
 
-**Managed scanning prepared, not activated:** the user chose managed private
+**Managed scanning validated; live setup is user-run:** the user chose managed private
 scanning. The Cloudmersive advanced adapter and durable scan-attempt budgets are
 implemented; see [managed-scanning setup](business-document-scanning.md).
-The user approved Cloudmersive's standard hosted endpoint. An appropriate
-provider account, credentials and the staged scanning migration are still
-required. No real documents have been
-sent to a new processor; the preview mock remains isolated. Do not use public/
+The user approved Cloudmersive's standard hosted endpoint and supplied a key.
+Synthetic clean PDF, near-3 MB and EICAR checks passed against the real service.
+New uploads are limited to 3 MB. Staged migrations and the production Worker
+secret still require the user to apply them. No real documents have been
+sent to the processor; the preview mock remains isolated. Do not use public/
 shared malware-submission services for tax documents.
 
 This is the first part of the revised workflow, not completion of all phases.

@@ -1,5 +1,6 @@
 // Server-only adapter. No document URLs, business details or original filenames
 // are sent to the processor. Never log provider bodies, credentials or findings.
+import {BUSINESS_DOCUMENT_MAX_BYTES} from "./business-document-limits.js";
 const ENDPOINT="https://api.cloudmersive.com/virus/scan/file/advanced";
 const MAX_VERDICT=64*1024;
 const unavailable=()=>Object.assign(new Error("Security screening is unavailable. No document was submitted."),{status:503});
@@ -25,7 +26,7 @@ export function businessDocumentScannerStatus(env){
   return {provider,available:approved&&hasKey};
 }
 
-async function verdictJson(response){
+export async function readBusinessDocumentScanVerdict(response){
   if(!response.ok||!response.body||
     !/^(?:application\/json|text\/json)(?:\s*;|$)/i.test(response.headers.get("content-type")||"")||
     Number(response.headers.get("content-length"))>MAX_VERDICT){
@@ -54,7 +55,7 @@ export async function scanBusinessDocument(env,bytes,mime,{fetchImpl=globalThis.
   const status=businessDocumentScannerStatus(env);
   if(!status.available)throw unavailable();
   const extension={"application/pdf":"pdf","image/png":"png","image/jpeg":"jpg"}[mime];
-  if(!(bytes instanceof Uint8Array)||!bytes.length||bytes.length>5*1024*1024||!extension)throw rejected();
+  if(!(bytes instanceof Uint8Array)||!bytes.length||bytes.length>BUSINESS_DOCUMENT_MAX_BYTES||!extension)throw rejected();
   let verdict;
   try{
     const signal=AbortSignal.timeout(12000);
@@ -64,11 +65,11 @@ export async function scanBusinessDocument(env,bytes,mime,{fetchImpl=globalThis.
       const headers={Apikey:env.CLOUDMERSIVE_API_KEY.trim(),Accept:"application/json",
         restrictFileTypes:".pdf,.png,.jpg,.jpeg"};
       for(const header of blockedHeaders)headers[header]="false";
-      verdict=await verdictJson(await fetchImpl(ENDPOINT,{
+      verdict=await readBusinessDocumentScanVerdict(await fetchImpl(ENDPOINT,{
         method:"POST",headers,body,signal,redirect:"error",
       }));
     }else{
-      verdict=await verdictJson(await env.BUSINESS_DOCUMENT_SCANNER.fetch("https://scanner.internal/scan",{
+      verdict=await readBusinessDocumentScanVerdict(await env.BUSINESS_DOCUMENT_SCANNER.fetch("https://scanner.internal/scan",{
         method:"POST",headers:{"content-type":mime,"x-document-size":String(bytes.length)},
         body:bytes,signal,redirect:"error",
       }));

@@ -51,6 +51,7 @@ test("document file sniffing rejects type mismatch, oversized, empty and malform
     ["application/pdf", new TextEncoder().encode("<script>alert(1)</script>")],
     ["image/png", pdf], ["image/jpeg", pdf], ["text/plain", pdf],
     ["application/pdf", new Uint8Array()],
+    ["application/pdf", new Uint8Array(3000001)],
     ["application/pdf", new Uint8Array(5242881)],
   ]) assert.throws(() => validateBusinessFile({ type }, bytes), /PDF, JPEG or PNG|contents must match/);
   assert.equal(isBusinessDocumentRoute(new URL(root).pathname), true);
@@ -74,6 +75,7 @@ test("isolated Ann business-document journey is tenant-checked, screened, revisi
     assert.ok(initial.gst.gstin);
     assert.ok(initial.gst.legal_name);
     assert.equal(initial.uploads_available, true);
+    assert.equal(initial.max_file_bytes,3000000);
     assert.equal(initial.retention.key,"subscription_lifetime_v1");
     assert.equal(initial.retention.automatic_deletion,false);
     assert.equal(initial.retention_days,undefined);

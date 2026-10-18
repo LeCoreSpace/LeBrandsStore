@@ -11,9 +11,9 @@
   },
   "vars": { "PREVIEW_LIVE_DATABASE": "enabled",
     "BUSINESS_DOCUMENT_SCAN_PROVIDER": "cloudmersive",
-    "BUSINESS_DOCUMENT_SCAN_PROCESSOR_APPROVED": "false" },
+    "BUSINESS_DOCUMENT_SCAN_PROCESSOR_APPROVED": "true" },
   "secrets": {
-    "required": ["SUPABASE_APP_DB_URL", "PASSWORD_PEPPER", "SESSION_SECRET", "GSTIN_KEY", "REPLIT_DEV_DOMAIN"]
+    "required": ["SUPABASE_APP_DB_URL", "PASSWORD_PEPPER", "SESSION_SECRET", "GSTIN_KEY", "REPLIT_DEV_DOMAIN", "CLOUDMERSIVE_API_KEY"]
   },
   "assets": { "directory": "./generated-artifacts/public", "binding": "ASSETS", "run_worker_first": true },
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "lebrands-store-media" },

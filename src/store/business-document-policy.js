@@ -1,4 +1,5 @@
 import {businessDocumentScannerStatus} from "./business-document-scanner.js";
+import {BUSINESS_DOCUMENT_MAX_BYTES} from "./business-document-limits.js";
 const decode=value=>typeof value==="string"?JSON.parse(value):value;
 export async function businessDocumentRetention(tx){
   const [schema]=await tx`SELECT to_regprocedure('public.business_document_retention_policy()') AS business_retention_definition`;
@@ -20,5 +21,5 @@ export function businessDocumentUploadPolicy(env,retention,{managedBudgetAvailab
     :!storage_available?"Private document storage is not configured. Document uploads are paused."
     :!scanner.available?"Private document storage is ready. Security screening needs platform activation before files can be uploaded."
     :!screening_available?"The managed security screening database update is required before files can be uploaded.": "";
-  return {storage_available,screening_available,screening_provider:scanner.provider,retention,uploads_available,upload_message,max_file_bytes:5*1024*1024};
+  return {storage_available,screening_available,screening_provider:scanner.provider,retention,uploads_available,upload_message,max_file_bytes:BUSINESS_DOCUMENT_MAX_BYTES};
 }

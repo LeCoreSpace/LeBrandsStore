@@ -15,7 +15,7 @@
 "CUSTOM_DOMAIN_CNAME_TARGET": "brands.lebrands.store",
 "CLOUDFLARE_WORKER_NAME": "lebrands-store",
 "BUSINESS_DOCUMENT_SCAN_PROVIDER": "cloudmersive",
-"BUSINESS_DOCUMENT_SCAN_PROCESSOR_APPROVED": "false"
+"BUSINESS_DOCUMENT_SCAN_PROCESSOR_APPROVED": "true"
 	},
 	"assets": {
 "directory": "./generated-artifacts/public",

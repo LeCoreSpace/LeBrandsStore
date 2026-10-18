@@ -5,9 +5,12 @@
 The user chose a managed private scanner rather than self-hosted ClamAV and
 explicitly approved Cloudmersive's standard hosted endpoint, without an
 India-only processing requirement.
-Cloudmersive's Advanced Virus Scan API is implemented but **disabled** in both
-Worker configurations. No provider account was created, plan purchased, live
-migration applied or genuine document sent by the agent.
+Cloudmersive's Advanced Virus Scan API is implemented. The user supplied its
+key securely, and real synthetic-file validation passed: a clean PDF and a
+2,990,628-byte clean PDF were accepted, while an embedded EICAR signature was
+detected and rejected. Processor activation is enabled in the prepared Worker
+configurations. Live database migrations, the production Worker secret and
+publication remain user-run steps; no real business document was used for testing.
 
 Official references checked on 2026-10-18:
 
@@ -24,11 +27,19 @@ Official references checked on 2026-10-18:
 Standard hosted processing has been selected. Before activation, the platform
 owner must complete applicable contractual/DPA setup and any required
 privacy-notice updates. Confirm
-the selected plan supports the advanced endpoint, 5 MiB documents, API credits
+the selected plan supports the advanced endpoint, 3 MB documents, API credits
 per scan and hard account usage limits. Do not assume a free plan or enable
 automatic paid overages. If India-only processing is required, obtain an approved
 regional endpoint/plan and update the pinned endpoint after verifying it.
 Do not introduce arbitrary endpoint URLs or follow redirects carrying the key.
+
+New uploads are capped at **3,000,000 bytes (3 MB)** in the form, API and scanner,
+leaving headroom below the advertised free-tier 3.5 MB maximum. Historical
+evidence is not deleted, relabelled or made inaccessible by this lower upload
+limit; the original database size constraint remains compatible with old records.
+The account's actual billing plan was not inspected or changed. Free-tier
+concurrency is limited by the provider; requests that exceed its limits fail
+closed without automatic paid retries.
 
 ## Staged database changes
 
@@ -58,19 +69,21 @@ provider. Existing submission throttling remains independent.
 3. For the published Cloudflare Worker, the user installs the key with the
    secure Wrangler prompt: `pnpm exec wrangler secret put CLOUDMERSIVE_API_KEY`.
    A Replit workspace secret does not by itself configure a published Worker.
-4. Once the workspace key exists, include its **name only** in the preview
-   configuration's `secrets.required` list if enabling real preview scanning.
-   It is intentionally not required while the adapter is disabled, so a missing
-   optional service cannot crash the existing preview.
-5. Keep `BUSINESS_DOCUMENT_SCAN_PROVIDER` set to `cloudmersive`. Only after
-   approval and setup, change `BUSINESS_DOCUMENT_SCAN_PROCESSOR_APPROVED` from
-   `"false"` to `"true"` for the environments being enabled. A missing key,
+4. The workspace key's **name only** is now included in the preview
+   configuration's `secrets.required` list. The value is never stored in source.
+5. Keep `BUSINESS_DOCUMENT_SCAN_PROVIDER` set to `cloudmersive`. Following
+   explicit processor approval and successful synthetic validation,
+   `BUSINESS_DOCUMENT_SCAN_PROCESSOR_APPROVED` is now `"true"`. A missing key,
    approval, migration or private storage keeps uploads disabled; the managed
    provider never silently falls back to a service binding.
-6. Validate the real service with synthetic clean and EICAR test material before
-   accepting business evidence. Current automated tests mock provider responses;
-   they verify the request/response and storage boundaries, not a live antivirus.
-   The user publishes through the established deployment process, not the agent.
+6. To repeat the three real provider checks intentionally, use
+   `node scripts/check-business-document-scanner.mjs --run-live`. This consumes
+   three provider requests and spaces them for the free-tier rate. It uses only
+   generated PDFs, checks actual EICAR signature detection (not just format
+   rejection), never accesses business records/storage, and never prints the
+   key or raw provider findings. Unit tests separately mock responses and verify
+   request/storage boundaries. The user publishes through the established
+   deployment process, not the agent.
 
 ## What crosses the processing boundary
 

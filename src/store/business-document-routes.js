@@ -5,9 +5,10 @@ import { REGISTRATION_COUNTRIES } from "../public/registration-validation.js";
 import {businessEditorAccess} from "./business-access.js";
 import {businessDocumentRetention,businessDocumentUploadPolicy} from "./business-document-policy.js";
 import {scanBusinessDocument,businessDocumentScanBudgetReady,reserveBusinessDocumentScan} from "./business-document-scanner.js";
+import {BUSINESS_DOCUMENT_MAX_BYTES} from "./business-document-limits.js";
 
 const ROOT = /^\/api\/stores\/([a-f0-9-]{36})\/business-verification(?:\/documents\/([a-f0-9-]{36}))?$/i;
-const MAX_FILE = 5 * 1024 * 1024;
+const MAX_FILE = BUSINESS_DOCUMENT_MAX_BYTES;
 const MAX_BODY = MAX_FILE + 64 * 1024;
 const supported = new Set(REGISTRATION_COUNTRIES.map(item => item.code));
 const respond = (value, status = 200) => Response.json(value, { status, headers: {
@@ -20,7 +21,7 @@ const decode = value => typeof value === "string" ? JSON.parse(value) : value;
 export const isBusinessDocumentRoute = path => ROOT.test(path);
 
 async function limitedBody(request) {
-  if (Number(request.headers.get("content-length")) > MAX_BODY) throw fail("Document exceeds 5 MB.", 413, "file");
+  if (Number(request.headers.get("content-length")) > MAX_BODY) throw fail("Document exceeds 3 MB.", 413, "file");
   if (!request.body) throw fail("Choose a document.", 400, "file");
   const reader = request.body.getReader();
   const chunks = [];
@@ -30,7 +31,7 @@ async function limitedBody(request) {
       const { done, value } = await reader.read();
       if (done) break;
       length += value.byteLength;
-      if (length > MAX_BODY) { await reader.cancel(); throw fail("Document exceeds 5 MB.", 413, "file"); }
+      if (length > MAX_BODY) { await reader.cancel(); throw fail("Document exceeds 3 MB.", 413, "file"); }
       chunks.push(value);
     }
   } finally { reader.releaseLock(); }
@@ -42,7 +43,7 @@ async function limitedBody(request) {
 
 export function validateBusinessFile(file, bytes) {
   if (!file || !(bytes instanceof Uint8Array) || !bytes.length || bytes.length > MAX_FILE)
-    throw fail("Choose one PDF, JPEG or PNG document up to 5 MB.", 400, "file");
+    throw fail("Choose one PDF, JPEG or PNG document up to 3 MB.", 400, "file");
   const mime = file.type?.toLowerCase();
   const valid = mime === "application/pdf"
     ? bytes.length > 20 && new TextDecoder().decode(bytes.subarray(0, 8)).startsWith("%PDF-1.")
@@ -175,7 +176,7 @@ export async function handleBusinessDocumentRoutes(request, env, db, user, token
       if (!current.uploads_available) throw fail(current.upload_message, 503, "file");
       if (!file || typeof file.arrayBuffer !== "function" || typeof file.size !== "number")
         throw fail("Choose a document to upload.", 400, "file");
-      if (file.size > MAX_FILE) throw fail("Document exceeds 5 MB.", 413, "file");
+      if (file.size > MAX_FILE) throw fail("Document exceeds 3 MB.", 413, "file");
       fileBytes = new Uint8Array(await file.arrayBuffer());
       mime = validateBusinessFile(file, fileBytes);
       filename = String(file.name || "business-document").split(/[\\/]/).pop().replace(/[\u0000-\u001f\u007f<>]/gu, "").slice(0, 150) || "business-document";

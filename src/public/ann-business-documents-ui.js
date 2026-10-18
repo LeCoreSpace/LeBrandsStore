@@ -60,7 +60,7 @@ export function attachAnnBusinessDocuments({ api, readOnly, onError, onSubmitted
     }
     if (file && !exc) {
       if (!MIMES.includes(file.type)) e.file = "The file must be a PDF, JPEG or PNG.";
-      else if (file.size > (data.max_file_bytes || 5242880)) e.file = "The file must be 5 MiB or smaller.";
+      else if (file.size > (data.max_file_bytes || 3000000)) e.file = "The file must be 3 MB or smaller.";
       else if (file.size === 0) e.file = "The file is empty.";
     }
     return e;
@@ -125,7 +125,7 @@ export function attachAnnBusinessDocuments({ api, readOnly, onError, onSubmitted
       h += field("registration_number", ind ? "GST number" : "Registration number", `<input type="text" maxlength="64" autocomplete="off" ${attrs("registration_number")} value="${esc(ind ? data.gst?.gstin : form.registration_number)}"${ind ? " readonly" : ""}>`);
       h += field("document_type", "Document type", `<select ${attrs("document_type")}><option value="">Choose</option>${r.document_types.map(t => `<option value="${esc(t.value)}"${t.value === form.document_type ? " selected" : ""}>${esc(t.label)}</option>`).join("")}</select>`);
       if (!data.uploads_available) h += `<p class="abd-warn">${esc(data.upload_message || "File uploads are unavailable right now.")}</p>`;
-      h += field("file", "Document file", `<input type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" ${attrs("file")}${data.uploads_available ? "" : " disabled"}>`, `PDF, JPEG or PNG, up to 5 MiB.${file ? " Selected: " + esc(file.name) : ""}`);
+      h += field("file", "Document file", `<input type="file" accept="application/pdf,image/jpeg,image/png,.pdf,.jpg,.jpeg,.png" ${attrs("file")}${data.uploads_available ? "" : " disabled"}>`, `PDF, JPEG or PNG, up to 3 MB.${file ? " Selected: " + esc(file.name) : ""}`);
     }
     return h + (dis ? "" : "");
   }
