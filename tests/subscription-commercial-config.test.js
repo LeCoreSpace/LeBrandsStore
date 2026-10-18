@@ -57,8 +57,8 @@ test("Free preserves its approved catalogue allowance and publication-based cloc
   assert.equal(config.common_rules.upgrades_reset_ai_allowance,false);
 });
 
-test("all plans explicitly reference the required core features and real native sections",()=>{
-  const required=["lebrands_space_placement","ann_and_theme_editor",
+test("all plans include store features while Space placement is paid-only",()=>{
+  const required=["ann_and_theme_editor",
     "branded_customisable_checkout","per_page_seo_metadata","transactional_emails",
     "payment_partner_integration","delivery_partner_integration",
     "conversion_section_library","data_export"];
@@ -68,6 +68,8 @@ test("all plans explicitly reference the required core features and real native 
     const included=config.feature_sets[p.core_feature_set];
     assert(Array.isArray(included),`${p.code} needs an explicit feature-set mapping`);
     for(const key of required)assert(included.includes(key),`${p.code} missing ${key}`);
+    assert.equal(included.includes("lebrands_space_placement"),p.code!=="free",
+      `${p.code}: Space placement must be paid-only`);
     for(const key of included){
       assert(catalog.has(key),`Undefined feature ${key}`);
       assert(catalog.get(key).implementation_readiness,`${key} needs a readiness status`);
@@ -80,8 +82,9 @@ test("all plans explicitly reference the required core features and real native 
   assert.equal(config.common_rules.add_further_sellable_features_only_after_implementation,true);
 });
 
-test("unresolved Space and provider decisions stay explicit rather than silently approved",()=>{
-  assert.equal(plan("free").lebrands_space_package,"to_be_confirmed");
+test("Free has no Space placement while the provider decision stays unresolved",()=>{
+  assert.equal(plan("free").lebrands_space_package,"none");
+  assert.equal(config.feature_catalog.find(f=>f.key==="lebrands_space_placement").free_package,"none");
   assert.equal(plan("launch").lebrands_space_package,"starter");
   assert.equal(plan("grow").lebrands_space_package,"premium");
   assert.equal(plan("scale").lebrands_space_package,"freedom");
@@ -89,7 +92,7 @@ test("unresolved Space and provider decisions stay explicit rather than silently
   assert.equal(config.provider.approved,null);
   assert.equal(config.provider.account_eligibility_verified,false);
   assert.equal(config.provider.existing_merchant_checkout_unchanged,true);
-  assert(config.open_items.includes("free_lebrands_space_package"));
+  assert(!config.open_items.includes("free_lebrands_space_package"));
   assert(config.open_items.includes("platform_subscription_provider_setup"));
 });
 

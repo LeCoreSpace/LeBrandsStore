@@ -6,7 +6,6 @@
   "billing_enabled": false,
   "live_charges_enabled": false,
   "open_items": [
-    "free_lebrands_space_package",
     "platform_subscription_provider_setup",
     "tax_legal_and_operational_release_review"
   ],
@@ -23,8 +22,18 @@
     "review_required_before_charging": true
   },
   "core_feature_inclusion_status": "required_by_owner",
-  "core_feature_plan_distribution_status": "confirmed_for_planning_across_all_plans",
+  "core_feature_plan_distribution_status": "confirmed_for_planning_with_paid_only_space_placement",
   "feature_sets": {
+    "store_core_without_space": [
+      "ann_and_theme_editor",
+      "branded_customisable_checkout",
+      "per_page_seo_metadata",
+      "transactional_emails",
+      "payment_partner_integration",
+      "delivery_partner_integration",
+      "conversion_section_library",
+      "data_export"
+    ],
     "store_core": [
       "lebrands_space_placement",
       "ann_and_theme_editor",
@@ -42,7 +51,7 @@
       "key": "lebrands_space_placement",
       "label": "LeBrands.Space placement",
       "implementation_readiness": "cross_product_fulfilment_confirmation_required",
-      "free_package": "to_be_confirmed"
+      "free_package": "none"
     },
     {
       "key": "ann_and_theme_editor",
@@ -112,8 +121,8 @@
   "plans": [
     {
       "code": "free",
-      "core_feature_set": "store_core",
-      "lebrands_space_package": "to_be_confirmed",
+      "core_feature_set": "store_core_without_space",
+      "lebrands_space_package": "none",
       "monthly_amount_minor": 0,
       "annual_amount_minor": null,
       "published_products": 100,

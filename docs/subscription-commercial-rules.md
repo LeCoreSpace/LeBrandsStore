@@ -70,13 +70,14 @@ or capacity guarantees. Capacity verification remains required before selling th
 ### Core feature entitlements
 
 The owner requires the following capabilities to appear as explicit plan features,
-not merely as audit notes. Planning baseline: include this core set in Free,
-Launch, Grow, Scale and Flagship, subject to each plan's duration and allowances.
-Implementation readiness and the exact Free LeBrands.Space package remain separate.
+not merely as audit notes. Planning baseline: include the shared store features in
+Free, Launch, Grow, Scale and Flagship, subject to duration and allowances.
+LeBrands.Space placement is a paid-plan feature only; Free has no placement.
+Implementation readiness remains separate from feature inclusion.
 
 | Plan feature | Free | Launch | Grow | Scale | Flagship |
 | --- | --- | --- | --- | --- | --- |
-| LeBrands.Space placement | Included; Free package to confirm | Starter placement | Premium placement | Freedom placement | Freedom plus contracted extras |
+| LeBrands.Space placement | Not included | Starter placement | Premium placement | Freedom placement | Freedom plus contracted extras |
 | Ann and theme editor, including five Ann conversation languages | Included | Included | Included | Included | Included |
 | Fully branded, customisable checkout | Included | Included | Included | Included | Included |
 | Per-page SEO titles and descriptions | Included | Included | Included | Included | Included |
@@ -88,9 +89,10 @@ Implementation readiness and the exact Free LeBrands.Space package remain separa
 
 “Included” records the intended entitlement, not proof that every part is live:
 
-- **LeBrands.Space placement:** preserve the paid Starter/Premium/Freedom mapping.
-  Confirm the Free exposure/package and fulfilment/provisioning process before
-  making activation promises. Store and Space entitlements move together.
+- **LeBrands.Space placement:** Free includes no placement or linked paid package.
+  Preserve the paid Starter/Premium/Freedom mapping. Confirm the paid fulfilment/
+  provisioning process before making activation promises. Store and Space
+  entitlements move together.
 - **Branded checkout:** the feature includes the brand's identity and supported
   design/content controls. Complete the customisation acceptance checks before
   presenting the full claim as available. Server-owned payment/security fields
@@ -115,8 +117,9 @@ Implementation readiness and the exact Free LeBrands.Space package remain separa
   media references. A downloadable media-file archive remains a separate
   implementation gap, not a claimed existing ZIP export.
 
-The companion JSON explicitly maps the shared core feature set to every plan and
-records implementation readiness separately. Add further sellable entitlements
+The companion JSON explicitly maps store features to every plan, excludes Space
+placement from Free, and records implementation readiness separately.
+Add further sellable entitlements
 when their implementation is complete; do not use future proposals as current
 paid benefits.
 
@@ -310,12 +313,12 @@ https://razorpay.com/docs/payments/subscriptions/faqs/
 
 ## 10. Approval record
 
-- Required core feature list and all-plan distribution: **confirmed for implementation planning**.
+- Required store features and paid-only Space placement: **confirmed for implementation planning**.
 - Commercial matrix: **confirmed as the Phase 1 planning baseline**.
 - India-only launch and tax-exclusive display: **planning baseline; live offer not authorised**.
 - Paid SKU/product/staff/media limits: **planning baseline; capacity and enforcement not verified**.
 - Upgrade/refund/non-payment and legacy-transition rules: **planning baseline; legal and release review required before activation**.
-- Free LeBrands.Space package: **unresolved; placement itself is a required feature**.
+- Free LeBrands.Space placement: **not included, explicitly confirmed by owner**.
 - Provider: **Razorpay remains the user's requested provider; new platform-subscription setup is unresolved**.
 - Tax/legal and operational fulfilment checks: **required before live charges**.
 - Billing enabled: **no**.
@@ -325,12 +328,10 @@ provider connection, live payment or automatic acceptance on behalf of brands.
 
 ### Open decisions and handoff
 
-1. Confirm whether Free receives basic LeBrands.Space placement or Starter benefits
-   for its live period. Do not invent the package or omit placement.
-2. Resolve the new platform subscription-provider setup. Do not change the requested
+1. Resolve the new platform subscription-provider setup. Do not change the requested
    provider to Stripe/Whop without approval, and do not treat merchant checkout as
    a working platform recurring-billing connection.
-3. Complete tax/legal, operational-benefit and capacity checks before activating
+2. Complete tax/legal, operational-benefit and capacity checks before activating
    any live offer. Planning confirmation is not a substitute for these checks.
 
 These unresolved items do not require changing the provider-neutral table design,

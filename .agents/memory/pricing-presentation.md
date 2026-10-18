@@ -63,6 +63,10 @@ customisable checkout, SEO titles per page, transactional emails, payment and
 delivery partner integration, all top-end conversion sections, and data export.
 Add more features when implemented later.
 
+Free plan has no placement in LeBrands.Space. Placement is a paid-plan benefit.
+
+**Why:** The user explicitly stated “free plan = no placement in lebrands.space”.
+
 **Why:** The user pointed out that these were omitted from the commercial feature
 matrix; mentioning them only in an implementation audit did not meet the request.
 
