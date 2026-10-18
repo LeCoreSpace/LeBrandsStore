@@ -51,15 +51,17 @@ silently expose it to additional parties or public sample sharing.
 is configured, retain the explicit upload block instead of claiming signature
 checks or a mock are genuine malware screening.
 
-Use a managed private scanning service rather than provisioning self-hosted
-ClamAV for this project.
+Use Cloudmersive's standard hosted endpoint for managed private scanning rather
+than provisioning self-hosted ClamAV for this project.
 
-**Why:** The user selected “Managed private scanning service (recommended)”.
+**Why:** The user selected managed private scanning and explicitly chose
+“Use Cloudmersive’s standard hosted endpoint”.
 
-**How to apply:** Prepare the managed integration, but obtain named-provider and
-processing-location approval before sending business documents. Selection of a
-managed approach alone does not establish India-only residency or approve a
-particular vendor's contractual terms.
+**How to apply:** Standard hosted processing is approved; do not impose an
+India-only residency requirement or claim the standard endpoint provides one.
+Account pricing/limits, contractual setup, credentials and synthetic validation
+still need confirmation before activation. This selection does not authorize
+buying a plan or sending real business evidence as test material.
 
 The user specified retention "for ever till the brands subscription is with us
 (for compliance)". Retain business evidence throughout the brand's subscription,

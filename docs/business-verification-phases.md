@@ -29,8 +29,9 @@ No scheduled cleanup may use the preserved legacy review dates as deletion dates
 **Managed scanning prepared, not activated:** the user chose managed private
 scanning. The Cloudmersive advanced adapter and durable scan-attempt budgets are
 implemented; see [managed-scanning setup](business-document-scanning.md).
-Named-provider/region approval, an appropriate provider account, credentials and
-the staged scanning migration are still required. No real documents have been
+The user approved Cloudmersive's standard hosted endpoint. An appropriate
+provider account, credentials and the staged scanning migration are still
+required. No real documents have been
 sent to a new processor; the preview mock remains isolated. Do not use public/
 shared malware-submission services for tax documents.
 

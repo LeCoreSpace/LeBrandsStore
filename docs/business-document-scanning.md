@@ -2,7 +2,9 @@
 
 ## Status and privacy approval
 
-The user chose a managed private scanner rather than self-hosted ClamAV.
+The user chose a managed private scanner rather than self-hosted ClamAV and
+explicitly approved Cloudmersive's standard hosted endpoint, without an
+India-only processing requirement.
 Cloudmersive's Advanced Virus Scan API is implemented but **disabled** in both
 Worker configurations. No provider account was created, plan purchased, live
 migration applied or genuine document sent by the agent.
@@ -19,8 +21,9 @@ Official references checked on 2026-10-18:
   India-only residency.** Dedicated/private infrastructure is not implied by
   using this standard multi-tenant hosted API.
 
-Before activation, the platform owner must approve Cloudmersive's contractual
-terms, DPA, processing location and any required privacy-notice updates. Confirm
+Standard hosted processing has been selected. Before activation, the platform
+owner must complete applicable contractual/DPA setup and any required
+privacy-notice updates. Confirm
 the selected plan supports the advanced endpoint, 5 MiB documents, API credits
 per scan and hard account usage limits. Do not assume a free plan or enable
 automatic paid overages. If India-only processing is required, obtain an approved
@@ -48,7 +51,8 @@ provider. Existing submission throttling remains independent.
 
 ## Credentials and explicit activation
 
-1. Approve the named provider, processing region and account terms first.
+1. Cloudmersive and its standard hosted endpoint are approved. Confirm the
+   account plan/limits and complete applicable contractual setup before activation.
 2. Add `CLOUDMERSIVE_API_KEY` using the workspace's secure Secrets flow, never in
    chat, source, a public variable or a screenshot.
 3. For the published Cloudflare Worker, the user installs the key with the
