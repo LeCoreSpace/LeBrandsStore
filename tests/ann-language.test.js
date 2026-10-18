@@ -7,7 +7,7 @@ const scripts={hi:/\p{Script=Devanagari}/u,ta:/\p{Script=Tamil}/u,mr:/\p{Script=
 
 test("the Hindi asset is served without removing existing starter dependencies",()=>{
   const assets=readFileSync("src/index.js","utf8").split("\n").find(line=>line.includes("const starterAsset ="));
-  for(const asset of ["ann-language.js","ann-language-regional.js","aura-starters.js","aura-starter-data.js","aura-starter-assets.js","ann-menu-model.js"])assert.ok(assets.includes(`"${asset}"`),asset);
+  for(const asset of ["ann-language.js","ann-language-regional.js","ann-language-onboarding.js","aura-starters.js","aura-starter-data.js","aura-starter-assets.js","ann-menu-model.js"])assert.ok(assets.includes(`"${asset}"`),asset);
 });
 test("all five language choices are present and every translated locale covers the same conversation copy",()=>{
   assert.deepEqual(ANN_LANGUAGES,["en","hi","ta","mr","te"]);
@@ -80,6 +80,93 @@ test("language preferences validate values and tolerate blocked storage",()=>{
     assert.equal(readAnnLanguage({getItem:()=>language},"key"),language);
     assert.equal(readAnnLanguage(storage,"key",language),language);
   }
+});
+
+test("new subscription and business prompts, including conditional questions, translate in every supported locale",()=>{
+  const source=readFileSync("src/public/ann-builder.js","utf8");
+  const newQuestions=source.slice(source.indexOf('case "plan":'),source.indexOf('case "gstin":'));
+  const questions=[...newQuestions.matchAll(/"([^"\n]+[?.])"/g)].map(m=>m[1]);
+  assert.ok(questions.length>=6,"include all conditional subscription and document-review prompts");
+  const serverMessages=[...readFileSync("src/store/business-access.js","utf8")
+    .split("const decode")[0].matchAll(/:\s*"([^"]+)"/g)].map(m=>m[1]);
+  const states=["Plan accepted","Existing store access preserved","Pending business review",
+    "Approved","Changes requested","Not submitted","Brand logo selected","Skipped"];
+  for(const language of Object.keys(scripts)){
+    for(const text of [...questions,...serverMessages,...states]){
+      assert.notEqual(annConversationText(text,language),text,`${language}: ${text}`);
+      assert.match(annConversationText(text,language),scripts[language]);
+    }
+  }
+});
+
+test("GST summaries preserve the full registered name and progress preserves its exact counters",()=>{
+  const legalName="STONES & STUDIO PRIVATE LIMITED 001 தமிழ்";
+  for(const language of Object.keys(scripts)){
+    const translated=annConversationText(`GST verified: ${legalName}`,language);
+    assert.ok(translated.endsWith(`: ${legalName}`));
+    assert.match(translated.slice(0,-legalName.length),scripts[language]);
+    assert.equal(annConversationText(`GST verified: ${legalName}`,"en"),`GST verified: ${legalName}`);
+    for(const text of ["1 of 12","6 of 11 design areas filled. Design saved to draft. Publishing checks are separate.",
+      "0 of 11 design areas filled. Nothing saved yet. Publishing checks are separate."]){
+      const localized=annConversationText(text,language);
+      assert.match(localized,scripts[language]);assert.doesNotMatch(localized,/design areas|Publishing checks|Nothing saved|Design saved/);
+      assert.deepEqual(localized.match(/\d+/g)?.sort(),text.match(/\d+/g)?.sort());
+    }
+  }
+});
+
+test("only explicitly marked system replies translate; countries and unsent merchant data stay correctly separated",()=>{
+  const events=new Map();
+  const paragraph=(text,{system=false,country,user=false,protectedValue=false}={})=>{
+    const node={nodeType:3,textContent:text};
+    return {node,childNodes:[node],dataset:{...(country?{annCountry:country}:{})},
+      hasAttribute:key=>key==="data-ann-copy"&&system,
+      closest:selector=>selector===".ann-msg"?{classList:{contains:()=>user}}:protectedValue?{}:null};
+  };
+  const pending=paragraph("Pending business review",{user:true,system:true});
+  const skipped=paragraph("Skipped",{user:true,system:true});
+  const country=paragraph("India",{user:true,system:true,country:"IN"});
+  const merchant=paragraph("Skipped",{user:true});
+  const legal=paragraph("Pending business review",{system:true,protectedValue:true});
+  const nodes=[pending,skipped,country,merchant,legal];
+  let observer;
+  const view={location:{href:"https://example.invalid/"},history:{replaceState(){}},
+    MutationObserver:class{constructor(callback){observer=callback;}observe(){}disconnect(){}}};
+  const root={ownerDocument:{defaultView:view},dataset:{},querySelectorAll:()=>nodes};
+  const select={addEventListener:(k,fn)=>events.set(k,fn),removeEventListener(){}};
+  const controller=attachAnnLanguage({root,select});
+  for(const language of ["hi","ta","mr","te","en"]){
+    select.value=language;events.get("change")();
+    assert.equal(pending.node.textContent,annConversationText("Pending business review",language));
+    assert.equal(skipped.node.textContent,annConversationText("Skipped",language));
+    assert.equal(country.node.textContent,language==="en"?"India":new Intl.DisplayNames([language],{type:"region"}).of("IN"));
+    assert.equal(merchant.node.textContent,"Skipped");
+    assert.equal(legal.node.textContent,"Pending business review");
+    // A later asynchronous redraw must not lose the chosen language.
+    observer();controller.refresh();
+    assert.equal(skipped.node.textContent,annConversationText("Skipped",language));
+  }
+  controller.destroy();
+});
+
+test("composer hints localise reversibly without changing unsent text or merchant input placeholders",()=>{
+  const events=new Map(),attrs=new Map([["placeholder","Choose an option above to continue"]]);
+  const composer={value:"Unsent merchant text",getAttribute:key=>attrs.get(key),
+    setAttribute:(key,value)=>attrs.set(key,value)};
+  const view={location:{href:"https://example.invalid/"},history:{replaceState(){}},
+    MutationObserver:class{observe(){}disconnect(){}}};
+  const root={ownerDocument:{defaultView:view},dataset:{},querySelectorAll:()=>[],
+    querySelector:selector=>selector==="#ann-input"?composer:null};
+  const select={addEventListener:(k,fn)=>events.set(k,fn),removeEventListener(){}};
+  const controller=attachAnnLanguage({root,select});
+  for(const language of ["hi","ta","mr","te","en"]){
+    select.value=language;events.get("change")();
+    assert.equal(attrs.get("placeholder"),annConversationText("Choose an option above to continue",language));
+    assert.equal(composer.value,"Unsent merchant text");
+    controller.refresh();
+    assert.equal(attrs.get("placeholder"),annConversationText("Choose an option above to continue",language));
+  }
+  controller.destroy();
 });
 test("switching is reversible, preserves user records, and translates new messages without redraw or API calls",()=>{
   const sentence=Object.keys(ANN_HINDI)[0],stored=new Map(),events=new Map();

@@ -27,7 +27,7 @@ export function attachAnnBranding({api,readOnly,initial={},inConversationStep=()
     return `<p class="ann-note">Choose an uploaded logo or add PNG, JPG or WebP, up to 5 MB. Transparent PNG or WebP works well.</p>
       ${image?`<img class="ann-branding-image" src="${esc(image)}" alt="Your selected brand logo">`:""}
       <label class="ann-field">Your logo<select data-brand-select${disabled()?" disabled":""}>
-        <option value="">Use my brand name instead</option>${[...known.values()].map(m=>`<option value="${esc(m.id)}"${m.id===selected?" selected":""}>${esc(m.label || "Brand logo")}</option>`).join("")}</select></label>
+        <option value="" data-ann-copy>Use my brand name instead</option>${[...known.values()].map(m=>`<option value="${esc(m.id)}"${m.id===selected?" selected":""}>${esc(m.label || "Brand logo")}</option>`).join("")}</select></label>
       <label class="ann-field">Upload a logo<input type="file" data-brand-file accept="image/png,image/jpeg,image/webp"${disabled()?" disabled":""}></label>
       ${loading||busy?`<p class="ann-note" role="status">${loading?"Loading your logos":"Saving your logo"}...</p>`:""}
       ${error?`<p class="ann-error" role="alert">${esc(error)}</p>`:""}

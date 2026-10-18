@@ -1,8 +1,10 @@
 import {ANN_REGIONAL_COPY,ANN_REGIONAL_TEMPLATES} from "./ann-language-regional.js";
+import {ANN_ONBOARDING_COPY,annOnboardingTemplate} from "./ann-language-onboarding.js";
 
 // Prepared, deterministic conversation copy. Never send merchant content for translation.
 export const ANN_LANGUAGES=Object.freeze(["en","hi","ta","mr","te"]);
 export const ANN_HINDI=Object.freeze({
+  ...ANN_ONBOARDING_COPY.hi,
   "Hi, I'm Ann! Let's bring your store to life. What's your brand name?":"नमस्ते! मैं Ann हूँ। चलिए आपका स्टोर बनाते हैं। आपके ब्रांड का नाम क्या है?",
   "Type your GSTIN to find your registered name and address. These go on your invoices and cannot change after confirmation.":"अपना GSTIN लिखें। हम आपका पंजीकृत नाम और पता दिखाएँगे। यही जानकारी इनवॉइस पर आएगी और पुष्टि के बाद बदली नहीं जा सकेगी।",
   "Here's your store's web address. Keep it, or type a new name below. You can connect your own domain later in Settings.":"यह आपके स्टोर का वेब पता है। इसे रखें या नीचे नया नाम लिखें। अपना डोमेन बाद में Settings में जोड़ सकते हैं।",
@@ -49,7 +51,9 @@ export const ANN_HINDI=Object.freeze({
   "Sketch up to five ideas per collection. These are planning notes, not real products. No prices or stock are set.":"हर कलेक्शन के लिए पाँच तक उत्पाद सुझाएँ। ये सिर्फ़ योजना के नोट हैं, असली उत्पाद नहीं। अभी कीमत या स्टॉक तय नहीं होगा।",
   "Choose a subcategory in Category to unlock product questions.":"उत्पाद के विकल्प देखने के लिए Category में एक सबकैटेगरी चुनें।",
 });
-export const ANN_TRANSLATIONS=Object.freeze({hi:ANN_HINDI,...ANN_REGIONAL_COPY});
+export const ANN_TRANSLATIONS=Object.freeze({hi:ANN_HINDI,
+  ...Object.fromEntries(Object.entries(ANN_REGIONAL_COPY).map(([language,copy])=>
+    [language,Object.freeze({...ANN_ONBOARDING_COPY[language],...copy})]))});
 const templates=[
   [/^Lovely! Which type of ([\s\S]+) do you sell\?$/,v=>`अच्छा! ${v} में आप किस तरह के उत्पाद बेचते हैं?`],
   [/^What goes in ([\s\S]+)\? Pick up to five products, or type your own\.$/,v=>`${v} में कौन-से उत्पाद रखेंगे? पाँच तक उत्पाद चुनें या अपने उत्पादों के नाम लिखें।`],
@@ -63,6 +67,7 @@ export function annConversationText(text,language="en"){
   const dictionary=ANN_TRANSLATIONS[language];
   const [,before,source,after]=text.match(/^(\s*)([\s\S]*?)(\s*)$/);
   let translated=Object.hasOwn(dictionary,source)?dictionary[source]:null;
+  if(!translated)translated=annOnboardingTemplate(source,language,v=>annConversationText(v,language));
   if(!translated)for(const [index,[pattern,hindiFormat]] of templates.entries()){
     const match=source.match(pattern);
     if(match){
@@ -83,29 +88,49 @@ export function attachAnnLanguage({root,select,storageKey,requested}){
   const view=root.ownerDocument.defaultView;
   let storage;try{storage=view.localStorage;}catch{}
   let language=readAnnLanguage(storage,storageKey,requested),queued=false;
+  const conversation=root.querySelector?.(".ann-chat")||root;
+  const planHeader=root.querySelector?.("#ann-store-plan");
+  const businessNotice=root.querySelector?.("#ann-business-access");
   const originals=new WeakMap();
+  const attributes=new WeakMap();
   function refresh(){
     queued=false;select.value=language;root.dataset.annConversationLanguage=language;
-    // Only authored Ann paragraphs/notices. Never values, user replies, controls,
-    // catalogue options, the design workspace, the iframe or legal-name/address fields.
-    for(const paragraph of root.querySelectorAll(".ann-msg:not(.me) .ann-bubble p,p.ann-note,.ann-error,.ann-callout")){
-      if(paragraph.closest(".ann-msg")?.classList.contains("me")||paragraph.closest("[data-ann-value],.ann-store-address"))continue;
+    // Only authored copy and explicitly marked system replies. Never merchant
+    // answers, catalogue choices, inputs, previews or registered identity fields.
+    for(const paragraph of [...conversation.querySelectorAll(".ann-msg:not(.me) .ann-bubble p,.ann-note,.ann-error,.ann-callout,.ann-rail button,.ann-mark,.ann-mark span,.ann-meter-t,.ann-btn,.ann-link,summary,label.ann-field,[data-ann-copy],#ann-status"),...(planHeader?.querySelectorAll("button,span")||[]),...(businessNotice?[businessNotice,...businessNotice.querySelectorAll("button")]:[])]){
+      if((paragraph.closest(".ann-msg")?.classList.contains("me")&&!paragraph.hasAttribute?.("data-ann-copy"))||paragraph.closest("[data-ann-value],.ann-store-address"))continue;
       let hasTranslation=false;
       for(const node of paragraph.childNodes){
         if(node.nodeType!==3||!node.textContent.trim())continue;
         let record=originals.get(node);
         if(!record||node.textContent!==record.rendered)record={source:node.textContent};
-        const rendered=annConversationText(record.source,language);
+        let rendered=annConversationText(record.source,language);
+        const country=paragraph.dataset?.annCountry;
+        if(country&&language!=="en") {
+          try{rendered=new Intl.DisplayNames([language],{type:"region"}).of(country)||rendered;}catch{/* Keep the recorded country name. */}
+        }
         if(rendered!==record.source)hasTranslation=true;
         originals.set(node,{source:record.source,rendered});
         if(node.textContent!==rendered)node.textContent=rendered;
       }
       paragraph.lang=hasTranslation?language:"en";
     }
+    // Localise the composer hint, never its value or any merchant form fields.
+    const composer=conversation.querySelector?.("#ann-input");
+    if(composer){
+      const source=composer.getAttribute("placeholder")||"";
+      let record=attributes.get(composer);
+      if(!record||source!==record.rendered)record={source};
+      const rendered=annConversationText(record.source,language);
+      attributes.set(composer,{source:record.source,rendered});
+      if(source!==rendered)composer.setAttribute("placeholder",rendered);
+    }
   }
   const schedule=()=>{if(!queued){queued=true;queueMicrotask(refresh);}};
   const observer=new view.MutationObserver(schedule);
-  observer.observe(root,{subtree:true,childList:true,characterData:true});
+  observer.observe(conversation,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder"]});
+  if(planHeader)observer.observe(planHeader,{subtree:true,childList:true,characterData:true});
+  if(businessNotice)observer.observe(businessNotice,{subtree:true,childList:true,characterData:true});
   const change=()=>{
     language=ANN_LANGUAGES.includes(select.value)?select.value:"en";
     try{storage?.setItem(storageKey,language);}catch{}

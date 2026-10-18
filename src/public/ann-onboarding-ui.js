@@ -157,7 +157,7 @@ export function attachAnnOnboarding({ api, storeId, readOnly, mode = "brand", on
   function gstHtml() {
     if (confirmed()) {
       const v = env.verification, r = v.registration || {}, a = addrList(v).find(x => x.pin === env.settings?.business_pincode && (x.line1 || x.line2) === env.settings?.business_line1) || addrList(v)[0];
-      return `<div class="ann-callout" role="status"><strong>GST verified</strong></div>
+      return `<div class="ann-callout" role="status"><strong data-ann-copy>GST verified</strong></div>
         <dl class="ann-summary"><div><dt>Legal name</dt><dd>${esc(r.legal_name || "")}</dd></div><div><dt>Registered address</dt><dd>${esc(addrText(a))}</dd></div></dl>
         <p class="ann-note">${GST_COPY}</p>${msgs()}
         <div class="ann-actions"><button type="button" class="ann-btn" data-ob="continue">${env.settings?.gstin_invoice_identity_locked===true?"Continue":"Confirm and lock this invoice address"}</button></div>`;

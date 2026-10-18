@@ -167,7 +167,7 @@ const obUIs = { brand: brandUI, gstin: gstUI, address: addressUI };
 const extrasNow = currentExtras(base.layouts);
 const bag = new Map((base.products || []).slice(0, 2).map(p => [p.id, 1]));
 const frame = $("#ann-preview"), canvas = $("#ann-canvas"), log = $("#ann-log"), foot = $("#ann-foot"), statusEl = $("#ann-status");
-attachAnnLanguage({root:log,select:$("#ann-language"),storageKey:`lebrands.ann.language.${boot.store.store_id}`,requested:new URL(location.href).searchParams.get("ann_lang")});
+attachAnnLanguage({root:$("#ann-app")||log,select:$("#ann-language"),storageKey:`lebrands.ann.language.${boot.store.store_id}`,requested:new URL(location.href).searchParams.get("ann_lang")});
 $("#ann-open-browser")?.addEventListener("click",()=>{
   renderPreview();
   if(!openAnnBrowserPreview({data:current,theme:config().theme,page,productId,collectionId,policyKind,device:canvas.dataset.device,bag}))
@@ -516,7 +516,11 @@ function timeline() {
     out += annBubble(d.q, active ? "is-active" : "", active ? ' id="ann-active"' : "");
     if (active && notice) out += `<p class="ann-callout" role="status">${esc(notice)}</p>`;
     if (d.kind === "list") { if (d.items.length) out += meBubble(listHtml(d)); }
-    else if (!active && d.kind !== "info" && (d.reply || i < ri)) out += meBubble(d.reply ? `<span class="ann-reply">${esc(d.reply)}</span>` : "<em>Skipped</em>", readOnly || isSetupStepLocked(p.step) ? "" : `<button type="button" class="ann-edit" data-edit-prompt="${esc(p.id)}" aria-label="Edit your answer to ${esc(d.label)}">Edit</button>`);
+    else if (!active && d.kind !== "info" && (d.reply || i < ri)) {
+      const systemReply=["plan","business-documents","logo"].includes(d.kind)||p.id==="gstin"||p.id==="business_country";
+      const country=p.id==="business_country"&&editorAccess.business_country?` data-ann-country="${esc(editorAccess.business_country)}"`:"";
+      out += meBubble(d.reply ? `<span class="ann-reply"${systemReply?" data-ann-copy":""}${country}>${esc(d.reply)}</span>` : "<em data-ann-copy>Skipped</em>", readOnly || isSetupStepLocked(p.step) ? "" : `<button type="button" class="ann-edit" data-ann-copy data-edit-prompt="${esc(p.id)}" aria-label="Edit your answer to ${esc(d.label)}">Edit</button>`);
+    }
     if (feeds[p.id]) out += feedHtml(feeds[p.id]);
     if (active && editing) out += annBubble(editQ());
     if (active) out += inlineControls(p, d);
