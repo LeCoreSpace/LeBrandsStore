@@ -47,20 +47,35 @@ the external/live Supabase database.
 
 ## Phase 2: Business details and private supporting documents
 
-Implement the following schema in a separate reviewed migration, together with
-its API and merchant UI, not as empty unprotected tables:
+Implemented as a separately staged migration, API and Ann merchant dialog.
+Open **Business documents** from Ann's top navigation. Nothing has been
+migrated or provisioned against the external/live environment.
 
 | Table | Responsibility |
 |---|---|
 | `store_business_verifications` | One current business-verification record per store: business country, legal name, registration type/number, review status and current submission reference |
 | `business_document_requirements` | Reviewed country/registration-type requirements and accepted document types; versioned so old submissions retain their applicable rules |
 | `store_business_documents` | Store-scoped private object key, document type, MIME type, size, checksum, submission version, upload/retention timestamps; never public media URLs |
-| `store_business_verification_events` | Append-only submission and review history, actor, timestamp and safe merchant-facing change request; no document content in logs |
+| `store_business_verification_events` | Append-only submission history, actor and private submitted-details snapshot; reviewer actions remain deferred; no document content in logs |
 
-Use explicit store ownership checks and tenant RLS. Keep staff-only review
-decisions separate from merchant-controlled fields. Define deletion/retention
-and malware scanning before real documents are accepted; use private R2
-storage with authorised, short-lived access.
+Only owner/admin memberships with an active session can use the private API.
+All three merchant tables have RLS with no direct APP/API-role table grants;
+new fixed-search-path functions check the session and tenant themselves.
+Merchants can submit/resubmit only as pending review, never approve a record.
+Revision checks prevent overwriting another tab's work, and earlier evidence
+and submitted-details snapshots are retained.
+
+Uploads use a **separate private R2 bucket**, not public product media. Download
+requests recheck membership and current submission on every GET/HEAD, stream
+attachments with no-store/nosniff/sandbox headers, and never return object keys.
+There are no permanent public or signed download links.
+
+Accepted files: one PDF, JPEG or PNG up to 5 MiB. Both bounded multipart reads
+and content signatures are checked. These are not an antivirus scanner:
+real uploads fail closed until the private scanner binding is configured.
+Failed scans never enter R2. If a database commit fails after upload, the
+new object is deleted, not the merchant's earlier evidence. Cleanup failures
+log a generic code only and require an operator to investigate private orphans.
 
 India: retain provider GSTIN verification and registered-address confirmation;
 then request GST registration certificate upload. Document submission must not
@@ -73,6 +88,60 @@ requirements country by country after review.
 
 Distinguish account country, business country, phone ownership, tax-number
 verification and document review. Do not infer one from another.
+
+### Database rollout
+
+After reviewing `db/staged/0031_business_documents.sql`, run personally:
+
+    pnpm run db:migrate -- --staged-business-documents
+
+Prerequisites: the regular foundation through 0010, GST migration 0011, Ann
+launch migration 0017 and registration-contact migration 0030 must already be
+recorded in `schema_migrations`. Use the existing administrative/BYPASSRLS
+migration connection. This command applies only the selected new migration.
+Old migrations, prepared-function identities, GST evidence and invoice rules
+are unchanged.
+
+### Production enablement: deliberately not performed automatically
+
+1. Provision `lebrands-business-documents` in the intended Cloudflare account,
+   for example using `pnpm exec wrangler r2 bucket create lebrands-business-documents`.
+   The `BUSINESS_DOCUMENTS` binding is prepared in production/preview configuration.
+   Keep public access, r2.dev, custom public domains and public CORS disabled.
+   Do not point this binding at the existing public media bucket.
+2. Deploy an approved private malware/document scanner and configure a Workers
+   service binding named `BUSINESS_DOCUMENT_SCANNER` to it. The scanner service
+   itself and any external vendor agreement are **not** supplied by this phase.
+   The Worker POSTs raw document bytes to `/scan` with its MIME and size. Only a
+   successful JSON response `{ "clean": true, "engine": "configured" } is
+   accepted; timeouts, malformed responses and non-clean results are rejected.
+   A signature-only echo service is not a security scanner and must not be used.
+   The mock scanner exists only inside the isolated synthetic preview fixture.
+3. Set `BUSINESS_DOCUMENT_RETENTION_DAYS` only after deciding an appropriate
+   policy, as an integer from 30 to 365. All submissions are paused without it.
+   This sets **retention review due dates**, not guaranteed deletion dates.
+   Automated deletion, legal holds and orphan reconciliation require a separately
+   reviewed operational policy; this phase never deletes prior submitted evidence.
+4. Apply the staged migration, then deploy the Worker through the established
+   process. Validate the private bucket and actual scanner with a synthetic file
+   before accepting business documents.
+
+Missing configuration is shown explicitly in the dialog. Even when scanning or
+storage is paused, the not-registered manual-assessment path can submit without
+a file once the retention review policy is configured. Countries other than
+India use an explicitly labelled generic manual assessment, not invented local
+legal requirements. Country-by-country reviewed policies remain future work.
+
+### Verification
+
+`tests/business-documents.test.js` applies the real foundational and staged DDL
+in disposable PGlite and tests submission/resubmission, revision conflicts and
+orphan cleanup, file checks, scan failure, private downloads, role denials,
+non-registered exceptions and no object-key exposure. The isolated
+`/__ann-builder-preview` uses fictional data, in-memory private storage and a
+mock scanner only; it does not access live tax evidence or provide a production
+scanner bypass. Submitted documents do not grant editor, publication,
+subscription or invoice privileges.
 
 ## Phase 3: Ann and editor access
 

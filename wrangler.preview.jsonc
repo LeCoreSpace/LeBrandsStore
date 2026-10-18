@@ -14,5 +14,6 @@
     "required": ["SUPABASE_APP_DB_URL", "PASSWORD_PEPPER", "SESSION_SECRET", "GSTIN_KEY", "REPLIT_DEV_DOMAIN"]
   },
   "assets": { "directory": "./generated-artifacts/public", "binding": "ASSETS", "run_worker_first": true },
-  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "lebrands-store-media" }]
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "lebrands-store-media" },
+    { "binding": "BUSINESS_DOCUMENTS", "bucket_name": "lebrands-business-documents" }]
 }

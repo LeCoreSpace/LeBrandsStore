@@ -30,7 +30,7 @@ export function attachAnnReplyFields({root=document.body,onChange=()=>{}}={}){
   function refresh(){
     fields.clear();
     for(const n of root.querySelectorAll(selector)){
-      if(n.closest("#ann-composer, .ann-ctx, .aw, #ann-design")||n.readOnly||n.type==="password"||insideClosedDetails(n))continue;
+      if(n.closest("#ann-composer, .ann-ctx, .aw, #ann-design, [data-ann-native-fields]")||n.readOnly||n.type==="password"||insideClosedDetails(n))continue;
       const key=keyFor(n);
       fields.set(key,n);
       if(!n.dataset.replyLabel)n.dataset.replyLabel=describe(n);

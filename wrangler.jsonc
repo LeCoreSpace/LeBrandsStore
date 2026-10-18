@@ -24,6 +24,10 @@
 		{
 			"binding": "MEDIA",
 			"bucket_name": "lebrands-store-media"
+},
+{
+"binding": "BUSINESS_DOCUMENTS",
+"bucket_name": "lebrands-business-documents"
 		}
 	],
 	"images": {

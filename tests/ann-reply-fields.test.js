@@ -13,7 +13,7 @@ test("One composer preserves field identity, validation, editor normalization an
     const n={value,placeholder:"",inputMode:"decimal",tagName:"INPUT",type:"text",disabled:false,readOnly:false,isConnected:true,
       getAttributeNames:()=>Object.keys(attrs),getAttribute:k=>attrs[k]??null,setAttribute:(k,v)=>{attrs[k]=v;},
       matches:()=>n.disabled,checkValidity:()=>n.value!=="invalid",validationMessage:"Use a valid price.",
-      closest:q=>q==="#ann-composer, .ann-ctx"?null:q==="#ann-log"?{}:q==="label"?{cloneNode:()=>({textContent:name,querySelectorAll:()=>[]})}:q==="fieldset"?null:{id:"ann-application-slot"},
+      closest:q=>q.startsWith("#ann-composer")?(n.nativeFields&&q.includes("[data-ann-native-fields]")?{}:null):q==="#ann-log"?{}:q==="label"?{cloneNode:()=>({textContent:name,querySelectorAll:()=>[]})}:q==="fieldset"?null:{id:"ann-application-slot"},
       after:b=>{n.nextElementSibling=b;},dispatchEvent:e=>{
         events.push({field:name,type:e.type,value:n.value});
         if(name==="price"&&e.type==="input"){
@@ -31,10 +31,12 @@ test("One composer preserves field identity, validation, editor normalization an
   try{
     const details={open:false,parentElement:null},partner=field("provider_key");
     partner.parentElement={closest:()=>details};
-    nodes=[field("price","10.00"),field("hsn"),partner];
+    const privateBusiness=field("business_name");privateBusiness.nativeFields=true;
+    nodes=[field("price","10.00"),field("hsn"),partner,privateBusiness];
     const bridge=attachAnnReplyFields({root});await Promise.resolve();
     const key=bridge.current().key;bridge.refresh();assert.equal(bridge.current().key,key);
     assert.equal(nodes[0].hidden,true);assert.match(nodes[0].nextElementSibling.textContent,/Change in chat/);
+    assert.notEqual(privateBusiness.hidden,true);assert.equal(privateBusiness.nextElementSibling,undefined);
     assert.throws(()=>bridge.submit("invalid"),/valid price/);assert.equal(nodes[0].value,"10.00");
     bridge.submit(" 1299.00 ");
     assert.equal(nodes[0].value,"1299.00","do not overwrite the editor's normalized value");

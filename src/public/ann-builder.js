@@ -12,6 +12,7 @@ import { attachAnnOnboarding } from "./ann-onboarding-ui.js";
 import { attachAnnReplyFields } from "./ann-reply-fields.js";
 import {attachAnnLanguage} from "./ann-language.js";
 import {attachAnnCatalogue} from "./catalogue-modal.js";
+import {attachAnnBusinessDocuments} from "./ann-business-documents-ui.js";
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { attachStoreEssentials, connectionHref } from "./store-essentials.js";
 import { openAnnBrowserPreview,browserPreviewLocation } from "./ann-browser-preview.js";
@@ -25,6 +26,13 @@ const boot = JSON.parse($("#ann-data").textContent);
 const ref = boot.reference && Array.isArray(boot.reference.categories) ? boot.reference : null;
 const readOnly = !boot.canWrite;
 const storeId = encodeURIComponent(boot.store.store_id);
+const businessDocuments = attachAnnBusinessDocuments({
+  api: boot.apiRoot?.startsWith("/__ann-builder-preview/")
+    ? "/__ann-builder-preview/catalogue/api/business-verification"
+    : `/api/stores/${storeId}/business-verification`,
+  readOnly, onError: message => say(message),
+});
+$("#ann-business-documents")?.addEventListener("click", () => businessDocuments.open());
 const api = boot.apiRoot || `/api/stores/${storeId}/ann`;
 const root = `/stores/${storeId}`;
 
@@ -888,7 +896,7 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || Object.values(obUIs).some(u => u.hasUnsavedChanges()) || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
+window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || businessDocuments.hasUnsavedChanges() || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || Object.values(obUIs).some(u => u.hasUnsavedChanges()) || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- start ---------- */
 const replyFields=attachAnnReplyFields({onChange:()=>drawComposer(true)});

@@ -21,6 +21,7 @@ import { stylePreviewData, renderStylePreview } from "./public/style-preview.js"
 import {mapGSTINResponse} from "./gstin/provider.js";
 import {handleGSTINRoutes} from "./gstin/routes.js";
 import {handleStoreRoutes} from "./store/routes.js";
+import {handleBusinessDocumentRoutes} from "./store/business-document-routes.js";
 import {renderDashboard} from "./ui/dashboard.js";
 import {handleDashboard} from "./dashboard/routes.js";
 
@@ -41,11 +42,18 @@ let database;
 const sampleProductId="dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const samplePhotoId="eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
 const memoryMedia=new Map();
+const memoryBusinessDocuments=new Map();
+const fixtureBusinessStorage={
+  async put(key,bytes){memoryBusinessDocuments.set(key,new Uint8Array(bytes));},
+  async get(key){const bytes=memoryBusinessDocuments.get(key);return bytes?{body:bytes}:null;},
+  async head(key){const bytes=memoryBusinessDocuments.get(key);return bytes?{size:bytes.length}:null;},
+  async delete(key){memoryBusinessDocuments.delete(key);},
+};
 const fixtureMedia={
   async put(key,bytes,options){memoryMedia.set(key,{bytes:new Uint8Array(bytes),type:options.httpMetadata.contentType});},
   async delete(key){memoryMedia.delete(key);},
 };
-export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false,verifiedBusiness=false,catalogueMasters=true,catalogueApi=false,sampleClassification=false,catalogueCustomValues=false}={}) {
+export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalogue=false,verifiedBusiness=false,businessDocuments=false,catalogueMasters=true,catalogueApi=false,sampleClassification=false,catalogueCustomValues=false}={}) {
   const pg = new PGlite();
   try {
     await pg.exec(`CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
@@ -104,6 +112,15 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
       }),{},annFixtureAdapter(pg),{id:ownerId},"a".repeat(64));
       if(!response.ok)throw new Error("Synthetic GST invoice identity could not be confirmed.");
     }
+    if(businessDocuments){
+      if(!verifiedBusiness)throw new Error("Business documents fixture requires synthetic GST evidence.");
+      await pg.exec(await readFile(new URL("../db/staged/0030_registration_contact.sql",import.meta.url),"utf8"));
+      // Mirror the migration runner's record of the actual DDL applied above.
+      for(const file of ["0011_gstin_approval.sql","0017_ann_launch_setup.sql","0030_registration_contact.sql"])
+        await pg.query("INSERT INTO public.schema_migrations(filename,checksum) VALUES($1,'isolated fixture')",[file]);
+      await pg.exec(await readFile(new URL("../db/staged/0031_business_documents.sql",import.meta.url),"utf8"));
+      await pg.query("UPDATE public.users SET country_code='IN',phone='+919876543210' WHERE id=$1",[ownerId]);
+    }
     if(sampleClassification){
       if(!catalogueApi)throw new Error("Sample classification requires the catalogue API fixture.");
       const {seedCataloguePreviewReferences}=await import("./catalogue-preview-references.js");
@@ -112,7 +129,7 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
     return pg;
   } catch (error) { await pg.close(); throw error; }
 }
-const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true,sampleCatalogue:true,verifiedBusiness:true,catalogueApi:true,sampleClassification:true,catalogueCustomValues:true}).catch(error => { database = null; throw error; });
+const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true,sampleCatalogue:true,verifiedBusiness:true,businessDocuments:true,catalogueApi:true,sampleClassification:true,catalogueCustomValues:true}).catch(error => { database = null; throw error; });
 export function annFixtureAdapter(pg) {
   return { withMemberStore: async (id, hash, fn) => {
     if (id !== storeId || !["a".repeat(64), "b".repeat(64)].includes(hash))
@@ -175,11 +192,22 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       const init={method:req.method,headers};
       if(!["GET","HEAD"].includes(req.method))Object.assign(init,{body:Readable.toWeb(req),duplex:"half"});
       const request=new Request(target,init);
-      response=target.pathname.endsWith("/orders")&&req.method==="GET"
+      response=target.pathname.includes("/business-verification")
+        ?await handleBusinessDocumentRoutes(request,{BUSINESS_DOCUMENTS:fixtureBusinessStorage,
+          BUSINESS_DOCUMENT_RETENTION_DAYS:"90",
+          // Only synthetic fixture bytes. Never exposed or configured in production.
+          BUSINESS_DOCUMENT_SCANNER:{async fetch(){return Response.json({clean:true,engine:"configured"});}}},db,user,hash)
+        :target.pathname.endsWith("/orders")&&req.method==="GET"
         ?await handleDashboard(request,db,user,hash,{MEDIA:fixtureMedia})
         :target.pathname.endsWith("/ann/reference")
         ?await handleAnnRoutes(request,{},db,user,hash)
         :await handleStoreRoutes(request,{MEDIA:fixtureMedia},db,user,hash);
+      if(target.pathname.includes("/business-verification")&&response.headers.get("content-type")?.includes("application/json")){
+        const body=await response.json();
+        for(const document of body.verification?.documents||[])
+          document.download_url=`${prefix}/catalogue/api/business-verification/documents/${document.id}`;
+        response=new Response(JSON.stringify(body),{status:response.status,headers:response.headers});
+      }
     }else if(url.pathname.startsWith(`${prefix}/catalogue/`)&&["GET","HEAD"].includes(req.method)){
       const match=url.pathname.slice(`${prefix}/catalogue/`.length).match(/^(products|collections)(?:\/(new|[a-f0-9-]{36}))?$/);
       if(!match)response=new Response("Unknown isolated catalogue page.",{status:404});

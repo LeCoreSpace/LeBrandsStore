@@ -26,3 +26,27 @@ subscription eligibility. Do not activate a manual-review subscription gate
 until a restricted staff review process exists. Keep documents private and
 define exceptions and reviewed jurisdiction requirements before collection.
 Complete and confirm one phase before proceeding, as requested earlier.
+
+Private evidence collection must fail closed until a real security scanner and
+retention review policy are configured. Signature checks and the isolated
+preview's mock scanner are not production malware screening. Keep evidence in
+a separate private bucket, not the public product-media bucket.
+
+**Why:** Tax documents contain sensitive business information. Accepting them
+through public media or presenting unconfigured scanning as protection would
+create a privacy and reviewer-safety risk.
+
+**How to apply:** Keep missing-configuration messages explicit. Distinguish
+retention review dates from a deletion guarantee. Do not silently enable
+production uploads, substitute an echo scanner, or infer legal requirements for
+unreviewed countries.
+
+Private business evidence forms must own their native text inputs rather than
+moving the entered details into Ann's shared chat composer.
+
+**Why:** A modal makes the background composer inaccessible, and registration
+details should stay inside the dedicated private submission flow.
+
+**How to apply:** Keep modal form fields independent of conversation input
+enhancements and test non-Indian free-text/exception paths as well as Indian
+read-only GST details.
