@@ -42,3 +42,4 @@
 - [Browser bundle lifecycle](browser-bundle-lifecycle.md) — safe public caching, cross-deployment editor sessions, and custom-build working directories.
 - [Navigation performance boundary](navigation-performance-boundary.md) — keep private data fresh and drafts coherent; audit GET side effects before relaxing read coordination.
 - [Business verification direction](business-verification-direction.md) — country-aware registration and private evidence; restricted review is approved, broader admin tooling remains later.
+- [Cloudflare scanner runtime](cloudflare-scanner-runtime.md) — use manual redirects and fail closed; Node probes cannot catch Workers rejecting redirect:error.

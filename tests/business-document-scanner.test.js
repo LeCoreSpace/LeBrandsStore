@@ -28,7 +28,7 @@ test("Cloudmersive advanced API contract sends only bytes with a generic filenam
   let calls=0;
   const result=await scanBusinessDocument(managed,pdf,"application/pdf",{fetchImpl:async(url,options)=>{
     calls++;assert.equal(url,"https://api.cloudmersive.com/virus/scan/file/advanced");
-    assert.equal(options.method,"POST");assert.equal(options.redirect,"error");
+    assert.equal(options.method,"POST");assert.equal(options.redirect,"manual");
     assert.equal(options.headers.Apikey,"synthetic-test-key");
     assert.equal(options.headers.restrictFileTypes,".pdf,.png,.jpg,.jpeg");
     for(const key of ["allowExecutables","allowInvalidFiles","allowScripts","allowPasswordProtectedFiles",

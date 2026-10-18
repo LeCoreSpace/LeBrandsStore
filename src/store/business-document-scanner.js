@@ -90,12 +90,15 @@ export async function scanBusinessDocument(env,bytes,mime,{fetchImpl=globalThis.
         restrictFileTypes:".pdf,.png,.jpg,.jpeg"};
       for(const header of blockedHeaders)headers[header]="false";
       verdict=await readBusinessDocumentScanVerdict(await fetchImpl(ENDPOINT,{
-        method:"POST",headers,body,signal,redirect:"error",
+        // Workers reject redirect:"error" before making any request. Manual
+        // mode plus the non-2xx verdict check rejects redirects without ever
+        // forwarding the key or document to the redirect destination.
+        method:"POST",headers,body,signal,redirect:"manual",
       }));
     }else{
       verdict=await readBusinessDocumentScanVerdict(await env.BUSINESS_DOCUMENT_SCANNER.fetch("https://scanner.internal/scan",{
         method:"POST",headers:{"content-type":mime,"x-document-size":String(bytes.length)},
-        body:bytes,signal,redirect:"error",
+        body:bytes,signal,redirect:"manual",
       }));
     }
   }catch(error){

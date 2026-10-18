@@ -148,9 +148,9 @@ Successful synthetic scans using the Replit secret do not prove that the
 separately deployed Cloudflare Worker has the same secret value. Cloudflare
 binding metadata confirms presence, not equality.
 
-**Why:** A production submission reported an opaque scanner outage while local
-synthetic clean files, near-limit PDFs and antivirus test detection all worked.
-The production credential mismatch was not confirmed.
+**Why:** Replit and Cloudflare manage secrets independently. Local scan success
+does not establish a production credential mismatch or prove Worker runtime
+compatibility.
 
 **How to apply:** Use bounded synthetic probes rather than re-sending merchant
 documents. Distinguish provider authentication, quota, network, timeout and
