@@ -44,6 +44,15 @@ backgrounds with white; it does not change merchant theme presets.
 
 ## Subscription entry points
 
+Initial platform billing uses one-time payments and manual renewals. Recurring
+payments are deferred until later.
+
+**Why:** The user explicitly said recurring payment is not needed now and will
+be added later.
+
+**How to apply:** Do not create automatic debits or mandates in the initial billing
+scope. Keep future recurring billing separate from current manual renewal.
+
 Brands must subscribe to the Free plan before starting to build with Ann.
 Show plan selection as a modal inside Ann Builder immediately after store name selection.
 Subscriptions must be available from the pricing page after login and from a

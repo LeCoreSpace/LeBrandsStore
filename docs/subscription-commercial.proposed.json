@@ -209,12 +209,18 @@
   },
   "proposed_lifecycle": {
     "paid_period_starts": "verified_successful_payment",
+    "collection_mode": "one_time_payment_manual_renewal",
+    "automatic_renewal_enabled": false,
+    "recurring_payments_enabled": false,
+    "recurring_payments_scope": "deferred",
+    "payment_mandate_required": false,
+    "renewal": "owner_initiated_checkout_after_explicit_amount_confirmation",
     "same_interval_upgrade": "positive_prorated_difference_after_verified_authorisation",
     "proration_basis": "actual_remaining_utc_seconds",
     "proration_rounding": "half_up_to_currency_minor_unit",
     "interval_or_currency_change": "next_period_with_new_quote_and_authorisation",
     "downgrade": "period_end_after_usage_remediation",
-    "cancellation": "stop_future_renewal_retain_paid_period_access",
+    "cancellation": "do_not_extend_retain_paid_period_access_no_automatic_debit",
     "automatic_cancellation_refund": false,
     "mandatory_legal_rights_preserved": true,
     "free_expiry": "pause_new_order_taking_preserve_existing_orders_and_fulfilment",
@@ -242,7 +248,15 @@
     "approved": null,
     "supported_new_connection_options": ["stripe", "whop"],
     "existing_merchant_checkout_unchanged": true,
+    "requested_initial_mode": "test",
+    "test_credential_secret_references": {
+      "key_id": "RAZORPAY_KEY_ID",
+      "key_secret": "RAZORPAY_KEY_SECRET"
+    },
+    "credential_validity_verified": false,
+    "platform_checkout_implemented": false,
     "account_eligibility_verified": false,
+    "recurring_support_required_for_initial_release": false,
     "recurring_currency_and_mandate_support_verified": false
   },
   "paid_launch_blockers": [

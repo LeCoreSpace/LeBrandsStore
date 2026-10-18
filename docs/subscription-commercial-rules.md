@@ -235,16 +235,21 @@ Audit anchors: `src/ui/pricing.js`, `src/public/pricing-plans.js`,
 
 ## 6. Proposed upgrades, cancellation and refunds
 
+Initial billing uses one-time payments for monthly or annual service periods,
+with manual renewal. Recurring payments, automatic debits and mandates are
+deferred. Each payment needs an owner-initiated checkout with the amount and
+period confirmed; a monthly plan does not imply automatic monthly collection.
+
 | Action | Proposed rule |
 | --- | --- |
 | Free to paid | Full chosen period starts at verified successful payment, even if the store has not published. Disclose this before paying. Do not restart or bank Free days. |
 | Same-interval upgrade | Immediate after verified payment/authorisation of the positive prorated base-price difference. Preserve the current period end. Compute remaining time in UTC seconds; round once to the currency's minor unit, half up; calculate applicable tax on the resulting line. Never double-charge through both provider and local proration. |
-| Proration support | Verify the selected provider and mandate type supports this operation. If it does not, require an explicitly authorised replacement mandate or schedule the change for renewal. Never silently debit an unsupported mandate. |
+| Proration support | Present the positive prorated difference in a new one-time checkout and activate the upgrade only after server-verified payment. Do not create a mandate, silently debit or extend the original period. |
 | Monthly/annual switch or currency change | Schedule for current paid-period end with an explicit new quote/authorisation. No mid-cycle cross-currency balance conversion. |
 | Downgrade | Schedule for period end. If usage exceeds the new limits, show a remediation path before confirming the change. Preserve existing data; do not delete products or stop checkout because an order band was exceeded. |
-| Cancellation | Stop future renewal; retain the already-paid service through period end. No surprise immediate suspension or new charge. |
+| Cancellation | Mark the plan not to extend; retain already-paid service through period end. Renewal is manual and no automatic charge or mandate exists. |
 | Refunds | No routine prorated refund merely for cancelling after a period starts. Verify duplicate/erroneous charges for correction; review service-failure requests manually. Applicable mandatory legal rights prevail; legal review required before publishing this policy. |
-| Renewal | Collect only through a valid authorised mandate and approved price. Disclose renewal amount and notice requirements; price changes do not rewrite existing invoices. |
+| Renewal | The owner explicitly starts a new one-time checkout for the disclosed amount and period. Extend service only after server-verified payment, once per payment. No recurring collection; price changes do not rewrite existing invoices. |
 | Founding discounts/add-ons | Disabled until an explicit offer, eligibility, duration and renewal price are approved. |
 
 Flagship is quotation-only: verify requirements and feature availability, issue an
@@ -256,7 +261,7 @@ amount is not itself an approved checkout amount.
 
 - Free expiry: pause new order-taking at the end of its 30-day live window.
   No automatic charge or conversion.
-- Paid renewal failure: seven full days of grace from the original due date.
+- Paid period not manually renewed: seven full days of grace from the original due date.
   Proposed day 8: design/catalogue become read-only. Proposed day 15: pause new
   order-taking. These exact staging dates need approval; they refine the earlier
   “grace, read-only, pause” sequence.
@@ -288,10 +293,23 @@ renaming, cancelling, changing owners or republishing.
 
 ## 9. Provider decision and release blockers
 
-The user requested Razorpay and stated that test credentials already exist.
-Existing code uses Razorpay for shoppers paying merchants; that does not establish
-platform recurring-billing readiness, mandates or international subscription support.
+The user requested Razorpay test credentials obtained for LeBrands.Space and
+explicitly deferred recurring payments. Secret-presence checks confirm
+`RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` already exist in this workspace.
+The companion configuration records secret names only, not credential values.
+Their validity, test-mode identity and account ownership have not been verified.
 No credential values were read and no provider transactions were created in this phase.
+
+Existing code uses store-scoped Razorpay credentials for shoppers paying merchants;
+that does not implement platform plan checkout using the workspace secrets.
+Keep platform billing separate from merchant accounts and order payments.
+Do not overwrite merchant credentials, place secrets in browser code, or grant
+entitlements from a checkout redirect alone. Verify payments server-side and
+deduplicate them before activating or extending access.
+
+One-time manual renewal is the initial scope. Recurring capabilities, mandates and
+recurring-payment markets are not launch requirements for that scope. Any later
+recurring-payment rollout needs a separate decision, implementation and consent.
 
 The supported new billing-connection flow available for this work offers Stripe
 or Whop rather than a new Razorpay subscription connection. Do not silently switch
@@ -304,7 +322,7 @@ against the agreed platform invoicing requirements. A provider selection is not
 proof of live account eligibility.
 
 Before paid billing can launch, approve the provider, verify the platform's actual
-account capabilities and mandate/currency support, complete tax/legal review,
+account capabilities for one-time payments in the launch currency, complete tax/legal review,
 confirm operational benefits, implement billing and quotas, and pass test-mode
 and controlled release verification. Test keys alone cannot approve live launch.
 
@@ -320,6 +338,8 @@ https://razorpay.com/docs/payments/subscriptions/faqs/
 - Upgrade/refund/non-payment and legacy-transition rules: **planning baseline; legal and release review required before activation**.
 - Free LeBrands.Space placement: **not included, explicitly confirmed by owner**.
 - Provider: **Razorpay remains the user's requested provider; new platform-subscription setup is unresolved**.
+- Collection: **one-time payments with manual renewal; recurring payments deferred**.
+- Test secrets: **already present; validity and platform checkout not yet verified**.
 - Tax/legal and operational fulfilment checks: **required before live charges**.
 - Billing enabled: **no**.
 
@@ -330,7 +350,7 @@ provider connection, live payment or automatic acceptance on behalf of brands.
 
 1. Resolve the new platform subscription-provider setup. Do not change the requested
    provider to Stripe/Whop without approval, and do not treat merchant checkout as
-   a working platform recurring-billing connection.
+   a working platform one-time billing connection. Recurring support is deferred.
 2. Complete tax/legal, operational-benefit and capacity checks before activating
    any live offer. Planning confirmation is not a substitute for these checks.
 

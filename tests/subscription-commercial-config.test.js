@@ -96,6 +96,25 @@ test("Free has no Space placement while the provider decision stays unresolved",
   assert(config.open_items.includes("platform_subscription_provider_setup"));
 });
 
+test("initial paid billing is test-only planning with manual renewal and secret references only",()=>{
+  const lifecycle=config.proposed_lifecycle;
+  assert.equal(lifecycle.collection_mode,"one_time_payment_manual_renewal");
+  assert.equal(lifecycle.automatic_renewal_enabled,false);
+  assert.equal(lifecycle.recurring_payments_enabled,false);
+  assert.equal(lifecycle.recurring_payments_scope,"deferred");
+  assert.equal(lifecycle.payment_mandate_required,false);
+  assert.equal(lifecycle.renewal,"owner_initiated_checkout_after_explicit_amount_confirmation");
+  assert.equal(config.provider.requested_initial_mode,"test");
+  assert.deepEqual(config.provider.test_credential_secret_references,{
+    key_id:"RAZORPAY_KEY_ID",key_secret:"RAZORPAY_KEY_SECRET"
+  });
+  assert.equal(config.provider.credential_validity_verified,false);
+  assert.equal(config.provider.platform_checkout_implemented,false);
+  assert.equal(config.provider.recurring_support_required_for_initial_release,false);
+  assert.equal(config.billing_enabled,false);
+  assert.equal(config.live_charges_enabled,false);
+});
+
 test("Free enrolment and legacy transition cannot approve business evidence or delete data",()=>{
   assert.equal(config.common_rules.explicit_free_activation_required,true);
   assert.equal(config.common_rules.plan_modal_position,"ann_after_store_name_confirmation");
