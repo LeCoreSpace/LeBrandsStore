@@ -1,10 +1,7 @@
 // Public editorial content. No merchant records or private operational data.
-const article=(slug,title,description,category,summary,takeaways,sections,faqs,related,imageAlt)=>({
-  slug,title,description,category,summary,takeaways,sections,faqs,related,imageAlt,
-  image:`/img/blog/${slug}.svg`,author:"LeBrands.Store editorial team",published:"2026-10-19",
-});
-const section=(id,heading,paragraphs,bullets=[])=>({id,heading,paragraphs,bullets});
-const faq=(question,answer)=>({question,answer});
+import {article,section,faq} from "./blog-helpers.js";
+import {D2C_GUIDES} from "./blog-d2c-guides.js";
+import {PLATFORM_GUIDES} from "./blog-platform-guides.js";
 
 export const BLOG_POSTS=[
   article("launch-checklist-indian-d2c-store",
@@ -269,33 +266,35 @@ export const BLOG_POSTS=[
     "An editorial illustration of a structured article linked to a sitemap and machine-readable content blocks"),
 
   article("payments-and-logistics-integration-roadmap",
-    "Payments and logistics on LeBrands.Store: what is available and what is next",
-    "Understand Razorpay website approval, merchant account authorisation, payment verification and logistics connection requirements.",
-    "Platform updates",
-    "An integration is useful only when the connected account, permissions and operational workflow are clear. Understand how website approval, merchant authorisation and transaction verification differ, and check the connection status applicable to your store.",
-    ["Razorpay website approval is complete; self-service partner OAuth is not enabled.","A connected account and verified payment are separate milestones.","Logistics connections require provider-specific configuration and availability checks."],
+    "Razorpay payments and delivery operations for a D2C store",
+    "A practical guide to Razorpay payments, delivery partner workflows, payment verification, fulfilment records and COD reconciliation.",
+    "Store operations",
+    "Payment collection and parcel delivery are connected parts of the customer experience. Use clear order records to connect Razorpay transactions, delivery partner activity and customer communication without confusing a confirmed order, a dispatched parcel and a settled payment.",
+    ["Reconcile Razorpay payment evidence with the correct order.","Use delivery partner records to distinguish dispatch, delivery and returns.","Track COD collection and settlement separately from shipment events."],
     [
-      section("current-status","The current integration status",[
-        "LeBrands.Store's website approval with Razorpay is complete. Self-service partner OAuth is not enabled. Website approval does not establish an authorised connection to every merchant account or prove that a payment was received.",
-        "Logistics connections depend on the provider, supported capabilities and account-authorisation requirements. A general-use logistics partner connection is not enabled. Do not assume that every logistics provider supports OAuth or that an account connection alone provides live shipping quotes, labels or tracking.",
+      section("current-status","Connect the payment to the correct order",[
+        "Razorpay payment records help a merchant identify the transaction associated with an order. Keep the order reference, payable amount, currency and provider payment identifier together. An integration is useful when the team can trace a customer enquiry back to clear payment evidence rather than relying on a screenshot or an informal confirmation.",
+        "Keep the store's customer-order payments distinct from its own platform subscription payments. They involve different purchasers, amounts and accounting records. A clear separation makes support and reconciliation easier, particularly when the merchant is handling cash-on-delivery orders alongside online transactions.",
       ]),
-      section("account-authorisation","What a partner connection should establish",[
-        "An account-authorisation flow should clearly identify the account being connected, the permissions requested and the store receiving access. When OAuth is supported and implemented, the provider's authorisation page should handle account consent rather than asking a merchant to share a password with the platform.",
-        "A connection also needs a lifecycle: merchants need to know whether it is connected, whether authorisation has expired or been revoked and what happens on disconnect. Confirm account-specific setup with the team and distinguish it from a self-service connection.",
+      section("account-authorisation","Keep provider access secure and accountable",[
+        "Use the provider's authorised account controls to manage access and permissions. Keep account credentials out of customer conversations, public pages and shared product documents. An employee who can prepare a shipment does not automatically need authority over payment settlements or sensitive account configuration.",
+        "Review access when a team member changes roles or a provider account changes ownership. Maintain a simple record of who owns payment and delivery operations inside the business. That ownership helps the team investigate a failed transaction or delayed parcel without passing the customer between unrelated departments.",
       ]),
-      section("payment-evidence","Keep test payments and real payment evidence separate",[
-        "Payment initiation, a browser callback and a captured payment are not interchangeable. The server must validate the relevant provider evidence before presenting an order as paid. A shopper closing a payment window or a temporary network failure should lead to a recoverable state, not a false success claim.",
-        "Sandbox credentials and test payments are for testing. They must not establish a live paid platform subscription, live payment collection or tax-invoice authority. Platform subscription billing and a merchant's customer-order payments are different money flows and should remain distinct in both the interface and records. Recurring platform billing is not announced here as available.",
+      section("payment-evidence","Distinguish a payment attempt from a verified result",[
+        "Payment initiation, a browser callback and a captured payment are not interchangeable. Validate the relevant provider evidence before treating an order as paid. A shopper closing a payment window or losing connectivity should not become a false payment-success record, and repeating a request should not create an unintended duplicate purchase.",
+        "Keep refunds traceable to the original transaction and explain their progress accurately to the buyer. For cash on delivery, state the amount due on delivery rather than presenting the order as an online payment. Good payment communication starts with the actual transaction result, not the label on a checkout button.",
       ]),
-      section("shipping-workflow","Connect logistics to the actual fulfilment process",[
-        "A useful shipping integration needs clear inputs and outcomes: destination serviceability, parcel details, applicable charges and the supported shipment or tracking actions. Which of those functions is available depends on the selected provider and the implemented agreement and API scope.",
-        "COD collection, settlement and RTO updates require particular care because a shipment event does not automatically prove payment has reached the merchant. We will describe the specific supported workflow when it is implemented. In the meantime, use accurate order records, current merchant policies and support-confirmed setup information rather than promises of universal automated fulfilment.",
+      section("shipping-workflow","Use delivery partner events to guide fulfilment",[
+        "Delivery partner workflows connect the customer's destination, parcel details and service selection to the physical shipment. Check package weight, dimensions and the delivery address before dispatch. A tracking reference is useful only when it identifies the correct parcel and the customer can understand the latest meaningful event.",
+        "Keep dispatch, delivery, return-to-origin and COD settlement distinct. A delivered parcel does not automatically prove that collected money has reached the merchant's account. Reconcile provider records with the order, explain exceptions through the store's published policies and keep customer updates specific to the evidence available.",
       ]),
     ],
-    [faq("Is Razorpay partner OAuth live for all LeBrands.Store merchants?","Not yet. Website approval is complete, while the partner OAuth integration is in progress."),
-      faq("Is a logistics partner already connected for every store?","No. A general-use logistics partner connection is not enabled. Provider choice, authorisation and supported shipping capabilities require confirmation for each supported setup.")],
+    [faq("Is an order confirmation the same as a verified online payment?","No. A confirmation records the order. Online payment verification requires matching provider evidence; a COD order instead has an amount due on delivery."),
+      faq("Does a delivery update prove that COD money has settled?","No. Delivery and financial settlement are separate events. Reconcile the delivery partner's collection and settlement evidence with the order.")],
     ["checkout-trust-and-verified-email","cash-on-delivery-and-rto-workflow"],
-    "An editorial roadmap separating account authorisation, payment verification and future parcel tracking"),
+    "Connected payment, order and parcel records showing distinct transaction, delivery and settlement events"),
+  ...D2C_GUIDES,
+  ...PLATFORM_GUIDES,
 ];
 
 export const getBlogPost=slug=>BLOG_POSTS.find(post=>post.slug===slug)||null;

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+<title id="title">Ann, from a store brief to a saved draft</title><desc id="desc">A guided conversation connects a brand brief and plan review to a storefront preview with theme controls.</desc>
+<rect width="1200" height="800" fill="#fdf8f6"/><circle cx="1080" cy="680" r="300" fill="#f6e7e3"/><rect x="40" y="40" width="1120" height="720" rx="28" fill="none" stroke="#e9d3cf" stroke-width="2"/>
+<rect x="110" y="135" width="400" height="525" rx="20" fill="#fff" stroke="#e9d3cf" stroke-width="3"/><circle cx="160" cy="190" r="23" fill="#874353"/><path d="M153 198l8-21 8 21m-13-7h10" stroke="#fff" stroke-width="3" fill="none"/>
+<rect x="205" y="175" width="240" height="12" rx="5" fill="#874353"/><rect x="150" y="235" width="300" height="75" rx="12" fill="#f6e7e3"/><path d="M175 260h230m-230 25h155" stroke="#ce928b" stroke-width="8" stroke-linecap="round"/>
+<rect x="220" y="345" width="235" height="58" rx="12" fill="#874353"/><path d="M250 375h170" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+<g fill="#fff" stroke="#ce928b" stroke-width="2"><rect x="150" y="450" width="88" height="120" rx="8"/><rect x="252" y="450" width="88" height="120" rx="8"/><rect x="354" y="450" width="88" height="120" rx="8"/></g><path d="M165 480h55m47 0h58m44 0h58" stroke="#874353" stroke-width="8" stroke-linecap="round"/>
+<path d="M540 400h65m-15-12l15 12-15 12" fill="none" stroke="#874353" stroke-width="5"/>
+<rect x="650" y="155" width="450" height="480" rx="18" fill="#fff" stroke="#e9d3cf" stroke-width="3"/><rect x="680" y="185" width="110" height="15" rx="5" fill="#874353"/><path d="M940 190h125" stroke="#ce928b" stroke-width="7"/>
+<rect x="680" y="235" width="390" height="210" rx="10" fill="#f6e7e3"/><rect x="705" y="275" width="170" height="18" rx="5" fill="#874353"/><rect x="705" y="315" width="140" height="10" rx="4" fill="#ce928b"/><rect x="705" y="360" width="100" height="35" rx="7" fill="#874353"/><rect x="925" y="265" width="90" height="150" rx="30" fill="#ce928b"/>
+<g fill="#f6e7e3"><rect x="680" y="480" width="115" height="120" rx="8"/><rect x="817" y="480" width="115" height="120" rx="8"/><rect x="955" y="480" width="115" height="120" rx="8"/></g>
+</svg>

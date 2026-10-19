@@ -3,8 +3,8 @@
 .b-wrap { width: var(--m-wrap); margin-inline: auto; }
 .b-main { padding-bottom: 96px; }
 .b-hero { padding: 80px 0 48px; }
-.b-hero h1, .b-art-head h1 { margin: 0 0 20px; max-width: 860px; font-size: clamp(40px, 6vw, 72px); font-weight: 400; line-height: 1; letter-spacing: -.06em; text-wrap: balance; }
-.b-art-head h1 { font-size: clamp(34px, 4.8vw, 58px); max-width: 900px; }
+.b-hero h1, .b-art-head h1 { margin: 0 0 20px; max-width: 860px; font-size: clamp(30px, 4vw, 46px); font-weight: 400; line-height: 1.14; letter-spacing: -.04em; text-wrap: balance; }
+.b-art-head h1 { font-size: clamp(28px, 3.2vw, 40px); max-width: 900px; }
 .b-lede { max-width: 640px; margin: 0; color: var(--m-muted); font-size: clamp(16px, 1.6vw, 19px); line-height: 1.6; }
 .b-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0 0 14px; color: var(--m-muted); font-size: 12px; }
 .b-cat { color: var(--m-accent); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; font-size: 10px; }
@@ -20,7 +20,7 @@
 .b-card p:not(.b-meta) { margin: 0 0 14px; color: var(--m-muted); font-size: 14px; }
 .b-more { font-size: 12px; font-weight: 600; color: var(--m-accent); border-bottom: 1px solid currentColor; padding-bottom: 3px; }
 .b-card-lead { display: grid; grid-template-columns: 1.25fr 1fr; gap: clamp(24px, 4vw, 56px); align-items: center; padding-bottom: 56px; border-bottom: 1px solid var(--m-line); }
-.b-card-lead h2 { font-size: clamp(30px, 3.6vw, 46px); line-height: 1.02; letter-spacing: -.055em; }
+.b-card-lead h2 { font-size: clamp(25px, 2.6vw, 34px); line-height: 1.15; letter-spacing: -.04em; }
 .b-card-lead p:not(.b-meta) { font-size: 16px; }
 .b-crumbs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 28px; color: var(--m-muted); font-size: 12px; }
 .b-crumbs a { text-decoration: none; } .b-crumbs a:hover { color: var(--m-accent); }
@@ -42,7 +42,7 @@
 .b-take ul { margin: 0; padding-left: 20px; font-size: 15px; }
 .b-take li + li { margin-top: 8px; }
 .b-sec { margin-bottom: 44px; scroll-margin-top: 24px; }
-.b-sec h2 { margin: 0 0 16px; font-size: clamp(26px, 3vw, 34px); font-weight: 400; line-height: 1.1; letter-spacing: -.05em; text-wrap: balance; }
+.b-sec h2 { margin: 0 0 16px; font-size: clamp(23px, 2.2vw, 28px); font-weight: 400; line-height: 1.2; letter-spacing: -.035em; text-wrap: balance; }
 .b-sec p, .b-sec li { font-size: 16.5px; line-height: 1.75; }
 .b-sec p { margin: 0 0 16px; }
 .b-sec ul { margin: 0 0 16px; padding-left: 22px; } .b-sec li::marker { color: var(--m-rose); }
@@ -54,7 +54,7 @@
 .b-cta h2 { margin: 0 0 8px; font-size: 26px; font-weight: 400; letter-spacing: -.045em; }
 .b-cta p { margin: 0 0 20px; color: var(--m-muted); }
 .b-related { margin-top: 88px; padding-top: 40px; border-top: 1px solid var(--m-line); }
-.b-related h2 { margin: 0 0 28px; font-size: clamp(28px, 3.4vw, 40px); font-weight: 400; letter-spacing: -.055em; }
+.b-related h2 { margin: 0 0 28px; font-size: clamp(25px, 2.5vw, 32px); font-weight: 400; letter-spacing: -.04em; }
 .b-related .b-grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
 @media (max-width: 900px) {
   .b-layout { grid-template-columns: minmax(0, 1fr); }

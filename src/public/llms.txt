@@ -18,8 +18,7 @@ The platform is operated by LeBrandsSpace Digital Private Limited, based in Chen
 ## Capabilities and boundaries
 
 - A brand manages its own products, customers, orders, fulfilment and customer-facing policies.
-- Cash on delivery is available. Razorpay website approval is complete. Self-service partner OAuth is not enabled. Existing brand-specific payment setup is distinct from a self-service partner connection.
-- A general-use logistics partner connection is not enabled. Provider-specific authorisation and supported shipping capabilities require confirmation. Do not imply that every store has payments or logistics connected.
+- Cash on delivery, Razorpay payment records and delivery partner workflows are distinct parts of order operations. Keep payment verification, dispatch, delivery, return-to-origin and financial settlement separate.
 - A valid GSTIN is required to publish. Every store's first go-live requires platform approval.
 - GST invoices support applicable CGST, SGST or IGST. Exempt product lines have zero tax. Brands remain responsible for accurate business details and applicable taxes.
 - Brands retain their customer relationships. LeBrands.Store does not market to their customers.
@@ -38,7 +37,20 @@ The platform is operated by LeBrandsSpace Digital Private Limited, based in Chen
 - [Discount codes and automatic offers](https://lebrands.store/blog/discount-codes-and-automatic-offers): Redemption methods, eligibility, checkout recovery and historical savings.
 - [COGS and product margin basics](https://lebrands.store/blog/cogs-and-product-margin-basics): Cost basis, illustrative margin calculations and missing-cost limitations.
 - [Ecommerce SEO and AI-readable content](https://lebrands.store/blog/ecommerce-seo-and-ai-readable-content): Semantic content, metadata, structured data and crawler-file boundaries.
-- [Payments and logistics integration roadmap](https://lebrands.store/blog/payments-and-logistics-integration-roadmap): Website approval, account authorisation, payment verification and logistics connection requirements.
+- [Razorpay payments and delivery operations](https://lebrands.store/blog/payments-and-logistics-integration-roadmap): Payment records, provider account security, fulfilment and COD settlement.
+- [A useful apparel size guide](https://lebrands.store/blog/size-guide-reduce-purchase-uncertainty): Measurement methods, fit context and consistent size labels.
+- [Collections for how customers shop](https://lebrands.store/blog/collections-merchandising-d2c-store): Shopping intent, product ordering, clear copy and browsing audits.
+- [Inventory replenishment for small brands](https://lebrands.store/blog/inventory-replenishment-small-d2c-brands): SKU demand, stock cover, reorder points and sellable stock.
+- [Order emails that build trust](https://lebrands.store/blog/transactional-emails-customer-retention): Accurate confirmation details, readable templates and separate marketing preferences.
+- [Shipping and returns policies](https://lebrands.store/blog/shipping-and-returns-policy-d2c): Processing, delivery estimates, return eligibility and refund handling.
+
+## How LeBrands.Store works
+
+- [Build a store with Ann](https://lebrands.store/blog/lebrands-store-ann-builder-guide): Brand naming, plan review, conversation languages, theme choices and saved drafts.
+- [Catalogue, variants and media](https://lebrands.store/blog/lebrands-store-catalogue-and-variants): Product classification, sellable SKUs, 4:5 media preparation and private product costs.
+- [The buying and order experience](https://lebrands.store/blog/lebrands-store-checkout-and-order-experience): Theme-matched frames, shared commerce layouts, verified email checkout and order communication.
+- [Offers and cost control](https://lebrands.store/blog/lebrands-store-offers-and-cost-control): Separate Offers and Catalogue COGS workspaces, eligible savings and historical order evidence.
+- [Verification and publication](https://lebrands.store/blog/lebrands-store-verification-and-publication): Business evidence, GST identity, support contacts, policy review and publication checks.
 
 ## Related service
 

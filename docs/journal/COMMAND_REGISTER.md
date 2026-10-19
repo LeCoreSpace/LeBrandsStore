@@ -1,5 +1,16 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: Twenty-article library and heading adjustment
+
+- `bash scripts/build-blog-images.sh`: create stripped PNG social derivatives
+  of the original SVG illustrations using the existing ImageMagick installation.
+- `node --test --test-concurrency=1 tests/platform-blog.test.js tests/platform-seo.test.js`:
+  eleven checks passed, covering twenty articles, forty image assets, public
+  routing, sitemap coverage, metadata, related links and copy restrictions.
+- `git diff --check`: whitespace validation.
+- Managed API workflow restart: rebuild public assets and serve the new content.
+- `pnpm run deploy`: manual production release; not executed. No migration.
+
 ## 19 October 2026: Public wording correction
 
 - `node --test --test-concurrency=1 tests/platform-blog.test.js tests/platform-seo.test.js tests/platform-billing-cards.test.js tests/compare-page.test.js tests/dashboard-navigation.test.js`: scoped content, metadata and UI regression verification.

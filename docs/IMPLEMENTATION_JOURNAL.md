@@ -785,6 +785,26 @@ decision:
   rendered Compare/dashboard text.
 - No migration is required. The Worker release remains manual.
 
+## 19 October 2026: Expanded editorial library and smaller blog headings
+
+- Reduced article titles from a 58 px desktop maximum to 40 px, and reduced
+  the index headline, featured article heading, section titles and related
+  articles heading with responsive sizing preserved.
+- Added five practical D2C guides on size information, merchandising,
+  replenishment, order emails and shipping/returns policies.
+- Added five detailed platform guides about Ann, catalogue/variants/media,
+  the buying journey, offers/COGS and verification/publication. Descriptions
+  reflect existing product behaviour rather than invented provider capabilities.
+- Added ten original SVG illustrations and PNG social-sharing versions.
+  Expanded the sitemap and machine-readable guide to all twenty articles.
+- Rewrote the existing payments/delivery article around merchant operations,
+  removing internal integration-release commentary in response to the user's
+  explicit public-copy instruction. Kept its established URL for continuity.
+- All eleven editorial and public SEO tests passed, including all forty
+  illustration/social-image requests through the actual Worker asset gate,
+  twenty server-rendered articles, related links and machine-readable metadata.
+- No migration or automatic production deployment. Release remains manual.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

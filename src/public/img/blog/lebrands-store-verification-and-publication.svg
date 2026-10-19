@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+<title id="title">Distinct checks before publication</title><desc id="desc">Separate document, tax, support, policy and product checkpoints connect to an explicit publish control.</desc>
+<rect width="1200" height="800" fill="#fdf8f6"/><circle cx="1060" cy="600" r="300" fill="#f6e7e3"/><rect x="40" y="40" width="1120" height="720" rx="28" fill="none" stroke="#e9d3cf" stroke-width="2"/>
+<rect x="110" y="130" width="620" height="535" rx="18" fill="#fff" stroke="#e9d3cf" stroke-width="3"/><rect x="150" y="175" width="230" height="17" rx="6" fill="#874353"/>
+<g fill="#f6e7e3"><rect x="150" y="235" width="540" height="62" rx="10"/><rect x="150" y="310" width="540" height="62" rx="10"/><rect x="150" y="385" width="540" height="62" rx="10"/><rect x="150" y="460" width="540" height="62" rx="10"/><rect x="150" y="535" width="540" height="62" rx="10"/></g>
+<g fill="none" stroke="#874353" stroke-width="4"><path d="M175 266l8 8 17-19m-25 86l8 8 17-19m-25 86l8 8 17-19m-25 86l8 8 17-19m-25 86l8 8 17-19"/></g><g stroke="#ce928b" stroke-width="10" stroke-linecap="round"><path d="M240 266h280m-280 75h235m-235 75h300m-300 75h260m-260 75h315"/></g>
+<path d="M765 400h70m-15-12l15 12-15 12" fill="none" stroke="#874353" stroke-width="4"/>
+<rect x="865" y="250" width="230" height="300" rx="18" fill="#fff" stroke="#e9d3cf" stroke-width="3"/><circle cx="980" cy="335" r="42" fill="#f6e7e3"/><path d="M960 335l13 13 27-29" stroke="#874353" stroke-width="6" fill="none"/>
+<path d="M900 420h160" stroke="#ce928b" stroke-width="10" stroke-linecap="round"/><rect x="895" y="460" width="170" height="55" rx="9" fill="#874353"/><path d="M935 487h90" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+</svg>

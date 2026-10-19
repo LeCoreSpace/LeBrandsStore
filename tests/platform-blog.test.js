@@ -14,9 +14,15 @@ const env={ASSETS:{fetch:async request=>{
 }}};
 const graph=html=>JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])["@graph"];
 
-test("ten substantive public articles have unique slugs, complete structure and real internal links",()=>{
-  assert.equal(BLOG_POSTS.length,10);
-  assert.equal(new Set(BLOG_POSTS.map(post=>post.slug)).size,10);
+test("twenty substantive public articles include five detailed platform guides and unique links",()=>{
+  assert.equal(BLOG_POSTS.length,20);
+  assert.equal(new Set(BLOG_POSTS.map(post=>post.slug)).size,20);
+  const platform=BLOG_POSTS.filter(post=>post.category==="Inside LeBrands.Store");
+  assert.equal(platform.length,5);
+  for(const post of platform){
+    assert.ok(post.sections.length>=5);
+    assert.ok(post.sections.flatMap(s=>s.paragraphs).join(" ").split(/\s+/).length>=450);
+  }
   assert.equal(getBlogPost("does-not-exist"),null);
   for(const post of BLOG_POSTS){
     assert.match(post.slug,/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
@@ -27,6 +33,7 @@ test("ten substantive public articles have unique slugs, complete structure and 
     for(const slug of post.related)assert.ok(getBlogPost(slug),slug);
     assert.doesNotMatch(JSON.stringify(post),/[\u2014\u2728]/);
     assert.doesNotMatch(JSON.stringify(post),/\b(upcoming|planned)\b/i);
+    assert.doesNotMatch(JSON.stringify(post),/\bin progress\b|\bnot enabled\b|\bnot yet\b|\brequires setup\b|\bon the way\b/i);
   }
 });
 
@@ -75,14 +82,18 @@ test("every original illustration and raster social image passes the actual Work
   assert.equal((await worker.fetch(new Request(`${origin}/img/blog/private.svg`),env)).status,404);
 });
 
-test("roadmap and crawler descriptions distinguish completed approval from future integrations",async()=>{
+test("integration guide covers payment and delivery operations without internal release commentary",async()=>{
   const post=getBlogPost("payments-and-logistics-integration-roadmap");
   const text=JSON.stringify(post);
-  assert.match(text,/website approval with Razorpay is complete/);
-  assert.match(text,/Self-service partner OAuth is not enabled/);
-  assert.match(text,/general-use logistics partner connection is not enabled/);
+  assert.match(text,/Razorpay payment records/);
+  assert.match(text,/Delivery partner workflows/);
+  assert.doesNotMatch(text,/OAuth|self-service|website approval|generally available/i);
   const llms=await readFile("src/public/llms.txt","utf8");
-  for(const post of BLOG_POSTS)assert.ok(llms.includes(`${origin}/blog/${post.slug}`));
+  const sitemap=await readFile("src/public/sitemap.xml","utf8");
+  for(const post of BLOG_POSTS){
+    assert.ok(llms.includes(`${origin}/blog/${post.slug}`));
+    assert.ok(sitemap.includes(`<loc>${origin}/blog/${post.slug}</loc>`));
+  }
   assert.match(llms,/Free plan has no LeBrands.Space placement/);
   assert.doesNotMatch(llms,/\b(upcoming|planned)\b/i);
 });

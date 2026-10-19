@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+<title id="title">Structured products, distinct stock and private costs</title><desc id="desc">A product branches into three variant records beside a portrait media frame and a locked cost field.</desc>
+<rect width="1200" height="800" fill="#fdf8f6"/><circle cx="220" cy="600" r="280" fill="#f6e7e3"/><rect x="40" y="40" width="1120" height="720" rx="28" fill="none" stroke="#e9d3cf" stroke-width="2"/>
+<rect x="100" y="180" width="280" height="350" rx="16" fill="#fff" stroke="#874353" stroke-width="3"/><path d="M140 225h95m50 0h55" stroke="#ce928b" stroke-width="7"/><path d="M180 300l40-20q20 25 40 0l40 20 35 60-35 20-10-20v110H190V360l-10 20-35-20z" fill="#f6e7e3" stroke="#874353" stroke-width="4"/>
+<path d="M415 350h80m0-135v270m0-270h80m-80 135h80m-80 135h80" fill="none" stroke="#ce928b" stroke-width="4"/>
+<g fill="#fff" stroke="#e9d3cf" stroke-width="3"><rect x="590" y="160" width="210" height="105" rx="14"/><rect x="590" y="295" width="210" height="105" rx="14"/><rect x="590" y="430" width="210" height="105" rx="14"/></g>
+<g fill="#874353"><rect x="615" y="187" width="65" height="14" rx="4"/><rect x="615" y="322" width="80" height="14" rx="4"/><rect x="615" y="457" width="95" height="14" rx="4"/></g><g stroke="#ce928b" stroke-width="7" stroke-linecap="round"><path d="M615 230h150m-150 135h150m-150 135h150"/></g>
+<rect x="875" y="165" width="200" height="250" rx="10" fill="#f6e7e3" stroke="#874353" stroke-width="3"/><path d="M895 370l50-65 35 30 40-85 35 120z" fill="#ce928b"/><circle cx="920" cy="210" r="16" fill="#fff"/>
+<rect x="875" y="490" width="200" height="135" rx="14" fill="#fff" stroke="#e9d3cf" stroke-width="3"/><path d="M955 545v-15a20 20 0 0 1 40 0v15" fill="none" stroke="#874353" stroke-width="4"/><rect x="945" y="545" width="60" height="45" rx="8" fill="#874353"/><circle cx="975" cy="566" r="5" fill="#fff"/>
+</svg>

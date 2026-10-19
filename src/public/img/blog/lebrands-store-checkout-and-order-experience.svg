@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+<title id="title">One recognisable journey from product to receipt</title><desc id="desc">Four commerce panels show a product, a bag, verified contact details and an order receipt beneath a continuous merchant theme frame.</desc>
+<rect width="1200" height="800" fill="#fdf8f6"/><circle cx="1080" cy="640" r="260" fill="#f6e7e3"/><rect x="40" y="40" width="1120" height="720" rx="28" fill="none" stroke="#e9d3cf" stroke-width="2"/>
+<rect x="95" y="140" width="1010" height="70" rx="12" fill="#874353"/><rect x="125" y="166" width="140" height="15" rx="5" fill="#fff"/><path d="M780 173h90m40 0h65m40 0h55" stroke="#e9d3cf" stroke-width="7" stroke-linecap="round"/>
+<g fill="#fff" stroke="#e9d3cf" stroke-width="3"><rect x="95" y="245" width="230" height="330" rx="14"/><rect x="355" y="245" width="230" height="330" rx="14"/><rect x="615" y="245" width="230" height="330" rx="14"/><rect x="875" y="245" width="230" height="330" rx="14"/></g>
+<rect x="120" y="275" width="180" height="155" rx="8" fill="#f6e7e3"/><path d="M170 305h80l-15 100h-50z" fill="#ce928b"/><path d="M125 465h150m-150 35h95" stroke="#874353" stroke-width="8" stroke-linecap="round"/>
+<path d="M410 335h115l-10 100h-95zm25 0v-25a32 32 0 0 1 64 0v25" fill="#f6e7e3" stroke="#874353" stroke-width="4"/><path d="M385 475h165m-165 35h100" stroke="#ce928b" stroke-width="8" stroke-linecap="round"/>
+<g fill="#fff" stroke="#ce928b" stroke-width="2"><rect x="645" y="290" width="170" height="45" rx="7"/><rect x="645" y="355" width="170" height="45" rx="7"/><rect x="645" y="420" width="170" height="45" rx="7"/></g><circle cx="800" cy="303" r="19" fill="#874353"/><path d="M792 303l5 5 10-11" fill="none" stroke="#fff" stroke-width="3"/>
+<circle cx="990" cy="320" r="34" fill="#f6e7e3"/><path d="M975 320l10 10 20-22" stroke="#874353" stroke-width="5" fill="none"/><path d="M905 390h170m-170 40h130m-130 40h170" stroke="#ce928b" stroke-width="8" stroke-linecap="round"/>
+<path d="M125 535h170m90 0h170m90 0h170m90 0h170" stroke="#874353" stroke-width="16" stroke-linecap="round"/><rect x="95" y="615" width="1010" height="45" rx="10" fill="#f6e7e3"/>
+</svg>

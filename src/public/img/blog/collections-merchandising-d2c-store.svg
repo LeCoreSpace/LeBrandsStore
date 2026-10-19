@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+<title id="title">A catalogue organised for discovery</title><desc id="desc">Three distinct collections show apparel, skincare and accessories beneath a simple store navigation.</desc>
+<rect width="1200" height="800" fill="#fdf8f6"/><circle cx="1040" cy="160" r="260" fill="#f6e7e3"/><rect x="40" y="40" width="1120" height="720" rx="28" fill="none" stroke="#e9d3cf" stroke-width="2"/>
+<rect x="100" y="110" width="1000" height="90" rx="14" fill="#fff" stroke="#e9d3cf" stroke-width="2"/><rect x="135" y="145" width="150" height="20" rx="5" fill="#874353"/><path d="M560 155h100m60 0h100m60 0h100" stroke="#ce928b" stroke-width="9" stroke-linecap="round"/>
+<g fill="#fff" stroke="#e9d3cf" stroke-width="2"><rect x="100" y="250" width="300" height="420" rx="16"/><rect x="450" y="250" width="300" height="420" rx="16"/><rect x="800" y="250" width="300" height="420" rx="16"/></g>
+<g fill="#f6e7e3"><rect x="125" y="275" width="250" height="260" rx="10"/><rect x="475" y="275" width="250" height="260" rx="10"/><rect x="825" y="275" width="250" height="260" rx="10"/></g>
+<path d="M190 330l35-15q25 30 50 0l35 15 45 75-40 25-15-25v85H200v-85l-15 25-40-25z" fill="#fff" stroke="#874353" stroke-width="4"/>
+<rect x="560" y="355" width="80" height="140" rx="12" fill="#fff" stroke="#874353" stroke-width="4"/><rect x="575" y="320" width="50" height="35" rx="5" fill="#874353"/><rect x="575" y="402" width="50" height="40" rx="4" fill="#ce928b"/>
+<path d="M875 390h150l-12 110H887z" fill="#fff" stroke="#874353" stroke-width="4"/><path d="M915 390v-30a35 35 0 0 1 70 0v30" fill="none" stroke="#874353" stroke-width="5"/>
+<g stroke-linecap="round"><path d="M145 580h150m200 0h150m200 0h150" stroke="#874353" stroke-width="12"/><path d="M145 620h90m260 0h90m260 0h90" stroke="#e9d3cf" stroke-width="9"/></g>
+</svg>
