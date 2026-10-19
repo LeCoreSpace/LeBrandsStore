@@ -10,6 +10,7 @@ import {sha256} from "../src/auth/passwords.js";
 import {changeOrderStatus} from "../src/dashboard/repository.js";
 import {syncPublishedProducts} from "../src/dashboard/repository.js";
 import {liveAvailability} from "../src/store/availability.js";
+import postgres from "postgres";
 const UUID=i=>`${String(i).padStart(8,"0")}-1111-4111-8111-111111111111`;
 test("cart identity validates UUIDs and rejects duplicate SKU lines, not different SKUs of one product",()=>{
   assert.equal(cartItems([{product_id:UUID(1),product_option_id:UUID(2),quantity:1},{product_id:UUID(1),product_option_id:UUID(3),quantity:1}]).length,2);
@@ -147,6 +148,27 @@ test("real schema SKU order, tax, idempotency, race, isolation, recovery and his
         const {stock,...fresh}=visible[0].variants[i],{stock:oldStock,...published}=data.products[0].variants[i];
         assert.deepEqual(fresh,published);
       }
+    });
+    await t.test("availability survives production driver serialization on first and repeated reads",async()=>{
+      // PGlite normally binds raw values and misses postgres.js JSON inference.
+      // Apply the installed driver's serializer for the parameter's SQL type.
+      const driver=postgres({fetch_types:false});
+      try{
+        for(let pass=0;pass<2;pass++){
+          const visible=await db.withStore(id,tx=>liveAvailability(async(parts,...values)=>{
+            const wire=values.map((value,index)=>{
+              if(!Array.isArray(JSON.parse(index===0?value:"[]")))throw Error("Expected ID list");
+              const type=/^::text\b/.test(parts[index+1])?25
+                :/^::jsonb\b/.test(parts[index+1])?3802:25;
+              return driver.options.serializers[type]?.(value)??value;
+            });
+            return tx(parts,...wire);
+          },id,data.products));
+          assert.equal(visible.length,data.products.length);
+          assert.equal(visible[0].id,data.products[0].id);
+          assert.equal(visible[0].variants.length,data.products[0].variants.length);
+        }
+      }finally{await driver.end();}
     });
   }finally{await pg.close();}
 });

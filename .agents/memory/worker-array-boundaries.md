@@ -15,6 +15,16 @@ service errors, not SQLSTATE errors. JSON has built-in driver handlers.
 check both result decoding and parameter serialization with discovery disabled.
 Tests returning JavaScript arrays unconditionally can conceal this mismatch.
 
+Apply driver-equivalent parameter serialization to read-only queries too, not
+only persistence tests.
+
+**Why:** A stock-availability SELECT passed raw-parameter PGlite tests but failed
+in the live Worker with SQLSTATE 22023 because an already serialized ID list was
+inferred as JSONB and encoded again. Read-only code can take the storefront down.
+
+**How to apply:** Use a text boundary for serialized JSON lists and exercise
+both first and repeated calls with the installed driver's serializers.
+
 When passing already serialized JSON through postgres.js, bind it as
 `::text::jsonb`, not directly `::jsonb`. Direct inference selects the driver's
 JSON serializer and encodes the string a second time.

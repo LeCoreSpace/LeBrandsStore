@@ -20,7 +20,7 @@ export async function liveAvailability(tx,storeId,products=[]){
       COALESCE((SELECT jsonb_agg(jsonb_build_object('id',v.id,'stock',v.stock))
         FROM public.product_options v WHERE v.store_id=p.store_id AND v.product_id=p.id),'[]'::jsonb) AS sku_stock
     FROM public.products p
-    JOIN jsonb_array_elements_text(${ids}::jsonb) AS wanted(id) ON p.id=wanted.id::uuid
+    JOIN jsonb_array_elements_text(${ids}::text::jsonb) AS wanted(id) ON p.id=wanted.id::uuid
     WHERE p.store_id=${storeId}
   `;
   return mergeAvailability(products,rows);

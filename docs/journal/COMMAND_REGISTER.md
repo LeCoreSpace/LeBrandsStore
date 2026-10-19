@@ -352,6 +352,15 @@ not assign an unverified execution date to a command.
 
 ## Maintenance
 
+### 19 October: Storefront availability incident
+
+| Command | Target / effect | Actual result |
+| --- | --- | --- |
+| `curl -sS -o /dev/null -w '%{http_code}\n' https://mystonescence.lebrands.store/` | Public production storefront GET only. | HTTP 503 before correction. |
+| `pnpm exec wrangler tail lebrands-store --format json` | Brief read-only production Worker log observation; stopped after reproduction. | Observed SQLSTATE `22023` on the store request. Initial attempt with `--sampling-rate 1` was rejected by Wrangler; retried without the flag. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/sku-checkout.test.js tests/storefront-commerce-shell.test.js` | Local synthetic database and renderer verification, including driver-equivalent serialization. | All 20 tests passed. |
+| `pnpm run deploy` | Manual production Worker release of the correction. | Required next action; not executed by the assistant. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

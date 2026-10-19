@@ -607,6 +607,21 @@ decision:
   normal Cloudflare deployment to appear on published stores; this redesign
   introduces no new database migration.
 
+## 19 October 2026: Storefront availability query correction
+
+- Investigated the reported live “Store temporarily unavailable” page.
+  A public GET returned HTTP 503; a short Cloudflare Worker tail confirmed
+  `Store lookup failed` with SQLSTATE `22023`.
+- The new availability query passed an already serialized product-ID list
+  directly to a JSONB parameter. The production postgres.js driver encoded
+  that string again. Added the explicit text-to-JSONB boundary, preserving
+  tenant checks and published metadata authority.
+- Added a regression check using the installed driver's parameter serializers
+  on first and repeated availability reads under the synthetic tenant role.
+  SKU checkout and storefront-shell suites passed all 20 tests.
+- No database migration, production data write or Worker deployment performed.
+  The production site requires the corrected Worker to be deployed.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 
