@@ -4,6 +4,8 @@ import { renderAura, storefrontIcon } from "../src/public/aura.js";
 import { STYLE_IDS } from "../src/public/aura-styles.js";
 import { productHref } from "../src/public/commerce-options.js";
 import { serveStorefront } from "../src/store/live.js";
+import {serveStoreIcon} from "../src/store/favicon.js";
+import {mergeAvailability} from "../src/store/availability.js";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const productId = "22222222-2222-4222-8222-222222222222";
@@ -23,18 +25,37 @@ const db = data => ({ withStore: async (_, fn) => fn(async (parts) => {
   return query.includes("SELECT p.snapshot") ? [{ snapshot: data }] : [{ enabled: false }];
 }) });
 
+test("availability changes never replace published metadata or expose unpublished variants",()=>{
+  const products=[{id:productId,title:"Published title",price_paise:10000,stock:9,
+    variants:[{id:"old",sku:"PUBLISHED",price_paise:12000,values:["S"],stock:9},
+      {id:"removed",sku:"REMOVED",values:["M"],stock:4}]}];
+  const before=JSON.stringify(products);
+  const updated=mergeAvailability(products,[{id:productId,stock:102,sku_stock:JSON.stringify([
+    {id:"old",stock:2,price_paise:999},{id:"unpublished",stock:100},
+  ])}]);
+  assert.equal(updated[0].stock,2);
+  assert.equal(updated[0].variants.length,2);
+  assert.equal(updated[0].variants[0].price_paise,12000);
+  assert.equal(updated[0].variants[1].stock,0);
+  assert.equal(updated[0].title,"Published title");
+  assert.equal(JSON.stringify(products),before);
+  assert.equal(mergeAvailability(products,[])[0].stock,0);
+  assert.equal(mergeAvailability([{id:productId,stock:0}],[{id:productId,stock:null,sku_stock:[]}])[0].stock,null);
+});
+
 test("all saved themes use the shared live product structure and merchant favicon", () => {
   for (const style of STYLE_IDS) {
     const data = fixture(style);
     const product = renderAura(data, { page: "product", productId, commerce: true });
-    assert.match(product, /sc-prod-live/, style);
-    assert.match(product, /sc-buybox/, style);
+    assert.match(product, /cm-product/, style);
+    assert.match(product, /cm-buy/, style);
     assert.match(product, new RegExp(`data-add-product="${productId}"`), style);
-    for (const page of ["product", "cart", "checkout"]) {
+    for (const page of ["product", "cart", "checkout","track","confirmation"]) {
       const html = renderAura(data, { page, productId, commerce: true });
-      assert.ok(html.includes(`<link rel="icon" href="${logo}">`), `${style}/${page}`);
-      assert.match(html, /commerce\.css/, `${style}/${page}`);
-      assert.ok(html.includes(`class="sc sc-${style}"`), `${style}/${page} must keep merchant theme framing`);
+      assert.ok(html.includes(`<link rel="icon" href="${storefrontIcon(data.settings).iconHref}" sizes="any">`), `${style}/${page}`);
+      assert.match(html, /commerce-signature\.css/, `${style}/${page}`);
+      assert.ok(html.includes('class="cm"')&&html.includes(`data-style="${style}"`), `${style}/${page} must use the shared commerce shell`);
+      assert.match(html, /<header class="cm-hd">/,style);
       if(page==="checkout"){
         assert.match(html,/id="checkout-form"/,style);
         assert.match(html,/data-commerce-config/,style);
@@ -47,6 +68,34 @@ test("all saved themes use the shared live product structure and merchant favico
   }
 });
 
+test("read-only saved product previews load the shared skin without enabling shopping",()=>{
+  const html=renderAura(fixture(STYLE_IDS[0]),{page:"product",productId,preview:true,readOnly:true,commerce:false});
+  assert.match(html,/commerce-signature\.css/);assert.match(html,/cm-product/);
+  assert.doesNotMatch(html,/data-add-product=/);
+});
+
+test("browser icons resize public merchant media to PNG with safe fallback",async()=>{
+  const transformed=[];
+  const bytes=new Uint8Array([137,80,78,71,13,10,26,10]);
+  const env={
+    MEDIA:{get:async()=>({body:new Response(bytes).body,size:bytes.length,httpEtag:'"fixture"',customMetadata:{},writeHttpMetadata(){}})},
+    IMAGES:{input:()=>({transform:options=>{transformed.push(options);return{output:async options=>{
+      assert.equal(options.format,"image/png");return{image:()=>bytes};
+    }};}})},
+  };
+  for(const [path,size] of [["favicon.png",64],["apple-touch-icon.png",180]]){
+    const response=await serveStoreIcon(new Request(`https://example.lebrands.store/${path}`),env,fixture(STYLE_IDS[0]).settings,id);
+    assert.equal(response.headers.get("content-type"),"image/png");
+    assert.deepEqual(new Uint8Array(await response.arrayBuffer()),bytes);
+    assert.deepEqual(transformed.at(-1),{width:size,height:size,fit:"contain"});
+  }
+  env.IMAGES={input(){throw Error("Synthetic resize outage");}};
+  const fallback=await serveStoreIcon(new Request("https://example.lebrands.store/favicon.png"),env,fixture(STYLE_IDS[0]).settings,id);
+  assert.match(fallback.headers.get("content-type"),/svg/);
+  assert.equal(fallback.headers.get("x-favicon-fallback"),"resize_unavailable");
+  assert.match(await fallback.text(),/EX/);
+});
+
 test("public links use saved slugs, remain stable after title edits and reject unsafe slugs", () => {
   const product = fixture(STYLE_IDS[0]).products[0];
   assert.equal(productHref(product), "/products/my-unique-womens-top");
@@ -54,6 +103,7 @@ test("public links use saved slugs, remain stable after title edits and reject u
   assert.equal(productHref({ ...product, slug: '"><script>' }), `/products/${productId}`);
   assert.equal(productHref({ id: productId }), `/products/${productId}`);
 });
+
 
 test("legacy product IDs redirect to the published slug and preserve attribution queries", async () => {
   const data = fixture(STYLE_IDS[0]), database = db(data);

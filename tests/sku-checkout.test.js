@@ -9,6 +9,7 @@ import {orderInput} from "../src/checkout/input.js";
 import {sha256} from "../src/auth/passwords.js";
 import {changeOrderStatus} from "../src/dashboard/repository.js";
 import {syncPublishedProducts} from "../src/dashboard/repository.js";
+import {liveAvailability} from "../src/store/availability.js";
 const UUID=i=>`${String(i).padStart(8,"0")}-1111-4111-8111-111111111111`;
 test("cart identity validates UUIDs and rejects duplicate SKU lines, not different SKUs of one product",()=>{
   assert.equal(cartItems([{product_id:UUID(1),product_option_id:UUID(2),quantity:1},{product_id:UUID(1),product_option_id:UUID(3),quantity:1}]).length,2);
@@ -16,7 +17,7 @@ test("cart identity validates UUIDs and rejects duplicate SKU lines, not differe
   assert.throws(()=>cartItems([{product_id:UUID(1),product_option_id:"forged",quantity:1}]));
 });
 test("real schema SKU order, tax, idempotency, race, isolation, recovery and historical snapshots",async t=>{
-  const f=await createSkuCheckoutFixture(),{pg,db,product,id}=f;
+  const f=await createSkuCheckoutFixture(),{pg,db,product,id,data}=f;
   const [black,white,soldout]=product.variants;
   const items=[{product_id:product.id,product_option_id:black.id,quantity:1},{product_id:product.id,product_option_id:white.id,quantity:1}];
   const input=rows=>orderInput({items:rows,contact:{name:"Synthetic Buyer",phone:"9000000000",email:""},
@@ -134,6 +135,18 @@ test("real schema SKU order, tax, idempotency, race, isolation, recovery and his
       assert.equal(receipt.items[0].sku,white.sku);
       assert.equal(receipt.items[0].quantity,1);assert.equal(Number(receipt.items[0].unit_price_paise),12000);
       assert.match(receipt.items[0].title,/Size: S.*Colour: White/);
+    });
+    await t.test("public availability refreshes stock under the tenant role without changing published SKU metadata",async()=>{
+      const before=JSON.stringify(data.products);
+      const visible=await db.withStore(id,tx=>liveAvailability(tx,id,data.products));
+      const actual=(await pg.query("SELECT id,stock FROM product_options WHERE store_id=$1",[id])).rows;
+      const current=new Map(actual.map(row=>[row.id,row.stock]));
+      for(const variant of visible[0].variants)assert.equal(variant.stock,current.get(variant.id));
+      assert.equal(JSON.stringify(data.products),before);
+      for(let i=0;i<visible[0].variants.length;i++){
+        const {stock,...fresh}=visible[0].variants[i],{stock:oldStock,...published}=data.products[0].variants[i];
+        assert.deepEqual(fresh,published);
+      }
     });
   }finally{await pg.close();}
 });

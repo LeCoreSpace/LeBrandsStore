@@ -4,15 +4,27 @@ import {createSkuCheckoutFixture} from "./sku-checkout-fixture-data.js";
 import {renderAura,storefrontIcon} from "./public/aura.js";
 import {STYLE_IDS} from "./public/aura-styles.js";
 import {handleCheckout,isCheckoutPath} from "./checkout/routes.js";
+import {liveAvailability} from "./store/availability.js";
 const prefix="/__sku-checkout-preview";
+// Presentation-only sample photography. Never insert local/demo URLs into a
+// real publication: the production DB correctly requires owned public media.
+const demoImages=[
+  {url:"/assets/img/aura-showcases/v01/editorial/aura-editorial-womens-clothing-p01-burgundy-silk-blouse-v01.webp",alt:"Illustrative sample garment photo"},
+  {url:"/assets/img/aura-showcases/v01/editorial/aura-editorial-womens-clothing-lifestyle-l01-city-in-silk-v01.webp",alt:"Illustrative sample styling photo"},
+];
 let fixture;
 export async function skuCheckoutPreview(req,res,previewOrigin){
   const browser=new URL(req.url||"/",previewOrigin||`http://${req.headers.host}`);
   if(!browser.pathname.startsWith(`${prefix}/`))return false;
   try{
     const f=await(fixture||=createSkuCheckoutFixture().catch(e=>{fixture=null;throw e;}));
-    const style=browser.searchParams.get("style");
-    const data=STYLE_IDS.includes(style)?{...f.data,settings:{...f.data.settings,ann_design:{version:1,style,copy:{},media:{}}}}:f.data;
+    const requested=browser.searchParams.get("style");
+    const remembered=String(req.headers.cookie||"").split(";").map(s=>s.trim()).find(s=>s.startsWith("skuPreviewStyle="))?.split("=")[1];
+    const style=STYLE_IDS.includes(requested)?requested:STYLE_IDS.includes(remembered)?remembered:STYLE_IDS[0];
+    if(STYLE_IDS.includes(requested))res.setHeader("set-cookie",`skuPreviewStyle=${style}; Path=${prefix}/; HttpOnly; SameSite=Lax`);
+    const products=await f.db.withStore(f.id,tx=>liveAvailability(tx,f.id,f.data.products));
+    const data={...f.data,products:products.map(p=>({...p,images:demoImages})),
+      settings:{...f.data.settings,ann_design:{version:1,style,copy:{},media:{}}}};
     const path=browser.pathname.slice(prefix.length);
     let response;
     if(path==="/state"&&req.method==="GET"){
@@ -27,7 +39,7 @@ export async function skuCheckoutPreview(req,res,previewOrigin){
         items:[{title:"Cotton shirt",sku:"SKU-S-WHITE",option_snapshot:{Size:"S",Colour:"White"},
           quantity:2,unit_price_paise:12000,line_total_paise:24000}]};
       response=new Response(renderAura(data,{page:"confirmation",order,commerce:true}),{headers:{"content-type":"text/html"}});
-    }else if(path==="/favicon.svg"){
+    }else if(["/favicon.svg","/favicon.png","/favicon.ico","/apple-touch-icon.png"].includes(path)){
       response=new Response(storefrontIcon(data.settings).svg,{headers:{"content-type":"image/svg+xml"}});
     }else if(path==="/"||path===`/products/${f.product.slug}`){
       response=new Response(renderAura(data,{page:"product",productId:f.product.id,commerce:true}),{headers:{"content-type":"text/html"}});
@@ -53,11 +65,12 @@ export async function skuCheckoutPreview(req,res,previewOrigin){
     let body=await response.text();
     if(response.headers.get("content-type")?.includes("text/html")){
       body=body.replace("data-commerce-config",`data-commerce-config data-api-root="${prefix}"`)
-        .replace(/href="\/((?:cart|checkout|products|collections|orders)(?:\/[^"]*)?)"/g,(_,path)=>`href="${prefix}/${path}${STYLE_IDS.includes(style)?`${path.includes("?")?"&":"?"}style=${style}`:""}"`)
-        .replaceAll('href="/favicon.svg?',`href="${prefix}/favicon.svg?`);
+        .replace(/href="\/((?:cart|checkout|products|collections|orders|track)(?:[/?][^"]*)?)"/g,(_,path)=>`href="${prefix}/${path}${STYLE_IDS.includes(style)?`${path.includes("?")?"&":"?"}style=${style}`:""}"`)
+        .replace(/href="\/(favicon\.(?:svg|png|ico)|apple-touch-icon\.png)/g,`href="${prefix}/$1`);
     }else if(response.headers.get("content-type")?.includes("application/json")){
       const json=JSON.parse(body);
       if(json.receipt_url)json.receipt_url=prefix+json.receipt_url;
+      if(Array.isArray(json.items))json.items=json.items.map(item=>item.product_id===f.product.id?{...item,image_url:demoImages[0].url}:item);
       body=JSON.stringify(json);
     }
     res.end(req.method==="HEAD"?undefined:body);

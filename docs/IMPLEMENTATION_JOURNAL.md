@@ -576,6 +576,37 @@ decision:
   this change. No production deployment, approval, policy replacement, GSTIN
   update or publication was performed. Deploy manually with `pnpm run deploy`.
 
+## 19 October 2026: Shared signature commerce design
+
+- **Request:** Replace the basic, theme-dominated product, bag, checkout and
+  post-order screens with a recognisable LeBrands.Store purchase experience.
+- **Implementation:** Added a dedicated shared commerce shell and stylesheet:
+  merchant-branded header, photographic product gallery, accessible SKU pills,
+  independent bag drawer, numbered checkout sections, progress trail and
+  ticket-style order summaries. Merchant-configured product sections and their
+  editor hooks remain available. Real catalogue content, not design copy, owns
+  product titles, descriptions, prices and variants.
+- **Browser icons:** Versioned same-origin icon links use public merchant logos,
+  small Cloudflare-generated PNGs where available, and a legible initials
+  fallback. The public media gate is reused; there is no arbitrary image proxy.
+- **Verification:** Focused renderer, editor/rich-text, browser-bundle and
+  real-schema SKU checks passed. One isolated browser journey verified SKU
+  selection, photo swapping, cart quantity changes, drawer focus/scroll
+  behaviour, address validation and a single COD order with exactly one stock
+  deduction. Twenty-four narrow-screen routes covered all eight saved styles.
+- **Findings addressed:** The browser pass exposed stale product availability
+  and a clipped mobile navigation label. Availability now reads current,
+  tenant-scoped stock without replacing published SKU metadata; restricted-role
+  database tests cover this boundary. Final desktop/mobile screenshots confirmed
+  the updated variant controls and fully visible navigation. The synthetic
+  fixture also preserves the selected style across checkout navigation.
+- **Safety:** Sample photography is presentation-only, never inserted as owned
+  production media. No live customer records, online charges or emails were
+  used. No production deployment or database migration was performed.
+- **Commands:** Recorded in the command register. Current source requires the
+  normal Cloudflare deployment to appear on published stores; this redesign
+  introduces no new database migration.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

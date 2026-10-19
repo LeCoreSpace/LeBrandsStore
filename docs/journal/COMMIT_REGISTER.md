@@ -2,7 +2,14 @@
 
 Captured on 19 October 2026 from the surviving project history. Times use Africa/Cairo.
 
-This register contains all **285 commits** available through 19 October, including the initial 272-commit backfill ending at `9adc763` and subsequent checkpoints `19919a1`, `ee31045`, `49d77ce`, `4b7d3c4`, `3d1ee10`, `1a3bfd4`, `75e3293`, `0db33ad`, `7712d0e`, `e993b5e`, `264f93b`, `d4378df` and `de261bf`. Original subjects are retained, including the historical use of “announcement” for Ann. File scopes describe evidence, not proof of working runtime behaviour. A versioned migration is not an applied migration, and a test-file change is not a passing test result. Production deployment is not established per commit.
+This register contains all **287 commits** available at this capture on 19 October, including the initial 272-commit backfill ending at `9adc763` and subsequent checkpoints `19919a1`, `ee31045`, `49d77ce`, `4b7d3c4`, `3d1ee10`, `1a3bfd4`, `75e3293`, `0db33ad`, `7712d0e`, `e993b5e`, `264f93b`, `d4378df`, `de261bf`, `4152eff` and `b899b66`. Original subjects are retained, including the historical use of “announcement” for Ann. File scopes describe evidence, not proof of working runtime behaviour. A versioned migration is not an applied migration, and a test-file change is not a passing test result. Production deployment is not established per commit.
+
+### Additional recorded checkpoints, 19 October 2026
+
+| Time (Cairo) | Commit | Original subject | Evidence scope |
+| --- | --- | --- | --- |
+| 12:02 | <a id="commit-4152eff"></a>`4152eff` | Update email service logic and document recent implementation progress | Email service and journal source changes; not proof of production delivery. |
+| 12:21 | <a id="commit-b899b66"></a>`b899b66` | Add asset images to repository | Image assets; not proof of deployment. |
 
 Related changes are explained in the [daily implementation journal](../IMPLEMENTATION_JOURNAL.md). Journal creation, command references, the shared editor, toolbar readability, COGS navigation, Stage 1 COGS, Stage 2 analytics, publication-review fixes, the public Google Analytics tag, Ann contact/policy forms, expanded D2C policy content and shared storefront commerce fixes have recorded checkpoints. Receipt/email design and notification preferences are uncommitted at this update.
 

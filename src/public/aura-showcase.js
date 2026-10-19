@@ -284,6 +284,63 @@ function productPageLive(x) {
   <div class="sc-info"><p class="sc-crumb"><a href="/">Home</a> / <a href="/collections/all">Shop</a></p><h1>${esc(p.title)}</h1><p class="sc-pp" data-opt-price>${rupees(p.price_paise)}${p.compare_at_paise ? ` <del>${rupees(p.compare_at_paise)}</del>` : ""}</p>${p.description ? `<p class="sc-desc" style="white-space:pre-line">${esc(p.description)}</p>` : ""}${features ? `<ul class="sc-feat" aria-label="Product details">${features}</ul>` : ""}<div class="sc-buybox">${buy}</div></div></section>
   ${rest.length ? `<section class="sc-rel"><h2>You may also like</h2><div class="sc-list">${rest.map((r, i) => card(r, i)).join("")}</div></section>` : ""}${vo ? `<div class="au-sticky-buy"><b data-opt-price>${rupees(p.price_paise)}</b>${renderOptionSticky(p, { esc })}</div>` : on ? `<div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button" class="au-btn"${avail ? ` data-add-product="${esc(p.id)}"` : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div>` : ""}`;
 }
+
+/* ---- Shared commerce shell: one transactional language for every saved theme ---- */
+function cmHeader(x) {
+  const menus = x.settings?.ann_design?.menus;
+  const links = menus ? renderDesignMenu(validateDesignMenus(menus).header) : [...NAV, ["Track order", "/track"]].map(([l, h]) => `<a href="${h}">${l}</a>`).join("");
+  const logo = safeImage(x.settings?.logo_url) || safeImage(x.settings?.ann_design?.media?.logo?.url);
+  const initials = [...String(x.brand || "S").replace(/[^\p{L}\p{N} ]/gu, "").trim().split(/\s+/).map(w => w[0]).join("").slice(0, 2)].join("").toUpperCase() || "S";
+  const mark = logo ? `<img src="${esc(logo)}" alt="" width="36" height="36"><span class="cm-brand-name">${esc(x.brand)}</span>` : `<span class="cm-mono" aria-hidden="true">${esc(initials)}</span><span class="cm-brand-name">${esc(x.brand)}</span>`;
+  return `<header class="cm-hd"><div class="cm-hd-in"><a class="cm-brand" href="/" aria-label="${esc(x.brand)} home">${mark}</a><nav class="cm-nav" aria-label="Primary">${links}</nav><div class="cm-tools"><form class="cm-search" role="search" action="/collections/all" method="get"><label class="au-sr" style="position:absolute;left:-9999px" for="cm-q">Search products</label><input id="cm-q" name="q" type="search" placeholder="Search products" autocomplete="off"><button type="submit">Search</button></form><button type="button" class="cm-bag" data-cart-open aria-label="Open bag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Bag <span data-cart-count>0</span></button></div></div></header>`;
+}
+function cmFooter(x) {
+  const menus = x.settings?.ann_design?.menus;
+  const links = menus ? renderDesignMenu(validateDesignMenus(menus).footer, { footer: true }) : NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("") + [["Track order", "/track"]].map(([l, h]) => `<a href="${h}">${l}</a>`).join("") + (x.policies || []).filter(p => /^[a-z0-9-]+$/.test(String(p.kind || ""))).map(p => `<a href="/policies/${p.kind}">${esc(p.title || p.kind)}</a>`).join("");
+  return `<footer class="cm-ft"><div class="cm-ft-in"><a class="cm-brand" href="/"><span class="cm-brand-name">${esc(x.brand)}</span></a><nav aria-label="Footer">${links}</nav>${x.page === "product" && LIVE && ((x.copy.footer && x.copy.footer !== x.brand) || LIVE.edit) ? `<p class="cm-ft-note"${dc("footer")}>${esc(x.copy.footer || x.brand)}</p>` : ""}</div></footer>`;
+}
+/** Configured product sections (care, size guide, how to use, FAQ, reviews), rendered in the commerce language. */
+function cmExtras(x) {
+  const data = x.data || {};
+  const chosen = data.settings?.ann_design?.plan?.section_options?.[x.page] ?? data.showcase_options?.[x.page];
+  if (!Array.isArray(chosen) || !EXTRA_PAGES[x.page]) return "";
+  return chosen.filter(t => EXTRA_PAGES[x.page].includes(t)).map(type => {
+    const sec = (data.layouts?.[x.page] || []).find(i => i.type === type && !i.hidden) || {};
+    const st = sec.settings || {};
+    const title = clean(st.title || st.heading || st.kicker) || LABEL(type);
+    if (type === "reviews") return `<section class="cm-extra" data-section-type="reviews"><h2>${esc(title)}</h2><p class="cm-extra-text">Customer reviews appear here once your store has real ones.</p></section>`;
+    const body = clean(st.text || st.body || st.description || st.content);
+    const items = (sec.blocks || []).map(b => { const t = b.settings || b; return [clean(t.title || t.question || t.name || t.label), clean(t.text || t.answer || t.description || t.value || t.body)]; }).filter(([a, c]) => a || c).slice(0, 8);
+    const text = body || (!items.length ? `Add your own ${LABEL(type).toLowerCase()} details here.` : "");
+    const list = items.length ? (type === "faq"
+      ? `<div class="cm-faq">${items.map(([a, c]) => `<details><summary>${esc(a || "Question")}</summary>${c ? `<p>${esc(c)}</p>` : ""}</details>`).join("")}</div>`
+      : `<ul class="cm-extra-list">${items.map(([a, c]) => `<li>${a ? `<b>${esc(a)}</b>` : ""}${c ? `<span>${esc(c)}</span>` : ""}</li>`).join("")}</ul>`) : "";
+    return `<section class="cm-extra" data-section-type="${type}"><h2>${esc(title)}</h2>${text ? `<p class="cm-extra-text">${esc(text)}</p>` : ""}${list}</section>`;
+  }).join("");
+}
+function productPageCm(x) {
+  const p = x.products.find(i => String(i.id) === String(x.options.productId)) || x.products[0];
+  if (!p) return `<main class="cm-main cm-product"><div class="cm-missing"><h1>Product not found</h1><p>This product is not available. It may have been removed.</p><a class="commerce-button" href="/collections/all">Browse products</a></div></main>`;
+  const media = (p.images || []).slice(0, 12);
+  const pics = media.filter(im => im.type !== "video" && okUrl(im.url)), vids = media.filter(im => im.type === "video");
+  const stageImg = pics[0] ? img(pics[0], p.title).replace("<img ", '<img data-gallery-image="0" ').replace('loading="lazy"', 'loading="eager"') : "";
+  const stage = stageImg || (vids[0] ? productVideo(vids[0], p.title) : `<span class="cm-stage-empty" aria-hidden="true">${esc(String(p.title || "P").slice(0, 1).toUpperCase())}</span>`);
+  const thumbs = pics.length > 1 ? `<div class="cm-thumbs" role="group" aria-label="Product photos">${pics.map((im, i) => `<button type="button" class="cm-thumb" data-cm-thumb="${esc(im.url)}" aria-current="${i === 0}" aria-label="Show photo ${i + 1}">${img(im, im.alt || p.title)}</button>`).join("")}</div>` : "";
+  const extraVids = (stageImg ? vids : vids.slice(1)).map(v => `<div class="cm-video">${productVideo(v, p.title)}</div>`).join("");
+  const own = String(p.id) === String(x.options.productId) && productDetailRows(p).length;
+  const feats = (own ? productFeatureRows(p) : (p.content?.features || [])).map(f => `<div><dt>${esc(f.label)}</dt><dd>${esc(f.value)}</dd></div>`).join("");
+  const rest = x.products.filter(i => i.id !== p.id).slice(0, 4), o = x.options;
+  const stock = p.stock == null ? null : Number(p.stock), avail = stock == null || stock > 0, on = o.commerce && (!o.readOnly || o.embeddedPreview);
+  const max = stock == null ? 99 : Math.max(1, Math.min(99, stock));
+  const vo = hasOptions(p) && o.commerce && !o.readOnly;
+  const buy = vo ? renderOptionBuy(p, { esc, money: rupees }) : on ? `<div class="au-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="${max}" value="1" inputmode="numeric" aria-label="Quantity"><button class="au-btn" type="button" data-add-product="${esc(p.id)}"${avail ? "" : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div><p class="au-feedback" data-commerce-feedback role="status"></p>`
+    : `<div class="au-buy"><button class="au-btn" type="button" disabled aria-disabled="true">${o.preview || o.embeddedPreview ? "Preview only: checkout on the live store" : o.commerce ? "Add to cart on the live store" : "Shopping unavailable"}</button></div>`;
+  const note = !vo && stock != null ? (stock <= 0 ? '<span class="cm-stock is-out">Sold out</span>' : stock <= 5 ? `<span class="cm-stock">Only ${stock} left</span>` : "") : "";
+  return `<main class="cm-main cm-product"><section class="cm-core"><nav class="cm-crumb" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><a href="/collections/all">Shop</a><span aria-hidden="true">/</span><span aria-current="page">${esc(p.title)}</span></nav>
+  <div class="cm-pdp"><div class="cm-gallery"><figure class="cm-stage" data-cm-stage>${stage}</figure>${thumbs}${extraVids}</div>
+  <div class="cm-buy"><h1>${esc(p.title)}</h1><div class="cm-price-row"><p class="cm-price" data-opt-price>${rupees(p.price_paise)}</p>${p.compare_at_paise ? `<del class="cm-price"><span class="au-sr" style="position:absolute;left:-9999px">Was </span>${rupees(p.compare_at_paise)}</del>` : ""}${note}</div>${p.description ? `<p class="cm-desc">${esc(p.description)}</p>` : ""}${feats ? `<dl class="cm-specs" aria-label="Product details">${feats}</dl>` : ""}<div class="cm-buybox">${buy}</div></div></div></section>
+  ${rest.length ? `<section class="cm-rel"><h2>More from ${esc(x.brand)}</h2><div class="cm-rel-grid">${rest.map(r => `<a class="cm-rel-card" href="${pHref(r)}"><span class="cm-rel-img">${pImg(r) || esc(String(r.title || "P").slice(0, 1).toUpperCase())}</span><b>${esc(r.title)}</b><span class="cm-rp">${rupees(r.price_paise)}</span></a>`).join("")}</div></section>` : ""}${cmExtras(x)}</main>${vo ? `<div class="au-sticky-buy"><b data-opt-price>${rupees(p.price_paise)}</b>${renderOptionSticky(p, { esc })}</div>` : on ? `<div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button" class="au-btn"${avail ? ` data-add-product="${esc(p.id)}"` : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div>` : ""}`;
+}
 function contactPageLive(x) {
   const st = x.settings || {};
   const rows = [st.support_email && `<a href="mailto:${esc(st.support_email)}">${esc(st.support_email)}</a>`, st.support_phone && `<a href="tel:${esc(String(st.support_phone).replace(/[^\d+]/g, ""))}">${esc(st.support_phone)}</a>`, st.address && `<p>${esc(st.address).replace(/\n/g, "<br>")}</p>`].filter(Boolean);
@@ -485,6 +542,7 @@ export function renderDesignLive(data, settings, options, design) {
   EDIT_SAMPLE=false;
   const style = design.style, page = options.page || "home";
   const commerce = options.commerce && ["cart","checkout","track","confirmation"].includes(page);
+  const cm = commerce || page === "product";
   if (!DEF[style] || !HOME[style] || !(commerce || page === "home" || ["collection", "product", "about", "contact"].includes(page))) return null;
   const pack = SHOWCASE_MEDIA?.[design.media_pack || style] || {}, m = design.media || {};
   const brand = settings.brand_name || data.store?.name || "Your brand";
@@ -496,10 +554,14 @@ export function renderDesignLive(data, settings, options, design) {
   const collections = (Array.isArray(data.collections) ? data.collections : []).map((c, i) => ({ ...c,
     image: i < 2 ? (liveMedia(m["collection" + i]) || liveMedia(pack.collections?.["c0" + (i + 1)])) : null }));
   const products = (Array.isArray(data.products) ? data.products : []).filter(p => p.status !== "archived");
-  const x = { style, media, def: DEF[style], products, collections, brand, copy, world: "", profile: null, options, page, settings, policies: data.policies || [] };
+  const x = { style, media, def: DEF[style], products, collections, brand, copy, world: "", profile: null, options, page, settings, policies: data.policies || [], data };
   const { overrides, font, preset } = themeOverrides(style, settings);
   LIVE = { edit: options.designEdit === true };
   try {
+    if (cm) {
+      const main = commerce ? renderCommerceBody({ ...data, settings }, options) : productPageCm(x);
+      return { body: `${cmHeader(x)}${main}${cmFooter(x)}`, css: "", bodyClass: "cm", style, font, preset, cm: true };
+    }
     let main = commerce ? renderCommerceBody({...data,settings},options) : page === "home" ? HOME[style](x) : BODY[page](x);
     if(!commerce)main += extras(x, data);
     if (page === "home" && !products.length) main += '<section class="sc-sec"><p class="sc-empty">Products are being added. Check back soon.</p></section>';

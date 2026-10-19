@@ -1,5 +1,5 @@
 import { statusLabel, indianDate } from "./dashboard-rules.js";
-import { cartKey, sameLine, cleanLine, normaliseCart, matchIssue, optionId, resolveSelection, valueStatus, variantTitleLines } from "./commerce-options.js";
+import { cartKey, sameLine, cleanLine, normaliseCart, matchIssue, optionId, resolveSelection, valueStatus, variantTitleLines, productImageUrl } from "./commerce-options.js";
 const configNode = document.querySelector("[data-commerce-config]");
 const storeKey = configNode?.dataset.storeKey || "";
 const page = configNode?.dataset.page || "";
@@ -44,7 +44,7 @@ function selectedMethod(v = validated) {
   const r = document.querySelector('#checkout-form [name="payment_method"]:checked');
   return r?.value === "online" && v?.online_available === true ? "online" : "cod";
 }
-const submitLabel = () => selectedMethod() === "online" ? 'Pay online <span aria-hidden="true">→</span>' : 'Place order <span aria-hidden="true">→</span>';
+const submitLabel = () => selectedMethod() === "online" ? 'Pay online' : 'Place order';
 function syncPayment() {
   const online = document.querySelector('#checkout-form [data-pay="online"]');
   if (!online || !validated) return;
@@ -160,12 +160,12 @@ function updatePlaceOrderAvailability() {
   button.disabled = busy || !validated || !cart.length || Boolean(validated.issues?.length) || !methodAvailable(validated, selectedMethod());
 }
 function productImage(url, title) {
-  const safe = /^https:\/\/media\.lebrands\.store\/stores\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:png|jpe?g|svg|webp)$/i.test(String(url || ""));
+  const safe = productImageUrl(url);
   return safe ? `<img class="commerce-line-image" src="${esc(url)}" alt="">` : `<div class="commerce-line-image" role="img" aria-label="${esc(title)}"><span>${esc(String(title || "P").slice(0,1).toUpperCase())}</span></div>`;
 }
 function linesMarkup(items, interactive = true) {
   const issues = validated?.issues || [];
-  if (!items?.length) return `${issues.map((entry)=>`<p class="commerce-error" role="alert">${esc(entry.message)}</p>`).join("")}<div class="commerce-empty"><span class="commerce-kicker">A considered start</span><h2>Your bag is empty.</h2><p>Find something made with care.</p><a class="commerce-button" href="/collections/all">Explore the collection</a></div>`;
+  if (!items?.length) return `${issues.map((entry)=>`<p class="commerce-error" role="alert">${esc(entry.message)}</p>`).join("")}<div class="commerce-empty"><span class="cm-empty-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span><h2>Your bag is empty</h2><p>Products you add will appear here with live prices and availability.</p><a class="commerce-button" href="/collections/all">Browse products</a></div>`;
   return `<div class="commerce-lines">${items.map((item) => {
     const issue = matchIssue(issues, item);
     const key = esc(cartKey(item)), opts = variantTitleLines(item);
@@ -180,7 +180,7 @@ function summaryMarkup(result, { checkout = false } = {}) {
   const method = selectedMethod(result);
   const unavailable = issues.length > 0 || (checkout ? !methodAvailable(result, method) : (result.cod_available === false && result.online_available !== true));
   const codMessage = !result.settings?.cod_enabled ? "This store is not accepting Cash on Delivery right now." : result.total_paise > Number(result.settings?.cod_max_paise) ? `Cash on Delivery is available up to ${money(result.settings.cod_max_paise)}.` : "Cash on Delivery is not available for this order. Please contact the store.";
-  return `<div class="commerce-summary"><h2>${checkout?"Order summary":"Your total"}</h2>${checkout?`<div class="checkout-summary-lines">${result.items.map((item)=>`<div class="checkout-summary-item"><span>${esc(item.title)}${variantTitleLines(item).length?`<small>${esc(variantTitleLines(item).join(" · "))}</small>`:""}${item.sku?`<small>SKU ${esc(item.sku)}</small>`:""}<small>Qty ${Number(item.quantity)||0}</small></span><strong>${money(item.line_total_paise)}</strong></div>`).join("")}</div>`:""}<div class="commerce-total-row"><span>Subtotal</span><strong>${money(result.subtotal_paise)}</strong></div><div class="commerce-total-row"><span>Delivery</span><strong>${Number(result.delivery_paise)===0?"Free":money(result.delivery_paise)}</strong></div>${Number(result.tax_paise)>0?`<div class="commerce-total-row"><span>Included taxes</span><strong>${money(result.tax_paise)}</strong></div>`:""}<div class="commerce-total-row grand"><span>Total</span><strong>${money(result.total_paise)}</strong></div>${issues.map((entry)=>`<p class="commerce-error">${esc(entry.message)}</p>`).join("")}${checkout&&!methodAvailable(result,method)?`<p class="commerce-error">${esc(codMessage)}</p>`:""}${checkout?"":`<a class="commerce-button" href="${esc(configNode?.dataset.apiRoot||"")}/checkout" ${unavailable?'aria-disabled="true"':''}>Continue to checkout <span aria-hidden="true">→</span></a>`}</div>`;
+  return `<div class="commerce-summary"><h2>${checkout?"Order summary":"Your total"}</h2>${checkout?`<div class="checkout-summary-lines">${result.items.map((item)=>`<div class="checkout-summary-item"><span>${esc(item.title)}${variantTitleLines(item).length?`<small>${esc(variantTitleLines(item).join(" · "))}</small>`:""}${item.sku?`<small>SKU ${esc(item.sku)}</small>`:""}<small>Qty ${Number(item.quantity)||0}</small></span><strong>${money(item.line_total_paise)}</strong></div>`).join("")}</div>`:""}<div class="cm-perf" aria-hidden="true"></div><div class="commerce-total-row"><span>Subtotal</span><strong>${money(result.subtotal_paise)}</strong></div><div class="commerce-total-row"><span>Delivery</span><strong>${Number(result.delivery_paise)===0?"Free":money(result.delivery_paise)}</strong></div>${Number(result.tax_paise)>0?`<div class="commerce-total-row"><span>Included taxes</span><strong>${money(result.tax_paise)}</strong></div>`:""}<div class="commerce-total-row grand"><span>Total</span><strong>${money(result.total_paise)}</strong></div>${issues.map((entry)=>`<p class="commerce-error">${esc(entry.message)}</p>`).join("")}${checkout&&!methodAvailable(result,method)?`<p class="commerce-error">${esc(codMessage)}</p>`:""}${checkout?"":`<a class="commerce-button" href="${esc(configNode?.dataset.apiRoot||"")}/checkout" ${unavailable?'aria-disabled="true"':''}>Continue to checkout</a>`}</div>`;
 }
 function renderCommerce() {
   const items = validated?.items || [];
@@ -614,6 +614,13 @@ function initializeReadOnlyPreview() {
 function bind() {
   if (readOnly) return;
   document.addEventListener("click", (event) => {
+    const thumb = event.target.closest("[data-cm-thumb]");
+    if (thumb) {
+      const stage = document.querySelector("[data-cm-stage] img"), pic = thumb.querySelector("img");
+      if (stage && pic) { stage.src = thumb.dataset.cmThumb; stage.removeAttribute("srcset"); stage.alt = pic.alt || ""; }
+      document.querySelectorAll("[data-cm-thumb]").forEach((t) => t.setAttribute("aria-current", String(t === thumb)));
+      return;
+    }
     if (event.target.closest('a[aria-disabled="true"]')) { event.preventDefault(); return; }
     const add = event.target.closest("[data-add-product]");
     if (add) { event.preventDefault(); if (add.disabled) return; addProduct(add.dataset.addProduct, document.getElementById("aura-quantity")?.value || 1, add.dataset.option || ""); return; }

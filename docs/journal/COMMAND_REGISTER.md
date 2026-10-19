@@ -1,5 +1,32 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: Shared commerce design and browser icons
+
+Workspace verification commands used:
+
+```sh
+node --experimental-test-module-mocks --test --test-concurrency=1 tests/storefront-commerce-shell.test.js tests/commerce-options.test.js tests/ann-browser-preview.test.js tests/browser-bundles.test.js tests/*rich*.test.js tests/*section-layout*.test.js tests/sku-checkout.test.js
+node --experimental-test-module-mocks --test --test-concurrency=1 tests/storefront-commerce-shell.test.js tests/sku-checkout.test.js
+node --experimental-test-module-mocks --test --test-concurrency=1 tests/sku-checkout.test.js
+git diff --check
+```
+
+The first batch exposed an invalid local-photo URL in the synthetic publication;
+the fixture was corrected without weakening the database media-ownership guard.
+Subsequent focused checks cover the stock-refresh and favicon boundaries. The
+browser pass used only the isolated fixture and public Turnstile test key.
+Managed web/API workflows were restarted for the completed code batches.
+No production query, migration, online payment or email send was run.
+
+Deployment command for the operator, **not run in this change**:
+
+```sh
+pnpm run deploy
+```
+
+This invokes the existing browser build and Cloudflare Worker deployment. No
+additional migration or secret is introduced by the shared commerce design.
+
 ## 19 October 2026: Receipt, utility emails and notification preferences
 
 Working directory: repository root.

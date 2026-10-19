@@ -15,9 +15,14 @@ const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
 const slug = (value) => String(value ?? "").replace(/[^a-z0-9-]/gi, "");
 export function storefrontIcon(settings = {}) {
   const initials = [...String(settings.brand_name || "Store").trim()].slice(0, 2).join("").toUpperCase();
+  const logo=safeImage(settings.logo_url)||safeImage(settings.ann_design?.media?.logo?.url);
+  const colour=/^#[0-9a-f]{6}$/i.test(settings.accent_color||"")?settings.accent_color:"#702440";
+  const revision=encodeURIComponent(`${logo?.split("/").at(-1)||settings.brand_name||"Store"}-${colour.slice(1)}`);
   return {
-    href: safeImage(settings.logo_url) || safeImage(settings.ann_design?.media?.logo?.url) || `/favicon.svg?v=${encodeURIComponent(settings.brand_name || "Store")}`,
-    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#fff"/><text x="32" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#222">${esc(initials)}</text></svg>`,
+    href: logo || `/favicon.svg?v=${revision}`,
+    iconHref:`/${logo?"favicon.png":"favicon.svg"}?v=${revision}`,
+    touchHref:`/apple-touch-icon.png?v=${revision}`,
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${colour}"/><text x="32" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="${contrastColor(colour)||"#fff"}">${esc(initials)}</text></svg>`,
   };
 }
 function accentTextColor(hex, backgrounds = ["#f8f6ef"]) {
@@ -136,8 +141,8 @@ export function renderAura(data = {}, options = {}) {
       <meta name="viewport" content="width=device-width, initial-scale=1">
       ${heroPreload}
       <title>${esc(title)}</title>
-      <link rel="icon" href="${esc(storefrontIcon(settings).href)}">
-      <link rel="apple-touch-icon" href="${esc(storefrontIcon(settings).href)}">
+      <link rel="icon" href="${esc(storefrontIcon(settings).iconHref)}" sizes="any">
+      <link rel="apple-touch-icon" href="${esc(storefrontIcon(settings).touchHref)}">
       <meta name="description" content="${esc(descriptionText)}">
       <meta name="theme-color" content="${esc(paper)}">
       ${noindex ? '<meta name="robots" content="noindex, nofollow">' : ""}
@@ -149,7 +154,7 @@ export function renderAura(data = {}, options = {}) {
       <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
       ${designed ? `<style>${designed.css}</style>` : '<link rel="stylesheet" href="/assets/aura.css">'}
       <style>:root{--accent:${accent};--accent-ink:${accentInk};--accent-label:${accentLabel};--display:${font.display};--body:${font.body};--radius:${radius}}${DESIGN_MENU_CSS}</style>
-      ${options.commerce ? `<link rel="stylesheet" href="/assets/commerce.css">` : ""}
+      ${options.commerce || designed?.cm ? `<link rel="stylesheet" href="/assets/${designed ? "commerce-signature" : "commerce"}.css">` : ""}
       ${!designed && STYLE_IDS.includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-styles.css">' : ""}
       ${!designed && ["minimal", "vintage"].includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-extra-styles.css">' : ""}
     </head>
