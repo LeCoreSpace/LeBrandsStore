@@ -37,6 +37,7 @@ LeBrands.Store is a multi-tenant store builder for Indian D2C brands. One codeba
 - Record verification, database migrations and production deployment separately. Never infer that tests passed because a test file exists, or that committed code was migrated or deployed.
 - Preserve historical entries; add dated corrections and superseding decisions instead of rewriting past outcomes. Do not include secrets, personal/account identifiers, raw database exports or private business documents.
 - Keep `docs/journal/COMMIT_REGISTER.md` aligned with available new checkpoints when updating the journal. If the latest work is not committed, mark it as such and add the reference during a later update; do not create commits solely for the journal.
+- Maintain `docs/journal/COMMAND_REGISTER.md` for relevant integration, deployment, migration and operational commands. Include working directory, purpose/effect, prerequisites, target environment and observed result or suggested-only status. Never record secret values, private identifiers or credential-bearing URLs.
 
 ## Reserved subdomains
 

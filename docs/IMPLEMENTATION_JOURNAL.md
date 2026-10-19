@@ -5,6 +5,8 @@
 **Historical coverage:** 11 September to 18 October 2026, covering 272 recorded commits  
 **Ongoing record:** maintained as part of completed implementation work
 
+**Command reference:** [integrations, deployment, migrations and operational commands](journal/COMMAND_REGISTER.md). Commands are labelled as observed, documented or supported references; a reference is not proof of execution.
+
 ## How to read this journal
 
 This is a retrospective reconstruction followed by an ongoing journal. It was
@@ -328,6 +330,27 @@ when a checkpoint is available.
 | Complete checkpoint register | Retained every recorded commit with its original subject, local timestamp, affected scope and evidence limits. | Smaller fixes, asset changes and configuration work remain traceable. | Register checked against the captured Git history. |
 | Ongoing maintenance rule | Added a project instruction to update the journal during completed implementation/fix work. | Future agents have an explicit maintenance requirement. This is not an unattended background service. | Documentation-only change; no app restart, database migration or production deployment needed. |
 
+### Update: commands and inline-editor assessment
+
+- The original journal work now has checkpoint
+  [19919a1](journal/COMMIT_REGISTER.md#commit-19919a1), recorded on 19 October.
+  The initial 272-commit backfill remains historical; the register now also
+  includes this subsequent documentation checkpoint.
+- Added the [command register](journal/COMMAND_REGISTER.md), covering local
+  checks, Cloudflare publishing, resource/secret configuration, supported staged
+  migrations, scanner diagnostics, reviewer roles and billing-test switches.
+  The commands were documented and checked against their sources; **no deployment,
+  integration mutation, credential upload, migration or billing-switch operation
+  was executed** to prepare the register.
+- Reviewed inline editing: Ann's contextual editor currently uses plain text
+  controls, while other content helpers support only a small HTML subset.
+  Recommended a shared, validated rich-text editor for Ann and the theme editor,
+  with text formatting, typography and colour controls. This is a **recommendation
+  awaiting implementation approval**, not a delivered editor feature.
+- The command-register additions and editor assessment are not yet part of a
+  captured checkpoint at the time of this update. No application code, database
+  settings or production deployment was changed for this documentation work.
+
 ## Current handover boundaries
 
 These are the boundaries recorded by the observed work, not a fresh production
@@ -365,6 +388,9 @@ decision:
 5. Add an available checkpoint reference and update the register for newly
    recorded commits. If the work is not committed yet, say so; add its reference
    during the next update. Do not create commits merely to maintain the journal.
+   Record relevant integration, deployment, migration and operational commands
+   in the command register, including working directory, effect, prerequisites
+   and whether they were actually executed or only suggested.
 6. Preserve old entries. Add a dated correction or superseding decision rather
    than rewriting an earlier outcome as if it had always been true.
 7. Do not include secrets, customer/account identifiers, raw database exports,
@@ -373,7 +399,10 @@ decision:
 ## Evidence and limitations
 
 - [Complete checkpoint register](journal/COMMIT_REGISTER.md): all 272 commits
-  captured for this reconstruction, ending at `9adc763`.
+  captured for the initial reconstruction, ending at `9adc763`, plus subsequent
+  available checkpoints recorded during ongoing maintenance.
+- [Command register](journal/COMMAND_REGISTER.md): operational commands and their
+  evidence/safety classifications.
 - Existing phase documents under `docs/`: supporting descriptions and release
   limitations, not automatically dated proof of test execution.
 - Recent conversation: direct evidence for the media and product-form results
