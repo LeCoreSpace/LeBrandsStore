@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+<title id="title">Multilingual guidance and verified business identity</title><desc id="desc">Five conversation choices connect to a GST business record, an explicit confirmation and a distinct document review.</desc>
+<rect width="1200" height="800" fill="#fdf8f6"/><circle cx="180" cy="450" r="290" fill="#f6e7e3"/><rect x="40" y="40" width="1120" height="720" rx="28" fill="none" stroke="#e9d3cf" stroke-width="2"/>
+<rect x="120" y="130" width="420" height="530" rx="20" fill="#fff" stroke="#e9d3cf" stroke-width="3"/>
+<g fill="#f6e7e3"><rect x="155" y="170" width="280" height="60" rx="14"/><rect x="225" y="260" width="280" height="60" rx="14"/><rect x="155" y="350" width="280" height="60" rx="14"/><rect x="225" y="440" width="280" height="60" rx="14"/><rect x="155" y="530" width="280" height="60" rx="14"/></g>
+<g stroke="#874353" stroke-width="8" stroke-linecap="round"><path d="M185 200h180m-110 90h210m-280 90h150m-80 90h185m-255 90h205"/></g>
+<path d="M575 400h65m-15-12l15 12-15 12" stroke="#874353" stroke-width="4" fill="none"/>
+<rect x="685" y="140" width="385" height="385" rx="18" fill="#fff" stroke="#e9d3cf" stroke-width="3"/><rect x="725" y="185" width="210" height="17" rx="6" fill="#874353"/>
+<path d="M725 250h295m-295 55h235m-235 55h270" stroke="#ce928b" stroke-width="12" stroke-linecap="round"/>
+<rect x="725" y="415" width="305" height="60" rx="10" fill="#874353"/><path d="M755 445l10 10 20-22" fill="none" stroke="#fff" stroke-width="5"/><path d="M820 445h170" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
+<rect x="685" y="565" width="385" height="100" rx="15" fill="#fff" stroke="#e9d3cf" stroke-width="3"/><path d="M725 590h35l15 15v35h-50zm35 0v15h15" fill="#f6e7e3" stroke="#874353" stroke-width="3"/><path d="M805 610h210m-210 25h140" stroke="#ce928b" stroke-width="8" stroke-linecap="round"/>
+</svg>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Public platform pages -->
   <url><loc>https://lebrands.store</loc></url>
   <url><loc>https://lebrands.store/pricing</loc></url>
   <url><loc>https://lebrands.store/compare</loc></url>
@@ -7,6 +8,7 @@
   <url><loc>https://lebrands.store/privacy</loc></url>
   <url><loc>https://lebrands.store/contact</loc></url>
   <url><loc>https://lebrands.store/support</loc></url>
+  <!-- Blog index and all published editorial articles -->
   <url><loc>https://lebrands.store/blog</loc></url>
   <url><loc>https://lebrands.store/blog/launch-checklist-indian-d2c-store</loc></url>
   <url><loc>https://lebrands.store/blog/product-pages-that-answer-buyer-questions</loc></url>
@@ -28,4 +30,6 @@
   <url><loc>https://lebrands.store/blog/lebrands-store-checkout-and-order-experience</loc></url>
   <url><loc>https://lebrands.store/blog/lebrands-store-offers-and-cost-control</loc></url>
   <url><loc>https://lebrands.store/blog/lebrands-store-verification-and-publication</loc></url>
+  <url><loc>https://lebrands.store/blog/ann-theme-styles-and-inline-editing</loc></url>
+  <url><loc>https://lebrands.store/blog/ann-multilingual-conversations-and-gst-verification</loc></url>
 </urlset>

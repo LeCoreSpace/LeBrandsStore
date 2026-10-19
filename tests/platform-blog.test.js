@@ -14,11 +14,11 @@ const env={ASSETS:{fetch:async request=>{
 }}};
 const graph=html=>JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1])["@graph"];
 
-test("twenty substantive public articles include five detailed platform guides and unique links",()=>{
-  assert.equal(BLOG_POSTS.length,20);
-  assert.equal(new Set(BLOG_POSTS.map(post=>post.slug)).size,20);
+test("twenty-two substantive public articles include seven detailed platform guides and unique links",()=>{
+  assert.equal(BLOG_POSTS.length,22);
+  assert.equal(new Set(BLOG_POSTS.map(post=>post.slug)).size,22);
   const platform=BLOG_POSTS.filter(post=>post.category==="Inside LeBrands.Store");
-  assert.equal(platform.length,5);
+  assert.equal(platform.length,7);
   for(const post of platform){
     assert.ok(post.sections.length>=5);
     assert.ok(post.sections.flatMap(s=>s.paragraphs).join(" ").split(/\s+/).length>=450);
@@ -102,4 +102,12 @@ test("editorial titles are escaped in HTML and structured data",()=>{
   const html=renderBlogArticle({...BLOG_POSTS[0],title:'Example "><script>alert(1)</script>'});
   assert.doesNotMatch(html,/<script>alert\(1\)/);
   assert.equal(graph(html).find(n=>n["@type"]==="BlogPosting").headline,'Example "><script>alert(1)</script>');
+});
+
+test("Ann guides cover actual styles, formatting, conversation languages and separate GST confirmation",()=>{
+  const design=getBlogPost("ann-theme-styles-and-inline-editing");
+  const text=JSON.stringify(design);
+  for(const phrase of ["Editorial","Modern Boutique","Bold Architectural","Minimal","inline","font","size","alignment","colours"])assert.ok(text.includes(phrase),phrase);
+  const business=JSON.stringify(getBlogPost("ann-multilingual-conversations-and-gst-verification"));
+  for(const phrase of ["English","Hindi","Tamil","Marathi","Telugu","GSTIN","legal business name","registered address","explicitly confirm","manual business-document approval"])assert.ok(business.includes(phrase),phrase);
 });

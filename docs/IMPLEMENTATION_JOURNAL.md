@@ -805,6 +805,32 @@ decision:
   twenty server-rendered articles, related links and machine-readable metadata.
 - No migration or automatic production deployment. Release remains manual.
 
+## 19 October 2026: Two detailed Ann guides
+
+- Added guides on theme styles and inline editing, and multilingual guidance
+  with automatic GST verification. The library now contains twenty-two articles.
+- Described the actual style choices, shared text-formatting controls and five
+  conversation languages. Kept legal records distinct from translated guidance,
+  and GST verification distinct from identity confirmation and document approval.
+- Added two original illustrations with PNG sharing derivatives, related links,
+  sitemap entries and machine-readable guide links. The blog's description now
+  derives its article count from the content rather than a hard-coded number.
+- Verification covers article structure, routes, images, metadata, discovery
+  files and the specific Ann feature descriptions. No migration or deployment.
+
+## 19 October 2026: Full public discovery inventory
+
+- Audited sitemap and AI-facing guide against the actual public route list.
+  All twenty-two articles, the blog index, home, Pricing, Compare, Terms,
+  Privacy, Contact and Support are covered: thirty canonical public pages.
+- Added direct Features and FAQ section links in `llms.txt`; their sitemap
+  destination remains the canonical homepage rather than duplicate fragments.
+- Grouped sitemap entries for readability and added a parity check proving the
+  AI-facing links and sitemap cover the same public page inventory.
+- Preserved exclusions for private account, merchant, dashboard and preview
+  routes and the non-indexable incomplete refund-policy page.
+- No database migration or automatic production release.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

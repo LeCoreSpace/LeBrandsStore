@@ -28,6 +28,19 @@ test("sitemap contains exactly the real public platform pages, without fabricate
   for (const location of locations) assert.equal((await worker.fetch(new Request(location), {})).status, 200);
 });
 
+test("llms and sitemap cover the same complete public page inventory", () => {
+  const urls=[...files["/llms.txt"].matchAll(/\]\((https:\/\/lebrands\.store(?:\/[^)]*)?)\)/g)]
+    .map(match=>new URL(match[1]));
+  const paths=new Set(urls.map(url=>url.pathname));
+  assert.deepEqual([...paths].sort(),[...PUBLIC_PLATFORM_PATHS].sort());
+  assert.ok(urls.some(url=>url.pathname==="/"&&url.hash==="#features"));
+  assert.ok(urls.some(url=>url.pathname==="/"&&url.hash==="#faq"));
+  for(const url of urls){
+    assert.equal(url.search,"");
+    assert.doesNotMatch(url.pathname,/^\/(?:account|stores|dashboard|api|__|login|register)(?:\/|$)/);
+  }
+});
+
 test("crawler files work as root Worker GET and HEAD endpoints with correct types and methods", async () => {
   for (const [path, content] of Object.entries(files)) {
     const response = await worker.fetch(new Request(PLATFORM_ORIGIN + path), env);

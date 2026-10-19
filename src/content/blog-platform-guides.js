@@ -31,7 +31,7 @@ export const PLATFORM_GUIDES=[
     ],
     [faq("Does choosing Free start the 30 live days immediately?","No. The 30 live days begin at the first successful publication, not when you name the store, review plans or edit a draft."),
       faq("Does switching Ann's language translate my business records?","No. The conversation language is separate from merchant-entered names, addresses, product records and submitted evidence.")],
-    ["lebrands-store-verification-and-publication","lebrands-store-catalogue-and-variants"],
+    ["ann-theme-styles-and-inline-editing","ann-multilingual-conversations-and-gst-verification","lebrands-store-verification-and-publication","lebrands-store-catalogue-and-variants"],
     "A guided Ann conversation linked to plan review, theme controls and a saved storefront draft"),
 
   article("lebrands-store-catalogue-and-variants",

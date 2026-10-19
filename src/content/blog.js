@@ -2,6 +2,7 @@
 import {article,section,faq} from "./blog-helpers.js";
 import {D2C_GUIDES} from "./blog-d2c-guides.js";
 import {PLATFORM_GUIDES} from "./blog-platform-guides.js";
+import {ANN_GUIDES} from "./blog-ann-guides.js";
 
 export const BLOG_POSTS=[
   article("launch-checklist-indian-d2c-store",
@@ -295,6 +296,7 @@ export const BLOG_POSTS=[
     "Connected payment, order and parcel records showing distinct transaction, delivery and settlement events"),
   ...D2C_GUIDES,
   ...PLATFORM_GUIDES,
+  ...ANN_GUIDES,
 ];
 
 export const getBlogPost=slug=>BLOG_POSTS.find(post=>post.slug===slug)||null;

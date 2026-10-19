@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+<title id="title">Ann theme styles and inline editing</title><desc id="desc">Three distinct storefront styles sit above a shared text editor with a type control, alignment choices and colour swatches.</desc>
+<rect width="1200" height="800" fill="#fdf8f6"/><circle cx="1060" cy="160" r="270" fill="#f6e7e3"/><rect x="40" y="40" width="1120" height="720" rx="28" fill="none" stroke="#e9d3cf" stroke-width="2"/>
+<g fill="#fff" stroke="#e9d3cf" stroke-width="3"><rect x="110" y="130" width="300" height="320" rx="16"/><rect x="450" y="130" width="300" height="320" rx="16"/><rect x="790" y="130" width="300" height="320" rx="16"/></g>
+<path d="M140 170h110m230 0h80m260 0h180" stroke="#874353" stroke-width="10" stroke-linecap="round"/>
+<rect x="140" y="210" width="240" height="130" rx="8" fill="#f6e7e3"/><path d="M165 245h125m-125 30h90" stroke="#874353" stroke-width="8" stroke-linecap="round"/><rect x="315" y="235" width="45" height="80" rx="18" fill="#ce928b"/>
+<rect x="480" y="210" width="105" height="160" rx="3" fill="#ce928b"/><path d="M610 240h110m-110 30h85m-85 30h95" stroke="#874353" stroke-width="8" stroke-linecap="round"/>
+<rect x="820" y="210" width="240" height="160" fill="#f6e7e3"/><path d="M830 225h220v130H830zM940 225v130m-110-65h220" fill="none" stroke="#874353" stroke-width="3"/>
+<path d="M140 395h145m195 15h130m210 0h145" stroke="#ce928b" stroke-width="12" stroke-linecap="round"/>
+<rect x="170" y="515" width="860" height="170" rx="18" fill="#fff" stroke="#874353" stroke-width="3"/><path d="M205 585h790" stroke="#e9d3cf" stroke-width="2"/>
+<path d="M220 563l12-25 12 25m-19-10h14m40-12h95m50 0h95m55 0h60m-60 12h45m-45 12h60" stroke="#874353" stroke-width="4" stroke-linecap="round" fill="none"/>
+<circle cx="785" cy="550" r="14" fill="#874353"/><circle cx="830" cy="550" r="14" fill="#ce928b"/><circle cx="875" cy="550" r="14" fill="#f6e7e3" stroke="#e9d3cf" stroke-width="2"/>
+<rect x="210" y="615" width="455" height="35" rx="5" fill="#f6e7e3"/><path d="M225 633h420" stroke="#874353" stroke-width="10" stroke-linecap="round"/><path d="M680 610v45" stroke="#874353" stroke-width="3"/>
+</svg>

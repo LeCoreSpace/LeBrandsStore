@@ -27,7 +27,7 @@ const HEAD_BASE = `<link rel="stylesheet" href="/assets/blog.css">`;
 
 export function renderBlogIndex() {
   const title = "Blog | LeBrands.Store guides for Indian D2C brands";
-  const description = "20 practical D2C guides on products, inventory, customer experience and running a store with Ann, catalogue tools, checkout, offers and business verification on LeBrands.Store.";
+  const description = `${BLOG_POSTS.length} practical D2C guides on products, inventory, customer experience and running a store with Ann, catalogue tools, checkout, offers and business verification on LeBrands.Store.`;
   const canonical = `${ORIGIN}/blog`;
   const [lead, ...rest] = BLOG_POSTS;
   const schema = {

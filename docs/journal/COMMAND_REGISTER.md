@@ -1,5 +1,21 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: Complete public discovery inventory
+
+- `node --test --test-concurrency=1 tests/platform-seo.test.js`: verify all
+  public destinations, crawler responses and sitemap/AI-guide inventory parity.
+- `git diff --check`: whitespace validation.
+- Managed API workflow restart: refresh static discovery assets.
+- `pnpm run deploy`: manual production release, not executed. No migration.
+
+## 19 October 2026: Two Ann editorial guides
+
+- `for image in src/public/img/blog/ann-*.svg; do magick "$image" -strip -define png:compression-level=9 "${image%.svg}.png"; done`: generate the two social-image derivatives.
+- `node --test --test-concurrency=1 tests/platform-blog.test.js tests/platform-seo.test.js`: verify the expanded public library and Ann content coverage.
+- `git diff --check`: whitespace validation.
+- Managed API workflow restart and article screenshot: confirm public serving
+  and readable layout. `pnpm run deploy` remains a manual release; not executed.
+
 ## 19 October 2026: Twenty-article library and heading adjustment
 
 - `bash scripts/build-blog-images.sh`: create stripped PNG social derivatives
