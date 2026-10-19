@@ -545,6 +545,37 @@ decision:
   [1a3bfd4](journal/COMMIT_REGISTER.md#commit-1a3bfd4); current Stage 2 work is
   uncommitted at this journal update.
 
+### 19 October 2026: publication review clarity and in-app confirmations
+
+- **What:** Replaced native confirmations in setup/publication review with the
+  existing accessible in-app dialog. Ann's final-review readiness panel now opens
+  by default and exposes the existing business, policy-generation and policy-review
+  controls without requiring the merchant to discover a collapsed section.
+- **How:** Show every shared business-validation error in Ann and publication
+  review, including missing support contacts, rather than a generic incomplete
+  business message. Policy-generation API errors also explain the missing fields.
+  Link directly to Settings → Business documents for current review status and
+  reviewer feedback. Manual document approval and GST verification remain separate.
+- **GSTIN investigation:** Confirmed GSTIN confirmation saves the store supplier
+  identity in store setup and verification evidence, not the shared brands
+  registry. Brands may belong to multiple stores; no inferred registry backfill
+  or change to historical/published invoice identity was performed.
+- **Preview:** Replaced misleading “Shopping unavailable” copy in read-only
+  product previews with explicit preview-only checkout wording. Actual storefront
+  availability, stock, checkout configuration and publication checks are unchanged.
+- **Verification:** 24 focused wizard/readiness/media checks passed, including
+  genuine policy generation against isolated foundational DDL, consent/staleness
+  guards and preview/live copy separation. Type checks and diff whitespace checks
+  passed. Browser asset graph/gate check also passed in the earlier bounded run.
+  An older upload test mock initially rejected the existing staged-billing schema
+  probe; its fixture now explicitly represents an unmigrated billing schema.
+  Both workflows restarted successfully. The isolated native-preview publication
+  screen rendered with the explicit missing-details list; no real merchant records
+  were read to establish current approval status.
+- **Release:** Uncommitted at this update. No database migration is required for
+  this change. No production deployment, approval, policy replacement, GSTIN
+  update or publication was performed. Deploy manually with `pnpm run deploy`.
+
 ## Evidence and limitations
 
 ### 19 October 2026: COGS navigation confirmed

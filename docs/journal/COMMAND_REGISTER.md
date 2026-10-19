@@ -1,5 +1,20 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: publication-review fixes
+
+Working directory: repository root.
+
+- **Executed locally:** `node --experimental-test-module-mocks --test --test-concurrency=1 tests/wizard.test.js tests/ann-readiness.test.js tests/aura-media.test.js`
+  passed 24 checks against synthetic fixtures and isolated databases.
+- **Executed locally:** `pnpm run typecheck` and `git diff --check` passed.
+- **Executed locally:** `node --experimental-test-module-mocks --test --test-concurrency=1 tests/wizard.test.js tests/ann-readiness.test.js tests/browser-bundles.test.js`
+  passed the Worker asset gate and 21 other checks. The upload fixture needed
+  the existing staged-billing schema probe represented; it passed after that
+  test-fixture correction in the 24-check run above.
+- **Suggested only, production mutation:** `pnpm run deploy`. Requires configured
+  Cloudflare credentials and the intended production configuration. No database
+  migration is needed for these UI/review fixes. Not executed by the agent.
+
 **Added:** 19 October 2026. **Working directory:** the project root, unless stated otherwise.
 
 This complements the [daily implementation journal](../IMPLEMENTATION_JOURNAL.md).

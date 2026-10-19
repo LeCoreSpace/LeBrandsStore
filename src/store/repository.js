@@ -313,7 +313,7 @@ export async function insertMedia(tx, id, key, type, size, metadata, alt) {
 }
 export async function regeneratePolicies(tx, id) {
   const data = await loadDraft(tx, id), errors = validateBasics(data.settings);
-  if (Object.keys(errors).length) throw badInput("Complete your brand basics before generating policy drafts.", errors);
+  if (Object.keys(errors).length) throw badInput(`Complete these business details before generating policy drafts: ${Object.values(errors).join(" ")}`, errors);
   for (const p of generatePolicies(data)) await tx`INSERT INTO public.policy_pages
     (store_id, slug, title, content) VALUES (${id}, ${p.kind}, ${p.title}, ${p.body})
     ON CONFLICT (store_id, slug) DO UPDATE SET content = EXCLUDED.content, title = EXCLUDED.title,

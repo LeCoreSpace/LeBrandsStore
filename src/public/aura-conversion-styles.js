@@ -96,7 +96,7 @@ export function buildConversion(h) {
     const max = p.stock == null ? 99 : Math.max(1, Math.min(99, Number(p.stock)));
     return on(x)
       ? `<div class="au-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="${max}" value="1" inputmode="numeric" aria-label="Quantity"><button class="au-btn" type="button" data-add-product="${esc(p.id)}"${ok ? "" : ' disabled aria-disabled="true"'}>${ok ? word : "Sold out"}</button></div><p class="au-feedback" data-commerce-feedback role="status"></p>`
-      : `<div class="au-buy"><button class="au-btn" type="button" disabled aria-disabled="true">${o.commerce ? "Add to cart on the live store" : "Shopping unavailable"}</button></div>`;
+      : `<div class="au-buy"><button class="au-btn" type="button" disabled aria-disabled="true">${o.preview || o.embeddedPreview ? "Preview only: checkout on the live store" : o.commerce ? "Add to cart on the live store" : "Shopping unavailable"}</button></div>`;
   };
   const mini = (x, p) => {
     if (!live()) return `<div class="au-buy cf-mini"><button type="button">Add to bag (preview)</button></div>`;

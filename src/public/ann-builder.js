@@ -850,7 +850,7 @@ function reviewStep() {
       <p class="ann-note">${dirty ? "You have unsaved changes." : designUI?.active() ? "Design saved to draft." : session ? "Your plan is saved." : "Not saved yet."}</p>`, "ann-card") +
     bubble(`<div id="ann-essentials-slot"></div>`, "ann-card") +
     `<p class="ann-note">Real draft products are created in the catalogue step. <button type="button" class="ann-link" data-go-prompt="catalogue">Open the catalogue step</button></p>
-    <details class="ann-review-step"><summary>When you are ready: getting your store ready to open</summary><section class="ann-card" id="ann-readiness-slot"></section></details>`;
+    <details class="ann-review-step" open><summary>Business details, policy drafts and publication readiness</summary><section class="ann-card" id="ann-readiness-slot"></section></details>`;
 }
 
 

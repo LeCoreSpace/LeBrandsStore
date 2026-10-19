@@ -1,4 +1,5 @@
 import { INDIAN_STATES } from "./commerce-rules.js";
+import { confirmCatalogueAction } from "./catalogue-confirm.js";
 import { attachAnnProducts } from "./ann-products-ui.js";
 import { inrToPaise, paiseToInr } from "./ann-money.js";
 export { inrToPaise } from "./ann-money.js";
@@ -110,9 +111,9 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     if (!ackGen) return;
     void submit("generate", { action: "generate-policies" }, () => { pol = Object.fromEntries(data.policies.map(p => [p.kind, polFrom(p)])); ackGen = false; });
   }
-  function reload() {
+  async function reload() {
     if (busy || productUI.isUploading()) return;
-    if (anyDirty() && !window.confirm("Reloading discards your unsaved readiness edits. Continue?")) return;
+    if (anyDirty() && !await confirmCatalogueAction("Reloading discards your unsaved readiness edits.", { title: "Reload saved details?", confirmLabel: "Discard edits and reload" })) return;
     void load(true);
   }
   function storeChanged(){
@@ -152,7 +153,7 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
   }
   function html() {
     const head = `<h2>Launch readiness</h2>
-      <p>This panel reads your actual store, not your Ann answers. Setup fields below are saved to the store separately from the Ann plan. The Save button under the conversation only saves the Ann plan.</p><p><a href="#ann-products">Jump to products</a></p>`;
+      <p>This panel reads your actual store, not your Ann answers. Setup fields below are saved to the store separately from the Ann plan. The Save button under the conversation only saves the Ann plan.</p><p><a href="#ann-products">Jump to products</a> · <a href="${root}/settings#business-documents">Check document approval and reviewer feedback</a></p>`;
     if (loading && !data) return `${head}<div class="ann-skel" aria-busy="true"><i></i><i></i><i></i></div>`;
     if (!data) return `${head}${loadError ? `<p class="ann-error" role="alert">${esc(loadError)}</p>` : ""}<button type="button" class="ann-btn" data-rd="load"${loading ? " disabled" : ""}>${loadError ? "Try again" : "Load readiness"}</button>`;
     const errs = data.business_errors || {}, st = data.store || {};
@@ -168,7 +169,7 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     const logoSel = `<label class="ann-field" for="rd-biz-logo">Logo<select id="rd-biz-logo" data-rd-key="biz-logo" data-rd-biz="logo_media_id"${dis()}${errs.logo_media_id ? ' aria-invalid="true" aria-describedby="rd-biz-logo-e"' : ""}><option value="">No logo</option>${logos.map(l => `<option value="${esc(l.id)}"${biz.logo_media_id === l.id ? " selected" : ""}>${esc(l.label)}</option>`).join("")}</select></label>${errs.logo_media_id ? `<p class="ann-error" id="rd-biz-logo-e">${esc(errs.logo_media_id)}</p>` : ""}<p class="ann-note">Upload new logos in <a href="${root}/setup">setup</a>.</p>`;
     const bd = bizDirty();
     const business = `<fieldset class="ann-item"><legend>Business details</legend>
-      ${Object.keys(errs).length ? `<p class="ann-callout" role="status">Some saved business details fail the shared checks. You can still save a draft.</p>` : ""}
+      ${Object.keys(errs).length ? `<div class="ann-callout" role="status"><strong>Business details still needed</strong><ul>${Object.values(errs).map(message=>`<li>${esc(message)}</li>`).join("")}</ul>You can still save an incomplete draft.</div>` : ""}
        ${lockNote}${f("brand_name")}${f("tagline")}${f("description", { area: true })}${f("legal_name")}${f("trade_name")}${f("address", { area: true })}${f("business_line1")}${f("business_line2")}${f("business_city")}${f("business_pincode", { mode: "numeric" })}${f("business_state", {state:true})}${f("gstin")}${f("support_email", { type: "email" })}${f("support_phone", { type: "tel" })}${f("notification_email", { type: "email" })}${logoSel}
       <label class="ann-check"><input type="checkbox" data-rd-key="ack-biz" data-rd-ack="biz"${ackBiz ? " checked" : ""}${dis(!bd)}><span>I confirm saving these business details to my store. Incomplete drafts can be saved.</span></label>
       ${msg("business")}

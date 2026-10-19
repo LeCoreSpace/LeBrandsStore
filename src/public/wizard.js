@@ -1,4 +1,5 @@
 import { formatPhone } from "/assets/commerce-rules.js";
+import { confirmCatalogueAction } from "/assets/catalogue-confirm.js";
 import { renderAura } from "/assets/aura.js";
 import { attachAuraSearch } from "/assets/aura-ui.js";
 import { mergeSettingsToLayouts } from "/assets/aura-layout.js";
@@ -377,7 +378,7 @@ function publishReady(){
 function renderReview(){
  const policies=data.policies||[];
  const checks=checklistItems();
- const s=currentSettings(),gstErrors=businessGSTINErrors(s);
+ const s=currentSettings(),gstErrors=businessGSTINErrors(s),basicErrors=validateBasics(s);
  const registered=reviewGST?.gstin===s.gstin&&reviewGST.state==="verified"?
    [reviewGST.registration?.principal_address,...(reviewGST.registration?.additional_addresses||[])].find(a=>a&&(a.line1||a.line2)===s.business_line1&&a.city===s.business_city):null;
  delete formErrors.gstin;delete formErrors.business_state;
@@ -385,9 +386,12 @@ function renderReview(){
  return shellStep(reviewOnly?"Publication review":"Step 04 · Nearly there","A final look before launch.","Review the essentials, read each policy draft, and publish when everything feels right.",`
   <div class="review-note">Policy drafts are starting points for your own review. LeBrands.Store does not provide legal advice.</div>
   <dl class="publication-summary"><dt>Brand</dt><dd>${esc(s.brand_name||data.store?.name||"Not set")}</dd><dt>Legal business name</dt><dd>${esc(s.legal_name||"Not set")}</dd><dt>GSTIN</dt><dd>${esc(s.gstin||"Not set")}</dd><dt>Saved invoice address</dt><dd style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(s.address||"Not set")}</dd><dt>Registered state</dt><dd>${esc(INDIAN_STATES.find(x=>x.code===registeredBusinessState(s))?.name||"Not set")}</dd><dt>Support email</dt><dd>${esc(s.support_email||"Not set")}</dd><dt>Support phone</dt><dd>${esc(s.support_phone||"Not set")}</dd></dl>
+  <p class="field-help">The GSTIN above is saved for this store. The shared brand record is not used as your verified invoice identity.</p>
   ${registered?.formatted_address?`<details class="policy-card"><summary>Full address returned by the GST service</summary><p style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(registered.formatted_address)}</p><p class="field-help">This is the provider's full address text. Your saved invoice address above has not been changed.</p></details>`:""}
   ${reviewGSTError?`<p class="field-help" role="status">${esc(reviewGSTError)}</p>`:""}
   <p class="field-help">These are your saved details, not a new setup form. <a href="/stores/${encodeURIComponent(storeId)}/build/ann">Return to Ann</a> if something is missing. A confirmed invoice address stays locked.</p>
+  ${Object.keys(basicErrors).length?`<div class="review-note" role="status"><strong>Business details still needed</strong><ul>${Object.values(basicErrors).map(message=>`<li>${esc(message)}</li>`).join("")}</ul><a href="/stores/${encodeURIComponent(storeId)}/settings">Complete business and contact details in Settings</a></div>`:""}
+  ${data.business_review?.enforced?`<p class="field-help">Document approval: <strong>${data.business_review.approved?"Approved":"Approval pending or action required"}</strong>. <a href="/stores/${encodeURIComponent(storeId)}/settings#business-documents">Check Business documents for the current review status and feedback</a>. GST verification is separate from document approval.</p>`:""}
    <ul class="checklist">${checks.map(c=>`<li><span class="check-indicator ${c.complete?"complete":""}" aria-hidden="true">${c.complete?"✓":""}</span><span>${esc(c.label)}</span></li>`).join("")}</ul>
    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:19px 0 6px"><strong style="font:500 22px var(--serif)">Store policies</strong><button class="btn btn-secondary" type="button" data-action="generate-policies" ${busy||uploadBusy?"disabled":""}>Generate drafts</button></div>
   <p class="field-help">Generating again replaces the current drafts. You'll be asked first.</p>
@@ -550,7 +554,7 @@ async function deleteProduct(){
   if(visualOnly){showReadOnly("remove products");return}
   if(uploadBusy||busy)return;
  const product=currentProduct();if(!product)return;
- if(!window.confirm(`Remove "${product.title||"this product"}" from your catalogue? This cannot be undone.`))return;
+ if(!await confirmCatalogueAction(`Remove "${product.title||"this product"}" from your catalogue? This cannot be undone.`,{title:"Remove product?",confirmLabel:"Remove product"}))return;
   busy=true;renderPanel();setStatus("saving","Removing product");
   try{
     await saveNow();
@@ -661,9 +665,9 @@ async function flushPolicies(){
 async function submitPublish(){
   if(visualOnly){showReadOnly("publish a store");return}
   if(uploadBusy)return;
-  if(!window.confirm(!data.business_review?.enforced && data.store?.approval_enabled && (!data.store?.approved_at || data.store?.approval_revoked_at)
+  if(!await confirmCatalogueAction(!data.business_review?.enforced && data.store?.approval_enabled && (!data.store?.approved_at || data.store?.approval_revoked_at)
     ?"Submit your store for LeBrands approval? It will remain offline until approved."
-    :"Publish your store? It will be available at your LeBrands.Store address."))return;
+    :"Publish your store? It will be available at your LeBrands.Store address.",{title:"Review publication",confirmLabel:"Continue"}))return;
   busy=true;formErrors={};renderPanel();setStatus("saving","Publishing");
   try{
     if(!await flushPolicies())throw new Error("A policy draft could not be saved. Retry before publishing.");
@@ -680,7 +684,7 @@ async function submitPublish(){
 async function unpublish(){
   if(visualOnly){showReadOnly("unpublish a store");return}
   if(busy||uploadBusy)return;
- if(!window.confirm("Unpublish this store? Visitors will no longer see the live catalogue."))return;
+ if(!await confirmCatalogueAction("Visitors will no longer see the live catalogue.",{title:"Unpublish this store?",confirmLabel:"Unpublish store"}))return;
   busy=true;renderPanel();setStatus("saving","Unpublishing");
   try{const result=await api(`${API}/unpublish`,{method:"POST",body:JSON.stringify({})});setDataFromResponse(result,revision);data.store={...data.store,...responseEnvelope(result).store,status:responseEnvelope(result).store?.status||"draft"}}
   catch(error){formErrors={_publish:error.message};setStatus("error",error.message,null)}
@@ -688,7 +692,7 @@ async function unpublish(){
 }
 async function generatePolicies(){
   if(visualOnly){showReadOnly("generate policy drafts");return}
- if(!window.confirm("Generate policy drafts? This replaces every existing draft and its review state."))return;
+ if(!await confirmCatalogueAction("Generating policy drafts replaces the existing draft text and clears its review status. Your live policies are unchanged until you publish.",{title:"Generate policy drafts?",confirmLabel:"Generate drafts",cancelLabel:"Keep existing drafts"}))return;
   if(uploadBusy||busy)return;
   busy=true;renderPanel();setStatus("saving","Generating drafts");
   try{

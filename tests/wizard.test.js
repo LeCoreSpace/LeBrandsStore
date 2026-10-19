@@ -11,6 +11,32 @@ import { storefrontPage } from "../src/store/live.js";
 import { handleStoreRoutes } from "../src/store/routes.js";
 import { handleAccounts } from "../src/auth/routes.js";
 import { accountHeader, brandMark } from "../src/ui/layout.js";
+import { readFile } from "node:fs/promises";
+
+test("review uses in-app confirmations, exposes missing details and shows Ann policy readiness", async () => {
+  const wizard = await readFile(new URL("../src/public/wizard.js", import.meta.url), "utf8");
+  const ann = await readFile(new URL("../src/public/ann-builder.js", import.meta.url), "utf8");
+  const readiness = await readFile(new URL("../src/public/ann-readiness-ui.js", import.meta.url), "utf8");
+  assert.doesNotMatch(wizard, /window\.confirm\(/);
+  assert.match(wizard, /await confirmCatalogueAction\(/);
+  assert.match(wizard, /Object\.values\(basicErrors\)/);
+  assert.match(wizard, /settings#business-documents/);
+  assert.match(ann, /ann-review-step" open/);
+  assert.match(readiness, /Object\.values\(errs\)/);
+  assert.match(readiness, /async function reload\(\)/);
+});
+
+test("read-only product previews explain disabled checkout without changing live availability", () => {
+  for (const style of ["editorial", "modern-boutique", "bold-architectural", "minimal", "vintage"]) {
+    const data = fixture();
+    data.settings.style_preset = style;
+    const preview = renderAura(data, { page: "product", productId: PRODUCT_ID, preview: true, embeddedPreview: true, readOnly: true });
+    assert.doesNotMatch(preview, />Shopping unavailable</);
+    assert.match(preview, /Preview only: checkout on the live store/);
+    const unavailable = renderAura(data, { page: "product", productId: PRODUCT_ID, readOnly: true });
+    assert.match(unavailable, /Shopping unavailable/);
+  }
+});
 
 const ID = "11111111-1111-4111-8111-111111111111";
 const MEDIA_ID = "22222222-2222-4222-8222-222222222222";
@@ -240,6 +266,8 @@ test("upload records use tenant-prefixed UUID keys and failed commits delete the
       delete: async (key) => { deletes.push(key); },
     } };
     const tx = async (strings, ...values) => {
+      // This focused upload fixture has no staged billing schema.
+      if (strings.join("?").includes("billing_build_access(uuid,text)")) return [{ billing_build_definition: null }];
       assert.match(strings.join("?"), /INSERT INTO public.media/);
       return [{ id: MEDIA_ID, store_id: values[0], object_key: values[1], upload_type: values[2],
         content_type: values[3], size_bytes: values[4], width: values[5], height: values[6], alt_text: values[7] }];
