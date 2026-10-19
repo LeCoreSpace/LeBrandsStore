@@ -55,7 +55,11 @@ test("all saved themes use the shared live product structure and merchant favico
       assert.ok(html.includes(`<link rel="icon" href="${storefrontIcon(data.settings).iconHref}" sizes="any">`), `${style}/${page}`);
       assert.match(html, /commerce-signature\.css/, `${style}/${page}`);
       assert.ok(html.includes('class="cm"')&&html.includes(`data-style="${style}"`), `${style}/${page} must use the shared commerce shell`);
-      assert.match(html, /<header class="cm-hd">/,style);
+      assert.match(html, /<header class="sc-hd aura-header">/,style);
+      assert.match(html, /<footer class="sc-ft">/,style);
+      assert.doesNotMatch(html, /<header class="cm-hd">|<body class="sc /,style);
+      assert.ok(html.includes('<body class="cm"'),style);
+      for(const hook of ["data-menu-open","data-search-open","data-cart-open","data-cart-count",'id="au-menu"','id="au-search-sc"'])assert.ok(html.includes(hook),`${style}/${page} ${hook}`);
       if(page==="checkout"){
         assert.match(html,/id="checkout-form"/,style);
         assert.match(html,/data-commerce-config/,style);

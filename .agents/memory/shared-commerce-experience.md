@@ -9,6 +9,17 @@ merchant's logo and accent colours. Store favicons should reflect the
 merchant, and product navigation should use readable, unique saved title slugs.
 Previously shared product links must keep working.
 
+Keep each selected theme's header and footer on product, cart, checkout and
+confirmation pages. Preserve the approved shared commerce body design across
+those pages.
+
+**Why:** The user explicitly praised the shared body design and asked to keep it
+as is, while correcting the header/footer to follow the store's theme.
+
+**How to apply:** Scope shared commerce typography and surfaces to the body
+content and cart overlay. Reuse actual theme framing rather than replacing it
+with another shared header/footer.
+
 **Why:** The user compared the recognisability of Shopify checkout with the
 standard they want for LeBrands.Store and approved fixing defects before
 implementing shared commerce layouts. They repeatedly rejected minor styling
@@ -16,7 +27,8 @@ changes to otherwise basic, theme-dominated forms as insufficient.
 
 **How to apply:** Keep transactional interactions consistent instead of making
 unrelated purchase flows per theme. Use a coherent commerce layout and typography
-instead of letting theme-specific navigation and all-caps styling dominate it.
+inside the commerce content, without letting theme-specific all-caps styling
+dominate the shared body.
 Do not add forced platform attribution or
 invent badges, payment methods or delivery promises.
 

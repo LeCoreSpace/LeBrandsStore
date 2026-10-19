@@ -352,6 +352,14 @@ not assign an unverified execution date to a command.
 
 ## Maintenance
 
+### 19 October: Themed commerce framing
+
+| Command | Target / effect | Actual result |
+| --- | --- | --- |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/storefront-commerce-shell.test.js tests/ann-browser-preview.test.js tests/browser-bundles.test.js` | Local rendering, all-theme preview and actual browser-asset gate checks. | All 13 tests passed after restoring themed headers/footers around the shared commerce body. |
+| `git diff --check` | Local whitespace validation. | Passed. |
+| `pnpm run deploy` | Manual production Worker release. | Not executed by the assistant; required to update published stores. |
+
 ### 19 October: Storefront availability incident
 
 | Command | Target / effect | Actual result |

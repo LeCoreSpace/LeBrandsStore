@@ -622,6 +622,22 @@ decision:
 - No database migration, production data write or Worker deployment performed.
   The production site requires the corrected Worker to be deployed.
 
+## 19 October 2026: Theme framing around the approved commerce body
+
+- **Request:** Keep the approved shared product, cart, checkout and confirmation
+  body design unchanged, but restore each selected theme's header and footer.
+- **Implementation:** Reused the actual theme header/footer, including saved
+  typography, colours, menus, announcement treatment and policy links. Theme
+  styling is scoped to framing wrappers, outside the shared commerce content.
+  Fixed bottom shortcut bars are hidden on these pages to avoid covering
+  purchase controls; the themed header navigation remains available.
+- **Verification:** All 13 targeted storefront, Ann preview and browser-bundle
+  tests passed, including framing and menu/search/cart hooks across all eight
+  themes. Desktop Architectural product and mobile Boutique receipt screenshots
+  confirmed themed headers around the unchanged commerce bodies. Workflow
+  restarted successfully; no checkout logic or production data changed.
+- **Release:** No migration required. Cloudflare deployment remains manual.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

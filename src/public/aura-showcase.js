@@ -560,7 +560,13 @@ export function renderDesignLive(data, settings, options, design) {
   try {
     if (cm) {
       const main = commerce ? renderCommerceBody({ ...data, settings }, options) : productPageCm(x);
-      return { body: `${cmHeader(x)}${main}${cmFooter(x)}`, css: "", bodyClass: "cm", style, font, preset, cm: true };
+      // Chrome = themed header/footer inside display:contents `.sc` scopes; the approved body stays outside `.sc`,
+      // so no .sc typography/global rule can reach it. Body keeps class "cm" (commerce-signature) only.
+      const scope = html => `<div class="sc sc-${style}" data-theme-chrome style="display:contents">${html}</div>`;
+      // Theme shortcut bars duplicate the header navigation and would cover
+      // the shared purchase controls or receipt on narrow screens.
+      const chromeCss = `${CSS}${RICH_CSS}${overrides}body.cm .sc-ft{margin-top:clamp(40px,7vw,96px)}body.cm .sc-tabbar{display:none}`;
+      return { body: `${scope(header(x))}${main}${scope(footer(x))}`, css: chromeCss, bodyClass: "cm", style, font, preset, cm: true };
     }
     let main = commerce ? renderCommerceBody({...data,settings},options) : page === "home" ? HOME[style](x) : BODY[page](x);
     if(!commerce)main += extras(x, data);
