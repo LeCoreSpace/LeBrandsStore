@@ -54,5 +54,7 @@ scheduled expiry or catalogue-limit enforcement; those require separate work.
 ## Release
 
 The database guard and approved transition were applied on 19 October 2026.
+The remaining legacy store was enrolled after the user confirmed its recorded
+6 October publication timestamp; its Free period ends on 5 November 2026.
 The account UI and publication error messages still require manual Worker
 publication with `pnpm run deploy`. Deployment is not a migration.

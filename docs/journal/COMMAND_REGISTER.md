@@ -509,7 +509,7 @@ not assign an unverified execution date to a command.
 | `node db/transition-account-stores.js --apply --draft=<approved-subdomain> --keep-live=<approved-subdomain>` | Live transaction: approved draft selection and historical Free assignments. | Selected store became draft and received historical Free. Existing Free preserved. Store with missing first-publication evidence left unchanged. |
 | `node --input-type=module` (read-only post-transition verification) | Workspace root, existing administrative Supabase connection; only relevant status/timer records and aggregate ownership conflicts. | Confirmed approved draft/live states, persisted Free clocks and zero multiple-live-owner accounts. |
 | `node --check db/transition-account-stores.js` and `git diff --check` | Local syntax/whitespace checks. | Passed. |
-| `node db/transition-account-stores.js --apply --first-publication=<subdomain>:<ISO-timestamp>` | Explicit operator completion for a legacy store with missing original publication evidence. | Documented only; requires confirmed historical date. |
+| `node db/transition-account-stores.js --apply --first-publication=<subdomain>:<ISO-timestamp>` | Explicit operator completion for a legacy store with missing original publication evidence. | Executed after user approval of the recorded 6 October 2026 timestamp. Free assignment succeeded, expiry verified as 5 November 2026, existing Free records preserved. |
 | `pnpm run deploy` | Manual Cloudflare publication of account UI and conflict messages. | Not run by the assistant. |
 
 For future work, add the relevant command, working directory, target environment,

@@ -921,8 +921,11 @@ decision:
   store. Assigned FunStyle Free from its recorded original publication evidence;
   preserved the live store's existing Free subscription. Read-only verification
   found no account owning multiple live stores.
-- **Pending data:** A separate older Stonescence store has no immutable original
-  publication evidence. It was left unchanged pending an authoritative date.
+- **Historical date completion:** The user subsequently approved the older
+  Stonescence store's recorded 6 October 2026 publication timestamp. Applied its
+  Free assignment using that timestamp; read-only verification confirmed expiry
+  on 5 November 2026 and that it remains live with enrolment enforcement enabled.
+  The other two Free subscriptions and draft/live statuses were preserved.
   Ownerless historical fixture stores were not altered. No live paid plan was
   downgraded, no existing Free timer reset, and no store data deleted.
 - **Release:** Both local workflows are running. The screenshot browser showed
