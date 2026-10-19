@@ -1,6 +1,7 @@
 import {billingContinuation} from "../billing/entry.js";
 import { escapeHtml, layout, brandMark, accountHeader, footer } from "./layout.js";
 import { REGISTRATION_COUNTRIES } from "../public/registration-validation.js";
+import {ownedStorePolicy} from "../auth/store-policy.js";
 
 const APP_ORIGIN = "https://app.lebrands.store";
 
@@ -114,6 +115,8 @@ function forcedNotice(data) {
 function dashboard(data) {
   const user = data.user || {};
   const stores = Array.isArray(data.stores) ? data.stores : [];
+  const policy=ownedStorePolicy(stores);
+  const liveChoice=policy.live.length>1?`<section class="form-alert" id="live-store-choice" aria-labelledby="live-store-title"><h2 id="live-store-title">Choose the store to keep live</h2><p>Your account can have one live store and one draft. Your other live stores will become drafts. Products, orders and billing history are retained.</p><form method="post" action="/account"><input type="hidden" name="account_action" value="choose_live_store"><div class="form-control"><label for="keep-live-store">Store to keep live</label><select id="keep-live-store" name="store_id" required><option value="">Choose a live store</option>${policy.live.map(store=>`<option value="${escapeHtml(store.store_id)}">${escapeHtml(store.name)} (${escapeHtml(store.subdomain)}.lebrands.store)</option>`).join("")}</select></div><label class="checkbox-row"><input type="checkbox" name="confirm_drafts" value="1" required><span>I understand that my other live stores will go offline and become drafts.</span></label><button class="button" type="submit">Confirm live store</button></form></section>`:"";
   const name = user.name || user.email || "there";
   const arrow = '<svg class="ah-arrow" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false"><path d="M3 8h9M8.5 4l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   const rows = stores.map((store, i) => {
@@ -129,9 +132,11 @@ function dashboard(data) {
   return accountDoc("Your stores", `${accountHeader(user)}<main class="wrap dashboard-main">
     ${forcedNotice(data)}
     <div class="dashboard-title"><div><div class="eyebrow">Your LeBrands account</div><h1>Good to see you, ${escapeHtml(name)}.</h1><p>Your stores, gathered in one place.</p></div>
-      <div class="dashboard-actions">${!user.must_change_password ? '<a class="button" href="/stores/new">Create a store <span aria-hidden="true">+</span></a>' : ""}</div>
+      <div class="dashboard-actions">${!user.must_change_password&&policy.canCreate ? `<a class="button" href="/stores/new">${policy.creationLabel} <span aria-hidden="true">+</span></a>` : ""}</div>
     </div>
     ${alertBlock(data.error, data.notice)}
+    ${!user.must_change_password?liveChoice:""}
+    ${policy.owned.length?'<p class="form-help">Your account supports two stores: one live store and one draft. Staff access to other stores does not use these slots.</p>':""}
     ${user.must_change_password ? "" : stores.length
       ? `<section aria-label="Your stores" class="store-list">${rows}</section>`
       : `<section class="empty-card"><div class="empty-mark" aria-hidden="true">+</div><h2>Your first store starts here.</h2><p>Claim a store address for your brand and start shaping its home online.</p><a class="button" href="/stores/new">Create your store <span aria-hidden="true">↗</span></a></section>`}

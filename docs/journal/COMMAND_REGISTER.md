@@ -498,6 +498,20 @@ not assign an unverified execution date to a command.
 | Managed web and API workflow restarts | Local preview code/build refresh. | Running; sign-in screenshot confirms sans-serif headings, CSS/font requests return HTTP 200. |
 | `pnpm run deploy` | Manual Cloudflare publication of shared typography changes. | Not executed by the assistant. No database migration needed. |
 
+### 19 October: Account store limits and legacy Free migration
+
+| Command / operation | Target / effect | Actual result |
+| --- | --- | --- |
+| `node --test --test-concurrency=1 tests/account-store-limits.test.js tests/ann-plan-selection.test.js tests/free-subscriptions.test.js` | Workspace root, isolated real-schema tests; no live DB. | 21 tests passed. |
+| `node --test --test-concurrency=1 tests/account-store-limits.test.js` | Focused isolated verification after adding paid-plan preservation coverage. | Both tests passed, including their Free history and paid preservation assertions. |
+| `node db/transition-account-stores.js --draft=<approved-subdomain> --keep-live=<approved-subdomain>` | Read-only live Supabase assessment using administrative Secret; no credentials or private IDs output. | Found the approved two-store selection, one existing Free record and one separate store requiring original publication-date confirmation. |
+| `pnpm run db:migrate -- --staged-account-store-limits` | Live administrative Supabase migration, explicitly authorized transition. | Migration committed successfully. Database ownership/live-store guards active. |
+| `node db/transition-account-stores.js --apply --draft=<approved-subdomain> --keep-live=<approved-subdomain>` | Live transaction: approved draft selection and historical Free assignments. | Selected store became draft and received historical Free. Existing Free preserved. Store with missing first-publication evidence left unchanged. |
+| `node --input-type=module` (read-only post-transition verification) | Workspace root, existing administrative Supabase connection; only relevant status/timer records and aggregate ownership conflicts. | Confirmed approved draft/live states, persisted Free clocks and zero multiple-live-owner accounts. |
+| `node --check db/transition-account-stores.js` and `git diff --check` | Local syntax/whitespace checks. | Passed. |
+| `node db/transition-account-stores.js --apply --first-publication=<subdomain>:<ISO-timestamp>` | Explicit operator completion for a legacy store with missing original publication evidence. | Documented only; requires confirmed historical date. |
+| `pnpm run deploy` | Manual Cloudflare publication of account UI and conflict messages. | Not run by the assistant. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

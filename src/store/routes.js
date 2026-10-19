@@ -180,6 +180,10 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
     });
     return json(result);
   } catch (error) {
+    if(["PSL01","PSL02"].includes(error.code))
+      return json({error:error.code==="PSL02"
+        ?"Only one of your stores can be live. Move the other store to draft from its dashboard, or choose your live store on the account page."
+        :"Your account can own two stores: one live store and one draft."},409);
     // A failed DB insert/commit must not leave an untracked uploaded object.
     if (uploadedKey) {
       try { await env.MEDIA.delete(uploadedKey); }

@@ -2,6 +2,7 @@ import { createDb } from "../db.js";
 import {handlePlatformAdmin,isPlatformAdminRoute} from "../admin/platform-routes.js";
 import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
+import {ownedStorePolicy} from "./store-policy.js";
 import { validateRegistration } from "../public/registration-validation.js";
 import { handleStoreRoutes, isStoreRoute } from "../store/routes.js";
 import {handleBillingRoutes,isBillingRoute} from "../billing/routes.js";
@@ -151,7 +152,8 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       }
       if (publicViews[path]) return user ? redirect(billingContinuation(url.searchParams.get("next"))||"/") : html(publicViews[path],{next:billingContinuation(url.searchParams.get("next"))});
       if (path === "/") return html("dashboard", { user, stores: session.stores });
-      if (path === "/stores/new") return html("new-store", { user });
+      if (path === "/stores/new") return ownedStorePolicy(session.stores).canCreate
+        ?html("new-store", { user }):redirect("/");
       if (path === "/account") return html("account", { user,next:billingContinuation(url.searchParams.get("next")) });
       // GET must never log a user out; show the dashboard's POST sign-out form.
       return html("dashboard", { user, stores: session.stores, notice: "Use Sign out to end this session." });
@@ -198,6 +200,8 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       return redirect("/login", sessionCookie("", true));
     }
     if (path === "/stores/new") {
+      if(!ownedStorePolicy(session.stores).canCreate)
+        return html("dashboard",{user,stores:session.stores,error:"Your account already has two stores. You can keep one live and the other as a draft."},409);
       const annStart=form.get("start_with_ann")==="1";
       const brandName = annStart?"My store":nameValue(form.get("brand_name"));
       const subdomain = annStart?`brand-${crypto.randomUUID().replace(/-/g,"").slice(0,12)}`:form.get("subdomain") ?? "";
@@ -209,6 +213,10 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
         const storeId = await repo.createStore(user.id, brandName, subdomain, tokenHash);
         if (storeId) return redirect(`/stores/${storeId}/build/ann${annStart?"?new=1":""}`);
       } catch (error) {
+        if(error.code==="PSL01"){
+          const latest=await repo.session(tokenHash);
+          return html("dashboard",{user,stores:latest?.stores||session.stores,error:"Your account already has two stores. You can keep one live and the other as a draft."},409);
+        }
         if (["23505", "22023"].includes(error.code)) {
           return html("new-store", { user, values, error: "That store address is not available. Choose another." }, 409);
         }
@@ -217,6 +225,21 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       return redirect("/");
     }
     if (path === "/account") {
+      if(form.get("account_action")==="choose_live_store"){
+        const keys=["account_action","store_id","confirm_drafts"];
+        if([...form.keys()].some(key=>!keys.includes(key)||form.getAll(key).length!==1)
+          ||!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(form.get("store_id")||"")
+          ||form.get("confirm_drafts")!=="1")
+          return html("dashboard",{user,stores:session.stores,error:"Choose your live store and confirm that your other live stores will become drafts."},400);
+        try{
+          await repo.chooseLiveStore(tokenHash,form.get("store_id"),true);
+          return redirect("/");
+        }catch(error){
+          if(["42501","22023","40001","40P01"].includes(error.code))
+            return html("dashboard",{user,stores:session.stores,error:"Your store selection could not be saved. Reload your account, select a currently live store and try again."},409);
+          throw error;
+        }
+      }
       await assertPasswordPepper(env);
       const password = form.get("password");
       const error = password !== form.get("confirm") ? "Your passwords do not match." : validatePassword(password);

@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-account-store-limits"){
+    return{staged:true,filename:"0047_account_store_limits.sql",requires:"0039_ann_plan_selection.sql"};
+  }
   if(values.length===1&&values[0]==="--staged-platform-admin"){
     return{staged:true,filename:"0046_platform_admin.sql",requires:"0035_business_document_review.sql"};
   }

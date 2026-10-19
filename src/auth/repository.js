@@ -48,6 +48,9 @@ export function accountRepository(db) {
       `;
       return row.store_id;
     }),
+    chooseLiveStore: (hash,storeId,confirmed) => db.account(tx=>tx`
+      SELECT public.account_choose_live_store(${hash},${storeId},${confirmed})
+    `),
     changePassword: (hash, record) => db.account(async (tx) => {
       const [row] = await tx`
         SELECT public.change_password(${hash}, ${record.password_hash}, ${record.password_algo},

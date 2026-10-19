@@ -900,6 +900,37 @@ decision:
 - **Release:** No database changes or production publication. Publish the updated
   Worker manually to update live stores.
 
+### 2026-10-19: Two owned stores, one live and historical Free migration
+
+- **What:** Implemented two ownership slots with one live store maximum. Creation
+  becomes “Create a draft store” after the first owned store and disappears at
+  two. Existing multiple-live owners get an explicit retained-store selection
+  with confirmation that their other live stores will become drafts.
+- **How:** Database ownership/status guards lock account rows and reject direct
+  bypasses. An owner-session-checked function records the selection and retains
+  all store data. The operator Free transition preserves paid subscriptions and
+  existing Free clocks, copies approved entitlements, and records platform
+  assignment separately from merchant consent. No recurring charge is enabled.
+- **Verification:** All 21 account-limit, Ann-plan and Free-subscription tests
+  passed. A subsequent focused two-test pass also verified live paid-subscription
+  preservation. Historical timestamps retain microseconds, duplicate transition
+  cannot reset them, unauthorized staff cannot select stores, third ownership
+  fails, and staff memberships do not consume slots.
+- **Live operations:** With the user's explicit selection, applied the additive
+  migration, changed FunStyle to draft and retained its owner's Stonescence live
+  store. Assigned FunStyle Free from its recorded original publication evidence;
+  preserved the live store's existing Free subscription. Read-only verification
+  found no account owning multiple live stores.
+- **Pending data:** A separate older Stonescence store has no immutable original
+  publication evidence. It was left unchanged pending an authoritative date.
+  Ownerless historical fixture stores were not altered. No live paid plan was
+  downgraded, no existing Free timer reset, and no store data deleted.
+- **Release:** Both local workflows are running. The screenshot browser showed
+  the public platform, not an authenticated account, so no signed-in browser
+  verification is claimed. Updated account UI/error messages require manual
+  publication; the database guard is already active. Scheduled Free expiry and
+  product/SKU allowance enforcement are separate scope.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 
