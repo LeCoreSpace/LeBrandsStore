@@ -512,6 +512,17 @@ not assign an unverified execution date to a command.
 | `node db/transition-account-stores.js --apply --first-publication=<subdomain>:<ISO-timestamp>` | Explicit operator completion for a legacy store with missing original publication evidence. | Executed after user approval of the recorded 6 October 2026 timestamp. Free assignment succeeded, expiry verified as 5 November 2026, existing Free records preserved. |
 | `pnpm run deploy` | Manual Cloudflare publication of account UI and conflict messages. | Not run by the assistant. |
 
+### 19 October: Integration screens, initial DNS setup and navigation
+
+| Command / operation | Target / effect | Actual result |
+| --- | --- | --- |
+| `node --test --test-concurrency=1 tests/dashboard-navigation.test.js tests/ann-launch-ui.test.js tests/ann-launch.test.js tests/account-store-limits.test.js` | Workspace root; isolated account quotas, navigation, domain and partner integration tests. | Focused run passed before the final DNS UI enhancement. No live merchant connection was touched. |
+| `node --test --test-concurrency=1 tests/ann-launch-ui.test.js tests/ann-launch.test.js tests/dashboard-navigation.test.js` | Workspace root; final DNS UI, provider and navigation checks. | 23 tests passed. |
+| `node --test --test-concurrency=1 tests/ann-launch.test.js` | Workspace root; read-only CNAME verification before Cloudflare provisioning and domain activation guards. | Four tests passed after the additional DNS verification path. |
+| `node --test --test-concurrency=1 tests/ann-launch-ui.test.js` | Workspace root; final DNS CNAME wording and merchant Settings forms. | Twelve tests passed. |
+| Replit preview workflow restarts for `artifacts/api-server: API Server` and `artifacts/lebrands-web: web` | Development Worker and web preview, not production publication. | Both restarted and served the public sign-in page without runtime errors. |
+| `pnpm run deploy` | Manual Cloudflare publication of the updated Worker, account page and integration screens. | Not run by the assistant; published site can continue to show the older Create button until publication. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

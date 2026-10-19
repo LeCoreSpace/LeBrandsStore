@@ -17,7 +17,7 @@ test("eight groups plus Today with offers separate from Catalogue", () => {
   const model=navigationModel(`/stores/${ID}`,{role:"owner"});
   assert.equal(model.groups.find(g=>g.label==="Catalogue").items.some(i=>i.label==="Offers & codes"),false);
   assert.ok(model.groups.some(g=>g.label==="Offers & codes"));
-  for (const l of ["Products","Collections","Stock &amp; SKUs","Vendors","Offers &amp; codes","Media library","Order queue","Dispatch &amp; tracking","COD &amp; returns","Customer directory","Payments &amp; settlements","Refunds","Invoices &amp; credit notes","GST summaries","Build with Ann","Theme editor","Menus &amp; links","Pages &amp; policies","Browser preview","Email campaigns","WhatsApp messages","Social campaigns","Sales performance","Product performance","Customer insights","Shopping journey","Business &amp; invoice identity","Store address &amp; domains","Payment connections","Delivery connections","Email &amp; messaging connections","Marketing connections","Dispatch preferences","People &amp; access","Plan &amp; billing","Activity history","Data exports"]) assert.ok(html.includes(`<span>${l}</span>`), l);
+  for (const l of ["Products","Collections","Stock &amp; SKUs","Vendors","Offers &amp; codes","Media library","Order queue","Dispatch &amp; tracking","COD &amp; returns","Customer directory","Payments &amp; settlements","Refunds","Invoices &amp; credit notes","GST summaries","Build with Ann","Theme editor","Menus &amp; links","Pages &amp; policies","Browser preview","Email campaigns","WhatsApp messages","Social campaigns","Sales performance","Product performance","Customer insights","Shopping journey","Business &amp; invoice identity","Custom domain integration","Razorpay integration","Shiprocket integration","Email &amp; messaging integrations","Marketing integrations","Dispatch preferences","People &amp; access","Plan &amp; billing","Activity history","Data exports"]) assert.ok(html.includes(`<span>${l}</span>`), l);
   assert.doesNotMatch(html, /Growth|Sales channels|Apps|—|sparkle/i);
 });
 test("live routes map to real pages and planned items have no href", () => {
@@ -31,9 +31,9 @@ test("live routes map to real pages and planned items have no href", () => {
   assert.equal(byLabel["People & access"].href, `${r}/team`);
   assert.equal(byLabel["Dispatch preferences"].href, `${r}/settings/checkout`);
   assert.equal(byLabel["Pages & policies"].href, `${r}/settings#policies`);
-  assert.equal(byLabel["Payment connections"].href, `${r}/settings?connection=payments`);
-  assert.equal(byLabel["Delivery connections"].href, `${r}/settings?connection=delivery`);
-  assert.equal(byLabel["Store address & domains"].href, `${r}/settings?connection=domain`);
+  assert.equal(byLabel["Razorpay integration"].href, `${r}/settings?connection=payments`);
+  assert.equal(byLabel["Shiprocket integration"].href, `${r}/settings?connection=delivery`);
+  assert.equal(byLabel["Custom domain integration"].href, `${r}/settings?connection=domain`);
   assert.equal(byLabel["Refunds"].hint, "In orders");
   assert.equal(byLabel["Stock & SKUs"].href, `${r}/inventory`);
   for (const i of all.filter(i => i.kind === "planned")) assert.equal(i.href, null);
@@ -44,7 +44,7 @@ test("live routes map to real pages and planned items have no href", () => {
   assert.doesNotMatch(html.replace(/<[^>]*>/g,""),/\b(upcoming|planned)\b/i);
   for (const [, href] of html.matchAll(/<a [^>]*href="([^"]*)"/g)) assert.ok(href.startsWith(r) || href.startsWith("https://demo.lebrands.store"), href);
 });
-test("current matching works on child views and opens the owning group", () => {
+test("current child view stays marked while only Settings starts expanded", async () => {
   const cases = [["overview","Today"],["order","Order queue"],["product","Products"],["product-new","Products"],["collection","Collections"],["customer","Customer directory"],["invoices","Invoices &amp; credit notes"]];
   for (const [view, label] of cases) {
     const html = nav({ view });
@@ -53,8 +53,11 @@ test("current matching works on child views and opens the owning group", () => {
     assert.match(html, new RegExp(`aria-current="page"[^>]*>(?:<svg[^]*?</svg>)?<span[^>]*>${label}</span>`), view);
   }
   const html = nav({ view: "order" });
-  assert.match(html, /data-nav-group="orders" data-current>[^]*?aria-expanded="true"/);
+  assert.match(html, /data-nav-group="orders" data-current>[^]*?aria-expanded="false"/);
   assert.match(html, /data-nav-group="catalogue">[^]*?aria-expanded="false"/);
+  assert.match(html, /data-nav-group="settings"[^]*?aria-expanded="true"/);
+  const source=await readFile("src/public/dashboard-navigation.js","utf8");
+  assert.doesNotMatch(source,/localStorage|writePrefs|readPrefs/);
 });
 test("legacy Ann connection links redirect to Settings without changing saved progress", async () => {
   const source=await readFile("src/public/ann-builder.js","utf8");
@@ -93,7 +96,7 @@ test("shell keeps desktop collapse, mobile drawer, help and logo; module is serv
   assert.match(dash, /dashboard-navigation\.js/);
   assert.match(dash, /Tab" && sidebar\?\.classList\.contains\("is-open"\)/);
   const mod = await readFile("src/public/dashboard-navigation.js", "utf8");
-  assert.match(mod, /try \{[^]*localStorage/);
+  assert.match(mod, /groups\.forEach\(g => setOpen\(g, g\.dataset\.navGroup === "settings"\)\)/);
   let path = "";
   const res = await worker.fetch(new Request("https://app.lebrands.store/assets/dashboard-navigation.js"), { ASSETS: { fetch: async r => { path = new URL(r.url).pathname; return new Response("export{};", { headers: { "content-type": "text/javascript" } }); } } }, {});
   assert.equal(res.status, 200);

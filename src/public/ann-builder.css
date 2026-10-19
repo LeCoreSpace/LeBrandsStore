@@ -246,6 +246,16 @@ body.ann-browser-shell{margin:0;height:100dvh;display:flex;flex-direction:column
 .ann-launch-st{display:block;font:400 12px var(--sans);color:var(--muted)}
 .ann-launch-dns{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:6px;font-size:12px}
 .ann-launch-dns code{overflow-wrap:anywhere}
+.ann-dns-guide{margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--paper,#fff)}
+.ann-dns-guide h4{margin:0 0 6px;font-size:14px}
+.ann-dns-table{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:12px}
+.ann-dns-row{display:grid;grid-template-columns:72px minmax(130px,1fr) minmax(150px,1.3fr);gap:8px;padding:9px;background:#fff;align-items:center}
+.ann-dns-head{background:#f4f0ef;font-weight:700}
+.ann-dns-row [role="cell"]{min-width:0;overflow-wrap:anywhere}
+.ann-dns-row code{display:block;white-space:normal;overflow-wrap:anywhere;user-select:all}
+.ann-dns-copy{margin-top:5px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:5px;padding:3px 8px;cursor:pointer;font:inherit}
+.ann-dns-copy:focus-visible{outline:2px solid #7b2146;outline-offset:2px}
+@media(max-width:550px){.ann-dns-row{grid-template-columns:1fr}.ann-dns-head{display:none}.ann-dns-row [role="cell"]::before{display:block;font-weight:700;color:var(--muted)}.ann-dns-row [role="cell"]:nth-child(1)::before{content:"Type"}.ann-dns-row [role="cell"]:nth-child(2)::before{content:"Name"}.ann-dns-row [role="cell"]:nth-child(3)::before{content:"Value"}}
 .ann-launch-step .ann-field input{min-height:40px}
 @media(max-width:900px){
   /* Wrapped style tabs and the consent card must not consume the iframe's

@@ -1,21 +1,16 @@
-const PREFIX = "lebrands.nav.v1.";
-const readPrefs = key => { try { const v = JSON.parse(localStorage.getItem(key) || "null"); return v && typeof v === "object" && !Array.isArray(v) ? v : null; } catch { return null; } };
-const writePrefs = (key, value) => { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable */ } };
-
 export function initNavigation() {
   const nav = document.querySelector("[data-nav]");
   const app = document.querySelector(".lb-app");
   if (!nav || !app) return;
-  const key = PREFIX + (nav.dataset.navStore || "");
   const groups = [...nav.querySelectorAll("[data-nav-group]")];
   const setOpen = (group, open) => {
     group.querySelector("[data-nav-toggle]")?.setAttribute("aria-expanded", String(open));
     const list = group.querySelector(".lbn-list");
     if (list) list.hidden = !open;
   };
-  const snapshot = () => Object.fromEntries(groups.map(g => [g.dataset.navGroup, g.querySelector("[data-nav-toggle]")?.getAttribute("aria-expanded") === "true"]));
-  const saved = readPrefs(key);
-  if (saved) groups.forEach(g => { if (typeof saved[g.dataset.navGroup] === "boolean") setOpen(g, saved[g.dataset.navGroup] || g.hasAttribute("data-current")); });
+  // On every page load, only Settings starts expanded. A previous visit's
+  // local preference must not silently reopen the other sections.
+  groups.forEach(g => setOpen(g, g.dataset.navGroup === "settings"));
   const mobile = () => matchMedia("(max-width: 767px)").matches;
   nav.addEventListener("click", event => {
     const toggle = event.target.closest("[data-nav-toggle]");
@@ -27,7 +22,6 @@ export function initNavigation() {
       document.querySelector("[data-sidebar-collapse]")?.setAttribute("aria-label", "Collapse sidebar");
       setOpen(group, true);
     } else setOpen(group, !wasOpen);
-    writePrefs(key, snapshot());
   });
   nav.addEventListener("keydown", event => {
     if (!["ArrowDown", "ArrowUp"].includes(event.key) || !event.target.matches("[data-nav-toggle]")) return;

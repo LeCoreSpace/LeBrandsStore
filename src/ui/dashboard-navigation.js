@@ -48,11 +48,11 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
       { key: "settings", label: "Settings", icon: "settings", views: ["settings"], items: [
         live("Business & invoice identity", `${settings}#business-gst`),
         ...(role === "owner" || role === "admin" ? [live("Business documents", `${settings}#business-documents`)] : []),
-        live("Store address & domains", `${settings}?connection=domain`),
-        live("Payment connections", `${settings}?connection=payments`),
-        live("Delivery connections", `${settings}?connection=delivery`),
-        live("Email & messaging connections", `${root}/team`, [], { hint: "Order emails" }),
-        planned("Marketing connections"),
+        live("Custom domain integration", `${settings}?connection=domain`),
+        live("Razorpay integration", `${settings}?connection=payments`),
+        live("Shiprocket integration", `${settings}?connection=delivery`),
+        live("Email & messaging integrations", `${root}/team`, [], { hint: "Order emails" }),
+        planned("Marketing integrations"),
         live("Dispatch preferences", `${settings}/checkout`),
         live("People & access", `${root}/team`),
         role==="owner"?live("Plan & billing",`${root}/billing`,["billing"]):{label:"Plan & billing",href:null,kind:"owner",views:[]},
@@ -83,7 +83,7 @@ export function renderSidebarNav({ storeId = "", view = "overview", role = "edit
   const todayCurrent = today.views.includes(view);
   const groups = model.groups.map(group => {
     const current = groupIsCurrent(group, view);
-    const open = current || group.key === "settings";
+    const open = group.key === "settings";
     const id = `lbn-${group.key}`;
     return `<section class="lbn-group${group.key === "settings" ? " lbn-settings" : ""}" data-nav-group="${group.key}"${current ? " data-current" : ""}>
       <h2 class="lbn-heading"><button type="button" class="lbn-toggle" data-nav-toggle aria-expanded="${open}" aria-controls="${id}" title="${esc(group.label)}">${dashboardIcon(group.icon)}<span class="lbn-label">${esc(group.label)}</span>${CHEVRON}</button></h2>

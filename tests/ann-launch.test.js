@@ -32,7 +32,7 @@ test("provider checks use fixed hosts, non-mutating Razorpay validation and safe
     calls.push({ url, options }); return json({ entity: "collection", items: [{ secret_customer_data: "must-not-return" }] });
   });
   assert.equal(calls[0].url, "https://api.razorpay.com/v1/orders?count=1");
-  assert.equal(calls[0].options.redirect, "error"); assert.equal(calls[0].options.method, undefined);
+  assert.equal(calls[0].options.redirect, "manual"); assert.equal(calls[0].options.method, undefined);
   assert.equal(rz.metadata.mode, "test"); assert.equal(rz.metadata.runtime_ready, false);
   assert.equal(rz.metadata.webhook_verified, false); assert.ok(!JSON.stringify(rz).includes("must-not-return"));
   await assert.rejects(verifyRazorpay(creds, async () => new Response("private-provider-details", { status: 401 })),
@@ -134,6 +134,22 @@ test("custom domains require real DNS and SSL evidence, explicit activation and 
   try {
     let state = await get();
     await assert.rejects(save(state, "domain-add", { hostname: "www.brand.com" }, {}), { status: 503 });
+    const dnsOnly={CUSTOM_DOMAIN_CNAME_TARGET:"brands.lebrands.store"};
+    state=await save(state,"domain-add",{hostname:"www.brand.com"},dnsOnly);
+    assert.equal(state.platform.domains_available,true);
+    assert.equal(state.platform.domain_activation_available,false);
+    assert.equal(state.domain.status,"pending");
+    assert.deepEqual(state.domain.dns_records,[{type:"CNAME",name:"www.brand.com",value:"brands.lebrands.store"}]);
+    assert.equal(creates,0);
+    state=await save(state,"domain-check",{id:state.domain.id},dnsOnly);
+    assert.equal(state.domain.cname_verified,false);
+    cname=true;
+    state=await save(state,"domain-check",{id:state.domain.id},dnsOnly);
+    assert.equal(state.domain.cname_verified,true);
+    assert.equal(state.domain.status,"pending");
+    await assert.rejects(save(state,"domain-activate",{id:state.domain.id,provider_domain_confirmed:true},dnsOnly),{status:503});
+    cname=false;
+    state=await save(state,"domain-remove",{id:state.domain.id},dnsOnly);
     state = await save(state, "domain-add", { hostname: "www.brand.com" });
     const domainId = state.domain.id;
     assert.equal(creates, 1); assert.equal(state.domain.status, "pending"); assert.equal(state.domain.dns_records.length, 2);

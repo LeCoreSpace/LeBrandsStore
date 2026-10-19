@@ -25,7 +25,7 @@ export async function openCredentials(secret, storeId, provider, value) {
 }
 async function providerJson(url, options = {}, fetcher = fetch) {
   let response;
-  try { response = await fetcher(url, { ...options, redirect: "error", signal: AbortSignal.timeout(12000) }); }
+  try { response = await fetcher(url, { ...options, redirect: "manual", signal: AbortSignal.timeout(12000) }); }
   catch { fail("The provider could not be reached. Your saved connection is unchanged. Try again later.", 502); }
   if (!response.ok) {
     if ([401, 403].includes(response.status)) fail("The provider did not accept these credentials or permissions. Check them in your provider account.", 400);
@@ -83,6 +83,9 @@ export function cloudflareAvailable(env) {
   return Boolean(env.CLOUDFLARE_API_TOKEN && /^[a-f0-9]{32}$/i.test(env.CLOUDFLARE_ZONE_ID || "") &&
     /^[a-z0-9.-]+\.lebrands\.store$/.test(env.CUSTOM_DOMAIN_CNAME_TARGET || ""));
 }
+export function domainTargetAvailable(env) {
+  return /^[a-z0-9.-]+\.lebrands\.store$/.test(env.CUSTOM_DOMAIN_CNAME_TARGET || "");
+}
 async function cloudflare(env, path, options, fetcher) {
   if (!cloudflareAvailable(env)) fail("Custom-domain provisioning needs platform configuration. You can keep using your included store address.", 503);
   const body = await providerJson(`https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames${path}`, {
@@ -98,12 +101,15 @@ export async function checkDomain(env, id, hostname, fetcher = fetch) {
   if (!/^[a-f0-9-]{32,36}$/i.test(id)) fail("This domain needs to be connected again.", 400);
   const result = await cloudflare(env, `/${id}`, { method: "GET" }, fetcher);
   if (result.hostname !== hostname) fail("The provider hostname does not match this store's connection.", 409);
+  return { ...result, cname_verified: await verifyDomainCname(env,hostname,fetcher) };
+}
+export async function verifyDomainCname(env,hostname,fetcher=fetch) {
+  if(!domainTargetAvailable(env))fail("Domain verification target is not configured.",503);
   const dns = await providerJson(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=CNAME`, {
     headers: { accept: "application/dns-json" },
   }, fetcher);
-  const cname = (dns.Answer || []).some(a => a.type === 5 && String(a.name).replace(/\.$/, "").toLowerCase() === hostname &&
+  return (dns.Answer || []).some(a => a.type === 5 && String(a.name).replace(/\.$/, "").toLowerCase() === hostname &&
     String(a.data).replace(/\.$/, "").toLowerCase() === env.CUSTOM_DOMAIN_CNAME_TARGET);
-  return { ...result, cname_verified: cname };
 }
 export function domainEvidence(result, env) {
   const rows = [{ type: "CNAME", name: result.hostname, value: env.CUSTOM_DOMAIN_CNAME_TARGET }];

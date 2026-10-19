@@ -6,7 +6,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   let state = null, loading = false, loadError = "", busy = "", stale = false;
   const msgs = {}, open = { 1: true, 2: false, 3: false };
   let prefs = null, prefsDirty = false;
-  const providerOpen={razorpay:false,shiprocket:false};
+  const providerOpen={razorpay:settingsMode,shiprocket:settingsMode};
   let focusedStep=null, customOnly=false;
   const skipped=new Set();
   // Drafts live only in memory. Values are applied to inputs as DOM properties, never written into HTML.
@@ -38,7 +38,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   }
   const v = k => draftVals[k].trim();
   const hostOk = () => HOST.test(v("host").toLowerCase());
-  const domVerified = () => { const d = state?.domain, p = state?.platform; return !!d && d.hostname_status === "active" && d.ssl_status === "active" && !!p?.domain_activation_available; };
+  const domVerified = () => { const d = state?.domain, p = state?.platform; return !!d && d.hostname_status === "active" && d.ssl_status === "active" && d.cname_verified === true && !!p?.domain_activation_available; };
   const domLive = () => state?.domain?.status === "active";
 
   async function request(method, body) {
@@ -135,8 +135,10 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       const live = domLive();
       const notes = [];
       if (!plat.domains_available) notes.push("Domain setup is not available on this platform right now. You can still check the status below.");
-      if (!live && !domVerified()) notes.push(plat.domain_activation_available ? "Activation unlocks once the hostname and SSL are both active." : "Activation is not available on this platform right now.");
-      dom = `<p><strong>${esc(d.hostname)}</strong> <span class="ann-launch-st">${esc(d.status)}${d.primary ? ", primary" : ""}</span></p><p class="ann-note">Hostname: ${esc(d.hostname_status)}. SSL: ${esc(d.ssl_status)}.</p>${(d.dns_records || []).length ? `<ul class="ann-launch-dns">${d.dns_records.map(r => `<li><b>${esc(r.type)}</b> ${esc(r.name)} <code>${esc(r.value)}</code></li>`).join("")}</ul>` : ""}${notes.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${diag}${live ? `<p class="ann-callout">This domain is active.</p>` : `<label class="ann-check"><input type="checkbox" data-ln-ack="dom"${ack ? " checked" : ""}${dis()}><span>If I use an online payment provider, I have approved this domain there.</span></label>`}${msg("dom")}${confirmRemove ? `<div class="ann-conflict" role="alertdialog"><p>Remove ${esc(d.hostname)}? This turns off the route for your store only. Nothing is deleted at your domain host or payment provider.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="drem-yes"${dis()}>Yes, remove</button><button type="button" class="ann-btn alt sm" data-ln-a="drem-no">Keep domain</button></div></div>` : ""}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="dchk"${dis()}>Check status</button>${live ? "" : `<button type="button" class="ann-btn sm" data-ln-a="dact"${dis(!domVerified() || !ack)}>Activate</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="drem"${dis(confirmRemove)}>Remove</button></div>`;
+      if (!live && !domVerified()) notes.push(plat.domain_activation_available ? "Activation requires the CNAME, hostname and SSL checks to pass." : "Activation is not available on this platform right now.");
+      const dns = (d.dns_records || []).length ? `<div class="ann-dns-guide"><h4>Update DNS at your domain provider</h4><p class="ann-note">Add every record below. DNS changes can take time. Then select Verify DNS and SSL. Do not remove your current records until you know which names they replace.</p><div class="ann-dns-table" role="table" aria-label="Required DNS records"><div class="ann-dns-row ann-dns-head" role="row"><span role="columnheader">Type</span><span role="columnheader">Name</span><span role="columnheader">Value</span></div>${d.dns_records.map(r => `<div class="ann-dns-row" role="row"><b role="cell">${esc(r.type)}</b><span role="cell"><code>${esc(r.name)}</code><button type="button" class="ann-dns-copy" data-ln-copy="${esc(r.name)}" aria-label="Copy DNS name">Copy</button></span><span role="cell"><code>${esc(r.value)}</code><button type="button" class="ann-dns-copy" data-ln-copy="${esc(r.value)}" aria-label="Copy DNS value">Copy</button></span></div>`).join("")}</div></div>` : "";
+      const dnsStatus=`<p class="ann-note" role="status">CNAME: <strong>${d.cname_verified ? "verified" : "waiting"}</strong> · Hostname: <strong>${esc(d.hostname_status)}</strong> · SSL: <strong>${esc(d.ssl_status)}</strong>.</p>`;
+      dom = `<p><strong>${esc(d.hostname)}</strong> <span class="ann-launch-st">${esc(d.status)}${d.primary ? ", primary" : ""}</span></p>${dnsStatus}${dns}${notes.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${diag}${live ? `<p class="ann-callout">This domain is active.</p>` : `<label class="ann-check"><input type="checkbox" data-ln-ack="dom"${ack ? " checked" : ""}${dis()}><span>If I use an online payment provider, I have approved this domain there.</span></label>`}${msg("dom")}${confirmRemove ? `<div class="ann-conflict" role="alertdialog"><p>Remove ${esc(d.hostname)}? This turns off the route for your store only. Nothing is deleted at your domain host or payment provider.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="drem-yes"${dis()}>Yes, remove</button><button type="button" class="ann-btn alt sm" data-ln-a="drem-no">Keep domain</button></div></div>` : ""}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="dchk"${dis()}>${plat.domain_activation_available?"Verify DNS and SSL":"Verify DNS CNAME"}</button>${live ? "" : `<button type="button" class="ann-btn sm" data-ln-a="dact"${dis(!domVerified() || !ack)}>Activate domain</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="drem"${dis(confirmRemove)}>Remove</button></div>`;
     }
     const s1 = `${own}${customOnly ? `<p class="ann-note">Your included store address keeps working. Connecting your own domain is optional.</p>` : addr}${dom}${saveRow(2)}`;
 
@@ -152,8 +154,8 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       + `${msg("act-rz")}<div class="ann-actions">${rzOn ? `<button type="button" class="ann-btn sm" data-ln-a="pay-off"${dis(execOff)}>${busy === "act-rz" ? "Saving" : "Turn off online checkout"}</button>` : `<button type="button" class="ann-btn sm" data-ln-a="pay-on"${dis(execOff || !!rzNeeds.length || !ackPay)}>${busy === "act-rz" ? "Saving" : "Turn on online checkout"}</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="disc" data-p="razorpay"${dis(!!confirmDisc)}>Disconnect</button></div>`;
     const rzBlock = `<h3>Razorpay</h3>` + (rzp.verified
       ? rzVerified
-      : `<p class="ann-note">Paste keys from your Razorpay dashboard. They are sent once and are never kept in this page after saving.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify account"}</button></div>`);
-    const s2 = `${own}${pay}${prefs.payments==="razorpay"||prefs.payments==="both"||rzp.verified?`<details class="ann-provider-setup" data-ln-provider="razorpay"${providerOpen.razorpay?" open":""}><summary>Connect Razorpay${rzOn?" · active":""}</summary>${rzBlock}</details>`:""}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${saveRow(3)}`;
+      : `<p class="ann-note">Enter your merchant Razorpay key ID and key secret. Also create a webhook secret in Razorpay so signed payment events can be checked. We verify the keys before storing them encrypted; they are not displayed again.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify and save Razorpay"}</button></div>`);
+    const s2 = `${own}${pay}${settingsMode||prefs.payments==="razorpay"||prefs.payments==="both"||rzp.verified?`<details class="ann-provider-setup" data-ln-provider="razorpay"${providerOpen.razorpay?" open":""}><summary>Razorpay integration${rzOn?" · active":""}</summary>${rzBlock}</details>`:""}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${saveRow(3)}`;
 
     // Step 3: delivery
     const del = `<p class="ann-note">Choose one or both. Add manual tracking from Orders.</p>${opts("delivery", [["manual", "I'll add tracking myself", "Use your courier and add its tracking number in Orders."], ["shiprocket", "Shiprocket", "Connect your account for automatic shipping."]])}`;
@@ -166,8 +168,8 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     const jobsHtml = jobs.length ? `<h3>Shipping jobs</h3><ul class="ann-launch-jobs">${jobs.map(j => `<li><div><b>${esc(j.order_number)}</b> ${esc(j.kind)} <span class="ann-launch-st">${j.status === "attention" ? "needs attention" : j.status === "done" ? "done" : esc(j.status)}</span>${when(j.updated_at) ? ` <small>${esc(when(j.updated_at))}</small>` : ""}${j.last_error ? `<p class="ann-note">${esc(j.last_error)}</p>` : ""}${msg("job-" + j.id)}</div>${j.status === "attention" ? `<label class="ann-check"><input type="checkbox" data-ln-ack="abs" data-id="${esc(j.id)}"${absence[j.id] ? " checked" : ""}${dis()}><span>Only if unsure: I checked the provider and no booking, AWB, pickup or refund exists, so another attempt is allowed. This may incur charges.</span></label><button type="button" class="ann-btn alt sm" data-ln-a="job" data-id="${esc(j.id)}"${dis()}>${busy === "job-" + j.id ? "Retrying" : "Retry"}</button>` : ""}</li>`).join("")}</ul>` : "";
     const srBlock = `<h3>Shiprocket</h3>` + (shp.verified
       ? `<p class="ann-callout">Account verified${shp.pickup_count != null ? `, ${esc(shp.pickup_count)} pickup location(s)` : ""}${srTime ? `, checked ${esc(srTime)}` : ""}.</p>${srForm}${srAuto}${jobsHtml}`
-      : `<p class="ann-note">Use an API user email and password, not your main Shiprocket login.</p>${inp("sr.email", "API user email", "email")}${inp("sr.password", "API user password", "password")}${msg("sr")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="sr"${dis(!v("sr.email") || !draftVals["sr.password"])}>${busy === "sr" ? "Checking" : "Verify account"}</button></div>`);
-    const s3 = `${own}${del}${prefs.delivery==="shiprocket"||prefs.delivery==="both"||shp.verified?`<details class="ann-provider-setup" data-ln-provider="shiprocket"${providerOpen.shiprocket?" open":""}><summary>Connect Shiprocket${srOn?" · active":""}</summary>${srBlock}</details>`:""}${msg("disc-shiprocket")}${confirmDisc === "shiprocket" ? discBox() : ""}${saveRow(4)}`;
+      : `<p class="ann-note">Create a separate API user in Shiprocket Settings → API. Enter its email and password, not your main account login. We verify the account and pickup locations before storing the credentials encrypted.</p>${inp("sr.email", "API user email", "email")}${inp("sr.password", "API user password", "password")}${msg("sr")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="sr"${dis(!v("sr.email") || !draftVals["sr.password"])}>${busy === "sr" ? "Checking" : "Verify and save Shiprocket"}</button></div>`);
+    const s3 = `${own}${del}${settingsMode||prefs.delivery==="shiprocket"||prefs.delivery==="both"||shp.verified?`<details class="ann-provider-setup" data-ln-provider="shiprocket"${providerOpen.shiprocket?" open":""}><summary>Shiprocket integration${srOn?" · active":""}</summary>${srBlock}</details>`:""}${msg("disc-shiprocket")}${confirmDisc === "shiprocket" ? discBox() : ""}${saveRow(4)}`;
 
     function discBox() { return `<div class="ann-conflict" role="alertdialog"><p>Disconnect ${esc(confirmDisc)}? Its saved credentials are removed.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="disc-yes"${dis()}>Yes, disconnect</button><button type="button" class="ann-btn alt sm" data-ln-a="disc-no">Keep connected</button></div></div>`; }
 
@@ -201,6 +203,16 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   const clear = ks => ks.forEach(k => { draftVals[k] = ""; });
   document.addEventListener("click", e => {
     const n = slot(); if (!n || !n.contains(e.target)) return;
+    const copy=e.target.closest("button[data-ln-copy]");
+    if(copy?.dataset?.lnCopy !== undefined){
+      e.preventDefault();
+      if(!canEdit())return;
+      if(!navigator.clipboard?.writeText){copy.textContent="Select the text to copy";return;}
+      navigator.clipboard.writeText(copy.dataset.lnCopy).then(()=>{
+        copy.textContent="Copied";setTimeout(()=>{if(copy.isConnected)copy.textContent="Copy";},1800);
+      }).catch(()=>{copy.textContent="Select the text to copy";});
+      return;
+    }
     const b = e.target.closest("button[data-ln-a],button[data-pref]"); if (!b) return;
     e.preventDefault();
     if (b.disabled) return;

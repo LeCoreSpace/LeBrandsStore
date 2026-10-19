@@ -934,6 +934,44 @@ decision:
   publication; the database guard is already active. Scheduled Free expiry and
   product/SKU allowance enforcement are separate scope.
 
+### 2026-10-19: Dashboard navigation and merchant integrations
+
+- **What:** Changed the dashboard so only Settings expands on each page load;
+  former sidebar preferences no longer reopen other menus. Renamed the three
+  settings destinations Custom domain integration, Razorpay integration and
+  Shiprocket integration.
+- **How:** Kept the existing tenant-scoped, encrypted provider verification and
+  activation gates. Made Razorpay and Shiprocket credential forms visible in
+  their Settings screens before the merchant changes checkout or delivery
+  preferences. Shiprocket uses a separate API-user email/password, not API
+  keys. Razorpay needs merchant key ID, key secret and webhook secret; saving
+  credentials does not switch on checkout or shipping.
+- **Domain setup:** A merchant can save a pending domain and see the platform
+  CNAME name/value even before Cloudflare hostname provisioning is available.
+  After platform provisioning, ownership and SSL TXT records also appear.
+  A read-only public DNS CNAME check can run while platform provisioning is
+  unavailable; it does not claim ownership or SSL verification. Once platform
+  provisioning is ready, full merchant verification rechecks DNS, ownership,
+  routing and SSL server-side;
+  there is no activation without passing platform checks. Replaced redirect
+  rejection with fail-closed manual redirect handling for provider requests.
+- **Why the extra store button appeared:** The database already rejects a
+  third owned store. The screenshot was of the published account page while
+  the previous dashboard UI change still awaited manual Worker deployment.
+  No new quota migration or new merchant store was created in this change.
+- **Verification:** Isolated account-limit coverage passed along with 23
+  focused integration and dashboard checks. Pending DNS evidence, existing
+  provider credential isolation, settings access before preferences, active
+  domain guards and initial collapsed navigation passed. No merchant
+  credentials were accessed; no live provider or domain was activated.
+- **Release:** Both preview workflows were restarted and the public sign-in
+  screen loaded without runtime errors. Signed-in integration screens were
+  checked through isolated render/route tests, not a live merchant session.
+  Manual Cloudflare Worker publication is still required for the published
+  account button and these new integration screens. Cloudflare for SaaS and
+  its platform configuration remain necessary before custom-domain
+  verification and live routing.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

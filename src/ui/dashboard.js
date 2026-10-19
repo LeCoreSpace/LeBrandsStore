@@ -334,7 +334,7 @@ function settingsPage(data) {
   return `${pageHeading("", "Settings", "",`<button class="lb-button" type="submit" form="lb-business-form" ${["owner","admin"].includes(data.role)?"":"disabled"}>Save business details</button>`)}${actionError(data)}
     <div class="lb-settings-layout"><nav class="lb-settings-index" aria-label="Settings sections">
        <a href="#store-details">Store details</a><a href="#contact-details">Contact details</a><a href="#business-gst">Business &amp; GST</a><a href="#business-documents">Business documents</a><a href="#policies">Policies</a>
-      <a href="${`/stores/${id}/settings/checkout`}">Checkout</a><a href="/stores/${id}/settings?connection=domain">Store connections</a><span>Users <small>Unavailable</small></span>
+      <a href="${`/stores/${id}/settings/checkout`}">Checkout</a><a href="/stores/${id}/settings?connection=domain">Integrations</a><span>Users <small>Unavailable</small></span>
     </nav><div class="lb-settings-panels">
       <div id="store-details">${card("Store details", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Store address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status === "awaiting_approval" ? "Awaiting approval" : store.status || "Setup in progress")}</dd></div><div><dt>Store setup</dt><dd><a class="lb-inline-link" href="/stores/${id}/setup">Open store setup</a></dd></div></dl>`)}</div>
        <div id="contact-details">${card("Customer contact details", contactForm)}</div>
@@ -346,7 +346,7 @@ function settingsPage(data) {
       <div id="checkout">${card("Checkout", `<p>Checkout and delivery settings are available in the existing checkout settings screen.</p><div class="lb-export-buttons"><a class="lb-button lb-button-outline lb-button-small" href="/stores/${id}/settings/checkout">Open checkout settings</a></div><small>${esc(checkoutSettings.store_state ? `Registered state: ${stateName(checkoutSettings.store_state)}` : "Checkout configuration is not included in this dashboard view.")}</small>`)}</div>
       <div id="exports">${card("Exports", `<p>Download a copy of your store records as CSV.</p>${exports}`)}</div>
       ${card("Store availability", ownerActions)}
-      <section id="store-connections" class="lb-card"><div class="lb-card-heading"><h2>Store connections</h2></div><p>Manage optional domains, online payments and shipping partners in Settings. Verifying an account does not activate online checkout or automatic shipping.</p><div class="lb-export-buttons"><a href="${connectionHref(id,"domain")}">Store address & domains</a><a href="${connectionHref(id,"payments")}">Payment connections</a><a href="${connectionHref(id,"delivery")}">Delivery connections</a></div><p>User management is available under People & access.</p></section>
+      <section id="store-connections" class="lb-card"><div class="lb-card-heading"><h2>Integrations</h2></div><p>Connect your own domain, Razorpay and Shiprocket. Verification does not activate online checkout or automatic shipping.</p><div class="lb-export-buttons"><a href="${connectionHref(id,"domain")}">Custom domain integration</a><a href="${connectionHref(id,"payments")}">Razorpay integration</a><a href="${connectionHref(id,"delivery")}">Shiprocket integration</a></div><p>User management is available under People & access.</p></section>
     </div></div>`;
 }
 
@@ -368,9 +368,9 @@ function normalizeView(view) {
 
 function connectionSettingsPage(data) {
   const kind=data.connectionKind, root=`/stores/${encodeURIComponent(data.store?.store_id || "")}`;
-  const names={domain:"Store address & domains",payments:"Payment connections",delivery:"Delivery connections"};
+  const names={domain:"Custom domain integration",payments:"Razorpay integration",delivery:"Shiprocket integration"};
   if(!Object.hasOwn(CONNECTION_KINDS,kind))return settingsPage(data);
-  return `${pageHeading("Settings",names[kind],"Manage connections here. Your Ann design and live storefront stay unchanged until you explicitly save or activate a service.")}
+  return `${pageHeading("Settings",names[kind],"Manage integrations here. Your Ann design and live storefront stay unchanged until you explicitly save or activate a service.")}
     <nav class="lb-export-buttons" aria-label="Store connection settings">${Object.keys(CONNECTION_KINDS).map(k=>`<a class="lb-button lb-button-outline lb-button-small" href="${connectionHref(data.store.store_id,k)}"${k===kind?' aria-current="page"':""}>${names[k]}</a>`).join("")}</nav>
     <section class="lb-card lb-connection-settings" data-connection-kind="${kind}">
     <p>${kind==="domain"?`Included address: <strong>${esc(data.store?.subdomain ? `${data.store.subdomain}.lebrands.store` : "Not assigned")}</strong>. A custom domain is optional.`:kind==="payments"?'Cash on Delivery and online payments can be used together. Save COD availability in checkout settings.':'Manual tracking remains available in Order desk, with or without a shipping partner.'}</p>

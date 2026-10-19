@@ -9,7 +9,7 @@ export async function connection(tx, storeId, provider, env) {
 }
 export async function remoteJson(url, options = {}, fetcher = fetch) {
   let response;
-  try { response = await fetcher(url, { ...options, redirect: "error", signal: AbortSignal.timeout(12000) }); }
+  try { response = await fetcher(url, { ...options, redirect: "manual", signal: AbortSignal.timeout(12000) }); }
   catch { throw Object.assign(failure("Provider response uncertain. Reconcile the provider account before retrying a booking or refund.", 502), { ambiguous: options.method === "POST" }); }
   if (!response.ok) throw Object.assign(failure(
     [401,403].includes(response.status) ? "Provider credentials or permissions need attention." :

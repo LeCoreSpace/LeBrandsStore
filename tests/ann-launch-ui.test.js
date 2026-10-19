@@ -29,7 +29,7 @@ async function harness(readOnly=false,onStep,settingsMode=false) {
     for(const fn of events.get("click")||[])fn({target,preventDefault(){}});
     await flush();
   };
-  return {ui,slot,requests,click,toggle:(provider,open)=>{for(const fn of events.get("toggle")||[])fn({target:{dataset:{lnProvider:provider},open}});},setFailure:v=>{fail=v;},get done(){return done;},get saved(){return saved;},
+  return {ui,slot,requests,click,toggle:(provider,open)=>{for(const fn of events.get("toggle")||[])fn({target:{dataset:{lnProvider:provider},open}});},setFailure:v=>{fail=v;},setState:v=>{state={...state,...v};},get done(){return done;},get saved(){return saved;},
     async close(){await flush();globalThis.document=previous.document;globalThis.fetch=previous.fetch;}};
 }
 test("unavailable domain choices stay readable, explain their prerequisite and cannot be selected",async()=>{
@@ -166,6 +166,38 @@ test("Ann replaces partner steps with an essentials summary while keeping plain-
   assert.match(js,/if \(p\.id === "review"\) \{\s*if \(active\)/,"editing earlier questions must not mount a second launch widget in an inactive review");
   const css=await readFile("src/public/ann-builder.css","utf8");
   assert.match(css,/\.ann-rail\{display:flex;flex-wrap:wrap/);
+});
+test("custom domain Settings shows DNS names and values without premature activation",async()=>{
+  const h=await harness(false,undefined,true);
+  try{
+    h.setState({platform:{domains_available:true,domain_activation_available:false},domain:{
+      id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",hostname:"www.brand.com",status:"pending",
+      hostname_status:"pending",ssl_status:"pending",cname_verified:false,
+      dns_records:[{type:"CNAME",name:"www.brand.com",value:"brands.lebrands.store"}]}});
+    await h.click({lnA:"reload"});
+    h.ui.mount(1,{customDomainOnly:true});await flush();
+    assert.match(h.slot.innerHTML,/Update DNS at your domain provider/);
+    assert.match(h.slot.innerHTML,/role="columnheader">Name/);
+    assert.match(h.slot.innerHTML,/role="columnheader">Value/);
+    assert.match(h.slot.innerHTML,/data-ln-copy="brands\.lebrands\.store"/);
+    assert.match(h.slot.innerHTML,/Verify DNS CNAME/);
+    assert.match(h.slot.innerHTML,/data-ln-a="dact" disabled/);
+  }finally{await h.close();}
+});
+test("integration setup is available in Settings before changing COD or manual delivery",async()=>{
+  const h=await harness(false,undefined,true);
+  try{
+    h.ui.mount(2);await flush();
+    assert.match(h.slot.innerHTML,/Razorpay integration/);
+    assert.match(h.slot.innerHTML,/data-ln-provider="razorpay" open/);
+    assert.match(h.slot.innerHTML,/data-ln="rz\.key_id"/);
+    assert.match(h.slot.innerHTML,/data-ln="rz\.webhook_secret"/);
+    h.ui.mount(3);await flush();
+    assert.match(h.slot.innerHTML,/Shiprocket integration/);
+    assert.match(h.slot.innerHTML,/data-ln-provider="shiprocket" open/);
+    assert.match(h.slot.innerHTML,/data-ln="sr\.email"/);
+    assert.match(h.slot.innerHTML,/data-ln="sr\.password"/);
+  }finally{await h.close();}
 });
 test("dedicated Settings preserves provider forms and combined choices without wizard navigation",async()=>{
   const h=await harness(false,undefined,true);

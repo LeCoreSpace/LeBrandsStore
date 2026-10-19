@@ -1,5 +1,5 @@
 import { audit } from "../dashboard/repository.js";
-import { cloudflareAvailable, sealCredentials, verifyRazorpay, verifyShiprocket,
+import { cloudflareAvailable, domainTargetAvailable, verifyDomainCname, sealCredentials, verifyRazorpay, verifyShiprocket,
   domainHostname, provisionDomain, checkDomain, domainEvidence } from "../connections/providers.js";
 import { runtimeAvailable } from "../connections/payments.js";
 import { connection, shiprocketClient } from "../connections/runtime-client.js";
@@ -44,7 +44,7 @@ export async function prepareAnnLaunch(tx, id, userId, env = {}) {
     preferences: state.preferences, providers, optional: true, cod_enabled: parse(checkout?.settings)?.cod_enabled === true,
     domain: state.domain ? { id: state.domain.id, hostname: state.domain.hostname, status: state.domain.status,
       primary: state.domain.is_primary, ...state.evidence } : null,
-    platform: { domains_available: cloudflareAvailable(env),
+    platform: { domains_available: domainTargetAvailable(env),
       domain_activation_available: cloudflareAvailable(env),
       diagnostics:state.evidence.platform_diagnostics||[{label:"Cloudflare credentials and zone configured",complete:cloudflareAvailable(env)}] } };
 }
@@ -139,19 +139,26 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
   } else if (body.action === "domain-add") {
     const hostname = domainHostname(body.hostname);
     if (current.domain) fail("Check or remove the existing domain before adding another.", 409);
-    if (!cloudflareAvailable(env)) fail("Custom-domain provisioning needs platform configuration. Keep your included address for now.", 503);
+    if (!domainTargetAvailable(env)) fail("Custom-domain DNS target is not configured. Keep your included address for now.", 503);
     const [reserved] = await tx`INSERT INTO public.domains(store_id,hostname,status) VALUES(${id},${hostname},'pending')
       ON CONFLICT(hostname) DO UPDATE SET status='pending'
       WHERE public.domains.store_id=${id} AND public.domains.status='disabled' RETURNING id,cloudflare_hostname_id`;
     if (!reserved) fail("That domain cannot be connected to this store.", 409);
     // A locally removed hostname remains in Cloudflare. Reuse only the ID
     // already owned by this store, never adopt another account's hostname.
-    const result = reserved.cloudflare_hostname_id
-      ? await checkDomain(env, reserved.cloudflare_hostname_id, hostname, fetcher)
-      : await provisionDomain(env, hostname, fetcher);
-    if (result.hostname !== hostname) fail("Cloudflare did not return the requested hostname.", 502);
-    await tx`UPDATE public.domains SET cloudflare_hostname_id=${result.id} WHERE store_id=${id} AND id=${reserved.id}`;
-    evidence = domainEvidence(result, env);
+    if(cloudflareAvailable(env)){
+      const result = reserved.cloudflare_hostname_id
+        ? await checkDomain(env, reserved.cloudflare_hostname_id, hostname, fetcher)
+        : await provisionDomain(env, hostname, fetcher);
+      if (result.hostname !== hostname) fail("Cloudflare did not return the requested hostname.", 502);
+      await tx`UPDATE public.domains SET cloudflare_hostname_id=${result.id} WHERE store_id=${id} AND id=${reserved.id}`;
+      evidence = domainEvidence(result, env);
+    }else{
+      // DNS can be prepared now; ownership TXT and SSL records are supplied
+      // only after Cloudflare accepts the hostname. Never mark this active.
+      evidence={dns_records:[{type:"CNAME",name:hostname,value:env.CUSTOM_DOMAIN_CNAME_TARGET}],
+        hostname_status:"pending",ssl_status:"pending",cname_verified:false};
+    }
   } else if (body.action.startsWith("domain-")) {
     const domain = current.domain;
     if (typeof body.id !== "string" || !UUID.test(body.id) || !domain || domain.id !== body.id) fail("This domain does not belong to this store.", 404);
@@ -160,7 +167,20 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
       preferences.address = "included"; evidence = {};
     } else {
       // Always recheck provider and DNS on activation. Never trust browser statuses.
-      const result = await checkDomain(env, domain.cloudflare_hostname_id, domain.hostname, fetcher);
+      if(body.action==="domain-check" && domain.status==="pending" && !cloudflareAvailable(env)){
+        evidence={...current.evidence,cname_verified:await verifyDomainCname(env,domain.hostname,fetcher),
+          checked_at:new Date().toISOString()};
+      }else{
+      if(!cloudflareAvailable(env))
+        fail("Cloudflare verification is not configured yet. Keep the CNAME in place and check again later.",503);
+      let hostnameId=domain.cloudflare_hostname_id;
+      if(!hostnameId){
+        const created=await provisionDomain(env,domain.hostname,fetcher);
+        if(created.hostname!==domain.hostname)fail("Cloudflare did not return the requested hostname.",502);
+        hostnameId=created.id;
+        await tx`UPDATE public.domains SET cloudflare_hostname_id=${hostnameId} WHERE store_id=${id} AND id=${domain.id}`;
+      }
+      const result = await checkDomain(env, hostnameId, domain.hostname, fetcher);
       evidence = domainEvidence(result, env);
       const platform=await domainPlatform(env,fetcher);
       evidence.platform_diagnostics=platform.diagnostics;
@@ -177,6 +197,7 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
           fail("Confirm that this domain is approved in your Razorpay account before activating it.");
         await tx`UPDATE public.domains SET status='active',is_primary=true WHERE store_id=${id} AND id=${domain.id}`;
         preferences.address = "custom";
+      }
       }
     }
   }
