@@ -1,4 +1,5 @@
 import { cartItems, INDIAN_STATES, commerceError } from "../public/commerce-rules.js";
+import {offerCode} from "../offers/rules.js";
 const text = (value,max) => typeof value === "string" && value.length <= max && !/[\u0000-\u001f\u007f]/.test(value) ? value.trim() : null;
 export function indianPhone(value) {
   if (typeof value !== "string") return null;
@@ -24,7 +25,11 @@ export function orderInput(body) {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.idempotency_key ?? "") ||
     !/^[0-9a-f]{64}$/.test(body.receipt_token ?? "")) errors._general = "Reload checkout and try again.";
   if (Object.keys(errors).length) throw commerceError("Check the highlighted fields.",errors);
+  if(body.expected_discount_paise!=null&&(!Number.isSafeInteger(body.expected_discount_paise)||body.expected_discount_paise<0))
+    throw commerceError("Reload the order summary before placing the order.");
   return {items:cartItems(body.items,false),contact:{name,phone,email},address:clean,
+    ...(body.code?{code:offerCode(body.code)}:{}),
+    ...(body.expected_discount_paise!=null?{expected_discount_paise:body.expected_discount_paise}:{}),
     ...(body.payment_method==="online"?{payment_method:"online"}:{}),
     idempotency_key:body.idempotency_key.toLowerCase(),receipt_token:body.receipt_token};
 }

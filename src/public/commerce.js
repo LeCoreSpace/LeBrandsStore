@@ -31,6 +31,20 @@ const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&a
 const money = (value) => `₹${(Math.max(0, Number(value) || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 let cart = [];
 let validated = null;
+const offerStorageKey=`${storageKey}:offer-code`;
+let activeOfferCode="";
+try{activeOfferCode=sessionStorage.getItem(offerStorageKey)||"";}catch{}
+function offerControls(){
+  if(readOnly||!cart.length||validated?.offers_available===false)return "";
+  return `<div class="commerce-offer"><label>Offer code<input data-offer-code maxlength="32" value="${esc(activeOfferCode)}" autocomplete="off" placeholder="Enter code"></label><div><button type="button" class="commerce-text-link" data-offer-apply>Apply code</button>${activeOfferCode?'<button type="button" class="commerce-text-link" data-offer-remove>Remove code</button>':""}</div><p role="status">${validated?.discount_paise>0?`${esc(validated.offer?.code||validated.offer?.title||"Offer")} applied. You save ${money(validated.discount_paise)}.`:"The best eligible offer applies. Offers cannot be combined."}${validated?.offer_notice?` ${esc(validated.offer_notice)}`:""}</p></div>`;
+}
+function addOfferSummary(slot){
+  if(!slot)return;
+  const total=slot.querySelector(".commerce-total-row.grand");
+  if(total&&Number(validated?.discount_paise)>0)total.insertAdjacentHTML("beforebegin",
+    `<div class="commerce-total-row"><span>Offer saving</span><strong>−${money(validated.discount_paise)}</strong></div>`);
+  slot.insertAdjacentHTML("beforeend",offerControls());
+}
 let busy = false;
 let lastFocus = null;
 let inertBackground = [];
@@ -129,7 +143,7 @@ async function validateCart({ render = true } = {}) {
   }
   updatePlaceOrderAvailability();
   try {
-    const result = await api("/api/cart/validate", { items: cart.map(cleanLine), ...(currentState() ? { state: currentState() } : {}) });
+    const result = await api("/api/cart/validate", { items: cart.map(cleanLine), code:activeOfferCode, ...(currentState() ? { state: currentState() } : {}) });
     if (seq !== validationSequence) return validated;
     validated = result;
     for (const item of result.items || []) {
@@ -147,8 +161,8 @@ async function validateCart({ render = true } = {}) {
   }
 }
 function showValidationError(text) {
-  for (const slot of document.querySelectorAll("[data-cart-page-lines], [data-checkout-summary]")) {
-    slot.innerHTML = `<div class="commerce-error" role="alert">${esc(text)} <button class="commerce-text-link" type="button" data-retry-validation>Try again</button></div>`;
+  for (const slot of document.querySelectorAll("[data-cart-page-lines], [data-checkout-summary], [data-cart-summary], [data-drawer-lines], [data-drawer-summary]")) {
+    slot.innerHTML = `<div class="commerce-error" role="alert">${esc(text)} <button class="commerce-text-link" type="button" data-retry-validation>Try again</button></div>${slot.matches("[data-checkout-summary], [data-cart-summary], [data-drawer-summary]")?offerControls():""}`;
   }
   const drawer = document.querySelector("[data-drawer-lines]");
   if (drawer) drawer.innerHTML = `<div class="commerce-error" role="alert">${esc(text)} <button class="commerce-text-link" type="button" data-retry-validation>Try again</button></div>`;
@@ -191,9 +205,9 @@ function renderCommerce() {
   const recs = document.querySelector("[data-cart-recs]");
   if (recs) recs.hidden = ![...recs.querySelectorAll("[data-rec-id]")].some((node) => !node.hidden);
   const cartSummary = document.querySelector("[data-cart-summary]");
-  if (cartSummary) cartSummary.innerHTML = summaryMarkup(validated);
+  if (cartSummary) {cartSummary.innerHTML = summaryMarkup(validated);addOfferSummary(cartSummary);}
   const checkoutSummary = document.querySelector("[data-checkout-summary]");
-  if (checkoutSummary) checkoutSummary.innerHTML = summaryMarkup(validated, { checkout: true });
+  if (checkoutSummary) {checkoutSummary.innerHTML = summaryMarkup(validated, { checkout: true });addOfferSummary(checkoutSummary);}
   syncPayment();
   const codNotice = document.querySelector("[data-cod-notice]");
   if (codNotice && validated) {
@@ -205,7 +219,7 @@ function renderCommerce() {
   const drawerLines = document.querySelector("[data-drawer-lines]");
   if (drawerLines) drawerLines.innerHTML = linesMarkup(items, true);
   const drawerSummary = document.querySelector("[data-drawer-summary]");
-  if (drawerSummary) drawerSummary.innerHTML = summaryMarkup(validated);
+  if (drawerSummary) {drawerSummary.innerHTML = summaryMarkup(validated);addOfferSummary(drawerSummary);}
   updatePlaceOrderAvailability();
 }
 function updateCount() {
@@ -377,7 +391,8 @@ async function placeOrder(event) {
   if (button) { button.disabled = true; button.textContent = "Preparing secure order…"; }
   let key;
   try {
-    const canonical = JSON.stringify({ items: cart.map(cleanLine), payment_method: selectedMethod(), contact: values.contact, address: values.address });
+    const canonical = JSON.stringify({ items: cart.map(cleanLine), payment_method: selectedMethod(), contact: values.contact, address: values.address,
+      code:activeOfferCode,expected_discount_paise:Number(validated?.discount_paise||0) });
     const fingerprintValue = await fingerprint(canonical);
     if (!checkoutAttempt || checkoutAttempt.fingerprint !== fingerprintValue) {
       let previous = null;
@@ -426,6 +441,8 @@ async function placeOrder(event) {
   try {
     const result = await api("/api/checkout/order", {
       items: cart.map(cleanLine),
+      code:activeOfferCode,
+      expected_discount_paise:Number(validated?.discount_paise||0),
       contact: values.contact,
       address: values.address,
       idempotency_key: key.idempotencyKey,
@@ -630,6 +647,13 @@ function bind() {
     if (quantity) { changeQuantity(quantity.dataset.id, Number(quantity.dataset.quantity), quantity.dataset.option || ""); return; }
     const remove = event.target.closest("[data-remove]");
     if (remove) { removeProduct(remove.dataset.remove, remove.dataset.option || ""); return; }
+    if(event.target.closest("[data-offer-apply], [data-offer-remove]")){
+      const control=event.target.closest("[data-offer-apply], [data-offer-remove]");
+      activeOfferCode=control.hasAttribute("data-offer-remove")?"":(control.closest(".commerce-offer")?.querySelector("[data-offer-code]")?.value||"").trim().toUpperCase();
+      try{sessionStorage.setItem(offerStorageKey,activeOfferCode);}catch{}
+      checkoutAttempt=null;allowReplayWithoutToken=false;
+      validateCart();return;
+    }
     if (event.target.closest("[data-retry-validation]")) { validateCart(); return; }
   });
   document.addEventListener("keydown", (event) => {

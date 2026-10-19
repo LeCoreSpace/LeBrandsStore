@@ -10,10 +10,13 @@ import worker from "../src/index.js";
 const ID = "11111111-1111-4111-8111-111111111111";
 const nav = (o = {}) => renderSidebarNav({ storeId: ID, subdomain: "demo", role: "owner", ...o });
 
-test("seven groups plus Today with the agreed leaves", () => {
+test("eight groups plus Today with offers separate from Catalogue", () => {
   const html = nav();
   for (const g of ["Catalogue", "Order desk", "Money &amp; records", "Store studio", "Brand reach", "Business pulse", "Settings"]) assert.match(html, new RegExp(`<span class="lbn-label">${g}</span>`));
-  assert.equal((html.match(/data-nav-group=/g) || []).length, 7);
+  assert.equal((html.match(/data-nav-group=/g) || []).length, 8);
+  const model=navigationModel(`/stores/${ID}`,{role:"owner"});
+  assert.equal(model.groups.find(g=>g.label==="Catalogue").items.some(i=>i.label==="Offers & codes"),false);
+  assert.ok(model.groups.some(g=>g.label==="Offers & codes"));
   for (const l of ["Products","Collections","Stock &amp; SKUs","Vendors","Offers &amp; codes","Media library","Order queue","Dispatch &amp; tracking","COD &amp; returns","Customer directory","Payments &amp; settlements","Refunds","Invoices &amp; credit notes","GST summaries","Build with Ann","Theme editor","Menus &amp; links","Pages &amp; policies","Browser preview","Email campaigns","WhatsApp messages","Social campaigns","Sales performance","Product performance","Customer insights","Shopping journey","Business &amp; invoice identity","Store address &amp; domains","Payment connections","Delivery connections","Email &amp; messaging connections","Marketing connections","Dispatch preferences","People &amp; access","Plan &amp; billing","Activity history","Data exports"]) assert.ok(html.includes(`<span>${l}</span>`), l);
   assert.doesNotMatch(html, /Growth|Sales channels|Apps|—|sparkle/i);
 });

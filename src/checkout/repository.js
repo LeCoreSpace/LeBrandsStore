@@ -2,6 +2,7 @@ import { DEFAULT_CHECKOUT_SETTINGS, checkoutSettings, inferStoreState, registere
 import { onlineAvailable, reservePayment, runtimeAvailable } from "../connections/payments.js";
 import { checkShipping } from "../connections/shipping.js";
 import {requireSkuCheckout,updateAggregateStock} from "./sku-inventory.js";
+import {discountedQuote,recordOffer} from "../offers/repository.js";
 
 const denied = () => commerceError("This store is not available for checkout.",undefined,404);
 export async function checkoutContext(tx, id, lock = false) {
@@ -39,11 +40,12 @@ export async function inventoryFor(tx,id,items,lock = false) {
   }
   return result;
 }
-export async function checkoutQuote(tx,id,items,state = "") {
+export async function checkoutQuote(tx,id,items,state = "",code="") {
   if(items.some(i=>i.product_option_id))await requireSkuCheckout(tx);
   const context = await checkoutContext(tx,id);
-  return {...quoteCart(context.snapshot.products ?? [],await inventoryFor(tx,id,items),items,context.settings,state),
-    online_available:await onlineAvailable(tx,id)};
+  const quote=quoteCart(context.snapshot.products ?? [],await inventoryFor(tx,id,items),items,context.settings,state);
+  const discounted=await discountedQuote(tx,id,quote,context.snapshot,{code,state});
+  return {...discounted,online_available:discounted.total_paise>0&&await onlineAvailable(tx,id)};
 }
 export async function consumeIpLimit(tx,id,hash,purpose) {
   // Committed in its own transaction before validation/Turnstile. Failed attempts
@@ -72,10 +74,13 @@ export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source,e
   const context = await checkoutContext(tx,id,true);
   const replay = await findReplay(tx,id,input,requestHash);
   if (replay) return replay;
-  const quote = quoteCart(context.snapshot.products ?? [],await inventoryFor(tx,id,input.items,true),
-    input.items,context.settings,input.address.state);
+  const quote = await discountedQuote(tx,id,quoteCart(context.snapshot.products ?? [],await inventoryFor(tx,id,input.items,true),
+    input.items,context.settings,input.address.state),context.snapshot,{code:input.code||"",state:input.address.state});
   if (quote.issues.length) throw commerceError(quote.issues.map((i) => i.message).join(" "),{cart:"Update your cart before placing the order."},409);
+  if(input.expected_discount_paise!=null&&input.expected_discount_paise!==(quote.discount_paise||0))
+    throw commerceError("Your offer changed. Refresh your bag and review the new total before placing the order.",undefined,409);
   const online=input.payment_method==="online";
+  if(online&&quote.total_paise===0)throw commerceError("Choose Cash on Delivery for this zero-total order. No payment will be collected.",undefined,400);
   if (online && !await onlineAvailable(tx,id)) throw commerceError("Online payment is not available at this store.",undefined,409);
   if (!online && !context.settings.cod_enabled) throw commerceError("Cash on Delivery is not available at this store.",undefined,409);
   if (!context.settings.store_state) throw commerceError("This store has not completed its checkout setup.",undefined,503);
@@ -100,10 +105,10 @@ export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source,e
   const prefix = context.store.subdomain.replace(/[^a-z]/g,"").slice(0,3).toUpperCase() || "ORD";
   const order_number = `${prefix}-${sequence.number}`, orderId = crypto.randomUUID();
   await tx`INSERT INTO public.orders
-    (id,store_id,customer_id,order_number,status,payment_method,subtotal_paise,tax_paise,shipping_paise,total_paise,
+    (id,store_id,customer_id,order_number,status,payment_method,subtotal_paise,tax_paise,shipping_paise,discount_paise,total_paise,
       shipping_address,source,idempotency_key,request_hash,confirmation_hash,supplier_snapshot)
     VALUES (${orderId},${id},${customer.id},${order_number},${online?"pending_payment":"confirmed_cod"},${online?"online":"cod"},${quote.subtotal_paise},
-      ${quote.tax_paise},${quote.delivery_paise},${quote.total_paise},${tx.json(address)},${source},
+      ${quote.tax_paise},${quote.delivery_paise},${quote.discount_paise||0},${quote.total_paise},${tx.json(address)},${source},
       ${input.idempotency_key},${requestHash},${receiptHash},${tx.json({
         legal_name:context.snapshot.settings?.legal_name || context.store.name,
         address:context.snapshot.settings?.address || "",gstin:context.snapshot.settings?.gstin || "",state:context.settings.store_state,
@@ -135,16 +140,18 @@ export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source,e
         AND (NOT track_inventory OR stock >= ${line.quantity}) RETURNING id`;
     if (!updated) throw commerceError("A product just sold out. Update your cart and try again.",undefined,409);
   }
+  await recordOffer(tx,id,orderId,customer.id,quote,online);
   if (online) await reservePayment(tx,id,orderId,env);
   await tx`INSERT INTO public.audit_log (store_id,actor_type,action,entity_type,entity_id,metadata)
     VALUES (${id},'system','order.created','order',${orderId},${tx.json({payment_method:input.payment_method || "cod",source})})`;
   return {order_number,total_paise:quote.total_paise,receipt_url:`/orders/${input.receipt_token}`,replayed:false};
 }
 export async function receiptOrder(tx,id,hash) {
-  const [order] = await tx`SELECT id,order_number,status,payment_method,subtotal_paise,tax_paise,shipping_paise,total_paise,shipping_address,created_at
+  const [order] = await tx`SELECT id,order_number,status,payment_method,subtotal_paise,tax_paise,shipping_paise,discount_paise,total_paise,shipping_address,created_at
     FROM public.orders WHERE store_id = ${id} AND confirmation_hash = ${hash}`;
   if (!order) throw commerceError("Order not found.",undefined,404);
-  const items = await tx`SELECT i.title,i.sku,to_jsonb(i)->'option_snapshot' AS option_snapshot,i.quantity,i.unit_price_paise,i.total_paise AS line_total_paise
+  const items = await tx`SELECT i.title,i.sku,to_jsonb(i)->'option_snapshot' AS option_snapshot,i.quantity,i.unit_price_paise,
+    i.total_paise-coalesce((to_jsonb(i)->>'discount_paise')::bigint,0) AS line_total_paise
     FROM public.order_items i WHERE i.store_id = ${id} AND i.order_id = ${order.id} ORDER BY i.created_at,i.id`;
   const [invoice] = await tx`SELECT id,invoice_number,status FROM public.invoices WHERE store_id = ${id} AND order_id = ${order.id}`;
   const attempt=order.payment_method==="online" && await runtimeAvailable(tx)

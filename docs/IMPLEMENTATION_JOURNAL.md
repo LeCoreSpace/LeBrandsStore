@@ -638,6 +638,49 @@ decision:
   restarted successfully; no checkout logic or production data changed.
 - **Release:** No migration required. Cloudflare deployment remains manual.
 
+## 19 October 2026: Store offers and dashboard ticket design
+
+- **Request:** Separate offers from Catalogue; implement initial offer types,
+  prepare future promotion/bundle storage, and extend the ticket design across
+  dashboard summaries without copying Shopify.
+- **Merchant UI:** Added a separate owner/admin Offers & codes destination,
+  offer tickets, an operational table and a live preview editor. Merchants can
+  create/edit percentage or fixed discounts, choose automatic/code application,
+  target products/collections/orders, set conditions and UTC schedules, and
+  pause/resume offers. Dashboard cards, billing and analytics summaries share
+  the perforated divider/notch treatment; forms and tables remain conventional.
+- **Schema:** Added a manual staged migration with tenant-scoped offer/code/
+  target records, versioned rule metadata, dormant bundle composition,
+  redemptions and immutable historical order allocations. Unsupported future
+  offer kinds cannot be activated. Existing rows are not repriced.
+- **Checkout:** Best-single-offer evaluation uses published SKU prices and
+  collection membership, integer rounding/allocation and discounted tax.
+  Saved savings appear in cart, checkout, receipt, invoice presentation and
+  utility email totals. Store-locked order creation handles usage caps,
+  idempotency and atomic stock writes; payment status transitions recover held
+  uses. Committed uses remain consumed after refunds/cancellations.
+- **Verification:** Targeted schema, SKU, navigation, invoice, email, renderer
+  and browser asset tests passed after correcting two test expectations: the
+  navigation now has eight groups, and the existing non-admin role is `editor`,
+  not an invented `staff` role. A read-only configuration row-lock attempt
+  initially needed UPDATE privilege; the redundant lock was removed rather
+  than granting broad configuration writes.
+- **Browser outcome:** One synthetic merchant created/edited/paused/resumed an
+  offer, then one shopper applied its 10% code and placed one COD order.
+  Subtotal ₹120, saving ₹12, total ₹108; the selected SKU fell from stock 3 to 2
+  exactly once, and usage became 1 of 1. Reload preserved the receipt.
+  Desktop/mobile tickets, editor and checkout were checked. The wide offers
+  table scrolls within its own container, not the page. A fixture-only account
+  resource returned 401 without blocking the journey; the intentional invalid
+  code returned 400 and recovered correctly.
+- **Final edge checks:** A discount can bring an order under the COD limit, and
+  an automatic discount must not increase the final payable total by losing
+  free delivery. Driver-compatible JSON text boundaries are explicit.
+- **Release:** No live migration, Worker deployment, customer data changes,
+  email sends or online payments occurred. Apply
+  `pnpm run db:migrate -- --staged-store-offers`, then `pnpm run deploy`.
+  See `docs/store-offers.md` for rules, safety and deferred capabilities.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

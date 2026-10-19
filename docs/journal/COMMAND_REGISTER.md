@@ -352,6 +352,19 @@ not assign an unverified execution date to a command.
 
 ## Maintenance
 
+### 19 October: Store offers and dashboard tickets
+
+| Command / operation | Target / effect | Actual result |
+| --- | --- | --- |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/store-offers.test.js tests/sku-checkout.test.js` | Local real-schema, restricted-role synthetic offer/SKU verification. | Passed following removal of a redundant configuration row lock; no APP UPDATE privilege was added. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/store-offers.test.js tests/storefront-commerce-shell.test.js tests/commerce-options.test.js tests/browser-bundles.test.js tests/*email*.test.js tests/*invoice*.test.js tests/*dashboard*test.js tests/*migration*test.js` | Broad local regression pass. | 74/77 initially passed. Remaining failures were an old seven-group navigation assertion and an invalid invented fixture role, including its parent-test failure. Corrected to eight groups and the actual `editor` role. The unmatched migration glob contributed no test file. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/store-offers.test.js tests/dashboard-navigation.test.js` | Verify corrected schema/access and navigation cases. | 15/15 passed. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/store-offers.test.js tests/browser-bundles.test.js` | Final availability/rounding/COD/delivery edge checks, staged migration selector and actual Worker browser-asset gate. | 9/9 passed. |
+| `git diff --check` | Local whitespace validation. | Passed. |
+| Managed API workflow restart | Local preview Worker/build only. | Started successfully; browser assets served. No remote Worker release. |
+| `pnpm run db:migrate -- --staged-store-offers` | Manual administrative schema migration; depends on the recorded SKU checkout migration. | Documented, not executed against the user's database. |
+| `pnpm run deploy` | Manual production Worker release, after migration. | Documented, not executed. |
+
 ### 19 October: Themed commerce framing
 
 | Command | Target / effect | Actual result |

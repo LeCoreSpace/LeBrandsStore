@@ -62,7 +62,8 @@ function confirmation(order = {}, invoiceUrl = "") {
   const payText = cod ? "Cash on Delivery" : pending ? "Awaiting payment" : st === "refunded" ? "Refunded" : bad ? "Not completed" : paid ? "Paid online" : "Online payment";
   const hasNum = (v) => v != null && v !== "" && Number.isFinite(Number(v));
   const rows = [["Subtotal", order.subtotal_paise], ["Shipping", order.shipping_paise]].filter(([, v]) => hasNum(v));
-  const shipRow = (l, v) => `<div class="receipt-line receipt-sub"><span>${l}</span><strong>${l === "Shipping" && Number(v) === 0 ? "Free" : money(v)}</strong></div>`;
+  if(Number(order.discount_paise)>0)rows.splice(1,0,["Offer saving",Number(order.discount_paise)]);
+  const shipRow = (l, v) => `<div class="receipt-line receipt-sub"><span>${l}</span><strong>${l==="Offer saving"?"−":""}${l === "Shipping" && Number(v) === 0 ? "Free" : money(v)}</strong></div>`;
   const lines = order.items.map((item) => {
     const meta = itemMeta(item), img = itemImage(item), t = item.title || snapOf(item).title || "Item";
     return `<li class="receipt-item">${img ? `<img class="receipt-thumb" src="${esc(img)}" alt="" loading="lazy">` : `<span class="receipt-thumb receipt-thumb-empty" aria-hidden="true">${esc(String(t).slice(0, 1).toUpperCase())}</span>`}<div class="receipt-item-main"><strong>${esc(t)}</strong>${meta.length ? `<small>${meta.map(esc).join(" · ")}</small>` : ""}<small>Qty ${Number(item.quantity) || 0}${hasNum(item.unit_price_paise) ? ` × ${money(item.unit_price_paise)}` : ""}</small></div><strong class="receipt-amt">${money(item.line_total_paise ?? (Number(item.unit_price_paise) || 0) * (Number(item.quantity) || 0))}</strong></li>`;

@@ -9,6 +9,7 @@ import { checkoutQuote, consumeIpLimit, findReplay, placeCodOrder, receiptOrder 
 import { renderInvoice } from "../ui/invoice.js";
 import { invoiceDetail } from "../dashboard/repository.js";
 import { checkoutPayment, verifyCheckout } from "../connections/payments.js";
+import {offerCode} from "../offers/rules.js";
 
 export const CHECKOUT_HEADERS = {...SECURITY_HEADERS,"cache-control":"no-store","referrer-policy":"no-referrer","x-robots-tag":"noindex, nofollow"};
 const json = (data,status = 200) => new Response(JSON.stringify(data),{
@@ -48,7 +49,13 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
     if (url.pathname === "/api/cart/validate") {
       const items = cartItems(body.items);
       if (body.state && !INDIAN_STATES.some((s) => s.code === body.state)) throw commerceError("Choose a valid state.",{state:"Choose your state."});
-      return json(await db.withStore(store.store_id,(tx) => checkoutQuote(tx,store.store_id,items,body.state ?? "")));
+      const code=offerCode(body.code??"");
+      if(code){
+        const hash=await ipHash(request,env.SESSION_SECRET);
+        if(!await db.withStore(store.store_id,tx=>consumeIpLimit(tx,store.store_id,hash,"checkout")))
+          throw commerceError("Too many offer checks. Please wait a minute and try again.",undefined,429);
+      }
+      return json(await db.withStore(store.store_id,(tx) => checkoutQuote(tx,store.store_id,items,body.state ?? "",code)));
     }
     const hash = await ipHash(request,env.SESSION_SECRET);
     const purpose = url.pathname === "/api/orders/track" ? "track" : "checkout";

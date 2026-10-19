@@ -781,3 +781,80 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .lb-custom-error{margin:0;color:#a33529;font-size:11px;font-weight:600}
 .lb-custom-row button:disabled,.lb-custom-row input:disabled{opacity:.6}
 @media(max-width:650px){.lb-custom-row{flex-direction:column;align-items:stretch}}
+
+/* Ticket ledger: perforated dividers and edge notches on summary cards. */
+.lb-card,.lb-metric-grid,.lb-empty{border-radius:6px}
+.lb-card{position:relative;box-shadow:var(--lb-shadow)}
+.lb-card-heading{position:relative;border-bottom:1px dashed #cbb9c1}
+.lb-card-heading::before,.lb-card-heading::after{content:"";position:absolute;bottom:-7px;width:13px;height:13px;border-radius:50%;background:var(--lb-paper);border:1px solid var(--lb-line);z-index:1}
+.lb-card-heading::before{left:-7px;clip-path:inset(0 0 0 50%)}
+.lb-card-heading::after{right:-7px;clip-path:inset(0 50% 0 0)}
+.lb-metric-grid{background:var(--lb-surface);border:1px solid var(--lb-line);border-top:3px solid var(--lb-green);box-shadow:var(--lb-shadow)}
+.lb-metric{position:relative;border-right:1px dashed #cbb9c1}
+.lb-metric:not(:last-child)::before,.lb-metric:not(:last-child)::after{content:"";position:absolute;right:-7px;width:13px;height:13px;border-radius:50%;background:var(--lb-paper);border:1px solid var(--lb-line);z-index:1}
+.lb-metric:not(:last-child)::before{top:-7px;clip-path:inset(50% 0 0 0)}
+.lb-metric:not(:last-child)::after{bottom:-7px;clip-path:inset(0 0 50% 0)}
+.lb-metric strong{font-variant-numeric:tabular-nums}
+.lb-totals .lb-total-final{border-top:1px dashed #b79aa7}
+@media(max-width:650px){.lb-metric:not(:last-child)::before,.lb-metric:not(:last-child)::after{display:none}}
+
+/* Offers & codes */
+.lbo{display:grid;gap:20px}
+.lbo-alert{margin:0}
+.lbo-empty{padding:34px 22px;text-align:center}
+.lbo-empty strong{font-size:18px;color:var(--lb-green-deep)}
+.lbo-empty p{margin:6px auto 0;max-width:380px;color:var(--lb-muted)}
+.lbo-table td small{display:block;margin-top:2px;color:var(--lb-muted)}
+.lbo-actions{display:flex;gap:14px}
+.lbo-status{background:#f1e5ea;color:var(--lb-green-deep)}
+.lbo-status[data-offer-status="active"]{background:#e3efe4;color:#2f6a3a}
+.lbo-status[data-offer-status="paused"],.lbo-status[data-offer-status="expired"]{background:#f1ece0;color:#7a6a3c}
+.lbo-status[data-offer-status="scheduled"]{background:#e6ebf4;color:#3a4f7a}
+.lbo-form{padding:6px 20px 20px;display:grid;gap:16px}
+.lbo-set{border:0;border-top:1px dashed #cbb9c1;margin:0;padding:14px 0 0;min-width:0;display:grid;gap:12px}
+.lbo-set:first-child{border-top:0}
+.lbo-set legend{padding:0 8px 0 0;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--lb-green)}
+.lbo-set:disabled{opacity:.6}
+.lbo-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.lbo-field>span{font-size:11px;font-weight:700}
+.lbo-targets-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+.lbo-targets-head input{height:34px;padding:0 10px;border:1px solid #d1d4c9;min-width:0;width:min(240px,100%)}
+.lbo-targets{max-height:200px;overflow:auto;border:1px solid var(--lb-line);border-radius:4px;padding:6px 10px;display:grid;gap:2px}
+.lbo-target{display:flex;gap:8px;align-items:center;padding:5px 0;font-size:12px}
+.lbo-note{margin:0}
+@media(max-width:650px){.lbo-form{padding-inline:14px}.lbo-targets-head{flex-direction:column;align-items:stretch}}
+
+/* Ticket motif reaches billing and analytics summaries. */
+.lb-app .pb-card,.lb-app .lba-card,.lb-app .lba-wf,.lb-app .lba-defs{border-radius:6px;position:relative}
+.lb-app .pb-card-head{border-bottom:1px dashed #cbb9c1}
+.lb-app .lba-card{border-top:3px solid var(--lb-green);border-bottom-style:dashed}
+.lb-app .lba-wf div{border-left:1px dashed #cbb9c1}
+.lb-app .pb-card::before,.lb-app .pb-card::after{content:"";position:absolute;top:44px;width:12px;height:12px;border-radius:50%;background:var(--lb-paper);border:1px solid var(--lb-line);z-index:1}
+.lb-app .pb-card::before{left:-7px;clip-path:inset(0 0 0 50%)}
+.lb-app .pb-card::after{right:-7px;clip-path:inset(0 50% 0 0)}
+
+/* Offer tickets */
+.lbo-tickets{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:16px}
+.lbo-tickets:empty{display:none}
+.lbo-ticket{position:relative;display:grid;grid-template-columns:112px minmax(0,1fr) auto;background:var(--lb-surface);border:1px solid var(--lb-line);border-left:4px solid var(--lb-green);border-radius:6px;box-shadow:var(--lb-shadow);min-width:0}
+.lbo-ticket[data-offer-status="paused"],.lbo-ticket[data-offer-status="expired"],.lbo-ticket[data-offer-status="draft"]{border-left-color:#b9a9b0}
+.lbo-ticket[data-offer-status="draft"]{border-style:dashed;border-left-style:solid}
+.lbo-t-value{position:relative;display:grid;align-content:center;justify-items:center;padding:16px 8px;border-right:1px dashed #b79aa7;text-align:center;background:#faf5f7}
+.lbo-t-value strong{font-size:22px;color:var(--lb-green-deep);overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.lbo-t-value small{color:var(--lb-muted);font-size:11px}
+.lbo-t-value::before,.lbo-t-value::after{content:"";position:absolute;right:-7px;width:13px;height:13px;border-radius:50%;background:var(--lb-paper);border:1px solid var(--lb-line);z-index:1}
+.lbo-t-value::before{top:-7px;clip-path:inset(50% 0 0 0)}
+.lbo-t-value::after{bottom:-7px;clip-path:inset(0 0 50% 0)}
+.lbo-t-body{padding:14px 16px;min-width:0}
+.lbo-t-body h3{margin:0 0 6px;font-size:14px;overflow-wrap:anywhere}
+.lbo-t-body p{margin:4px 0 0;font-size:11px;color:var(--lb-muted)}
+.lbo-t-code{display:inline-block;padding:2px 8px;border:1px dashed var(--lb-green);color:var(--lb-green-deep);font:600 12px ui-monospace,Menlo,monospace;letter-spacing:.06em}
+.lbo-t-side{display:grid;align-content:space-between;justify-items:end;gap:10px;padding:14px}
+.lbo-editor{display:grid;grid-template-columns:minmax(240px,320px) minmax(0,1fr);gap:8px 20px;align-items:start;padding:14px 20px 0}
+.lbo-editor .lbo-form{padding:0}
+.lbo-preview-wrap{position:sticky;top:12px;display:grid;gap:8px}
+.lbo-preview-label{font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:10px;color:var(--lb-green)}
+.lbo-preview-wrap .lbo-ticket{grid-template-columns:92px minmax(0,1fr)}
+.lbo-preview-wrap .lbo-t-side{grid-column:1/-1;justify-items:start;border-top:1px dashed #cbb9c1}
+@media(max-width:900px){.lbo-editor{grid-template-columns:1fr;padding-inline:14px}.lbo-preview-wrap{position:static}}
+@media(max-width:480px){.lbo-ticket{grid-template-columns:88px minmax(0,1fr)}.lbo-t-side{grid-column:1/-1;grid-auto-flow:column;justify-content:space-between;align-items:center;border-top:1px dashed #cbb9c1}}

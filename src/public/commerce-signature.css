@@ -25,6 +25,11 @@ body.cm>main{flex:1 0 auto}
 .cm [hidden]{display:none!important}
 .cm :focus-visible,.commerce-drawer :focus-visible{outline:3px solid var(--cm-label);outline-offset:2px}
 body.commerce-lock{overflow:hidden;overscroll-behavior:none}
+.commerce-offer{border-top:1px dashed var(--cm-line,#ddd8cb);margin-top:18px;padding-top:18px;font:14px/1.5 var(--cm-font,system-ui)}
+.commerce-offer label{display:grid;gap:8px;font-weight:600}
+.commerce-offer input{width:100%;min-height:44px;padding:10px 12px;border:1px solid var(--cm-edge,#8c8779);border-radius:10px;background:var(--cm-card,#fffefb);color:var(--cm-ink,#1c201e);font:inherit}
+.commerce-offer>div{display:flex;flex-wrap:wrap;gap:18px;margin:8px 0}
+.commerce-offer p{font-size:13px;color:var(--cm-mute,#555c57)}
 
 /* ---------- Shared header ---------- */
 .cm-hd{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--cm-card) 94%,transparent);border-bottom:1px solid var(--cm-line);backdrop-filter:saturate(1.4) blur(10px)}

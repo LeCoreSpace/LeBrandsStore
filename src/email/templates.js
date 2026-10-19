@@ -23,7 +23,7 @@ const intro={
   verification:"Confirm your email to use the AI store builder. This single-use link expires in 30 minutes."};
 const labels={reset:"Reset password",invite:"Accept invitation",verification:"Verify email",new_order:"Open order",shipped:"Track shipment"};
 const itemTitle=i=>i.title||i.product_title||i.product_snapshot?.title||"Item";
-const itemTotal=i=>i.line_total_paise??i.total_paise??Number(i.unit_price_paise||0)*Number(i.quantity||0);
+const itemTotal=i=>i.line_total_paise??(i.total_paise!=null?Number(i.total_paise)-Number(i.discount_paise||0):Number(i.unit_price_paise||0)*Number(i.quantity||0));
 function itemMeta(i){
   const s=i.product_snapshot&&typeof i.product_snapshot==="object"?i.product_snapshot:{},p=[];
   const a=s.attributes||s.options||s.variant_attributes||i.option_snapshot;
@@ -58,6 +58,7 @@ export function renderEmail(type,data={}){
     }
     const tot=[];
     if(has(data.subtotal_paise))tot.push(["Subtotal",money(data.subtotal_paise)]);
+    if(Number(data.discount_paise)>0)tot.push(["Offer saving",`−${money(data.discount_paise)}`]);
     if(has(data.shipping_paise))tot.push(["Shipping",Number(data.shipping_paise)===0?"Free":money(data.shipping_paise)]);
     if(has(data.tax_paise)&&Number(data.tax_paise)>0)tot.push(["GST (included in total)",money(data.tax_paise)]);
     const grand=inactive?"Order total":cod?"Total due on delivery":paid?"Total paid":"Total including GST";
