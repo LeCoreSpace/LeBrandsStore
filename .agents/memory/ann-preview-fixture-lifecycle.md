@@ -58,3 +58,15 @@ adoption. The tester reached GST onboarding rather than the intended editor.
 **How to apply:** Confirm the fixture editor returns 200 before browser handoff.
 Keep setup synthetic, and check newly imported browser modules return 200 too;
 a unit-tested controller can still fail to initialize if a module is not served.
+
+Judge fixture isolation by its routing and storage, not by a realistic-looking
+business name in a checked-in GST sample.
+
+**Why:** An editor check stopped at a registration prerequisite because the
+sample looked like a real merchant. The handler was actually using in-memory
+storage and a synthetic scanner. Conversely, a fictional label alone would not
+make an outbound production request safe.
+
+**How to apply:** Confirm the destination and backing store before supplying
+synthetic verification evidence. Keep every request inside the isolated fixture;
+never weaken production approval controls just to reach an unrelated editor.

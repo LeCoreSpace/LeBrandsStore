@@ -15,6 +15,7 @@ import { projectAnnPreview } from "../public/ann-projection.js";
 import { prefilledSection } from "../public/aura-starters.js";
 import { validDesignSections } from "../public/ann-section-layout.js";
 import {validateDesignMenus} from "../public/ann-menu-model.js";
+import {validRichTextDocument,richTextPlain} from "../public/ann-rich-text.js";
 
 const plain = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const conflict = () => { throw Object.assign(new Error("Your store draft changed in another window. Reload the saved design before trying again. Your unsaved edits are kept."), { status: 409 }); };
@@ -22,7 +23,7 @@ const keys = (value, allowed) => {
   if (!plain(value) || Object.keys(value).some(key => !allowed.includes(key))) throw badInput("Use the design editor's supported fields.");
 };
 export function validateDesignRequest(body, creating = false) {
-  keys(body, ["expected_draft", "confirm", "answers","catalogue_mode", ...(creating ? [] : ["copy", "media","sections","menus"])]);
+  keys(body, ["expected_draft", "confirm", "answers","catalogue_mode", ...(creating ? [] : ["copy", "media","sections","menus","formatting"])]);
   if(body.menus!==undefined&&body.menus!==null)body.menus=validateDesignMenus(body.menus);
   if(body.catalogue_mode!==undefined&&!["sample","own"].includes(body.catalogue_mode))throw badInput("Choose sample or own catalogue for the draft preview.");
   if(body.sections!==undefined&&!validDesignSections(body.sections))throw badInput("Choose valid page sections. Product purchase and contact forms must remain available.");
@@ -41,6 +42,15 @@ export function validateDesignRequest(body, creating = false) {
   if (body.media !== undefined) {
     if(!plain(body.media)||Object.keys(body.media).length>150||Object.keys(body.media).some(key=>!isDesignMediaKey(key)))throw badInput("Choose supported section media fields.");
     if (Object.values(body.media).some(id => id !== null && !UUID.test(id || ""))) throw badInput("Choose an image uploaded to this store.");
+  }
+  if(body.formatting!==undefined){
+    if(!plain(body.formatting)||Object.keys(body.formatting).length>300)throw badInput("Choose supported text formatting fields.");
+    for(const [key,doc]of Object.entries(body.formatting)){
+      if(!isDesignCopyKey(key)||(doc!==null&&!validRichTextDocument(doc,getDesignCopyLimit(key))))
+        throw badInput("Use supported text formatting, safe links and the field's character limit.");
+      if(doc!==null&&body.copy?.[key]!==undefined&&richTextPlain(doc)!==body.copy[key])
+        throw badInput("Formatted text must match the text saved for this field.");
+    }
   }
   if (new TextEncoder().encode(JSON.stringify(body)).length > 60000) throw badInput("This design is too large. Shorten the text before saving.");
   return body;
@@ -115,6 +125,17 @@ export async function saveAnnDesign(tx, storeId, userId, raw, creating = false) 
   } else design = { ...structuredClone(previous), plan,
     copy: { ...previous.copy, ...body.copy }, media: { ...previous.media } };
   for(const [key,value] of Object.entries(design.copy))if(value===null)delete design.copy[key];
+  if(!creating){
+    design.formatting={...previous.formatting,...body.formatting};
+    for(const key of Object.keys(body.copy||{}))
+      if(!Object.hasOwn(body.formatting||{},key)&&body.copy[key]!==previous.copy?.[key])delete design.formatting[key];
+    for(const [key,doc]of Object.entries(design.formatting)){
+      if(doc===null){delete design.formatting[key];continue;}
+      if(!validRichTextDocument(doc,getDesignCopyLimit(key))||richTextPlain(doc)!==design.copy[key])
+        throw badInput("Formatted text must match the text saved for this field.");
+    }
+    if(!Object.keys(design.formatting).length)delete design.formatting;
+  }
   if(body.sections)design.sections=structuredClone(body.sections);
   if(body.menus===null)delete design.menus;
   else if(body.menus!==undefined)design.menus=structuredClone(body.menus);

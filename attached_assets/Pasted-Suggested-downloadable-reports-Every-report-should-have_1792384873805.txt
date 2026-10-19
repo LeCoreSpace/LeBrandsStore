@@ -1,0 +1,54 @@
+Suggested downloadable reports
+
+Every report should have a date range picker with presets for this month, quarter, and financial year (Apr–Mar). Each should export as Excel/CSV, with a PDF summary option.
+
+A. Sales & Orders
+
+Report	Covers
+Sales Summary (daily/monthly)	First Sale, Revenue, AOV. Gross sales → discounts → returns → net sales
+Order Register (line-level)	Base data for everything else
+Product / SKU Performance	Units, revenue, and margin per SKU
+Conversion Funnel	Sessions → product view → cart → checkout → paid gives Conversion Rate
+Returns & Refunds	Return & Refund Rate, by reason and by SKU
+
+B. Customers
+
+Report	Covers
+Customer Retention / Cohorts	Repeat Purchase Rate, LTV
+Acquisition by Source (UTM) + ad spend	CAC, and LTV:CAC ratio
+
+C. Profitability (needs COGS and expenses)
+
+Report	Covers
+Product P&L	Gross Margin, Contribution Margin (after shipping, gateway fees, ads)
+Monthly P&L	Revenue vs Profit, OPEX, EBITDA, Net Profit Margin
+Break-Even Report	Units and revenue needed to break even
+
+D. Cash & Operations
+
+Report	Covers
+Inventory Report	Stock on hand, Inventory Turnover, days of inventory
+Cash Flow Summary	Burn Rate, Cash Runway
+Receivables Ageing	Pending COD, B2B invoices, unsettled gateway payouts, giving DSO
+Working Capital & CCC	Working Capital, Cash Conversion Cycle (needs payables input)
+
+E. Year-End Tax Pack (FY bundle)
+
+This is what a CA will ask for at filing time:
+
+Sales Register (invoice-wise): invoice no., date, customer GSTIN (if B2B), place of supply, HSN, taxable value, CGST/SGST/IGST, and total.
+B2B vs B2C split, with B2C sales broken down state-wise. GSTR-1 needs this.
+HSN-wise summary.
+Credit/Debit Note Register, covering returns and post-sale adjustments.
+Monthly GST liability summary for each GSTR-3B, plus an annual consolidation to reconcile against GSTR-9.
+Payment gateway reconciliation (Razorpay): gross collected, gateway fees, GST on fees, refunds, net settled, and UTR/settlement IDs. The GST on fees is claimable input credit, so this matters.
+COD remittance reconciliation from the logistics partners.
+Platform fee statement: LeBrands subscription invoices with GST, which is also claimable input credit for the brand.
+Discount & Coupon Register.
+Cancelled orders and invoice-series continuity check. Gaps in invoice numbering are a common audit flag.
+Annual Turnover Summary: the single headline figure for the ITR and tax-audit applicability.
+TCS/TDS statement: this only applies if a sale is collected via an e-commerce operator, such as mall orders if LeBrands collects payment. For a brand’s own store on its own Razorpay, this usually doesn’t apply. Have a CA confirm which flows trigger it.
+Nice-to-haves that brands will love
+Tally / Zoho Books export format. Most Indian CAs work in Tally, so this saves brands real money.
+“Send to my CA” button that emails the FY tax pack as a zip.
+One-page Founder Snapshot PDF with all 20 metrics on a single page, which also works for investor updates.

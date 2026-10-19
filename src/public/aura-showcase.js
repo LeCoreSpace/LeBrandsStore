@@ -189,7 +189,7 @@ const cImg = (c, x, i) => img(c.image || x.products.find(p => (c.product_ids || 
 const rv = (i = 0) => `class="rv" style="--i:${i}"`;
 let LIVE = null;
 let EDIT_SAMPLE=false;
-const dc = key => LIVE?.edit||EDIT_SAMPLE ? ` data-design-copy="${key}"` : "";
+const dc = key => ` data-ann-copy-field="${key}"${LIVE?.edit||EDIT_SAMPLE?` data-design-copy="${key}"`:""}`;
 const rvc = (cls, i = 0) => `class="rv ${cls}" style="--i:${i}"`;
 
 const card = (p, i, extra = "") => `<a class="sc-card rv${LIVE ? " au-card" : ""}"${LIVE ? ` data-title="${esc(String(p.title || "").toLowerCase())}" data-price="${Number(p.price_paise) || 0}" data-available="${p.stock == null || Number(p.stock) > 0 ? 1 : 0}" data-index="${i}"` : ""} style="--i:${i}" href="${pHref(p)}"><span class="sc-img">${pImg(p)}</span><span class="sc-meta"><span class="sc-n">${num(i)}</span><b>${esc(p.title)}</b><span class="sc-price">${rupees(p.price_paise)}${LIVE ? "" : "<small>illustrative</small>"}</span>${extra}</span></a>`;

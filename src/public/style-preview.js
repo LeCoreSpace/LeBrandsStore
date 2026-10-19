@@ -1,6 +1,7 @@
 import { renderAura } from "./aura.js";
 import { applyDesignSections } from "./ann-section-layout.js";
 import { applyDesignContent } from "./ann-section-content.js";
+import { applyRichDesignText } from "./ann-rich-text.js";
 import { starterPreview, prefilledSection } from "./aura-starters.js";
 import { starterLayouts } from "./aura-skeleton.js";
 import { safeImage } from "./aura-sections.js";
@@ -63,6 +64,7 @@ export function renderStylePreview(data, settings, options = {}) {
   const finish=html=>{
     html=applyDesignContent(html,data.settings?.ann_design,options.page||"home",Boolean(options.designEdit));
     html=applyDesignSections(html,data.settings?.ann_design?.sections,options.page||"home");
+    html=applyRichDesignText(html,data.settings?.ann_design);
     if(logo) {
       const mark=`<img class="sc-brand-logo" src="${esc(logo)}" alt="${esc(merged.brand_name || data.store?.name || "Brand logo")}" height="40">`;
       html=html.replace(/(<a class="sc-brand" href="\/">)[\s\S]*?(<\/a>)/g,(_,open,close)=>open+mark+close);

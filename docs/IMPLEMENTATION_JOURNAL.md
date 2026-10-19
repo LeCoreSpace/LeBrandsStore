@@ -351,6 +351,46 @@ when a checkpoint is available.
   captured checkpoint at the time of this update. No application code, database
   settings or production deployment was changed for this documentation work.
 
+### Update: shared text-formatting editor implemented
+
+The user subsequently approved implementation of the shared editor.
+
+| Implementation | How it was done | Outcome |
+| --- | --- | --- |
+| Shared Ann/theme-editor toolbar | Replaced the shared contextual plain-text control with a structured editor: fonts, numeric sizes, presets, emphasis, text/highlight colours, alignment, line/letter spacing, lists, links, undo/redo and clearing. | Implemented in the existing shared editing surface. Lists/links are withheld for headings, buttons and text inside links. |
+| Safe formatting storage | Kept plain copy and a separate bounded JSON formatting document. Validated fields, fonts, colour values, numeric bounds and link protocols on the server. | Real restricted-role save/reload checks passed; stale requests and unauthorised roles remain rejected. No schema migration required. |
+| Consistent rendering | Applied validated formatting after trusted section-field indexing, in sample previews and the saved storefront renderer. Preserved heading/button/link semantics and protected commerce/form content. | Rendering checks passed across all supported styles; old unformatted designs remain supported. No production publication was performed. |
+| Selection and typing correctness | Preserved Unicode caret offsets and explicit normal-weight flags; retained selected formatting when replacing text, including browser-generated plain-text input. | The browser check found colour loss when styled text was replaced. The input handling was corrected and replacement/reopen regression checks passed. |
+| Browser module delivery | Registered both new modules at the real Worker asset gate and rebuilt the browser graphs. | Module-delivery regression passed; no missing-import fallback or new credentials were introduced. |
+
+**Verification actually observed**
+
+- Final targeted run: **14 tests passed** across rich-text model/rendering,
+  restricted-role draft persistence, editor helpers and real Worker module
+  delivery.
+- Workspace type checks and JavaScript syntax checks passed.
+- An earlier broader Ann selection had 34 passing tests and two failures on
+  outdated source/notice assertions in `tests/ann-design-workspace.test.js` and
+  `tests/ann-editor-handoff.test.js`. Those unrelated assertions were not
+  changed or represented as passing.
+- Partial browser verification in the isolated fixture confirmed theme-editor
+  typing/live preview, save/reload of text/font/size, selection formatting,
+  links/lists, undo/redo, clear formatting, protected-field controls and safe
+  plain-text paste. The check was intentionally skipped before Ann-side
+  cross-editor and mobile verification completed. No further browser test was
+  run after that pause. The colour-replacement correction was checked with
+  focused regression tests, not a repeated browser run.
+- Only synthetic in-memory fixture data and a clearly labelled test document
+  were used for setup. No live merchant data, external scanner calls, production
+  migrations, real payments or production deployment were used.
+
+**Release:** the existing manual Cloudflare `pnpm run deploy` operation is still
+required to publish these changes. No new migration or secret is required.
+
+**Checkpoint status:** implementation changes are not yet part of a captured
+checkpoint at the time of this entry. The earlier command-register update is now
+recorded in checkpoint [ee31045](journal/COMMIT_REGISTER.md#commit-ee31045).
+
 ## Current handover boundaries
 
 These are the boundaries recorded by the observed work, not a fresh production

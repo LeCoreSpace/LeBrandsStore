@@ -8,6 +8,7 @@ import { DESIGN_MEDIA_KEYS, isDesignCopyKey, isDesignMediaKey, getDesignCopyLimi
 import {validateDesignMenus,defaultDesignMenus} from "./ann-menu-model.js";
 import { designNeutralCopy } from "./aura-showcase.js";
 import { AURA_STYLES } from "./aura-styles.js";
+import { mountRichEditor, richEditorMarkup } from "./ann-rich-editor.js";
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const COPY_LABEL = {
@@ -44,17 +45,18 @@ export function attachAnnDesign(o) {
   let busy = "", error = "", conflict = false, ack = false, editMode = true, selected = null, uploadAlt = "", uploadNote = "",menuDraftError="";
   let lastKey = "";
   let catalogueAck = false, cataloguePrompt = false, consentOpen = false;
+  let richEditor=null;
   let undoStack=[],historyState=null,historyGroup="",historyTime=0,savedPlan="",menuRevision=0;
 
   const active = () => Boolean(model);
   const mediaIds = m => Object.fromEntries([...new Set([...DESIGN_MEDIA_KEYS, ...Object.keys(m || {}), ...Object.keys(design?.media || {})])].filter(k => isDesignMediaKey(k)).map(k => [k, m?.[k]?.media_id || null]));
-  const snapshot = () => model ? JSON.stringify({ c: model.copy, m: mediaIds(model.media),s:model.sections,catalogue:model.catalogue_mode,menus:model.menus }) : "";
+  const snapshot = () => model ? JSON.stringify({ c: model.copy, f: model.formatting, m: mediaIds(model.media),s:model.sections,catalogue:model.catalogue_mode,menus:model.menus }) : "";
   const dirty = () => active() && (snapshot() !== baseline || planDirty || Boolean(menuDraftError));
   const mode = () => o.getPreviewMode();
   const browsingStyle = () => o.getStyle?.() || o.getAnswers().style_preset || "editorial";
   const sameStyle = () => active() && browsingStyle() === model.style;
   const editing = () => active() && !readOnly && editMode && mode() === "store" && sameStyle();
-  const captureHistory=()=>model?structuredClone({copy:model.copy,media:model.media,sections:model.sections,catalogue_mode:model.catalogue_mode,menus:model.menus,plan:planPayload()}):null;
+  const captureHistory=()=>model?structuredClone({copy:model.copy,formatting:model.formatting,media:model.media,sections:model.sections,catalogue_mode:model.catalogue_mode,menus:model.menus,plan:planPayload()}):null;
   function remember(group=""){
     if(!o.themeEditor||readOnly||!model)return;
     const next=captureHistory();
@@ -69,7 +71,7 @@ export function attachAnnDesign(o) {
   function undo(){
     if(!canUndo())return;
     const previous=undoStack.pop();
-    model.copy=structuredClone(previous.copy);model.media=structuredClone(previous.media);
+    model.copy=structuredClone(previous.copy);model.formatting=structuredClone(previous.formatting||{});model.media=structuredClone(previous.media);
     model.sections=structuredClone(previous.sections);model.catalogue_mode=previous.catalogue_mode;
     model.menus=structuredClone(previous.menus??null);
     model.plan=structuredClone(previous.plan);o.applyPlan?.(structuredClone(previous.plan));
@@ -93,7 +95,7 @@ export function attachAnnDesign(o) {
     const d = body.design;
     if (d && d.version === 1) {
       design = d;
-      model = { style: d.style, media_pack: d.media_pack,catalogue_mode:d.catalogue_mode||"own",sections:structuredClone(d.sections||{}),menus:d.menus==null?null:validateDesignMenus(d.menus), plan: d.plan || {}, copy: { ...d.copy }, media: structuredClone(d.media || {}) };
+      model = { style: d.style, media_pack: d.media_pack,catalogue_mode:d.catalogue_mode||"own",sections:structuredClone(d.sections||{}),menus:d.menus==null?null:validateDesignMenus(d.menus), plan: d.plan || {}, copy: { ...d.copy }, formatting: structuredClone(d.formatting || {}), media: structuredClone(d.media || {}) };
       baseline = snapshot(); planDirty = false;
       if (hydrate) o.applyPlan?.(d.plan || {});
       savedPlan=JSON.stringify({...d.plan,style_preset:d.style});
@@ -142,22 +144,24 @@ export function attachAnnDesign(o) {
     if (readOnly || !active()) return true;
     if (busy) return false;
     if (!dirty() && !error) return true;
-    for (const k of Object.keys(model.copy)) if (!String(model.copy[k] ?? "").trim()) model.copy[k] = designNeutralCopy(model.style, o.getBrand?.() || "Your brand")?.[k] ?? model.copy[k];
+    for (const k of Object.keys(model.copy)) if (!String(model.copy[k] ?? "").trim()) { model.copy[k] = designNeutralCopy(model.style, o.getBrand?.() || "Your brand")?.[k] ?? model.copy[k]; delete model.formatting[k]; }
     busy = "save"; error = ""; paint(); say("Saving your draft design");
-    const sent = snapshot(), sentPlan = planPayload(), live = { copy: { ...model.copy }, media: structuredClone(model.media) };
+    const sent = snapshot(), sentPlan = planPayload(), live = { copy: { ...model.copy }, formatting: { ...model.formatting }, media: structuredClone(model.media) };
     // Null resets an individual section field to its base content. This also
     // lets Undo remove a new override that was saved during this session.
     for(const key of Object.keys(design?.copy||{}))
       if(key.startsWith("section.")&&!Object.hasOwn(live.copy,key))live.copy[key]=null;
+    for(const key of Object.keys(design?.formatting||{}))
+      if(!Object.hasOwn(live.formatting,key))live.formatting[key]=null;
     try {
-      const { res, body } = await call("PATCH", { expected_draft: expected, confirm: true, copy: live.copy, media: mediaIds(live.media),sections:model.sections,menus:structuredClone(model.menus),catalogue_mode:model.catalogue_mode, answers: sentPlan });
+      const { res, body } = await call("PATCH", { expected_draft: expected, confirm: true, copy: live.copy, formatting: { ...live.formatting }, media: mediaIds(live.media),sections:model.sections,menus:structuredClone(model.menus),catalogue_mode:model.catalogue_mode, answers: sentPlan });
       if (res.status === 409) { conflict = true; throw new Error("Another window changed this draft. Your edits are kept here and nothing was overwritten."); }
       if (!res.ok) throw new Error(body.error || "Your design could not be saved. Your edits are kept.");
       const changed = snapshot() !== sent;
-      const latestCopy = { ...model.copy }, latestMedia = structuredClone(model.media), latestSections=structuredClone(model.sections),latestCatalogue=model.catalogue_mode,latestMenus=structuredClone(model.menus);
+      const latestCopy = { ...model.copy }, latestFormatting = structuredClone(model.formatting), latestMedia = structuredClone(model.media), latestSections=structuredClone(model.sections),latestCatalogue=model.catalogue_mode,latestMenus=structuredClone(model.menus);
       const newerPlan = JSON.stringify(planPayload()) !== JSON.stringify(sentPlan);
       ingest(body, { hydrate: false,preserveMenuDraft:true });
-      if (changed) { model.copy = latestCopy; model.media = latestMedia;model.sections=latestSections;model.catalogue_mode=latestCatalogue;model.menus=latestMenus; }
+      if (changed) { model.copy = latestCopy; model.formatting = latestFormatting; model.media = latestMedia;model.sections=latestSections;model.catalogue_mode=latestCatalogue;model.menus=latestMenus; }
       planDirty = newerPlan;
       say(changed || newerPlan ? "Draft saved. Your newer edits still need saving." : "Draft saved. Your live site is unchanged.");
       return true;
@@ -195,12 +199,32 @@ export function attachAnnDesign(o) {
     const panel=o.contextual?el.querySelector(".ann-ctx"):el.querySelector(".ann-design-edit");
     if(o.contextual)anchorNode()?.scrollIntoView?.({block:"nearest"});else panel?.scrollIntoView({block:"nearest",behavior:"smooth"});
     if(o.contextual)placePop();
-    (panel?.querySelector("[data-design-input]")||panel?.querySelector("button"))?.focus({preventScroll:true});
+    (panel?.querySelector("[data-rich-host] [contenteditable]")||panel?.querySelector("[data-design-input]")||panel?.querySelector("button"))?.focus({preventScroll:true});
     if(!wasEditing)o.onChange?.();
   }
   function setCopy(key, value) {
     if (readOnly || !model) return;
-    model.copy[key] = value.slice(0, getDesignCopyLimit(key));
+    model.copy[key] = [...value].slice(0, getDesignCopyLimit(key)).join("");
+    delete model.formatting[key];
+    remember(`copy:${key}`);
+    error = conflict ? error : ""; paintDynamic(); o.onChange?.();
+  }
+  const restrictedTag = new Map();
+  const RESTRICT = "h1,h2,h3,h4,h5,h6,a,button,summary";
+  function restricted(key) {
+    const a = anchorNode();
+    if (a && selected?.key === key && a.closest) restrictedTag.set(key, Boolean(a.closest(RESTRICT)));
+    return restrictedTag.get(key) || false;
+  }
+  function baseFlags() {
+    const a = anchorNode(), w = a?.ownerDocument?.defaultView; if (!a || !w) return {};
+    const cs = w.getComputedStyle(a), dec = cs.textDecorationLine || cs.textDecoration || "";
+    return { b: Number(cs.fontWeight) >= 600 || cs.fontWeight === "bold", i: cs.fontStyle === "italic", u: dec.includes("underline"), s: dec.includes("line-through") };
+  }
+  function setRich(key, out) {
+    if (readOnly || !model || !isDesignCopyKey(key)) return;
+    model.copy[key] = [...String(out.text ?? "")].slice(0, getDesignCopyLimit(key)).join("");
+    if (out.document) model.formatting[key] = structuredClone(out.document); else delete model.formatting[key];
     remember(`copy:${key}`);
     error = conflict ? error : ""; paintDynamic(); o.onChange?.();
   }
@@ -364,8 +388,9 @@ export function attachAnnDesign(o) {
   }
   function panel() {
     if (selected.kind === "copy") {
-      const k = selected.key, lim = getDesignCopyLimit(k), v = k in model.copy ? String(model.copy[k] ?? "") : (anchorNode()?.textContent || "").trim().slice(0, lim), long = lim > 300;
-      return `<div class="ann-design-edit"><label class="ann-field">${esc(labelOf("copy", k))}${long ? `<textarea rows="4" maxlength="${lim}" data-design-input="${esc(k)}">${esc(v)}</textarea>` : `<input type="text" maxlength="${lim}" value="${esc(v)}" data-design-input="${esc(k)}">`}</label>
+      const k = selected.key, lim = getDesignCopyLimit(k), v = k in model.copy ? String(model.copy[k] ?? "") : (anchorNode()?.textContent || "").trim().slice(0, lim), long = lim > 300 && !restricted(k);
+      const fmt = k in model.copy ? model.formatting[k] || null : null;
+      return `<div class="ann-design-edit"><div class="ann-field" data-design-input="${esc(k)}" data-rich="1">${richEditorMarkup({ text: v, document: fmt, limit: lim, label: labelOf("copy", k), allowBlocks: long })}</div>
         <div class="ann-actions"><span class="ann-note" data-design-count>${v.length} of ${lim}</span><button type="button" class="ann-btn alt sm" data-design-act="reset-copy">Use suggested text</button><button type="button" class="ann-btn alt sm" data-design-act="done">Done</button></div></div>`;
     }
     const k = selected.key, cur = model.media[k];
@@ -395,10 +420,18 @@ export function attachAnnDesign(o) {
     const focus = document.activeElement?.closest?.("#ann-design") ? document.activeElement.getAttribute("data-design-input") : null;
     const pos = focus ? document.activeElement.selectionStart : 0;
     const fa = !focus && document.activeElement?.closest?.("#ann-design") ? document.activeElement.getAttribute("data-design-act") : null;
+    richEditor?.destroy(); richEditor = null;
     el.innerHTML = body();
+    mountRich();
     if (fa) el.querySelector(`[data-design-act="${fa}"]`)?.focus({ preventScroll: true });
     if (focus) { const f = el.querySelector(`[data-design-input="${focus}"]`); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch {} } }
     paintDynamic(); placePop();
+  }
+  function mountRich() {
+    const host = el.querySelector("[data-rich-host]"); if (!host || !selected || selected.kind !== "copy") return;
+    const key = selected.key; let doc = null;
+    try { doc = host.dataset.richDoc ? JSON.parse(host.dataset.richDoc) : null; } catch { doc = null; }
+    richEditor = mountRichEditor(host, { text: host.dataset.richText || "", document: doc, limit: Number(host.dataset.richLimit) || 2000, label: host.dataset.richLabel || "Text", allowBlocks: Boolean(host.dataset.richBlocks), baseFlags, onChange: out => setRich(key, out) });
   }
   function paintDynamic() {
     const save = el.querySelector("[data-design-save]"), st = el.querySelector("[data-design-state]"), pub = el.querySelector("[data-design-publish]");
@@ -408,7 +441,7 @@ export function attachAnnDesign(o) {
     if (st) st.textContent = busy === "save" ? "Saving your draft design" : d ? "Unsaved changes. The page already shows them." : "Saved to your draft. Your live site is unchanged.";
     const input = el.querySelector("[data-design-input]");
     const c = el.querySelector("[data-design-count]");
-    if (input && c) c.textContent = `${input.value.length} of ${getDesignCopyLimit(input.dataset.designInput)}`;
+    if (input && c) c.textContent = `${(input.value ?? String(model.copy[input.dataset.designInput] ?? "")).length} of ${getDesignCopyLimit(input.dataset.designInput)}`;
   }
 
   el.addEventListener("click", e => {
@@ -433,6 +466,7 @@ export function attachAnnDesign(o) {
       const seed = designNeutralCopy(model.style, o.getBrand?.() || "Your brand");
       if(selected.key.startsWith("section."))delete model.copy[selected.key];
       else model.copy[selected.key] = seed?.[selected.key] ?? "";
+      delete model.formatting[selected.key];
       remember();
       paint(true); o.onChange?.(); return;
     }
@@ -445,7 +479,7 @@ export function attachAnnDesign(o) {
   el.addEventListener("toggle", e => { if (e.target.matches?.("[data-design-consent]")) consentOpen = e.target.open; }, true);
   el.addEventListener("input", e => {
     const t = e.target;
-    if (t.dataset?.designInput) setCopy(t.dataset.designInput, t.value);
+    if (t.dataset?.designInput && typeof t.value === "string" && !t.dataset.rich) setCopy(t.dataset.designInput, t.value);
     else if (t.dataset?.designAlt !== undefined) uploadAlt = t.value;
   });
   el.addEventListener("change", e => {
@@ -495,7 +529,7 @@ export function attachAnnDesign(o) {
     /** The design to preview, or null when the page should show the showcase instead. */
     previewDesign() {
       if (!active() || !sameStyle()) return null;
-      return { version: 1, style: model.style, media_pack: model.media_pack,catalogue_mode:model.catalogue_mode,sections:structuredClone(model.sections),...(model.menus===null?{}:{menus:structuredClone(model.menus)}), plan: planPayload(), copy: { ...model.copy }, media: { ...model.media } };
+      return { version: 1, style: model.style, media_pack: model.media_pack,catalogue_mode:model.catalogue_mode,sections:structuredClone(model.sections),...(model.menus===null?{}:{menus:structuredClone(model.menus)}), plan: planPayload(), copy: { ...model.copy }, formatting: { ...model.formatting }, media: { ...model.media } };
     },
     setSections(value){if(readOnly||!model)return;model.sections=structuredClone(value);planDirty=true;remember();paintDynamic();o.onChange?.();},
     getMenus(){return structuredClone(model?.menus??defaultDesignMenus(menuSource));},

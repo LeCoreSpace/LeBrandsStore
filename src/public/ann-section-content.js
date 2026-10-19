@@ -23,7 +23,7 @@ function sectionContent(section,design,page,edit) {
         // Leaf text only: retain existing typography and interactive children.
         if(!text.includes("<") && text.trim() && textIndex<60){
           const key=prefix+`text${textIndex++}`;
-          if(edit)changes.push([node.start,node.end,node.open.slice(0,-1)+` data-design-copy="${key}">`]);
+          if(edit||design.formatting?.[key])changes.push([node.start,node.end,node.open.slice(0,-1)+` data-ann-copy-field="${key}"${edit?` data-design-copy="${key}"`:""}>`]);
           if(Object.hasOwn(design.copy||{},key))changes.push([node.end,m.index,esc(design.copy[key])]);
         }
       }
@@ -32,7 +32,7 @@ function sectionContent(section,design,page,edit) {
     const blocked=(design.catalogue_mode==="own"&&page==="product"&&section.required)||
       stack.some(n=>n.blocked)||tag==="form"||tag==="fieldset"||PROTECTED.test(m[0]);
     const inheritedCopy=stack.some(n=>n.copy);
-    const copy=/\bdata-design-copy=/.test(m[0]);
+    const copy=/\bdata-(?:design-copy|ann-copy-field)=/.test(m[0]);
     if(tag==="img"&&!blocked&&imageIndex<10){
       const index=imageIndex++,key=prefix+`image${index}`,videoKey=prefix+`video${index}`;
       const image=design.media?.[key],video=design.media?.[videoKey];

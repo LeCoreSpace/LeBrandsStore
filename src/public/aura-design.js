@@ -6,6 +6,7 @@ import { SHOWCASE_STYLES, renderDesignLive } from "./aura-showcase.js";
 import { isAnnDesign } from "./ann-design-model.js";
 import { applyDesignSections } from "./ann-section-layout.js";
 import { applyDesignContent } from "./ann-section-content.js";
+import { applyRichDesignText } from "./ann-rich-text.js";
 
 export const DESIGN_PAGES = Object.freeze(["home", "collection", "product", "about", "contact"]);
 
@@ -21,6 +22,6 @@ export function renderSavedDesign(data = {}, options = {}) {
   const page = options.page || "home";
   if (!design || !DESIGN_PAGES.includes(page)) return null;
   const rendered=renderDesignLive(data, { ...data.settings, style_preset: design.style }, { ...options, page }, design);
-  if(rendered?.body)rendered.body=applyDesignSections(applyDesignContent(rendered.body,design,page,Boolean(options.designEdit)),design.sections,page);
+  if(rendered?.body)rendered.body=applyRichDesignText(applyDesignSections(applyDesignContent(rendered.body,design,page,Boolean(options.designEdit)),design.sections,page),design);
   return rendered;
 }
