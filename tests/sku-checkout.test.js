@@ -11,6 +11,7 @@ import {changeOrderStatus} from "../src/dashboard/repository.js";
 import {syncPublishedProducts} from "../src/dashboard/repository.js";
 import {liveAvailability} from "../src/store/availability.js";
 import postgres from "postgres";
+import {fixtureEmailProof} from "./helpers/checkout-email-proof.js";
 const UUID=i=>`${String(i).padStart(8,"0")}-1111-4111-8111-111111111111`;
 test("cart identity validates UUIDs and rejects duplicate SKU lines, not different SKUs of one product",()=>{
   assert.equal(cartItems([{product_id:UUID(1),product_option_id:UUID(2),quantity:1},{product_id:UUID(1),product_option_id:UUID(3),quantity:1}]).length,2);
@@ -21,7 +22,7 @@ test("real schema SKU order, tax, idempotency, race, isolation, recovery and his
   const f=await createSkuCheckoutFixture(),{pg,db,product,id,data}=f;
   const [black,white,soldout]=product.variants;
   const items=[{product_id:product.id,product_option_id:black.id,quantity:1},{product_id:product.id,product_option_id:white.id,quantity:1}];
-  const input=rows=>orderInput({items:rows,contact:{name:"Synthetic Buyer",phone:"9000000000",email:""},
+  const input=rows=>orderInput({items:rows,contact:{name:"Synthetic Buyer",phone:"9000000000",email:"buyer@example.invalid"},
     address:{line1:"12 Test Street",line2:"",landmark:"",city:"Chennai",state:"33",pincode:"600001"},
     receipt_token:crypto.randomUUID().replaceAll("-","").repeat(2),idempotency_key:crypto.randomUUID(),payment_method:"cod"});
   const place=async value=>{
@@ -126,7 +127,8 @@ test("real schema SKU order, tax, idempotency, race, isolation, recovery and his
       const host=`https://${f.data.store.subdomain}.lebrands.store`;
       const response=await handleCheckout(new Request(`${host}/api/checkout/order`,{
         method:"POST",headers:{origin:host,"content-type":"application/json","cf-connecting-ip":"203.0.113.42"},
-        body:JSON.stringify({...value,turnstile_token:"isolated-fixture-test"}),
+        body:JSON.stringify({...value,turnstile_token:"isolated-fixture-test",
+          email_verification:await fixtureEmailProof("isolated-sku-checkout-test-secret-not-production",id,value.contact.email)}),
       }),{SESSION_SECRET:"isolated-sku-checkout-test-secret-not-production"},db,f.data.store,f.data,
         {verifyTurnstile:async()=>true});
       const result=await response.json();

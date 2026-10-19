@@ -352,6 +352,20 @@ not assign an unverified execution date to a command.
 
 ## Maintenance
 
+### 19 October: Verified shopper email and PIN assistance
+
+| Command / operation | Purpose | Result |
+| --- | --- | --- |
+| `pnpm exec wrangler secret list` | Read production Worker secret names only. | Existing Resend, session-signing and Turnstile secret names are configured. No values printed or changed. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/checkout-email-auth.test.js tests/checkout.test.js tests/sku-checkout.test.js tests/store-offers.test.js tests/email.test.js tests/email-preferences.test.js tests/commerce-options.test.js tests/storefront-commerce-shell.test.js tests/browser-bundles.test.js` | Broad local verification, including new real-schema OTP and postal tests. | New security tests and existing unaffected suites passed. Legacy checkout tests initially lacked the newly required email proof; old mock query/column contracts also needed alignment with the prior offer release. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/checkout.test.js tests/sku-checkout.test.js tests/checkout-email-auth.test.js` | Verify authenticated legacy fixtures and real-schema identity integration. | Real-schema SKU and identity tests passed. Remaining fake-database failures traced to the missing offer-schema availability query and shifted discount-column positions, subsequently corrected. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/checkout.test.js` | Final focused check after mock-contract fixes. | 14/14 passed. |
+| `node --check src/public/checkout-contact.js` / `node --check src/checkout/email-auth.js` / `node --check src/public/commerce.js` | Parse changed modules. | Passed. |
+| `git diff --check` | Whitespace validation. | Passed. |
+| Managed API workflow restart | Build browser assets and start local preview. | Running; isolated browser email/PIN/COD journey passed. |
+| `pnpm run db:migrate -- --staged-checkout-email-auth` | Manual new challenge-table migration. | Documented, not executed against the user's database. |
+| `pnpm run deploy` | Publish the updated Worker after migration. | Documented, not executed. |
+
 ### 19 October: Offer-code rejection recovery
 
 - Ran a **read-only** Supabase administrative transaction using the existing

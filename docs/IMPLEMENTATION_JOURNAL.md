@@ -701,6 +701,45 @@ decision:
   visual recovery flow without placing orders or touching merchant data.
 - **Release:** Worker update only, no new migration. Not deployed automatically.
 
+## 19 October 2026: Verified shopper email and PIN-assisted checkout
+
+- **Request:** Explain disabled ordering, improve contact/address arrangement,
+  fill city/state from PIN and require email authentication for transaction emails.
+- **UI:** First name plus optional last name, required mobile/email, inline send
+  and verify-code controls, editable city/state lookup and country display.
+  The disabled Place order action now states its blocking reason. Theme header/
+  footer and the shared commerce body remain intact.
+- **Identity:** Added a manual tenant-isolated challenge-table migration. OTP
+  codes expire after ten minutes, are single-use and stored only as keyed hashes;
+  failed guesses commit their bounded attempt count. CAPTCHA, IP limits,
+  resend cooldown and store/email quotas guard requests. Successful verification
+  issues a store/email-bound signed capability lasting 30 minutes. New HTTP
+  orders require it; idempotent recovery of an existing order stays available.
+  This is shopper checkout identity, not a merchant-account migration.
+- **Email:** Extended the existing professional utility template with checkout
+  verification and the essential-email preferences notice. Reused Resend with
+  explicit delivery failures; no marketing consent is inferred. Worker secret
+  names were checked and the existing email/security keys are present.
+- **PIN:** The server queries public postal data using only the six-digit PIN,
+  prefers the head office for the town name and maps its state to the existing
+  state code. Failed lookup permits manual entry, rather than blocking checkout.
+- **Verification:** Real-schema authentication tests passed for bad/expired/
+  consumed codes, guess limits, resend cooldown, token tampering, cross-store/
+  changed-email rejection and order retries. SKU, offers, tax, email, renderer
+  and asset checks passed. Older isolated checkout mocks needed the already
+  introduced offer-schema query and discount-column positions; fixture inputs
+  now use email and signed synthetic identities, with no production bypass.
+- **Browser outcome:** One synthetic shopper tested missing/rejected codes,
+  invalid PIN/manual recovery, PIN 629001 autofill, wrong OTP then successful
+  email verification, mobile enabled-order state and one successful ₹120 COD
+  order. Stock fell from 3 to 2 once and the receipt held the combined name.
+  Email verification survived reload. The test inbox and postal fixtures exist
+  only in the Node preview, not the production Worker. No real email/payment
+  was sent or merchant data changed.
+- **Release:** Run `pnpm run db:migrate -- --staged-checkout-email-auth` before
+  `pnpm run deploy`. Neither production command was executed automatically.
+  See `docs/checkout-customer-identity.md`.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

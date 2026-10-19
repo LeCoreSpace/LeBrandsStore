@@ -6,6 +6,7 @@ import { handleCheckout } from "../src/checkout/routes.js";
 import { verifyTurnstile } from "../src/checkout/turnstile.js";
 import { renderAura } from "../src/public/aura.js";
 import { merchantCheckout } from "../src/checkout/merchant.js";
+import {fixtureEmailProof} from "./helpers/checkout-email-proof.js";
 
 const A = "11111111-1111-4111-8111-111111111111", B = "22222222-2222-4222-8222-222222222222";
 const PA = "33333333-3333-4333-8333-333333333333", PB = "44444444-4444-4444-8444-444444444444";
@@ -15,7 +16,7 @@ const product = {id:PA,title:"Cotton tote",price_paise:10000,gst_rate:18,hsn_cod
   images:[{url:"https://media.lebrands.store/example.png",alt:"Cotton tote"}]};
 const data = {store,settings:{gstin:"33ABCDE1234F1Z5"},products:[product],policies:[]};
 function input(overrides = {}) {
-  return {items:[{product_id:PA,quantity:1}],contact:{name:"Test Buyer",phone:"9000000000",email:""},
+  return {items:[{product_id:PA,quantity:1}],contact:{name:"Test Buyer",phone:"9000000000",email:"buyer@example.invalid"},
     address:{line1:"12 Test Street",line2:"",landmark:"",city:"Chennai",state:"33",pincode:"600001"},
     idempotency_key:crypto.randomUUID(),receipt_token:Array.from(crypto.getRandomValues(new Uint8Array(32)),(n)=>n.toString(16).padStart(2,"0")).join(""),
     turnstile_token:"test-only",...overrides};
@@ -36,6 +37,7 @@ function fakeDatabase() {
       const own = (id) => id === tenant;
       if (q.startsWith("SELECT role")) return [{role:"owner"}];
       if (q.includes("to_regclass('public.payment_attempts')")) return [{ready:false}];
+      if (q.includes("to_regprocedure('public.store_offer_save")) return [{enabled:false}];
       if (q.includes("FROM public.integrations")) return [];
       if (q.includes("FROM public.stores")) return own(values[0])?[state.stores[tenant]]:[];
       if (q.includes("FROM public.store_publications")) return own(values[0])?[{snapshot:state.publications[tenant]}]:[];
@@ -68,8 +70,8 @@ function fakeDatabase() {
       if (q.startsWith("UPDATE public.checkout_settings")) return [{number:state.next[tenant]++}];
       if (q.startsWith("INSERT INTO public.orders")) {
         state.orders.push({id:values[0],store_id:values[1],customer_id:values[2],order_number:values[3],status:values[4],payment_method:values[5],
-          subtotal_paise:values[6],tax_paise:values[7],shipping_paise:values[8],total_paise:values[9],
-          shipping_address:JSON.parse(values[10].json),source:values[11],idempotency_key:values[12],request_hash:values[13],confirmation_hash:values[14]});
+          subtotal_paise:values[6],tax_paise:values[7],shipping_paise:values[8],discount_paise:values[9],total_paise:values[10],
+          shipping_address:JSON.parse(values[11].json),source:values[12],idempotency_key:values[13],request_hash:values[14],confirmation_hash:values[15]});
         return [];
       }
       if (q.startsWith("INSERT INTO public.order_items")) {
@@ -93,6 +95,7 @@ function fakeDatabase() {
   return {withStore,withMemberStore:(id,hash,fn)=>withStore(id,fn),get state(){return state;}};
 }
 async function order(db,body,dependencies = {},path="/api/checkout/order") {
+  if(path==="/api/checkout/order")body={...body,email_verification:await fixtureEmailProof("offline-only-secret-not-a-real-key".repeat(2),A,body.contact?.email)};
   return handleCheckout(new Request(`https://stonescence.lebrands.store${path}`,{
     method:"POST",headers:{"origin":"https://stonescence.lebrands.store","content-type":"application/json","cf-connecting-ip":"192.0.2.1"},body:JSON.stringify(body),
   }),{SESSION_SECRET:"offline-only-secret-not-a-real-key".repeat(2)},db,store,data,{verifyTurnstile:async()=>{},...dependencies});

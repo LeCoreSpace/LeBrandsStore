@@ -41,6 +41,9 @@ export async function skuCheckoutPreview(req,res,previewOrigin){
       if(!["GET","HEAD"].includes(req.method))Object.assign(init,{body:Readable.toWeb(req),duplex:"half"});
       response=await handleDashboard(new Request(target,init),f.member,
         {id:"bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",name:"Fixture Owner",email:"owner@example.invalid"},f.token);
+    }else if(path==="/email-inbox"&&req.method==="GET"){
+      // Only the isolated Node fixture exposes synthetic test messages.
+      response=Response.json({messages:f.checkoutEmails||[]});
     }else if(path==="/state"&&req.method==="GET"){
       const stocks=(await f.pg.query("SELECT id,product_id,sku,stock FROM product_options WHERE store_id=$1 ORDER BY sort_order",[f.id])).rows;
       const orders=(await f.pg.query("SELECT order_number,status,total_paise FROM orders WHERE store_id=$1 ORDER BY created_at",[f.id])).rows;
@@ -71,7 +74,12 @@ export async function skuCheckoutPreview(req,res,previewOrigin){
       // Public Cloudflare test site key; validation injection is confined here.
       response=await handleCheckout(new Request(target,init),
         {TURNSTILE_SITE_KEY:"1x00000000000000000000AA",SESSION_SECRET:"isolated-sku-checkout-test-secret-not-production"},
-        f.db,f.data.store,data,{verifyTurnstile:async()=>true});
+        f.db,f.data.store,data,{verifyTurnstile:async()=>true,
+          sendCheckoutEmail:async(_env,message)=>{(f.checkoutEmails||=[]).push(message);return"synthetic-message";},
+          postalFetcher:async url=>{
+            const pin=String(url).split("/").pop();
+            return Response.json(pin==="629001"?[{Status:"Success",PostOffice:[{Name:"Nagercoil",Pincode:pin,BranchType:"Head Post Office",State:"Tamil Nadu",District:"Kanyakumari"}]}]:[{Status:"Error",PostOffice:null}]);
+          }});
     }else response=new Response("Unknown synthetic checkout path",{status:404});
     res.statusCode=response.status;
     response.headers.forEach((value,name)=>res.setHeader(name,value));

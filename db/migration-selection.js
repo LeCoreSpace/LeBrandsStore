@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-checkout-email-auth"){
+    return{staged:true,filename:"0045_checkout_email_auth.sql",requires:"0018_commerce_runtime.sql"};
+  }
   if(values.length===1&&values[0]==="--staged-store-offers"){
     return{staged:true,filename:"0044_store_offers.sql",requires:"0029_sku_checkout.sql"};
   }

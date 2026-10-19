@@ -10,7 +10,7 @@ const has=v=>v!=null&&v!==""&&Number.isFinite(Number(v));
 const https=value=>{try{const url=new URL(value);return url.protocol==="https:"&&!url.username&&!url.password?url.href:"";}catch{return "";}};
 const titles={confirmed:"Your order is confirmed",shipped:"Your order is on its way",delivered:"Your order has been delivered",
   cancelled:"Your order was cancelled",refunded:"Your refund update",new_order:"A new order for your store",
-  reset:"Reset your password",invite:"You are invited to a store",verification:"Verify your email"};
+  reset:"Reset your password",invite:"You are invited to a store",verification:"Verify your email",checkout_verification:"Your checkout verification code"};
 const intro={
   confirmed:"Thank you for your order. Here is your receipt.",
   new_order:"A customer has placed an order. The details are below.",
@@ -20,7 +20,8 @@ const intro={
   refunded:"Here is the latest on your refund.",
   reset:"Use this single-use link within 30 minutes. If you did not request it, ignore this email.",
   invite:"Sign in with the invited email address to join this store. This single-use invitation expires in 7 days.",
-  verification:"Confirm your email to use the AI store builder. This single-use link expires in 30 minutes."};
+  verification:"Confirm your email to use the AI store builder. This single-use link expires in 30 minutes.",
+  checkout_verification:"Verify your email to complete checkout. This single-use code expires in 10 minutes. If you did not request it, ignore this email."};
 const labels={reset:"Reset password",invite:"Accept invitation",verification:"Verify email",new_order:"Open order",shipped:"Track shipment"};
 const itemTitle=i=>i.title||i.product_title||i.product_snapshot?.title||"Item";
 const itemTotal=i=>i.line_total_paise??(i.total_paise!=null?Number(i.total_paise)-Number(i.discount_paise||0):Number(i.unit_price_paise||0)*Number(i.quantity||0));
@@ -48,6 +49,12 @@ export function renderEmail(type,data={}){
   const blocks=[];
   const para=(s,strong)=>{if(s)blocks.push({h:`<p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#3b3b3f${strong?";font-weight:700":""}">${esc(s)}</p>`,t:s});};
   para(introduction);
+  if(type==="checkout_verification"){
+    if(!/^\d{6}$/.test(String(data.verification_code||"")))throw new Error("Invalid checkout verification code");
+    blocks.push({h:`<div style="margin:24px 0;padding:22px;border:1px dashed ${colour};border-radius:10px;text-align:center;font-size:34px;font-weight:700;letter-spacing:.2em;color:${colour}">${esc(data.verification_code)}</div>`,
+      t:`Your verification code: ${data.verification_code}`});
+    para("Never share this code. LeBrands.Store will not ask for it by phone or message.");
+  }
   if(number)blocks.push({h:`<p style="margin:0 0 18px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:${colour};font-weight:700">${esc(number)}</p>`,t:number});
   const items=Array.isArray(data.items)?data.items:[];
   if(orderish){

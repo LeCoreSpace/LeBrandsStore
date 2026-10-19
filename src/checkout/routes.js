@@ -10,12 +10,14 @@ import { renderInvoice } from "../ui/invoice.js";
 import { invoiceDetail } from "../dashboard/repository.js";
 import { checkoutPayment, verifyCheckout } from "../connections/payments.js";
 import {offerCode} from "../offers/rules.js";
+import {startCheckoutEmail,completeCheckoutEmail,requireCheckoutEmail} from "./email-auth.js";
+import {pincodeLocation} from "./pincode.js";
 
 export const CHECKOUT_HEADERS = {...SECURITY_HEADERS,"cache-control":"no-store","referrer-policy":"no-referrer","x-robots-tag":"noindex, nofollow"};
 const json = (data,status = 200) => new Response(JSON.stringify(data),{
   status,headers:{...CHECKOUT_HEADERS,"content-type":"application/json; charset=utf-8"},
 });
-export const isCheckoutPath = (path) => ["/api/cart/validate","/api/checkout/order","/api/checkout/verify","/api/orders/track","/cart","/checkout","/track"].includes(path) || /^\/orders\/[0-9a-f]{64}(?:\/invoice)?$/.test(path);
+export const isCheckoutPath = (path) => ["/api/cart/validate","/api/checkout/order","/api/checkout/verify","/api/checkout/email/start","/api/checkout/email/verify","/api/checkout/pincode","/api/orders/track","/cart","/checkout","/track"].includes(path) || /^\/orders\/[0-9a-f]{64}(?:\/invoice)?$/.test(path);
 export async function handleCheckout(request,env,db,store,data,dependencies = {}) {
   const url = new URL(request.url), api = url.pathname.startsWith("/api/");
   try {
@@ -43,9 +45,23 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
         headers:{...CHECKOUT_HEADERS,"content-security-policy":csp,"content-type":"text/html; charset=utf-8"},
       });
     }
+    if(url.pathname==="/api/checkout/pincode"){
+      if(request.method!=="GET")return json({error:"Method not allowed."},405);
+      return json(await pincodeLocation(url.searchParams.get("code"),dependencies.postalFetcher));
+    }
     if (request.method !== "POST") return json({error:"Method not allowed."},405);
     if (request.headers.get("origin") !== url.origin) return json({error:"Reload this store and try again."},403);
     const body = await readJson(request);
+    if(url.pathname==="/api/checkout/email/start"||url.pathname==="/api/checkout/email/verify"){
+      const hash=await ipHash(request,env.SESSION_SECRET);
+      if(!await db.withStore(store.store_id,tx=>consumeIpLimit(tx,store.store_id,hash,"checkout")))
+        throw commerceError("Too many verification attempts. Please wait a minute.",undefined,429);
+      if(url.pathname.endsWith("/start")){
+        await (dependencies.verifyTurnstile??verifyTurnstile)(request,env,body);
+        return json(await startCheckoutEmail(db,store,env,body.email,{sendEmail:dependencies.sendCheckoutEmail}));
+      }
+      return json(await completeCheckoutEmail(db,store.store_id,env,body));
+    }
     if (url.pathname === "/api/cart/validate") {
       const items = cartItems(body.items);
       if (body.state && !INDIAN_STATES.some((s) => s.code === body.state)) throw commerceError("Choose a valid state.",{state:"Choose your state."});
@@ -83,6 +99,7 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
     const replay = await db.withStore(store.store_id,(tx) => findReplay(tx,store.store_id,input,requestHash));
     if (replay) return json(input.payment_method==="online" ?
       await db.withStore(store.store_id,tx=>checkoutPayment(tx,store.store_id,input,env,dependencies.fetcher)):replay);
+    await requireCheckoutEmail(env,store.store_id,input.contact.email,body.email_verification);
     // Tests inject a verification dependency; there is no URL/env production bypass.
     await (dependencies.verifyTurnstile ?? verifyTurnstile)(request,env,body);
     const receiptHash = await sha256(`${store.store_id}:${input.receipt_token}`);

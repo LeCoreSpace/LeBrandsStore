@@ -12,7 +12,7 @@ export function orderInput(body) {
   const name = text(contact.name,120), phone = indianPhone(contact.phone), email = text(contact.email ?? "",254);
   if (!name || name.length < 2) errors.name = "Enter your full name.";
   if (!phone) errors.phone = "Enter a valid Indian 10-digit mobile number.";
-  if (email == null || (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) errors.email = "Enter a valid email, or leave it blank.";
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Enter your email for order confirmation.";
   const clean = {};
   for (const [key,max] of Object.entries({line1:200,line2:200,landmark:120,city:100,pincode:6,state:2})) {
     clean[key] = text(address[key] ?? "",max);

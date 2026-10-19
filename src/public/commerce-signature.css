@@ -386,3 +386,15 @@ body.commerce-lock{overflow:hidden;overscroll-behavior:none}
 .cm [data-design-copy],.cm [data-design-image]{cursor:text}.cm [data-design-image]{cursor:pointer}
 .cm [data-design-copy]:hover,.cm [data-design-image]:hover{outline:2px dashed var(--cm-accent);outline-offset:3px}
 .cm [data-design-selected]{outline:2px solid var(--cm-accent)!important;outline-offset:3px}
+
+/* ---------- Checkout contact and address arrangement ---------- */
+.checkout-form .email-group{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:stretch}
+.checkout-form .email-group .commerce-button{min-height:52px;padding:0 18px;white-space:nowrap}
+.checkout-form .email-verify>label,.checkout-form .email-code-fields>label,.checkout-form .addr-fields>.commerce-field>label{font-size:14px;font-weight:600}
+.checkout-form .email-code-fields{display:grid;gap:7px;margin-top:12px}
+.checkout-form .email-code-fields input{letter-spacing:.3em;font-variant-numeric:tabular-nums}
+.checkout-form .field-status{min-height:0;font-size:13px;font-weight:600;color:var(--cm-label)}
+.checkout-form .field-status:empty{display:none}
+.checkout-form input[readonly]{background:var(--cm-tint);color:var(--cm-mute)}
+.checkout-actions .field-status{text-align:center}
+@media(max-width:480px){.checkout-form .commerce-fields{grid-template-columns:minmax(0,1fr)}.checkout-form .email-group{grid-template-columns:minmax(0,1fr)}}

@@ -8,6 +8,7 @@ export async function createSkuCheckoutFixture({offers=false}={}){
   try{
   await pg.exec(await readFile(new URL("../db/staged/0029_sku_checkout.sql",import.meta.url),"utf8"));
   if(offers)await pg.exec(await readFile(new URL("../db/staged/0044_store_offers.sql",import.meta.url),"utf8"));
+  if(offers)await pg.exec(await readFile(new URL("../db/staged/0045_checkout_email_auth.sql",import.meta.url),"utf8"));
   const member=annFixtureAdapter(pg),id="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",token="a".repeat(64);
   const axes=[{name:"Size",values:["S","M"]},{name:"Colour",values:["Black","White"]}];
   const response=await handleStoreRoutes(new Request(`https://accounts.lebrands.store/api/stores/${id}/products`,{

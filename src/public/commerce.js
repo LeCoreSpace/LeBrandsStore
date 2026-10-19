@@ -1,5 +1,6 @@
 import { statusLabel, indianDate } from "./dashboard-rules.js";
 import { cartKey, sameLine, cleanLine, normaliseCart, matchIssue, optionId, resolveSelection, valueStatus, variantTitleLines, productImageUrl } from "./commerce-options.js";
+import {initializeCheckoutContact} from "./checkout-contact.js";
 const configNode = document.querySelector("[data-commerce-config]");
 const storeKey = configNode?.dataset.storeKey || "";
 const page = configNode?.dataset.page || "";
@@ -31,12 +32,13 @@ const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&a
 const money = (value) => `₹${(Math.max(0, Number(value) || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 let cart = [];
 let validated = null;
+let emailAuth=null;
 const offerStorageKey=`${storageKey}:offer-code`;
 let activeOfferCode="";
 try{activeOfferCode=sessionStorage.getItem(offerStorageKey)||"";}catch{}
 function offerControls(){
   if(readOnly||!cart.length||(validated?.offers_available===false&&!activeOfferCode))return "";
-  return `<div class="commerce-offer"><label>Offer code<input data-offer-code maxlength="32" value="${esc(activeOfferCode)}" autocomplete="off" placeholder="Enter code" aria-invalid="${validated?.offer_error?"true":"false"}"></label><div><button type="button" class="commerce-text-link" data-offer-apply>Apply code</button>${activeOfferCode?'<button type="button" class="commerce-text-link" data-offer-remove>Remove code</button>':""}</div>${validated?.offer_error?`<p class="commerce-error" role="alert">${esc(validated.offer_error)} Remove this code or try another before placing your order.</p>`:""}<p role="status">${validated?.discount_paise>0?`${esc(validated.offer?.code||validated.offer?.title||"Offer")} applied. You save ${money(validated.discount_paise)}.`:"The best eligible offer applies. Offers cannot be combined."}${validated?.offer_notice?` ${esc(validated.offer_notice)}`:""}</p></div>`;
+  return `<div class="commerce-offer"><label>Offer code<input data-offer-code maxlength="32" value="${esc(activeOfferCode)}" autocomplete="off" placeholder="Enter code" aria-invalid="${validated?.offer_error?"true":"false"}"></label><div><button type="button" class="commerce-text-link" data-offer-apply>Apply code</button>${activeOfferCode?'<button type="button" class="commerce-text-link" data-offer-remove>Remove code</button>':""}</div>${validated?.offer_error?`<p class="commerce-error" role="alert">${esc(validated.offer_error)} Remove this code or try another before placing your order.</p>`:""}<p role="status">${validated?.discount_paise>0?`${validated.offer?.code?"Code":"Automatic offer:"} ${esc(validated.offer?.code||validated.offer?.title||"Offer")} applied. You save ${money(validated.discount_paise)}.`:"The best eligible offer applies. Offers cannot be combined."}${validated?.offer_notice?` ${esc(validated.offer_notice)}`:""}</p></div>`;
 }
 function addOfferSummary(slot){
   if(!slot)return;
@@ -171,7 +173,14 @@ function showValidationError(text) {
 function updatePlaceOrderAvailability() {
   const button = document.querySelector("#checkout-form [type='submit']");
   if (!button || readOnly) return;
-  button.disabled = busy || !validated || Boolean(validated.offer_error) || !cart.length || Boolean(validated.issues?.length) || !methodAvailable(validated, selectedMethod());
+    button.disabled = busy || !validated || Boolean(validated.offer_error) || !emailAuth?.verified() || !turnstileToken || !cart.length || Boolean(validated.issues?.length) || !methodAvailable(validated, selectedMethod());
+    const note=document.querySelector("[data-place-order-status]");
+    if(note)note.textContent=busy?"Preparing your order…":!validated?"Checking your bag…":
+      validated.offer_error?"Remove the rejected code or apply a valid code to continue.":
+      validated.issues?.length?"Review the unavailable items in your bag.":
+      !emailAuth?.verified()?"Verify your email above to enable Place order.":
+      !turnstileToken?"Complete the security check to continue.":
+      !methodAvailable(validated,selectedMethod())?"Choose an available payment method.":"Ready to place your order.";
 }
 function productImage(url, title) {
   const safe = productImageUrl(url);
@@ -329,7 +338,7 @@ function formValues(form) {
   const phoneRaw = String(data.get("phone") || "").replace(/[^\d]/g, "");
   const phone = phoneRaw.startsWith("91") && phoneRaw.length === 12 ? phoneRaw.slice(2) : phoneRaw;
   return {
-    contact: { phone, name: String(data.get("name") || "").trim(), email: String(data.get("email") || "").trim() },
+    contact: { phone, name: [data.get("first_name"),data.get("last_name")].map(v=>String(v||"").trim()).filter(Boolean).join(" "), email: String(data.get("email") || "").trim().toLowerCase() },
     address: { pincode: String(data.get("pincode") || "").trim(), line1: String(data.get("line1") || "").trim(), line2: String(data.get("line2") || "").trim(), landmark: String(data.get("landmark") || "").trim(), city: String(data.get("city") || "").trim(), state: String(data.get("state") || "") },
   };
 }
@@ -337,7 +346,7 @@ function validateCheckout(form, values) {
   const errors = [];
   if (!/^[6-9]\d{9}$/.test(values.contact.phone)) errors.push("Enter a valid 10-digit Indian mobile number.");
   if (values.contact.name.length < 2 || values.contact.name.length > 120) errors.push("Enter your full name.");
-  if (values.contact.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.contact.email)) errors.push("Enter a valid email address, or leave it blank.");
+  if (!values.contact.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.contact.email)) errors.push("Enter your email for order confirmation.");
   if (!/^[1-9]\d{5}$/.test(values.address.pincode)) errors.push("Enter a valid 6-digit pincode.");
   if (values.address.line1.length < 5 || values.address.line1.length > 200) errors.push("Enter your house number and street.");
   if (values.address.city.length < 2 || values.address.city.length > 100 || !values.address.state) errors.push("Complete your city and state.");
@@ -382,6 +391,7 @@ async function placeOrder(event) {
   if (busy) return;
   const form = event.currentTarget;
   clearCheckoutError();
+  if(!emailAuth?.verified()){showCheckoutError("Verify your email before placing your order.");form.elements.email?.focus();return;}
   if(validated?.offer_error){showCheckoutError("Remove the rejected offer code or apply a valid one before placing your order.");return;}
   const values = formValues(form);
   const errors = validateCheckout(form, values);
@@ -443,6 +453,7 @@ async function placeOrder(event) {
     const result = await api("/api/checkout/order", {
       items: cart.map(cleanLine),
       code:activeOfferCode,
+      email_verification:emailAuth.token(),
       expected_discount_paise:Number(validated?.discount_paise||0),
       contact: values.contact,
       address: values.address,
@@ -540,7 +551,7 @@ function initTurnstile() {
     const slot = document.querySelector("[data-turnstile]");
     if (!slot || !window.turnstile) { showCheckoutError("Security verification could not load. Check your connection and retry."); return; }
     try {
-      turnstileWidget = window.turnstile.render(slot, { sitekey: siteKey, action: "checkout", theme: "auto", callback: (token) => { turnstileToken = token; clearCheckoutError(); }, "expired-callback": () => { turnstileToken = ""; }, "error-callback": () => { turnstileToken = ""; showCheckoutError("Security verification is temporarily unavailable. Please retry."); } });
+      turnstileWidget = window.turnstile.render(slot, { sitekey: siteKey, action: "checkout", theme: "auto", callback: (token) => { turnstileToken = token; clearCheckoutError();updatePlaceOrderAvailability(); }, "expired-callback": () => { turnstileToken = "";updatePlaceOrderAvailability(); }, "error-callback": () => { turnstileToken = ""; showCheckoutError("Security verification is temporarily unavailable. Please retry.");updatePlaceOrderAvailability(); } });
     } catch { showCheckoutError("Security verification could not start. Please reload and try again."); }
   };
   script.onerror = () => showCheckoutError("Security verification could not load. Check your connection and retry.");
@@ -683,6 +694,11 @@ if (readOnly) {
   mountDrawer();
   updateCount();
   bind();
+  emailAuth=initializeCheckoutContact({api,apiRoot:configNode?.dataset.apiRoot||"",storageKey,
+    onUpdate:updatePlaceOrderAvailability,onStateChange:()=>validateCart(),
+    security:{token:()=>turnstileToken,
+      focus:()=>document.querySelector("[data-turnstile]")?.scrollIntoView({block:"center",behavior:"smooth"}),
+      reset:()=>{turnstileToken="";try{if(turnstileWidget!=null)window.turnstile?.reset(turnstileWidget);}catch{}updatePlaceOrderAvailability();}}});
   document.querySelectorAll("[data-product-options]").forEach(initOptions);
   if (page === "cart" || page === "checkout") validateCart();
   initTurnstile();
