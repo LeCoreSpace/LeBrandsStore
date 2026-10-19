@@ -1,5 +1,16 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: Google Analytics platform tag
+
+- Working directory: repository root.
+- **Executed locally:** `node --test tests/google-tag.test.js tests/platform-seo.test.js`
+  passed eight checks with simulated browser globals and actual Worker public
+  responses, without submitting live visitor events.
+- **Executed locally:** `git diff --check` passed.
+- **Suggested only, production mutation:** `pnpm run deploy`, using the intended
+  Cloudflare configuration and credentials. Not executed. No migration or Google
+  secret is needed for the public measurement ID.
+
 ## 19 October 2026: publication-review fixes
 
 Working directory: repository root.

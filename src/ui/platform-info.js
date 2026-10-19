@@ -41,6 +41,10 @@ export const PLATFORM_INFO = {
     title: "Privacy policy",
     description: "The information handled by LeBrands.Store and how it supports your account and store.",
     sections: [
+      { title: "Public website analytics", paragraphs: [
+        "We use Google Analytics on the public LeBrands.Store website to understand visits and page usage. Google Analytics may use cookies and process device and usage information. This platform tag is not included in private account, dashboard or builder pages, or in brand storefronts.",
+        "Our page-view configuration removes query strings and fragments from page addresses and referrers and disables Google signals and advertising personalisation signals. The tag is not started when the browser reports Global Privacy Control or Do Not Track. These controls do not replace any consent requirements that apply to your visit.",
+      ] },
       { title: "Who operates LeBrands.Store", paragraphs: [
         `${PLATFORM_COMPANY}, based in ${PLATFORM_LOCATION}, operates the platform. For privacy questions or requests, email ${email}.`,
       ] },

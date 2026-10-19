@@ -4,6 +4,7 @@ import { isShowcaseImage } from "./public/aura-showcase-assets.js";
 import { createDb } from "./db.js";
 import { handleAccounts } from "./auth/routes.js";
 import { SECURITY_HEADERS } from "./auth/security.js";
+import { GOOGLE_TAG_HEAD, googleTagCsp } from "./ui/google-tag.js";
 import { renderHome, renderLegal } from "./ui/home.js";
 import { renderPricing, renderCompare } from "./ui/marketing.js";
 import { FAVICON_SVG, FAVICON_CSP } from "./ui/favicon.js";
@@ -173,7 +174,9 @@ export default {
       const marketing=url.pathname==="/" || url.pathname==="/pricing" || url.pathname==="/compare";
       const headers={ ...SECURITY_HEADERS, "cache-control": "public, max-age=300", "content-type": "text/html; charset=utf-8" };
       if(marketing)headers["content-security-policy"]=headers["content-security-policy"].replace("font-src https://fonts.gstatic.com","font-src 'self' https://fonts.gstatic.com");
-      return new Response(request.method==="HEAD"?null:withNavigation(url.pathname === "/" ? renderHome() : url.pathname==="/pricing"?renderPricing():url.pathname==="/compare"?renderCompare():renderLegal(legal[url.pathname])), {
+      headers["content-security-policy"]=googleTagCsp(headers["content-security-policy"]);
+      const html=withNavigation(url.pathname === "/" ? renderHome() : url.pathname==="/pricing"?renderPricing():url.pathname==="/compare"?renderCompare():renderLegal(legal[url.pathname]));
+      return new Response(request.method==="HEAD"?null:html.replace("</head>",`${GOOGLE_TAG_HEAD}</head>`), {
         headers,
       });
     }

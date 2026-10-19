@@ -2,11 +2,15 @@
 
 Captured on 19 October 2026 from the surviving project history. Times use Africa/Cairo.
 
-This register contains all **279 commits** available through 19 October, including the initial 272-commit backfill ending at `9adc763` and subsequent checkpoints `19919a1`, `ee31045`, `49d77ce`, `4b7d3c4`, `3d1ee10`, `1a3bfd4` and `75e3293`. Original subjects are retained, including the historical use of “announcement” for Ann. File scopes describe evidence, not proof of working runtime behaviour. A versioned migration is not an applied migration, and a test-file change is not a passing test result. Production deployment is not established per commit.
+This register contains all **280 commits** available through 19 October, including the initial 272-commit backfill ending at `9adc763` and subsequent checkpoints `19919a1`, `ee31045`, `49d77ce`, `4b7d3c4`, `3d1ee10`, `1a3bfd4`, `75e3293` and `0db33ad`. Original subjects are retained, including the historical use of “announcement” for Ann. File scopes describe evidence, not proof of working runtime behaviour. A versioned migration is not an applied migration, and a test-file change is not a passing test result. Production deployment is not established per commit.
 
-Related changes are explained in the [daily implementation journal](../IMPLEMENTATION_JOURNAL.md). Journal creation, command references, the shared editor, toolbar readability, COGS navigation, Stage 1 COGS and Stage 2 analytics have recorded checkpoints. Publication-review clarity and confirmation fixes are uncommitted at this update.
+Related changes are explained in the [daily implementation journal](../IMPLEMENTATION_JOURNAL.md). Journal creation, command references, the shared editor, toolbar readability, COGS navigation, Stage 1 COGS, Stage 2 analytics and publication-review fixes have recorded checkpoints. Google Analytics public-platform integration is uncommitted at this update.
 
-Latest checkpoint: 19 October, 09:44 Cairo, `75e3293`, “Update documentation and migration infrastructure”. Records Stage 2 analytics, staged migration, UI, tests and documentation across 24 files. Local verification is documented in the journal; production migration/deployment is not established.
+Latest checkpoints:
+- 19 October, 09:44 Cairo, `75e3293`, “Update documentation and migration infrastructure”. Records Stage 2 analytics, staged migration, UI, tests and documentation across 24 files.
+- 19 October, 10:07 Cairo, `0db33ad`, “Update documentation and refine form interaction logic”. Records publication-review/form interaction fixes and associated documentation.
+
+Local verification is documented in the journal; production migration/deployment is not established.
 
 ## 2026-09-11
 

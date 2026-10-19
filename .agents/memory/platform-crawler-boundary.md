@@ -2,6 +2,16 @@
 name: Platform crawler boundary
 description: Marketing versus tenant/private indexing and truthful AI-facing claims
 ---
+Keep the platform's Google Analytics tag separate from private account/editor
+pages and merchant storefronts.
+
+**Why:** Platform visitor measurement must not silently become cross-tenant
+merchant tracking or disclose operational URLs to a third party.
+
+**How to apply:** Scope future platform measurement to public responses;
+require separate scope for merchant analytics. Privacy preferences and disabled
+advertising signals are not a substitute for jurisdiction-specific consent.
+
 The root platform sitemap covers the public marketing and information pages,
 not merchant storefronts, accounts, dashboards, invoices or local demonstrations.
 An unfinished policy should not enter the sitemap.

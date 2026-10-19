@@ -577,6 +577,24 @@ decision:
   update or publication was performed. Deploy manually with `pnpm run deploy`.
 
 ## Evidence and limitations
+### 19 October 2026: Google Analytics public platform tag
+
+- **What:** Added the supplied GA4 measurement tag to public LeBrands.Store
+  platform responses only, including homepage, pricing, comparison and information
+  pages. It is not added to account, dashboard, Ann, editor or merchant pages.
+- **How:** One response-level injection shared by both public HTML layouts;
+  asynchronous loading, production-browser hostname checks, GPC/DNT opt-out,
+  query/fragment removal in configured page addresses and referrers, advertising
+  signals disabled. Added Google endpoints only to public-page CSP, preserving
+  the shared private security policy. Added a privacy disclosure.
+- **Verification:** Eight Google-tag/crawler/SEO checks passed. Checks cover tag
+  count, actual Worker responses and CSP, hostname isolation, privacy preferences,
+  safe configured URLs and existing SEO behavior. Both workflows restarted.
+  No real Google Analytics receipt or production traffic was verified locally.
+- **Release:** Uncommitted at this update. No migration required. Production
+  deployment has not been run. Jurisdiction-specific cookie consent and legal
+  review remain separate; this implementation is not a consent-compliance claim.
+
 
 ### 19 October 2026: COGS navigation confirmed
 
