@@ -33,6 +33,7 @@ let cart = [];
 let validated = null;
 let busy = false;
 let lastFocus = null;
+let inertBackground = [];
 let turnstileWidget = null;
 let turnstileToken = "";
 let checkoutAttempt = null;
@@ -215,18 +216,24 @@ function mountDrawer() {
   if (document.getElementById("commerce-cart-drawer")) return;
   const mount = document.getElementById("commerce-mount");
   if (!mount) return;
+  // Saved themes can create transformed/isolated stacking contexts. A modal
+  // must be a direct body child to cover their headers, galleries and buy bars.
+  document.body.append(mount);
   mount.innerHTML = `<div class="commerce-overlay" data-drawer-close tabindex="-1"></div><aside class="commerce-drawer" id="commerce-cart-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" aria-hidden="true" inert><div class="commerce-drawer-head"><h2 id="drawer-title">Your bag <span data-cart-count>0</span></h2><button class="commerce-close" type="button" data-drawer-close aria-label="Close bag">×</button></div><div class="commerce-drawer-content" data-drawer-lines><div class="commerce-loading" role="status">Checking your bag…</div></div><div data-drawer-summary></div></aside>`;
 }
 async function openDrawer() {
   mountDrawer();
   const drawer = document.getElementById("commerce-cart-drawer");
   if (!drawer) return;
+  if (drawer.classList.contains("is-open")) { await validateCart(); return; }
   lastFocus = document.activeElement;
   drawer.inert = false;
   drawer.classList.add("is-open");
   drawer.setAttribute("aria-hidden", "false");
   document.querySelector(".commerce-overlay")?.classList.add("is-open");
   document.body.classList.add("commerce-lock");
+  inertBackground = [...document.body.children].filter(el => el !== document.getElementById("commerce-mount") && !["SCRIPT","STYLE","LINK"].includes(el.tagName)).map(el => [el, el.inert]);
+  for (const [el] of inertBackground) el.inert = true;
   drawer.querySelector("[data-drawer-close]")?.focus();
   await validateCart();
 }
@@ -237,6 +244,8 @@ function closeDrawer() {
   if (drawer) drawer.inert = true;
   document.querySelector(".commerce-overlay")?.classList.remove("is-open");
   document.body.classList.remove("commerce-lock");
+  for (const [el, wasInert] of inertBackground) el.inert = wasInert;
+  inertBackground = [];
   lastFocus?.focus?.();
 }
 function addProduct(id, quantity, option = "") {
@@ -620,7 +629,7 @@ function bind() {
     if (event.key === "Escape" && document.getElementById("commerce-cart-drawer")?.classList.contains("is-open")) closeDrawer();
     if (event.key === "Tab" && document.getElementById("commerce-cart-drawer")?.classList.contains("is-open")) {
       const drawer = document.getElementById("commerce-cart-drawer");
-      const focusable = [...drawer.querySelectorAll('button:not(:disabled),a[href],input,select,[tabindex="0"]')];
+      const focusable = [...drawer.querySelectorAll('button:not(:disabled),a[href],input:not(:disabled),select:not(:disabled),[tabindex="0"]')].filter(el => el.getClientRects().length && !el.closest("[inert]"));
       if (!focusable.length) return;
       if (event.shiftKey && document.activeElement === focusable[0]) { event.preventDefault(); focusable.at(-1).focus(); }
       else if (!event.shiftKey && document.activeElement === focusable.at(-1)) { event.preventDefault(); focusable[0].focus(); }

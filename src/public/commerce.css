@@ -17,3 +17,75 @@ body.commerce-lock{overflow:hidden}
 .commerce-recs{margin-top:28px}.commerce-recs[hidden],.commerce-rec-list article[hidden]{display:none}.commerce-rec-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px}.commerce-rec-list article{display:grid;gap:8px;align-content:start}.commerce-rec-list a{color:inherit}
 
 .payment-options{display:grid;gap:8px}.payment-options .payment-choice{position:relative;cursor:pointer;border-color:var(--line);background:transparent}.payment-options .payment-choice.is-selected{border-color:var(--accent);background:#f0f1e8}.payment-options .payment-choice[hidden]{display:none}.payment-options .payment-radio{border:2px solid var(--muted);flex:none}.payment-options .is-selected .payment-radio{border:5px solid var(--accent)}.payment-input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}.payment-input:focus-visible+.payment-radio{outline:2px solid var(--accent);outline-offset:3px}
+
+/* ---- Shared commerce layer: opaque surfaces, reliable stacking ---- */
+.sc{--sans:var(--body,system-ui,sans-serif);--serif:var(--disp,Georgia,serif);--accent:var(--acc,#3d4a43);--accent-ink:var(--acc-ink,#fff);--surface:var(--paper,#fff);--muted:color-mix(in srgb,var(--ink,#222) 68%,transparent)}
+.commerce-main,.commerce-drawer{font-family:var(--sans,system-ui,sans-serif);color:var(--ink,#222)}
+.commerce-main input,.commerce-main select{color:var(--ink,#222);background:var(--paper,#fff)}
+.commerce-summary>.commerce-summary{position:static;padding:0;border:0;background:transparent}
+.sc .commerce-button,.commerce-drawer .commerce-button{color:var(--accent-ink,#fff)}
+/* A theme's shopping shortcut bar must not cover transactional form fields. */
+.sc[data-design-page="cart"] .sc-tabbar,
+.sc[data-design-page="checkout"] .sc-tabbar,
+.sc[data-design-page="track"] .sc-tabbar,
+.sc[data-design-page="confirmation"] .sc-tabbar{display:none}
+.commerce-overlay,.commerce-drawer{--cd-bg:var(--paper,var(--bg,var(--background,#fbfaf7)));--cd-ink:var(--ink,var(--text,#1f1f1d));--cd-line:var(--line,rgba(127,127,127,.28))}
+.commerce-overlay{z-index:2147483000;background:rgba(20,20,20,.5)}
+.commerce-drawer{z-index:2147483001;width:min(480px,100%);height:100vh;height:100dvh;max-height:100dvh;padding:0;background:#fbfaf7;background:var(--cd-bg);color:var(--cd-ink);overflow:hidden;overscroll-behavior:contain;isolation:isolate;box-shadow:-16px 0 48px rgba(0,0,0,.22)}
+.commerce-drawer-head{flex:none;padding:18px 22px;border-bottom:1px solid var(--cd-line);background:inherit}
+.commerce-drawer-content{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:6px 22px}
+.commerce-drawer [data-drawer-summary]{flex:none;max-height:46dvh;overflow-y:auto;padding:0 22px calc(18px + env(safe-area-inset-bottom));background:inherit;border-top:1px solid var(--cd-line);box-shadow:0 -10px 24px -18px rgba(0,0,0,.35)}
+.commerce-drawer .commerce-summary{padding-top:14px}
+.commerce-drawer .commerce-summary h2{font-size:15px;margin-bottom:6px}
+.commerce-close{min-width:44px;min-height:44px;width:44px;height:44px;display:grid;place-items:center;color:inherit}
+body.commerce-lock{overflow:hidden;overscroll-behavior:none}
+@media(max-width:720px){.commerce-drawer{width:100vw;inset:0}.commerce-drawer-head{padding:14px 16px}.commerce-drawer-content{padding:4px 16px}.commerce-drawer [data-drawer-summary]{padding:0 16px calc(14px + env(safe-area-inset-bottom))}}
+
+/* ---- Cart lines ---- */
+.commerce-line{grid-template-columns:84px minmax(0,1fr) auto;align-items:start}
+.commerce-line-image{width:84px;height:104px;object-fit:cover;border-radius:var(--radius,4px)}
+.commerce-line-title{font-size:15px;font-weight:600;line-height:1.3}
+.commerce-qty{border-radius:var(--radius,4px);overflow:hidden}
+.commerce-qty button{width:36px;height:36px;font-size:16px;cursor:pointer}.commerce-qty button[disabled]{opacity:.35;cursor:not-allowed}
+.commerce-qty output{min-width:32px;font-variant-numeric:tabular-nums}
+.commerce-remove{min-height:36px;padding:0 4px}
+.commerce-line-total{font-variant-numeric:tabular-nums}
+.commerce-drawer .commerce-line{grid-template-columns:68px minmax(0,1fr) auto}.commerce-drawer .commerce-line-image{width:68px;height:84px}
+.commerce-summary .commerce-button[aria-disabled=true]{opacity:.5;pointer-events:none}
+.commerce-total-row{font-variant-numeric:tabular-nums}
+.commerce-main .commerce-summary,.commerce-main .commerce-panel{background:var(--surface,var(--paper,#fbfaf7))}
+
+/* ---- Checkout ---- */
+.checkout-form{counter-reset:cs}
+.checkout-section h2{display:flex;align-items:center;gap:10px}
+.checkout-section h2:before{counter-increment:cs;content:counter(cs);width:24px;height:24px;flex:none;display:grid;place-items:center;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:700 11px var(--sans,var(--body,sans-serif))}
+.commerce-field{font-size:12px}
+.commerce-field input,.commerce-field select{height:48px;font-size:16px;border-radius:var(--radius,4px);border-color:var(--line,#d4d9cf)}
+.commerce-field input:focus,.commerce-field select:focus{outline:2px solid var(--accent-label,var(--accent));outline-offset:1px}
+.payment-choice{min-height:56px;border-radius:var(--radius,4px)}
+.commerce-submit{min-height:52px;font-size:13px}
+.checkout-summary-lines{max-height:min(320px,40dvh)}
+.checkout-layout .commerce-summary{top:24px}
+@media(max-width:720px){
+.checkout-layout .commerce-summary[data-checkout-summary]{order:-1;position:static;padding:16px}
+.checkout-summary-lines{max-height:168px}
+.commerce-summary[data-checkout-summary] h2{font-size:17px;margin-bottom:10px}
+.commerce-line{grid-template-columns:72px minmax(0,1fr)}.commerce-line-image{width:72px;height:90px}
+.commerce-submit{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom));z-index:3}
+}
+@media(max-width:380px){.commerce-main{width:calc(100% - 24px)}}
+
+/* Grid tracks and form controls must shrink to the mobile viewport. */
+.commerce-layout>*,
+.commerce-fields>*,
+.checkout-summary-item>*{min-width:0}
+.commerce-main input,.commerce-main select,.commerce-main textarea{box-sizing:border-box;max-width:100%}
+.checkout-summary-item span,.commerce-line-title{overflow-wrap:anywhere}
+@media(max-width:720px){
+  .commerce-layout,.checkout-layout{grid-template-columns:minmax(0,1fr)}
+  .commerce-fields{grid-template-columns:minmax(0,1fr)}
+  .commerce-layout>.commerce-summary,.checkout-form{min-width:0;max-width:100%}
+  .commerce-field input,.commerce-field select{width:100%;min-width:0}
+  /* Keep the purchase action in flow; it must never hide customer inputs. */
+  .commerce-submit{position:static;z-index:auto}
+}

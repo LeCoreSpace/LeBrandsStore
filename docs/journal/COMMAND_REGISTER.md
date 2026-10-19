@@ -1,5 +1,21 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: Shared storefront commerce
+
+Working directory: repository root. Tests use synthetic/isolated data.
+
+- **Executed locally:** `node --experimental-test-module-mocks --test --test-concurrency=1 tests/wizard.test.js tests/commerce-options.test.js tests/commerce-runtime.test.js tests/sku-checkout.test.js tests/ann-browser-preview.test.js tests/aura-preview-motion.test.js tests/checkout-prefix-fixture.test.js` passed 50 checks.
+- **Executed locally:** `node --experimental-test-module-mocks --test --test-concurrency=1 tests/storefront-commerce-shell.test.js tests/ann-browser-preview.test.js tests/commerce-options.test.js tests/browser-bundles.test.js` passed 17 checks after saved-theme checkout framing.
+- **Executed locally:** `node --test tests/storefront-commerce-shell.test.js`
+  passed four focused checks after the final selected-logo fallback.
+- **Executed locally:** `pnpm run typecheck` and `git diff --check` passed.
+- **Executed in isolated browser:** one COD purchase and focused 390px
+  responsive follow-up under `/__sku-checkout-preview/`; no live checkout.
+  Mobile findings and incomplete style sweep are recorded in the daily journal.
+- **Suggested only, production mutation:** `pnpm run deploy`, using the intended
+  Cloudflare configuration/credentials. No migration is required. Not executed
+  by the agent. Existing public slugs, cart IDs and SKU IDs are preserved.
+
 ## 19 October 2026: D2C policy content
 
 - Working directory: repository root.

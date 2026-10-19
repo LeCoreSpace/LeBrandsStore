@@ -577,6 +577,46 @@ decision:
   update or publication was performed. Deploy manually with `pnpm run deploy`.
 
 ## Evidence and limitations
+### 19 October 2026: Shared storefront commerce and publication defects
+
+- **What:** Added a shared product/cart/checkout presentation across all eight
+  saved Ann styles, preserving merchant branding. Fixed transparent/overlapping
+  cart drawers, title-slug navigation and merchant favicons. Cart and checkout
+  now use saved-theme framing rather than falling back to an unrelated theme.
+- **How:** Live product layouts share gallery/details/purchase structure,
+  including conversion styles. Commerce CSS supplies opaque drawer surfaces,
+  reliable layering, responsive form tracks and readable controls. Drawer focus
+  is trapped, background content becomes inert while open, and close restores
+  interaction. Transaction pages suppress fixed theme shortcut navigation so it
+  cannot cover customer fields. Mobile submit remains in normal form flow.
+  Public links use published slugs; legacy ID links permanently redirect while
+  retaining query parameters. Existing saved slugs stay stable on title edits.
+  Favicon markup uses the uploaded or selected Ann logo, with a safe monogram
+  fallback and tenant-aware icon routes. No catalogue or order identity changed.
+- **Verification:** An initial 50-check suite passed, including isolated real
+  schema checkout, payment recovery, SKU pricing/stock and preview boundaries.
+  A final 17-check renderer/bundle suite passed, followed by four focused
+  slug/favicon/theme tests after the last icon fallback adjustment. Workspace
+  type checks and whitespace checks passed. All eight themes render one shared
+  live product picker and preserve their theme framing in transaction HTML.
+- **Browser outcome:** In the isolated synthetic store, selection, drawer
+  layering/opacity, keyboard focus/close, quantity changes, totals and phone
+  validation passed. One COD purchase completed using the selected S/White
+  override-priced SKU and deducted only that SKU's stock. No live payment,
+  merchant data or production database was touched. The initial mobile check
+  found grid overflow and a submit overlapping fields; the focused follow-up
+  confirmed the Architectural checkout, product and cart fit at 390px after
+  correction. It then exposed Boutique's fixed quick navigation covering a
+  phone field; shortcut bars were suppressed on all transaction surfaces and
+  cart button text contrast was strengthened. The remaining five mobile styles
+  were not completed in that browser sweep; do not claim a full mobile browser
+  pass from renderer tests. A final native 390px Boutique capture confirmed the
+  shortcut bar is absent and contact/address/payment fields and submit render
+  in normal flow without the reported occlusion.
+- **Release:** Working changes are uncommitted at this update. No database
+  migration or production deployment was performed. Cloudflare release is
+  manual; current merchant policies and publication snapshots were not rewritten.
+
 ### 19 October 2026: Professional D2C policy draft content
 
 - **What:** Replaced short setup-oriented text with full customer-facing Privacy,

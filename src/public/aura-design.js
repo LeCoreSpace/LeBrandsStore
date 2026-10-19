@@ -20,8 +20,9 @@ export function annDesign(settings) {
 export function renderSavedDesign(data = {}, options = {}) {
   const design = annDesign(data.settings);
   const page = options.page || "home";
-  if (!design || !DESIGN_PAGES.includes(page)) return null;
+  if (!design || ![...DESIGN_PAGES,"cart","checkout","track","confirmation"].includes(page)) return null;
   const rendered=renderDesignLive(data, { ...data.settings, style_preset: design.style }, { ...options, page }, design);
-  if(rendered?.body)rendered.body=applyRichDesignText(applyDesignSections(applyDesignContent(rendered.body,design,page,Boolean(options.designEdit)),design.sections,page),design);
+  // Commerce uses the shared transactional form, not editable theme sections.
+  if(rendered?.body&&DESIGN_PAGES.includes(page))rendered.body=applyRichDesignText(applyDesignSections(applyDesignContent(rendered.body,design,page,Boolean(options.designEdit)),design.sections,page),design);
   return rendered;
 }

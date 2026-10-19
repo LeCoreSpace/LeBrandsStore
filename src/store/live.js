@@ -1,4 +1,5 @@
-import { renderAura } from "../public/aura.js";
+import { renderAura, storefrontIcon } from "../public/aura.js";
+import { productHref } from "../public/commerce-options.js";
 import { POLICY_KINDS, UUID } from "../public/validation.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import { handleCheckout, isCheckoutPath } from "../checkout/routes.js";
@@ -46,9 +47,22 @@ export async function serveStorefront(request, db, store, env = {}) {
   const data = { ...publication.snapshot,
     store: { ...publication.snapshot.store, ...store },
     settings: { ...publication.snapshot.settings, subdomain: store.subdomain } };
+  if (["GET","HEAD"].includes(request.method) && ["/favicon.svg","/favicon.ico"].includes(url.pathname)) {
+    const icon = storefrontIcon(data.settings);
+    const headers = { ...SECURITY_HEADERS, "cache-control":"public, max-age=3600" };
+    if (icon.href.startsWith("https://")) return new Response(null,{status:302,headers:{...headers,location:icon.href}});
+    return new Response(request.method==="HEAD"?null:icon.svg,{headers:{...headers,"content-type":"image/svg+xml; charset=utf-8","content-security-policy":"default-src 'none'; style-src 'unsafe-inline'; sandbox"}});
+  }
   if (isCheckoutPath(url.pathname)) return handleCheckout(request,env,db,store,data);
   if (!["GET","HEAD"].includes(request.method)) return new Response("Method not allowed",{status:405,headers:SECURITY_HEADERS});
   const options = storefrontPage(url.pathname, data);
+  if (options.page === "product") {
+    const product = data.products.find(p => p.id === options.productId);
+    const canonical = productHref(product);
+    if (url.pathname !== canonical) return new Response(null, {
+      status:308,headers:{...SECURITY_HEADERS,location:`${canonical}${url.search}`},
+    });
+  }
   return new Response(request.method === "HEAD" ? null : withNavigation(renderAura(data, {...options,commerce:true,siteKey:env.TURNSTILE_SITE_KEY ?? ""})), {
     status: options.status,
     headers: { ...SECURITY_HEADERS, "content-type": "text/html; charset=utf-8" },

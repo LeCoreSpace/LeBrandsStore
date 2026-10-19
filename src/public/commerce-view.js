@@ -1,5 +1,6 @@
 import { INDIAN_STATES, formatPhone } from "./commerce-rules.js";
 import { stateName, statusLabel, indianDate } from "./dashboard-rules.js";
+import { productHref } from "./commerce-options.js";
 
 const esc = (value) => String(/^\+91[0-9]{10}$/.test(String(value)) ? formatPhone(value) : value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 const money = (value) => `₹${(Math.max(0, Number(value) || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -10,7 +11,7 @@ function cartRecommendations(data) {
   if (data.aura_skeleton_enabled !== true) return "";
   const picks = (Array.isArray(data.products) ? data.products : []).filter((p) => p?.id && p.title && (p.stock == null || Number(p.stock) > 0)).slice(0, 4);
   if (!picks.length) return "";
-  return `<section class="commerce-panel commerce-recs" data-cart-recs aria-label="You may also like"><h2>You may also like</h2><div class="commerce-rec-list">${picks.map((p) => `<article data-rec-id="${esc(p.id)}"><a href="/products/${encodeURIComponent(p.id)}">${esc(p.title)}</a><span>${money(p.price_paise)}</span><button type="button" class="commerce-button" data-add-product="${esc(p.id)}">Add to bag</button></article>`).join("")}</div></section>`;
+  return `<section class="commerce-panel commerce-recs" data-cart-recs aria-label="You may also like"><h2>You may also like</h2><div class="commerce-rec-list">${picks.map((p) => `<article data-rec-id="${esc(p.id)}"><a href="${productHref(p)}">${esc(p.title)}</a><span>${money(p.price_paise)}</span><button type="button" class="commerce-button" data-add-product="${esc(p.id)}">Add to bag</button></article>`).join("")}</div></section>`;
 }
 function cartPage(data = {}) {
   return `<main class="commerce-main"><div class="commerce-heading"><span class="commerce-kicker">Your selection</span><h1>Your bag.</h1><p>Good things, gathered in one place.</p></div><div class="commerce-layout"><section class="commerce-panel"><div data-cart-page-lines><div class="commerce-loading" role="status">Checking your bag…</div></div></section><aside class="commerce-summary" data-cart-summary></aside></div>${cartRecommendations(data)}</main>`;

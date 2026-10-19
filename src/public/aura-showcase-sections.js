@@ -4,12 +4,13 @@
  * Bundle totals are exact sums of the projected product prices.
  */
 import { safeImage } from "./aura-sections.js";
+import { productHref } from "./commerce-options.js";
 import * as Profiles from "./aura-showcase-profiles.js";
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const rupees = paise => `\u20B9${(Number(paise || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 const tag = text => `<em class="sc-demo-tag">${esc(text)}</em>`;
 const ILL = "Illustrative demo";
-const pHref = p => `/products/${encodeURIComponent(p.id)}`;
+const pHref = productHref;
 const pic = (o, alt) => safeImage(o?.url) ? `<img src="${esc(safeImage(o.url))}" alt="${esc(alt ?? o.alt ?? "")}" width="${Number(o.width) || 1024}" height="${Number(o.height) || 1024}" loading="lazy" decoding="async">` : "";
 const DEFAULT_WORLD = { editorial: /women|cloth|apparel|dress|fashion/i, boutique: /skin/i, architectural: /street|cloth|apparel|men/i, minimal: /decor|home/i, vintage: /bag|leather/i };
 /** True when the selected niche is the style's own sample world (or unknown). */

@@ -4,7 +4,7 @@ import { formatPhone } from "./commerce-rules.js";
 import { sanitizeRichText } from "./aura-layout.js";
 import { normalisePageSize } from "./catalog-page.js";
 import { productDetailRows } from "./product-details.js";
-import { hasOptions, renderOptionBuy, renderOptionSticky, OPTION_CSS } from "./commerce-options.js";
+import { hasOptions, renderOptionBuy, renderOptionSticky, OPTION_CSS, productHref } from "./commerce-options.js";
 export { OPTION_CSS };
 
 export const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -51,7 +51,7 @@ function img(image, { eager = false, cls = "", label = "", sizes = HERO_IMAGE_SI
 }
 function card(p, ctx, eager = false, index = 0) {
   const im = img(p.images?.[0], { label: p.title, sizes:"(max-width: 680px) 50vw, (max-width: 1024px) 33vw, 25vw" });
-  return `<a class="au-card" data-title="${esc(String(p.title || "").toLowerCase())}" data-price="${Number(p.price_paise) || 0}" data-available="${available(p) ? 1 : 0}" data-index="${index}"${Array.isArray(p.collection_ids) ? ` data-collections="${esc(p.collection_ids.join(" "))}"` : ""} href="/products/${encodeURIComponent(p.id || "")}"><span class="au-card-media">${im || `<span class="au-card-blank">${esc((p.title || "").slice(0, 1))}</span>`}</span><span class="au-card-name">${esc(p.title || "Untitled product")}</span><span class="au-card-price">${money(p.price_paise)}${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}${available(p) ? "" : " · Sold out"}</span></a>`;
+  return `<a class="au-card" data-title="${esc(String(p.title || "").toLowerCase())}" data-price="${Number(p.price_paise) || 0}" data-available="${available(p) ? 1 : 0}" data-index="${index}"${Array.isArray(p.collection_ids) ? ` data-collections="${esc(p.collection_ids.join(" "))}"` : ""} href="${productHref(p)}"><span class="au-card-media">${im || `<span class="au-card-blank">${esc((p.title || "").slice(0, 1))}</span>`}</span><span class="au-card-name">${esc(p.title || "Untitled product")}</span><span class="au-card-price">${money(p.price_paise)}${p.compare_at_paise ? ` <del>${money(p.compare_at_paise)}</del>` : ""}${available(p) ? "" : " · Sold out"}</span></a>`;
 }
 const heading = (t, extra = "") => t ? `<div class="au-head"><h2>${esc(t)}</h2>${extra}</div>` : "";
 
@@ -158,7 +158,7 @@ export const SECTION_RENDERERS = {
     if (off(s)) return "";
     const p = c.products.find((i) => String(i.id) === String(s.settings?.product));
     if (!p || !img(p.images?.[0])) return "";
-    return `<section class="au-spotlight"><div class="au-spot-media">${img(p.images[0], { label: p.title })}</div><div class="au-spot-copy"><h2>${esc(p.title)}</h2><div class="au-rich">${c.renderDescription(String(p.description || "").slice(0, 260))}</div><p class="au-card-price">${money(p.price_paise)}</p><a class="au-btn" href="/products/${encodeURIComponent(p.id)}">View product</a></div></section>`;
+    return `<section class="au-spotlight"><div class="au-spot-media">${img(p.images[0], { label: p.title })}</div><div class="au-spot-copy"><h2>${esc(p.title)}</h2><div class="au-rich">${c.renderDescription(String(p.description || "").slice(0, 260))}</div><p class="au-card-price">${money(p.price_paise)}</p><a class="au-btn" href="${productHref(p)}">View product</a></div></section>`;
   },
   lookbook(s) {
     const items = (s.blocks || []).map((b) => b.settings || {}).filter((b) => safeImage(b.image?.url));

@@ -2,6 +2,7 @@ import { contrastColor } from "./validation.js";
 import { renderSection, safeImage, policyTitle, imageSourceSet, HERO_IMAGE_SIZES } from "./aura-sections.js";
 import { getPageKey, defaultPageLayouts } from "./aura-layout.js";
 import { STYLE_IDS } from "./aura-styles.js";
+import { productHref } from "./commerce-options.js";
 
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
   "&": "&amp;",
@@ -12,6 +13,13 @@ const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
 }[character]));
 
 const slug = (value) => String(value ?? "").replace(/[^a-z0-9-]/gi, "");
+export function storefrontIcon(settings = {}) {
+  const initials = [...String(settings.brand_name || "Store").trim()].slice(0, 2).join("").toUpperCase();
+  return {
+    href: safeImage(settings.logo_url) || safeImage(settings.ann_design?.media?.logo?.url) || `/favicon.svg?v=${encodeURIComponent(settings.brand_name || "Store")}`,
+    svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#fff"/><text x="32" y="42" text-anchor="middle" font-family="Arial,sans-serif" font-size="28" font-weight="700" fill="#222">${esc(initials)}</text></svg>`,
+  };
+}
 function accentTextColor(hex, backgrounds = ["#f8f6ef"]) {
   const lum = (h) => { const l = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4); return l[0] * 0.2126 + l[1] * 0.7152 + l[2] * 0.0722; };
   const ratio = (x, y) => (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
@@ -94,7 +102,7 @@ export function renderAura(data = {}, options = {}) {
   const seo=page==="product"?prodForPage?.catalogue:page==="collection"?activeCol:null;
   const title=seo?.seo_title||defaultTitle;
   const descriptionText = String(seo?.seo_description || (page==="product"?prodForPage?.description:activeCol?.description) || description).replace(/<[^>]*>/g," ").replace(/\s+/g, " ").trim().slice(0, 160);
-  const canonicalPath = page === "collection" ? (activeCol && /^[a-z0-9-]+$/.test(String(activeCol.slug || "")) ? `/collections/${activeCol.slug}` : "/collections/all") : page === "product" ? `/products/${encodeURIComponent(prodForPage?.slug || prodForPage?.id || "")}`
+  const canonicalPath = page === "collection" ? (activeCol && /^[a-z0-9-]+$/.test(String(activeCol.slug || "")) ? `/collections/${activeCol.slug}` : "/collections/all") : page === "product" ? productHref(prodForPage)
     : page === "about" ? "/pages/about" : page === "contact" ? "/pages/contact" : page === "policy" ? `/policies/${slug(options.policyKind)}` : "/";
   const canonicalUrl = subdomain && !commercePage ? `https://${subdomain}.lebrands.store${canonicalPath}` : "";
   const logoUrl = safeImage(settings.logo_url);
@@ -128,6 +136,8 @@ export function renderAura(data = {}, options = {}) {
       <meta name="viewport" content="width=device-width, initial-scale=1">
       ${heroPreload}
       <title>${esc(title)}</title>
+      <link rel="icon" href="${esc(storefrontIcon(settings).href)}">
+      <link rel="apple-touch-icon" href="${esc(storefrontIcon(settings).href)}">
       <meta name="description" content="${esc(descriptionText)}">
       <meta name="theme-color" content="${esc(paper)}">
       ${noindex ? '<meta name="robots" content="noindex, nofollow">' : ""}

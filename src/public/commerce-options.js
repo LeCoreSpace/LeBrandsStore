@@ -1,3 +1,9 @@
+// Public navigation uses the published slug, never an administrative title edit.
+export function productHref(product) {
+  const slug = String(product?.slug || "");
+  return `/products/${encodeURIComponent(/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ? slug : String(product?.id || ""))}`;
+}
+
 // Pure SKU-variant helpers. No DOM. Shared by renderers, the cart script and tests.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const s = (v) => typeof v === "string" ? v.trim() : "";

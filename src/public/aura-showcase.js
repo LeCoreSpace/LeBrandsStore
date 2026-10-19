@@ -11,7 +11,8 @@ import { showcaseProfile, renderNicheSections, NICHE_SECTION_CSS, profileGuidanc
 import { styleSettings, STYLE_IDS } from "./aura-styles.js";
 import { CONVERSION_COPY, CONVERSION_NEUTRAL, CONVERSION_KIND, CONVERSION_CSS, CONVERSION_TABBAR, isConversionStyle, conversionTopper, buildConversion } from "./aura-conversion-styles.js";
 import { productDetailRows, productFeatureRows } from "./product-details.js";
-import { hasOptions, renderOptionBuy, renderOptionSticky, OPTION_CSS } from "./commerce-options.js";
+import { hasOptions, renderOptionBuy, renderOptionSticky, OPTION_CSS, productHref } from "./commerce-options.js";
+import { renderCommerceBody } from "./commerce-view.js";
 export { OPTION_CSS };
 import { contrastColor } from "./validation.js";
 import {validateDesignMenus,renderDesignMenu,DESIGN_MENU_CSS} from "./ann-menu-model.js";
@@ -183,7 +184,7 @@ function context(data, settings, options) {
     profile: showcaseProfile({ ...data, showcase_niche: data.showcase_niche || pack }, style), options, page: options.page || "home" };
 }
 const pImg = (p, i = 0) => p?.images?.[i]?.url ? img(p.images[i]) : "";
-const pHref = p => `/products/${encodeURIComponent(p.id)}`;
+const pHref = productHref;
 const cHref = c => `/collections/${encodeURIComponent(c.slug || c.id)}`;
 const cImg = (c, x, i) => img(c.image || x.products.find(p => (c.product_ids || []).includes(p.id))?.images?.[0], c.title, LIVE && c.image && i < 2 ? `collection${i}` : undefined);
 const rv = (i = 0) => `class="rv" style="--i:${i}"`;
@@ -279,8 +280,8 @@ function productPageLive(x) {
   const vo = hasOptions(p) && o.commerce && !o.readOnly;
   const buy = vo ? renderOptionBuy(p, { esc, money: rupees }) : on ? `<div class="au-buy"><label for="aura-quantity">Quantity</label><input id="aura-quantity" type="number" min="1" max="${max}" value="1" inputmode="numeric" aria-label="Quantity"><button class="au-btn" type="button" data-add-product="${esc(p.id)}"${avail ? "" : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div><p class="au-feedback" data-commerce-feedback role="status"></p>`
     : `<div class="au-buy"><button class="au-btn" type="button" disabled aria-disabled="true">${o.preview || o.embeddedPreview ? "Preview only: checkout on the live store" : o.commerce ? "Add to cart on the live store" : "Shopping unavailable"}</button></div>`;
-  return `<section class="sc-prod"><div class="sc-gal"><div class="sc-gal-main">${pics[0] || ""}</div>${pics.length > 1 ? `<div class="sc-gal-sub">${pics.slice(1).map(i => `<div>${i}</div>`).join("")}</div>` : ""}</div>
-  <div class="sc-info"><p class="sc-crumb"><a href="/">Home</a> / <a href="/collections/all">Shop</a></p><h1>${esc(p.title)}</h1><p class="sc-pp" data-opt-price>${rupees(p.price_paise)}${p.compare_at_paise ? ` <del>${rupees(p.compare_at_paise)}</del>` : ""}</p><p class="sc-desc" style="white-space:pre-line">${esc(p.description || "")}</p>${features ? `<ul class="sc-feat">${features}</ul>` : ""}${buy}</div></section>
+  return `<section class="sc-prod sc-prod-live"><div class="sc-gal"><div class="sc-gal-main">${pics[0] || ""}</div>${pics.length > 1 ? `<div class="sc-gal-sub">${pics.slice(1).map(i => `<div>${i}</div>`).join("")}</div>` : ""}</div>
+  <div class="sc-info"><p class="sc-crumb"><a href="/">Home</a> / <a href="/collections/all">Shop</a></p><h1>${esc(p.title)}</h1><p class="sc-pp" data-opt-price>${rupees(p.price_paise)}${p.compare_at_paise ? ` <del>${rupees(p.compare_at_paise)}</del>` : ""}</p>${p.description ? `<p class="sc-desc" style="white-space:pre-line">${esc(p.description)}</p>` : ""}${features ? `<ul class="sc-feat" aria-label="Product details">${features}</ul>` : ""}<div class="sc-buybox">${buy}</div></div></section>
   ${rest.length ? `<section class="sc-rel"><h2>You may also like</h2><div class="sc-list">${rest.map((r, i) => card(r, i)).join("")}</div></section>` : ""}${vo ? `<div class="au-sticky-buy"><b data-opt-price>${rupees(p.price_paise)}</b>${renderOptionSticky(p, { esc })}</div>` : on ? `<div class="au-sticky-buy"><b>${rupees(p.price_paise)}</b><button type="button" class="au-btn"${avail ? ` data-add-product="${esc(p.id)}"` : ' disabled aria-disabled="true"'}>${avail ? "Add to cart" : "Sold out"}</button></div>` : ""}`;
 }
 function contactPageLive(x) {
@@ -289,8 +290,8 @@ function contactPageLive(x) {
   return `<section class="sc-contact"><div><p>Contact</p><h1>Get in touch.</h1>${rows.length ? `<div class="sc-crow">${rows.join("")}</div>` : "<p>Contact details will appear here soon.</p>"}</div><div class="sc-about-img">${img(x.media.lifestyle, undefined, "lifestyle")}</div></section>`;
 }
 function productPage(x) {
-  if (CONV.PRODUCT[x.style]) return CONV.PRODUCT[x.style](x);
   if (LIVE) return productPageLive(x);
+  if (CONV.PRODUCT[x.style]) return CONV.PRODUCT[x.style](x);
   const p = x.products.find(i => String(i.id) === String(x.options.productId)) || x.products[0];
   if (!p) return `<section class="sc-chead"><h1>No sample product</h1></section>`;
   const features = (p.content?.features || []).map(f => `<li><span>${esc(f.label)}</span>${esc(f.value)}</li>`).join("");
@@ -483,7 +484,8 @@ const liveMedia = o => o && typeof o === "object" && okUrl(o.url) ? { url: o.url
 export function renderDesignLive(data, settings, options, design) {
   EDIT_SAMPLE=false;
   const style = design.style, page = options.page || "home";
-  if (!DEF[style] || !HOME[style] || !(page === "home" || ["collection", "product", "about", "contact"].includes(page))) return null;
+  const commerce = options.commerce && ["cart","checkout","track","confirmation"].includes(page);
+  if (!DEF[style] || !HOME[style] || !(commerce || page === "home" || ["collection", "product", "about", "contact"].includes(page))) return null;
   const pack = SHOWCASE_MEDIA?.[design.media_pack || style] || {}, m = design.media || {};
   const brand = settings.brand_name || data.store?.name || "Your brand";
   const dm = design.copy && typeof design.copy === "object" ? design.copy : {};
@@ -498,13 +500,13 @@ export function renderDesignLive(data, settings, options, design) {
   const { overrides, font, preset } = themeOverrides(style, settings);
   LIVE = { edit: options.designEdit === true };
   try {
-    let main = page === "home" ? HOME[style](x) : BODY[page](x);
-    main += extras(x, data);
+    let main = commerce ? renderCommerceBody({...data,settings},options) : page === "home" ? HOME[style](x) : BODY[page](x);
+    if(!commerce)main += extras(x, data);
     if (page === "home" && !products.length) main += '<section class="sc-sec"><p class="sc-empty">Products are being added. Check back soon.</p></section>';
     main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${kindOf(style)}"`)
       .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${kindOf(style)}"`);
-    return { body: `${header(x)}<main class="sc-main sc-p-${page}">${main}</main>${footer(x)}`,
+    return { body: `${header(x)}${commerce?main:`<main class="sc-main sc-p-${page}">${main}</main>`}${footer(x)}`,
       css: `${CSS}${RICH_CSS}${overrides}${LIVE_CSS}`, bodyClass: `sc sc-${style}`, style, font, preset };
   } finally { LIVE = null; }
 }
-const LIVE_CSS = `.sc .au-buy{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:1.2rem 0}.sc .au-buy input{width:4.5rem;padding:.7rem;border:1px solid var(--line,#ccc);background:transparent;color:inherit;font:inherit}.sc .au-btn{padding:.85rem 1.6rem;border:0;background:var(--acc);color:var(--acc-ink,#fff);font-weight:600;border-radius:var(--rad,0)}.sc .au-btn[disabled]{opacity:.5;cursor:not-allowed}.sc .au-feedback{font-size:.85rem}.sc .sc-crow{display:grid;gap:.5rem;margin:1rem 0}.sc .ar-stats{grid-template-columns:repeat(2,1fr)}.sc [hidden]{display:none!important}.sc [data-design-copy],.sc [data-design-image]{cursor:text}.sc [data-design-image]{cursor:pointer}.sc [data-design-copy]:hover,.sc [data-design-image]:hover{outline:2px dashed var(--acc);outline-offset:3px}.sc [data-design-selected]{outline:2px solid var(--acc)!important;outline-offset:3px}`;
+const LIVE_CSS = `.sc-prod-live{max-width:1320px;margin-inline:auto;align-items:start;gap:clamp(1.5rem,4vw,4rem)}.sc-prod-live .sc-gal-main{aspect-ratio:4/5;background:var(--tint,#eee);display:grid}.sc-prod-live .sc-gal-main img,.sc-prod-live .sc-gal-main video{width:100%;height:100%;object-fit:cover}.sc-prod-live .sc-gal-sub{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:.6rem}.sc-prod-live .sc-gal-sub div{aspect-ratio:1;background:var(--tint,#eee)}.sc-prod-live .sc-gal-sub img,.sc-prod-live .sc-gal-sub video{width:100%;height:100%;object-fit:cover;cursor:zoom-in}.sc-prod-live .sc-info{gap:1.1rem;max-height:calc(100dvh - 6rem);overflow-y:auto;scrollbar-width:thin;padding-bottom:1rem}.sc-prod-live .sc-info h1{font-size:clamp(1.8rem,3.2vw,2.8rem);overflow-wrap:anywhere}.sc-prod-live .sc-pp{display:flex;align-items:baseline;gap:.7rem;margin:0;font-size:1.35rem;font-weight:700;font-variant-numeric:tabular-nums;padding-bottom:1rem;border-bottom:1px solid var(--line,#ccc)}.sc-prod-live .sc-pp del{font-weight:400;opacity:.55;font-size:.8em}.sc-prod-live .sc-desc{margin:0;line-height:1.7;max-width:60ch}.sc-prod-live .sc-feat{border-top:1px solid var(--line,#ccc);margin:0}.sc-prod-live .sc-feat li{display:flex;gap:1rem;padding:.65rem 0;border-bottom:1px solid var(--line,#ccc);font-size:.92rem}.sc-prod-live .sc-feat span{min-width:6.5rem;opacity:.65}.sc-buybox{display:grid;gap:.9rem;padding:1.1rem;border:1px solid var(--line,#ccc);background:var(--tint,transparent)}.sc-buybox .au-buy{margin:0;flex-wrap:nowrap;align-items:stretch}.sc-buybox .au-buy label{position:absolute;left:-9999px}.sc-buybox .au-buy input{width:5rem;min-height:3.2rem;text-align:center}.sc-buybox .au-buy .au-btn{flex:1;min-height:3.2rem;cursor:pointer;text-transform:uppercase;letter-spacing:.04em;font-size:.85rem}.sc-buybox .au-options{display:grid;gap:1rem;margin:0}.sc-buybox .au-opt legend{font-size:.8rem;text-transform:uppercase;letter-spacing:.08em}.sc-buybox .au-opt-v label{min-height:2.9rem;min-width:3rem;border:1px solid var(--ink,currentColor);border-radius:var(--rad,0);opacity:1;background:transparent}.sc-buybox .au-opt-v input:checked+label{background:var(--ink,#111);color:var(--paper,#fff);outline:0}.sc-buybox .au-opt-v input[data-opt-flag]+label{opacity:.5;border-style:dashed}.sc-buybox .au-opt-v input:focus-visible+label,.sc-buybox .au-btn:focus-visible{outline:3px solid var(--acc);outline-offset:2px}.sc-buybox .au-opt-status{margin:0;font-size:.9rem}.sc .au-sticky-buy{display:none}@media(max-width:760px){.sc-prod-live{padding:1rem 1rem 6rem}.sc-prod-live .sc-info{max-height:none;overflow:visible}.sc-prod-live .sc-gal-main{aspect-ratio:1}.sc-prod-live .sc-gal-sub{display:flex;overflow-x:auto;scroll-snap-type:x mandatory}.sc-prod-live .sc-gal-sub div{flex:0 0 28%;scroll-snap-align:start}.sc .au-sticky-buy{position:fixed;inset:auto 0 0;z-index:40;display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.7rem 1rem calc(.7rem + env(safe-area-inset-bottom));background:var(--bg,var(--paper,#fff));color:var(--ink,#111);border-top:1px solid var(--line,#ccc)}.sc .au-sticky-buy .au-btn{min-height:3rem;flex:1;max-width:60%}}.sc .au-buy{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:1.2rem 0}.sc .au-buy input{width:4.5rem;padding:.7rem;border:1px solid var(--line,#ccc);background:transparent;color:inherit;font:inherit}.sc .au-btn{padding:.85rem 1.6rem;border:0;background:var(--acc);color:var(--acc-ink,#fff);font-weight:600;border-radius:var(--rad,0)}.sc .au-btn[disabled]{opacity:.5;cursor:not-allowed}.sc .au-feedback{font-size:.85rem}.sc .sc-crow{display:grid;gap:.5rem;margin:1rem 0}.sc .ar-stats{grid-template-columns:repeat(2,1fr)}.sc [hidden]{display:none!important}.sc [data-design-copy],.sc [data-design-image]{cursor:text}.sc [data-design-image]{cursor:pointer}.sc [data-design-copy]:hover,.sc [data-design-image]:hover{outline:2px dashed var(--acc);outline-offset:3px}.sc [data-design-selected]{outline:2px solid var(--acc)!important;outline-offset:3px}`;
