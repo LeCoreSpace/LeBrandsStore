@@ -497,6 +497,54 @@ decision:
   [3d1ee10](journal/COMMIT_REGISTER.md#commit-3d1ee10). Current COGS changes were
   not yet checkpointed at the time of this entry.
 
+### 19 October 2026: Stage 2 commerce analytics
+
+- **Requested:** continue the staged analytics work after the private COGS
+  foundation.
+- **Implemented:** owner/admin-only **Business pulse → Analytics**, with daily
+  sales, a line-level order register and product/SKU performance. All reports
+  share month, quarter, April-to-March financial-year, 30-day and custom dates,
+  timezone/currency filters, pagination and refresh. CSV and genuine Excel
+  downloads cover the complete selected report; the browser's Print / Save PDF
+  option produces an aggregate summary.
+- **How:** a staged, tenant/session-checked PostgreSQL read function calculates
+  the reports from saved orders, order lines and immutable private cost
+  snapshots. Date boundaries are local and inclusive. Daily aggregation avoids
+  repeated scans of every order line for every day. The HTML's initial result
+  is reused instead of immediately querying it a second time.
+- **Financial limits:** booked value is not collected cash or recognised income.
+  Return/refund reversals are current-status estimates on the order-date cohort,
+  not confirmed refund transactions. Currencies are separate. Margins cover only
+  known-cost, tax-reconciled units without unallocated order discounts. Unknown
+  historical costs remain unknown; changing catalogue costs does not rewrite
+  prior margins. Definitions are recorded in
+  [the staged delivery document](catalogue-costs-and-analytics.md).
+- **Download safeguards:** authenticated owner/admin access, no-store responses,
+  safe spreadsheet strings, exact decimal amounts, store/period metadata,
+  genuine XLSX report and definition sheets, and explicit refusal above
+  10,000 rows or 24 MiB. Repeated whole-order amounts are labelled not to sum
+  across lines. No invoice, tax, subscription or payment authority changes.
+- **Verification:** the relevant analytics, COGS, navigation and Worker browser
+  graph suite covered 29 checks. A brittle HTML JSON key-order assertion was
+  corrected to parse the embedded data; the analytics file then passed all
+  13 checks, with the other 16 checks already passing. Type checks and syntax
+  checks passed. Real isolated checkout creation exercised known zero,
+  historical unknown, changed current costs, invalid tax reconciliation,
+  currency separation, local midnight boundaries, owner/editor denials and
+  exports. Python verified XLSX ZIP checksums and parsed every XML part.
+  Native-preview desktop and 402-pixel mobile screenshots showed the real
+  dashboard with synthetic data. No real merchant database was queried.
+- **Release:** `0042_commerce_analytics.sql` and its staged selector are prepared,
+  requiring recorded `0041_catalogue_cogs.sql`. Neither live migration nor
+  production deployment was performed. Manual commands are in the
+  [command register](journal/COMMAND_REGISTER.md).
+- **Deferred:** invoice/GST reconciliation and tax packs, verified refund/
+  settlement ledgers, cohorts/traffic, contribution margin and net profit.
+  COGS CSV import/export remains separate from these analytics reports.
+- **Checkpoint:** Stage 1 is captured in
+  [1a3bfd4](journal/COMMIT_REGISTER.md#commit-1a3bfd4); current Stage 2 work is
+  uncommitted at this journal update.
+
 ## Evidence and limitations
 
 ### 19 October 2026: COGS navigation confirmed

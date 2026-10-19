@@ -104,6 +104,27 @@ onboarding requirements.
 
 ## 4. Database migrations
 
+### 19 October: commerce analytics
+
+Working directory: repository root. Development checks use only isolated
+synthetic PostgreSQL data. Production commands below are **suggested only**.
+
+| Command | Effect and prerequisites | Execution evidence |
+| --- | --- | --- |
+| `pnpm run db:migrate -- --staged-catalogue-cogs` | Stage 1 prerequisite if not yet applied. Review/backup the existing Supabase database first. Requires recorded catalogue API migration. | Not executed against the live database by the assistant. |
+| `pnpm run db:migrate -- --staged-commerce-analytics` | Apply only reviewed `0042_commerce_analytics.sql`; requires recorded `0041_catalogue_cogs.sql`. Adds a restricted, tenant/session-checked read function without rewriting historical money or costs. | Prepared, not executed against the live database. |
+| `pnpm run deploy` | After successful migrations, build and publish the Worker using the existing Cloudflare configuration and approved credentials. Does not enable live charges. | Suggested manual release, not executed. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/commerce-analytics.test.js tests/catalogue-cogs.test.js tests/dashboard-navigation.test.js tests/browser-bundles.test.js` | Bounded isolated financial, permission, navigation and actual Worker asset-gate checks. No production data. | Executed: 27/29 initially passed; one brittle assertion and its parent failed. Corrected to parse the actual embedded JSON. Other 16 checks passed unchanged. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/commerce-analytics.test.js` | Targeted report calculations, captured costs, date boundaries, permissions, no-store export and XLSX package checks. | Executed after the assertion correction: 13/13 passed. No live database access. |
+| `pnpm run typecheck` | Workspace TypeScript checks. | Passed. |
+| `git diff --check` | Check tracked diffs for whitespace errors. | Passed during verification. |
+
+The existing managed web/API workflows were restarted, and the Worker built
+23 fingerprinted browser entries / 34 files. Native-preview screenshots
+verified desktop and mobile rendering using `/__analytics-preview/` synthetic
+data only. Browser Print / Save PDF is a user-operated system dialog; a saved
+PDF file was not claimed as tested.
+
 ### 19 October: catalogue COGS
 
 All commands below run from the repository root.

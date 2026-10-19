@@ -39,6 +39,7 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
         storeUrl ? { label: "Browser preview", href: storeUrl, kind: "external", hint: "Opens store", views: [] } : { label: "Browser preview", href: null, kind: "unavailable", hint: "Unavailable", views: [] }] },
       { key: "reach", label: "Brand reach", icon: "reach", items: [planned("Email campaigns"), planned("WhatsApp messages"), planned("Social campaigns")] },
       { key: "pulse", label: "Business pulse", icon: "pulse", items: [
+        ...(role === "owner" || role === "admin" ? [live("Analytics", `${root}/analytics`, ["analytics"], { hint: "Private" })] : []),
         live("Sales performance", root, [], { hint: "On Today" }),
         context("Product performance", root, "On Today"),
         planned("Customer insights"), planned("Shopping journey")] },

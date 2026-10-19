@@ -25,3 +25,14 @@ prove that database credential and session prerequisites are satisfied.
 **How to apply:** Keep authentication fixtures consistent with real persistence
 contracts, not just renderer or verifier stubs; do not weaken constraints to
 make the fixture pass.
+
+For financial reporting, verify persisted records at the application boundary,
+not only totals calculated from hand-built financial fixtures.
+
+**Why:** Schema and permission checks can pass while an adapter mismatch leaves
+the intended transactions absent or in the wrong period. Checkout rate limits
+and uniqueness failures are reasons to inspect the fixture, not relax guards.
+
+**How to apply:** Exercise the actual checkout/cost-capture transaction in an
+isolated database and independently establish record identity and period
+membership before relying on those records to prove financial aggregates.

@@ -2,9 +2,9 @@
 
 Captured on 19 October 2026 from the surviving project history. Times use Africa/Cairo.
 
-This register contains all **277 commits** available through 19 October, including the initial 272-commit backfill ending at `9adc763` and subsequent checkpoints `19919a1`, `ee31045`, `49d77ce`, `4b7d3c4` and `3d1ee10`. Original subjects are retained, including the historical use of “announcement” for Ann. File scopes describe evidence, not proof of working runtime behaviour. A versioned migration is not an applied migration, and a test-file change is not a passing test result. Production deployment is not established per commit.
+This register contains all **278 commits** available through 19 October, including the initial 272-commit backfill ending at `9adc763` and subsequent checkpoints `19919a1`, `ee31045`, `49d77ce`, `4b7d3c4`, `3d1ee10` and `1a3bfd4`. Original subjects are retained, including the historical use of “announcement” for Ann. File scopes describe evidence, not proof of working runtime behaviour. A versioned migration is not an applied migration, and a test-file change is not a passing test result. Production deployment is not established per commit.
 
-Related changes are explained in the [daily implementation journal](../IMPLEMENTATION_JOURNAL.md). Journal creation, the command-reference update, shared editor, toolbar readability and COGS navigation confirmation have recorded checkpoints. The new COGS implementation is not yet captured at the time of this update.
+Related changes are explained in the [daily implementation journal](../IMPLEMENTATION_JOURNAL.md). Journal creation, command references, the shared editor, toolbar readability, COGS navigation and Stage 1 COGS have recorded checkpoints. Stage 2 analytics is uncommitted at this update.
 
 ## 2026-09-11
 
@@ -388,3 +388,4 @@ Related changes are explained in the [daily implementation journal](../IMPLEMENT
 | 07:44 | <a id="commit-49d77ce"></a>`49d77ce` | Update fixture lifecycle documentation and UI implementation details | Shared rich-text editor, validation and rendering, Worker module gate, tests and journal. | Implementation captured; verification and partial browser coverage described in the daily journal. No production deployment implied. |
 | 07:57 | <a id="commit-4b7d3c4"></a>`4b7d3c4` | Update rich editor functionality and document recent changes | Toolbar readability, scoped controls, regression guard, analytics recommendations and journal. | Nine focused checks passed as recorded in the daily journal. No analytics implementation or production deployment implied. |
 | 08:02 | <a id="commit-3d1ee10"></a>`3d1ee10` | Update documentation and agent memory records | COGS navigation confirmation, journal and project memory. | Catalogue placement recorded only; no application implementation or release in this checkpoint. |
+| 08:57 | <a id="commit-1a3bfd4"></a>`1a3bfd4` | Update project documentation and dashboard implementation details | Stage 1 private COGS, optional shared product-form costs, captured order costs, isolated fixtures, tests and journal. | Implementation captured; verification is described in the daily journal. No live migration or production deployment implied. |
