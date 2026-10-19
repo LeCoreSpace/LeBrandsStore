@@ -58,6 +58,15 @@ screens when changing LeBrands branding; preserve operational layouts and flows.
 
 Storefront/Aura colours belong to the brand's chosen preset, not LeBrands plum.
 
+Offers and codes must not be under Catalogue. They need their own dashboard
+destination because offers can target products, collections or entire orders,
+including limited-time promotions.
+
+**Why:** The user explicitly rejected Catalogue placement for offers and codes.
+
+**How to apply:** Keep catalogue targeting within offer rules, not as the
+navigation parent for discount management.
+
 **Why:** The user explicitly stated this boundary when approving the app accent
 recolour.
 
