@@ -577,6 +577,44 @@ decision:
   update or publication was performed. Deploy manually with `pnpm run deploy`.
 
 ## Evidence and limitations
+### 19 October 2026: Order receipts, shared utility emails and unsubscribe
+
+- **What:** Redesigned the order confirmation/summary with clearer status,
+  payment details, item/SKU quantities, totals, included GST, delivery address
+  and tracking/invoice actions. COD is distinguished from paid, pending,
+  cancelled and refunded states.
+- **How:** One responsive receipt layout works inside saved merchant themes.
+  All nine existing email types now use one table-based, merchant-aware HTML
+  shell, hidden preheader, consistent actions/footer and plain-text equivalent.
+  Customer confirmations continue through the existing idempotent Resend queue.
+  HTML/plain text include itemised amounts, stored variant selections and
+  delivery information. No confirmation or paid claim is made for pending or
+  inactive orders.
+- **Unsubscribe:** Added recipient/store-scoped persisted preferences and signed
+  private links in all utility emails. GET/HEAD do not change preferences.
+  Form POST and supported one-click POST disable optional shipping/delivery
+  updates; the worker checks preferences even for already-rendered queued jobs.
+  Essential confirmation, payment/refund and security emails remain enabled.
+  No marketing consent is created. Preference storage retains a recipient hash,
+  not an email address, and direct application-role table access is revoked.
+- **Verification:** A 25-check focused suite passed, covering real-schema SKU
+  receipts, email delivery/idempotency, signed links, actual isolated preference
+  persistence/tenant isolation, all-theme rendering and browser bundle delivery.
+  After final email-state/payment-evidence adjustments, nine email/preference
+  checks passed. Syntax/whitespace checks passed. Mobile receipt and confirmed
+  email were visually checked in synthetic fixtures. No live email, live order,
+  production database write or production release was performed.
+- **Schema lesson:** A proposed receipt projection assumed a product snapshot
+  column that the real order schema does not contain. The existing schema tests
+  rejected it; the final query reads stored option selections without inventing
+  historical product data.
+- **Release:** Review/apply `0043_email_preferences.sql` using
+  `pnpm run db:migrate -- --staged-email-preferences`, then release the Worker.
+  It requires the existing transactional-email migration. New preferences fail
+  explicitly as unavailable until this migration is applied. Delivery still
+  requires the configured Resend secret and verified sending domain. Checkout
+  email remains optional; no confirmation can be emailed without an address.
+
 ### 19 October 2026: Shared storefront commerce and publication defects
 
 - **What:** Added a shared product/cart/checkout presentation across all eight

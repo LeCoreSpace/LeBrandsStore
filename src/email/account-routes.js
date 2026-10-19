@@ -4,6 +4,7 @@ import {readForm,normalizeEmail,SECURITY_HEADERS,ipHash} from "../auth/security.
 import {sha256,randomToken,hashPassword,validatePassword} from "../auth/passwords.js";
 import {signedEmailToken,verifyEmailToken,platformDeliveryKey} from "./tokens.js";
 import {renderEmail} from "./templates.js";
+import {emailPreferencesUrl} from "./preferences.js";
 import {emailsEnabled} from "./worker.js";
 const html=(body,status=200)=>new Response(layout({title:"Account | LeBrands.Store",noindex:true,body:`${accountHeader()}<main style="max-width:560px;margin:80px auto;padding:24px;font:16px Arial;line-height:1.7">${body}</main>${footer()}`}),
  {status,headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
@@ -24,7 +25,7 @@ export async function handleEmailAccount(request,env,db,user,sessionHash){
   if(email&&env.AI_BUILD_QUEUE&&rate.allowed){
    try{
     const token=await signedEmailToken(env,"reset",1800),delivery=await platformDeliveryKey(env,await sha256(token));
-   const message={from:"LeBrands.Store <hello@notify.lebrands.store>",to:[email],...renderEmail("reset",{action_url:`https://app.lebrands.store/reset-password?token=${encodeURIComponent(token)}`})};
+   const message={from:"LeBrands.Store <hello@notify.lebrands.store>",to:[email],...renderEmail("reset",{action_url:`https://app.lebrands.store/reset-password?token=${encodeURIComponent(token)}`,preferences_url:await emailPreferencesUrl(env,email)})};
    const[row]=await db.account(async tx=>tx`SELECT public.email_issue_reset(${email},${await sha256(token)},${tx.json(message)},${delivery}) AS id`);
    if(row?.id)await env.AI_BUILD_QUEUE.send({type:"platform-email",id:row.id,delivery_key:delivery});
    }catch{/* Identical response for known, unknown, throttled and temporarily unavailable accounts. */}

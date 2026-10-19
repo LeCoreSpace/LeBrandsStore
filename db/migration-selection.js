@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-email-preferences"){
+    return{staged:true,filename:"0043_email_preferences.sql",requires:"0014_transactional_email.sql"};
+  }
   if(values.length===1&&values[0]==="--staged-commerce-analytics"){
     return{staged:true,filename:"0042_commerce_analytics.sql",requires:"0041_catalogue_cogs.sql"};
   }

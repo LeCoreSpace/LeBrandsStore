@@ -2,9 +2,9 @@
 
 Captured on 19 October 2026 from the surviving project history. Times use Africa/Cairo.
 
-This register contains all **284 commits** available through 19 October, including the initial 272-commit backfill ending at `9adc763` and subsequent checkpoints `19919a1`, `ee31045`, `49d77ce`, `4b7d3c4`, `3d1ee10`, `1a3bfd4`, `75e3293`, `0db33ad`, `7712d0e`, `e993b5e`, `264f93b` and `d4378df`. Original subjects are retained, including the historical use of “announcement” for Ann. File scopes describe evidence, not proof of working runtime behaviour. A versioned migration is not an applied migration, and a test-file change is not a passing test result. Production deployment is not established per commit.
+This register contains all **285 commits** available through 19 October, including the initial 272-commit backfill ending at `9adc763` and subsequent checkpoints `19919a1`, `ee31045`, `49d77ce`, `4b7d3c4`, `3d1ee10`, `1a3bfd4`, `75e3293`, `0db33ad`, `7712d0e`, `e993b5e`, `264f93b`, `d4378df` and `de261bf`. Original subjects are retained, including the historical use of “announcement” for Ann. File scopes describe evidence, not proof of working runtime behaviour. A versioned migration is not an applied migration, and a test-file change is not a passing test result. Production deployment is not established per commit.
 
-Related changes are explained in the [daily implementation journal](../IMPLEMENTATION_JOURNAL.md). Journal creation, command references, the shared editor, toolbar readability, COGS navigation, Stage 1 COGS, Stage 2 analytics, publication-review fixes, the public Google Analytics tag, Ann contact/policy forms and expanded D2C policy content have recorded checkpoints. Shared storefront commerce fixes are uncommitted at this update.
+Related changes are explained in the [daily implementation journal](../IMPLEMENTATION_JOURNAL.md). Journal creation, command references, the shared editor, toolbar readability, COGS navigation, Stage 1 COGS, Stage 2 analytics, publication-review fixes, the public Google Analytics tag, Ann contact/policy forms, expanded D2C policy content and shared storefront commerce fixes have recorded checkpoints. Receipt/email design and notification preferences are uncommitted at this update.
 
 Latest checkpoints:
 - 19 October, 09:44 Cairo, `75e3293`, “Update documentation and migration infrastructure”. Records Stage 2 analytics, staged migration, UI, tests and documentation across 24 files.
@@ -13,6 +13,7 @@ Latest checkpoints:
 - 19 October, 10:36 Cairo, `e993b5e`, “Update onboarding documentation and refine public dashboard UI components”. Records in-place contact forms, Ann policy generation and associated tests/documentation.
 - 19 October, 10:52 Cairo, `264f93b`, “Update onboarding documentation and expand policy store logic”. Records expanded professional policy drafts and tests.
 - 19 October, 11:09 Cairo, `d4378df`, “Add image assets to project folder”. Records uploaded reference imagery, not a verified deployment or feature outcome.
+- 19 October, 11:42 Cairo, `de261bf`, “Update project documentation and refine aura component logic”. Records shared storefront commerce, merchant favicons and slug redirects. Deployment is not established by this checkpoint.
 
 Local verification is documented in the journal; production migration/deployment is not established.
 

@@ -141,14 +141,14 @@ export async function placeCodOrder(tx,id,input,requestHash,receiptHash,source,e
   return {order_number,total_paise:quote.total_paise,receipt_url:`/orders/${input.receipt_token}`,replayed:false};
 }
 export async function receiptOrder(tx,id,hash) {
-  const [order] = await tx`SELECT id,order_number,status,payment_method,subtotal_paise,shipping_paise,total_paise,shipping_address,created_at
+  const [order] = await tx`SELECT id,order_number,status,payment_method,subtotal_paise,tax_paise,shipping_paise,total_paise,shipping_address,created_at
     FROM public.orders WHERE store_id = ${id} AND confirmation_hash = ${hash}`;
   if (!order) throw commerceError("Order not found.",undefined,404);
-  const items = await tx`SELECT title,sku,quantity,unit_price_paise,total_paise AS line_total_paise
-    FROM public.order_items WHERE store_id = ${id} AND order_id = ${order.id} ORDER BY created_at,id`;
+  const items = await tx`SELECT i.title,i.sku,to_jsonb(i)->'option_snapshot' AS option_snapshot,i.quantity,i.unit_price_paise,i.total_paise AS line_total_paise
+    FROM public.order_items i WHERE i.store_id = ${id} AND i.order_id = ${order.id} ORDER BY i.created_at,i.id`;
   const [invoice] = await tx`SELECT id,invoice_number,status FROM public.invoices WHERE store_id = ${id} AND order_id = ${order.id}`;
   const attempt=order.payment_method==="online" && await runtimeAvailable(tx)
     ? (await tx`SELECT state FROM public.payment_attempts WHERE store_id=${id} AND order_id=${order.id}`)[0] : null;
-  return {...order,invoice,payment_status:attempt?.state||null,subtotal_paise:Number(order.subtotal_paise),shipping_paise:Number(order.shipping_paise),
+  return {...order,invoice,payment_status:attempt?.state||null,subtotal_paise:Number(order.subtotal_paise),tax_paise:Number(order.tax_paise),shipping_paise:Number(order.shipping_paise),
     total_paise:Number(order.total_paise),items:items.map((i) => ({...i,unit_price_paise:Number(i.unit_price_paise),line_total_paise:Number(i.line_total_paise)}))};
 }

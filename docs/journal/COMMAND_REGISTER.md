@@ -1,5 +1,22 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: Receipt, utility emails and notification preferences
+
+Working directory: repository root.
+
+- **Executed locally:** `node --experimental-test-module-mocks --test --test-concurrency=1 tests/sku-checkout.test.js tests/email-preferences.test.js tests/email.test.js tests/storefront-commerce-shell.test.js tests/browser-bundles.test.js` passed 25 checks after correcting the receipt query against the real schema.
+- **Executed locally:** `node --test --test-concurrency=1 tests/email-preferences.test.js tests/email.test.js` passed nine checks after final payment-state adjustments.
+- **Executed locally:** `node --check src/index.js`,
+  `node --check src/email/worker.js` and `git diff --check` passed.
+- **Visual previews checked:** `/__sku-checkout-preview/sample-receipt?style=boutique`
+  and `/__email-preview?type=confirmed` at 390px, using synthetic data only.
+- **Suggested only, database mutation:** `pnpm run db:migrate -- --staged-email-preferences`
+  reviews/applies `0043_email_preferences.sql`; prerequisite:
+  `0014_transactional_email.sql`. Not executed against the configured database.
+- **Suggested only, production mutation:** `pnpm run deploy` after migration
+  review/application. Not executed. Live delivery requires the Worker's existing
+  Resend secret and verified sender. No test email was sent to a real recipient.
+
 ## 19 October 2026: Shared storefront commerce
 
 Working directory: repository root. Tests use synthetic/isolated data.

@@ -5,6 +5,7 @@ import {SECURITY_HEADERS,normalizeEmail} from "../auth/security.js";
 import {signedEmailToken} from "./tokens.js";
 import {emailsEnabled} from "./worker.js";
 import {renderEmail} from "./templates.js";
+import {emailPreferencesUrl} from "./preferences.js";
 import {renderStaff} from "../ui/staff.js";
 import {loadDraft,saveSetup} from "../store/repository.js";
 import {readForm} from "../auth/security.js";
@@ -37,7 +38,7 @@ export async function handleStaffInvitation(request,env,db,user,sessionHash,stor
   }
   if(!email||!["admin","editor"].includes(input.role))return json({error:"Enter an email and choose admin or editor."},400);
   const token=await signedEmailToken(env,"invite",7*86400);
-  const message={from:"LeBrands.Store <hello@notify.lebrands.store>",to:[email],...renderEmail("invite",{action_url:`https://app.lebrands.store/invite?token=${encodeURIComponent(token)}`})};
+  const message={from:"LeBrands.Store <hello@notify.lebrands.store>",to:[email],...renderEmail("invite",{action_url:`https://app.lebrands.store/invite?token=${encodeURIComponent(token)}`,preferences_url:await emailPreferencesUrl(env,email,storeId)})};
   const[row]=await tx`SELECT public.email_invite_staff(${storeId},${sessionHash},${email},${input.role},${await sha256(token)},${tx.json(message)}) AS id`;
   if(ui)return new Response(null,{status:303,headers:{...SECURITY_HEADERS,location:`/stores/${storeId}/team?invited=1`}});
   return json({id:row.id,notice:"Invitation queued. It expires in 7 days."},201);

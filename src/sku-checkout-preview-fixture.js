@@ -20,6 +20,13 @@ export async function skuCheckoutPreview(req,res,previewOrigin){
       const orders=(await f.pg.query("SELECT order_number,status,total_paise FROM orders WHERE store_id=$1 ORDER BY created_at",[f.id])).rows;
       const lines=(await f.pg.query("SELECT sku,option_snapshot,quantity,unit_price_paise FROM order_items WHERE store_id=$1 ORDER BY created_at",[f.id])).rows;
       response=new Response(JSON.stringify({stocks,orders,lines}),{headers:{"content-type":"application/json"}});
+    }else if(path==="/sample-receipt"&&req.method==="GET"){
+      const order={order_number:"DEMO-1042",status:"confirmed_cod",payment_method:"cod",
+        created_at:"2026-10-19T08:00:00Z",subtotal_paise:24000,tax_paise:1143,shipping_paise:0,total_paise:24000,
+        shipping_address:{name:"Example Customer",line1:"12 Test Street",city:"Chennai",state:"33",pincode:"600001"},
+        items:[{title:"Cotton shirt",sku:"SKU-S-WHITE",option_snapshot:{Size:"S",Colour:"White"},
+          quantity:2,unit_price_paise:12000,line_total_paise:24000}]};
+      response=new Response(renderAura(data,{page:"confirmation",order,commerce:true}),{headers:{"content-type":"text/html"}});
     }else if(path==="/favicon.svg"){
       response=new Response(storefrontIcon(data.settings).svg,{headers:{"content-type":"image/svg+xml"}});
     }else if(path==="/"||path===`/products/${f.product.slug}`){

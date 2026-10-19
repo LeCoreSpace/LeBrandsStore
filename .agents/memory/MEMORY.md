@@ -35,6 +35,7 @@
 - [Ann-only onboarding](ann-onboarding-direction.md) — replace the builder chooser; verify business first, guide catalogue setup and preserve the exact saved design in the editor.
 - [AI copy boundary](ai-copy-boundary.md) — constrain model output to copy fields; never relax server-owned controls to fix repeated generation failures.
 - [Email queue recovery](email-queue-recovery.md) — private jobs must be recoverable after queue failure without exposing links or recipients.
+- [Utility email boundary](utility-email-boundary.md) — shared professional email design with real preferences; optional updates can stop, critical messages remain enabled.
 - [Database revision precision](database-revision-precision.md) — preserve timestamp microseconds across JavaScript optimistic-concurrency boundaries.
 - [Migration test foundations](migration-test-foundations.md) — use real foundational DDL; invented fixtures can mask incompatibilities with the existing database.
 - [Offline test memory](offline-test-memory.md) — keep concurrent PGlite tests bounded so verification does not exhaust the running workspace.

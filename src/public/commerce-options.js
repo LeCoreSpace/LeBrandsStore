@@ -4,6 +4,12 @@ export function productHref(product) {
   return `/products/${encodeURIComponent(/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ? slug : String(product?.id || ""))}`;
 }
 
+export function productImageUrl(value) {
+  const url=String(value||"");
+  return /^https:\/\/media\.lebrands\.store\/stores\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:png|jpe?g|webp)$/i.test(url)
+    || /^\/assets\/img\/[a-z0-9_./-]+\.(?:png|jpe?g|webp)$/i.test(url) ? url : "";
+}
+
 // Pure SKU-variant helpers. No DOM. Shared by renderers, the cart script and tests.
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const s = (v) => typeof v === "string" ? v.trim() : "";

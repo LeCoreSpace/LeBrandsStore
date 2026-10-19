@@ -1,6 +1,6 @@
 import { INDIAN_STATES, formatPhone } from "./commerce-rules.js";
 import { stateName, statusLabel, indianDate } from "./dashboard-rules.js";
-import { productHref } from "./commerce-options.js";
+import { productHref, productImageUrl } from "./commerce-options.js";
 
 const esc = (value) => String(/^\+91[0-9]{10}$/.test(String(value)) ? formatPhone(value) : value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
 const money = (value) => `₹${(Math.max(0, Number(value) || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
@@ -27,17 +27,48 @@ function checkoutPage() {
 function trackPage() {
   return `<main class="commerce-main commerce-narrow"><div class="commerce-heading"><span class="commerce-kicker">A little peace of mind</span><h1>Track your order.</h1><p>Enter the order number and mobile used at checkout.</p></div><form class="commerce-panel track-form" id="track-form"><label class="commerce-field">Order number<input name="order_number" autocomplete="off" required placeholder="For example, STN-1001"></label><label class="commerce-field">Mobile number<input name="phone" type="tel" inputmode="numeric" autocomplete="tel-national" required placeholder="10-digit mobile number"></label><p class="commerce-error" data-track-error role="alert" hidden></p><button class="commerce-button" type="submit">Find my order</button><div data-track-result aria-live="polite"></div></form></main>`;
 }
+const safeImg = productImageUrl;
+const snapOf = (item) => (item && typeof item.product_snapshot === "object" && item.product_snapshot) || {};
+function itemMeta(item) {
+  const s = snapOf(item), parts = [];
+  const attrs = s.attributes || s.options || s.variant_attributes || item.option_snapshot;
+  if (attrs && typeof attrs === "object" && !Array.isArray(attrs)) Object.entries(attrs).forEach(([k, v]) => { if (v != null && typeof v !== "object" && String(v)) parts.push(`${k}: ${v}`); });
+  else if (s.variant_title || s.variant) parts.push(String(s.variant_title || s.variant));
+  const sku = s.sku || s.variant_sku || item.sku;
+  if (sku) parts.push(`SKU ${sku}`);
+  return parts;
+}
+function itemImage(item) {
+  const s = snapOf(item), m = s.media || s.images || s.image || s.image_url;
+  const first = Array.isArray(m) ? m[0] : m;
+  return safeImg(typeof first === "string" ? first : first?.url || first?.src);
+}
 function confirmation(order = {}, invoiceUrl = "") {
   if (!order || !order.order_number || !Array.isArray(order.items)) return `<main class="commerce-main commerce-narrow"><section class="commerce-empty"><span class="commerce-kicker">Order details</span><h1>We can’t show this receipt.</h1><p>This confirmation needs a valid receipt link. Nothing has been assumed or filled in.</p><a class="commerce-button" href="/track">Track an order</a></section></main>`;
-  if (order.payment_status==="refunded") order={...order,status:"refunded"};
+  if (order.payment_status === "refunded") order = { ...order, status: "refunded" };
   const address = order.shipping_address || {};
   const firstName = String(order.customer_name || order.name || address.name || "").trim().split(/\s+/)[0];
-  const st = String(order.status || "");
-  const pending = st === "pending_payment", bad = ["failed", "cancelled", "payment_failed", "expired","refunded"].includes(st);
-  const thanks = pending ? "Payment pending." : bad ? (st==="refunded"?"Your payment was refunded.":st === "cancelled" ? "This order was cancelled." : "Payment was not completed.") : (firstName ? `Thank you, ${esc(firstName)}. Your order is confirmed.` : "Thank you. Your order is confirmed.");
-  const note = pending ? `<p class="receipt-lead">Your order is not confirmed yet. We confirm it only after the payment provider verifies your payment, which can take a minute. Reload this page to check. If you were charged and it stays pending, keep your order number.</p>` : bad ? `<p class="receipt-lead">${st==="refunded"?"Your payment provider has processed the refund. Bank processing times vary.":"If money was deducted, contact the store with your order number to check the payment or refund status."}</p>` : "";
-  const mark = pending || bad ? "" : `<div class="receipt-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m7 12 3 3 7-7"/></svg></div>`;
-  return `<main class="commerce-main commerce-narrow"><section class="receipt-card">${mark}<h1>${thanks}</h1>${note}<p class="receipt-lead">Order <strong>${esc(order.order_number)}</strong> placed ${esc(indianDate(order.created_at))}.</p><div class="receipt-status"><span>Status</span><strong>${esc(statusLabel(order.status||"confirmed_cod",order.payment_method||"cod"))}</strong></div><div class="receipt-lines"><h2>Order summary</h2>${order.items.map((item)=>`<div class="receipt-line"><span>${esc(item.title)} <small>× ${Number(item.quantity)||0}</small></span><strong>${money(item.line_total_paise)}</strong></div>`).join("")}<div class="receipt-total"><span>Order total</span><strong>${money(order.total_paise)}</strong></div></div><div class="receipt-address"><h2>Delivery address</h2><p>${[address.name,address.line1,address.line2,address.landmark,address.city,stateName(address.state),address.pincode,address.phone].filter(Boolean).map(esc).join("<br>")}</p></div>${order.invoice && invoiceUrl ? `<p><a class="commerce-text-link" href="${esc(invoiceUrl)}">Open ${order.invoice.status === "cancelled" ? "cancelled " : ""}invoice / receipt</a></p>` : ""}<a class="commerce-text-link" href="/track">Track this order</a></section></main>`;
+  const st = String(order.status || ""), cod = order.payment_method === "cod" || st === "confirmed_cod";
+  const pending = st === "pending_payment";
+  const bad = ["failed", "cancelled", "payment_failed", "expired", "refunded"].includes(st);
+  const tone = pending ? "pending" : bad ? "bad" : "ok";
+  const thanks = pending ? "Payment pending." : bad ? (st === "refunded" ? "Your payment was refunded." : st === "cancelled" ? "This order was cancelled." : "Payment was not completed.") : (firstName ? `Thank you, ${esc(firstName)}. Your order is confirmed.` : "Thank you. Your order is confirmed.");
+  const note = pending ? "Your order is not confirmed yet. We confirm it only after the payment provider verifies your payment, which can take a minute. Reload this page to check. If you were charged and it stays pending, keep your order number."
+    : bad ? (st === "refunded" ? "Your payment provider has processed the refund. Bank processing times vary." : "If money was deducted, contact the store with your order number to check the payment or refund status.")
+    : cod ? "Pay the delivery partner when your order arrives. No online payment has been taken." : "";
+  const mark = tone === "ok" ? `<div class="receipt-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m7 12 3 3 7-7"/></svg></div>` : "";
+  const paid = !cod && !pending && !bad && (order.payment_status === "paid" || ["paid", "confirmed", "processing", "packed", "shipped", "delivered"].includes(st));
+  const payText = cod ? "Cash on Delivery" : pending ? "Awaiting payment" : st === "refunded" ? "Refunded" : bad ? "Not completed" : paid ? "Paid online" : "Online payment";
+  const hasNum = (v) => v != null && v !== "" && Number.isFinite(Number(v));
+  const rows = [["Subtotal", order.subtotal_paise], ["Shipping", order.shipping_paise]].filter(([, v]) => hasNum(v));
+  const shipRow = (l, v) => `<div class="receipt-line receipt-sub"><span>${l}</span><strong>${l === "Shipping" && Number(v) === 0 ? "Free" : money(v)}</strong></div>`;
+  const lines = order.items.map((item) => {
+    const meta = itemMeta(item), img = itemImage(item), t = item.title || snapOf(item).title || "Item";
+    return `<li class="receipt-item">${img ? `<img class="receipt-thumb" src="${esc(img)}" alt="" loading="lazy">` : `<span class="receipt-thumb receipt-thumb-empty" aria-hidden="true">${esc(String(t).slice(0, 1).toUpperCase())}</span>`}<div class="receipt-item-main"><strong>${esc(t)}</strong>${meta.length ? `<small>${meta.map(esc).join(" · ")}</small>` : ""}<small>Qty ${Number(item.quantity) || 0}${hasNum(item.unit_price_paise) ? ` × ${money(item.unit_price_paise)}` : ""}</small></div><strong class="receipt-amt">${money(item.line_total_paise ?? (Number(item.unit_price_paise) || 0) * (Number(item.quantity) || 0))}</strong></li>`;
+  }).join("");
+  const addr = [address.name, address.line1, address.line2, address.landmark, [address.city, stateName(address.state)].filter(Boolean).join(", "), address.pincode, address.phone].filter(Boolean).map(esc).join("<br>");
+  const totalLabel = cod && !bad ? "Total due on delivery" : paid ? "Total paid" : "Order total";
+  return `<main class="commerce-main commerce-narrow"><section class="receipt-card receipt-${tone}" aria-labelledby="receipt-title">${mark}<h1 id="receipt-title">${thanks}</h1>${note ? `<p class="receipt-lead">${note}</p>` : ""}<dl class="receipt-meta"><div><dt>Order</dt><dd>${esc(order.order_number)}</dd></div><div><dt>Placed</dt><dd>${esc(indianDate(order.created_at))}</dd></div><div><dt>Status</dt><dd>${esc(statusLabel(order.status || "confirmed_cod", order.payment_method || "cod"))}</dd></div><div><dt>Payment</dt><dd>${esc(payText)}</dd></div></dl><div class="receipt-lines"><h2>Order summary</h2><ul class="receipt-items">${lines}</ul>${rows.map(([l, v]) => shipRow(l, v)).join("")}${hasNum(order.tax_paise) && Number(order.tax_paise) > 0 ? `<div class="receipt-line receipt-sub"><span>GST (included in total)</span><strong>${money(order.tax_paise)}</strong></div>` : ""}<div class="receipt-total"><span>${totalLabel}</span><strong>${money(order.total_paise)}</strong></div></div>${addr ? `<div class="receipt-address"><h2>Delivery address</h2><p>${addr}</p></div>` : ""}<div class="receipt-actions"><a class="commerce-button" href="/track">Track this order</a>${order.invoice && invoiceUrl ? `<a class="commerce-text-link" href="${esc(invoiceUrl)}">Open ${order.invoice.status === "cancelled" ? "cancelled " : ""}invoice / receipt</a>` : ""}</div></section></main>`;
 }
 export function renderCommerceBody(data = {}, options = {}) {
   const page = options.page;

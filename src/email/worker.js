@@ -4,6 +4,8 @@ import {orderDetail} from "../dashboard/repository.js";
 import {sendResend} from "./service.js";
 import {platformDeliveryKey} from "./tokens.js";
 import {renderEmail,maskRecipient} from "./templates.js";
+import {emailPreferencesUrl,optionalUpdatesAllowed,OPTIONAL_EMAIL_TYPES} from "./preferences.js";
+import {runtimeAvailable} from "../connections/payments.js";
 export async function emailsEnabled(tx){
   const[row]=await tx`SELECT to_regprocedure('public.email_pending_stores()') IS NOT NULL AS enabled`;
   return row?.enabled===true;
@@ -58,22 +60,38 @@ export async function processEmailMessage(body,env){
       return {...row,attempts:row.attempts+1};
     });
     if(!job)return;
+    if(OPTIONAL_EMAIL_TYPES.has(job.template)&&!await optionalUpdatesAllowed(db,id,job.recipient)){
+      await db.withStore(id,tx=>tx`UPDATE public.email_log SET status='failed',error_code='recipient_unsubscribed',lease_until=NULL
+        WHERE store_id=${id} AND id=${job.id} AND status='sending'`);
+      await env.AI_BUILD_QUEUE.send({type:"email",store_id:id});
+      return;
+    }
     let providerId=null;
     try{
       let message=job.payload;
       if(!message.html){
-        const details=await db.withStore(id,async tx=>({draft:await loadDraft(tx,id),order:await orderDetail(tx,id,job.order_id)}));
+        const details=await db.withStore(id,async tx=>{
+          const draft=await loadDraft(tx,id),order=await orderDetail(tx,id,job.order_id);
+          if(order.payment_method==="online"&&await runtimeAvailable(tx)){
+            const [payment]=await tx`SELECT state FROM public.payment_attempts WHERE store_id=${id} AND order_id=${order.id}`;
+            order.payment_status=payment?.state||null;
+          }
+          return {draft,order};
+        });
         const s=details.draft.settings,o=details.order;
         const origin=`https://${details.draft.store.subdomain}.lebrands.store`;
         const shipment=o.shipments?.[0]||{};
-        const content=renderEmail(job.template,{brand_name:s.brand_name,accent_colour:s.accent_color,font:s.font_preset,logo_url:s.logo_url,
+        const preferencesUrl=await emailPreferencesUrl(env,job.recipient,id);
+        const content=renderEmail(job.template,{brand_name:s.brand_name,accent_colour:s.accent_color,font:s.font_preset,logo_url:s.logo_url||s.ann_design?.media?.logo?.url,
           contact_email:s.support_email,policy_url:`${origin}/policies/terms`,...o,address:o.shipping_address,
+          preferences_url:preferencesUrl,
           ...shipment,credit_note_number:o.invoice?.credit_note_number,
           credit_amount_paise:o.invoice?.credit_note_number?o.invoice.total_paise:null,
           refund_paise:o.refund_paise,
           action_url:job.template==="new_order"?`https://app.lebrands.store/stores/${id}/orders/${o.id}`:
             job.template==="shipped"&&shipment.tracking_url?shipment.tracking_url:`${origin}/track?order=${encodeURIComponent(o.order_number)}`});
-        message={from:`${JSON.stringify(name(s.brand_name))} <orders@notify.lebrands.store>`,to:[job.recipient],...(s.support_email?{reply_to:s.support_email}:{}),...content};
+        message={from:`${JSON.stringify(name(s.brand_name))} <orders@notify.lebrands.store>`,to:[job.recipient],...(s.support_email?{reply_to:s.support_email}:{}),...content,
+          ...(OPTIONAL_EMAIL_TYPES.has(job.template)?{headers:{"List-Unsubscribe":`<${preferencesUrl}>`,"List-Unsubscribe-Post":"List-Unsubscribe=One-Click"}}:{})};
         await db.withStore(id,tx=>tx`UPDATE public.email_log SET payload=${tx.json(message)} WHERE store_id=${id} AND id=${job.id} AND status='sending'`);
       }
       providerId=await sendResend(env,message,`store-email-${job.id}`);

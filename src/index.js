@@ -13,6 +13,7 @@ import { LE_BRANDS_LOGO } from "./ui/brand.js";
 import { serveMedia } from "./store/media.js";
 import {processEmailMessage,schedulePendingEmails} from "./email/worker.js";
 import {handleEmailWebhook} from "./email/webhook.js";
+import {handleEmailPreferences} from "./email/preferences.js";
 import { serveStorefront } from "./store/live.js";
 import { CRAWLER_FILES, serveCrawlerFile } from "./crawler-files.js";
 import { processAiMessage } from "./ai/worker.js";
@@ -91,6 +92,11 @@ export default {
     const url = new URL(request.url);
     const hostname = url.hostname;
     if(hostname==="app.lebrands.store"&&url.pathname==="/webhooks/resend")return handleEmailWebhook(request,env);
+    if(hostname==="app.lebrands.store"&&url.pathname==="/email-preferences"){
+      const preferencesDb=createDb(env);
+      try{return await handleEmailPreferences(request,env,preferencesDb);}
+      finally{ctx.waitUntil(preferencesDb.close());}
+    }
     const paymentWebhook=hostname==="app.lebrands.store" && url.pathname.match(/^\/webhooks\/razorpay\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})$/);
     if(paymentWebhook){
       const webhookDb=createDb(env);
