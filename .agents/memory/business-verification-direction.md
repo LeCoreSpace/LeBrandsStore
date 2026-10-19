@@ -1,6 +1,6 @@
 ---
 name: Business verification direction
-description: Country-aware onboarding, supporting documents and deferred administrative review.
+description: Country-aware onboarding, private evidence and platform administrative authority.
 ---
 Registration must collect country and phone with a visible calling code and
 country-specific format validation. Treat account country as self-declared,
@@ -15,9 +15,9 @@ to change tax or publication rules.
 
 Indian businesses should upload their GST registration certificate after GSTIN
 verification. Non-Indian businesses should submit applicable country-specific
-tax/business evidence for review before subscription. The broad admin dashboard
-remains deferred; the user has now authorized its restricted document-review
-section and approval-before-publication controls.
+tax/business evidence for review before subscription. The user has authorized a
+separate platform admin dashboard for cross-store operational status, billing
+visibility, private document review and audited suspension controls.
 
 **Why:** The user requested supporting documents for both groups, country-based
 verification before subscription, and phased implementation with database changes.
@@ -76,7 +76,7 @@ compliance; this is a product policy, not a verified statement of statutory law.
 Do not invent a post-cancellation deletion deadline or claim retention alone
 satisfies all jurisdiction-specific compliance obligations.
 
-Approval is manual through the planned admin dashboard. After document
+Approval is manual through the restricted admin dashboard. After document
 submission, the merchant should be able to continue store creation. If manual
 verification fails, suspend the store and notify the merchant to upload
 replacement evidence through dashboard Settings for verification again.

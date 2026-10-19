@@ -1,4 +1,5 @@
 import { createDb } from "../db.js";
+import {handlePlatformAdmin,isPlatformAdminRoute} from "../admin/platform-routes.js";
 import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
 import { validateRegistration } from "../public/registration-validation.js";
@@ -43,6 +44,7 @@ const nameValue = (value) => typeof value === "string" && value.trim().length >=
 export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
+  if(isPlatformAdminRoute(path))return handlePlatformAdmin(request,env,ctx,dependencies);
   const editorMatch=path.match(/^\/stores\/([0-9a-f-]{36})\/editor$/i);
   const storeRoute = isBillingPagePath(path)||isBusinessReviewRoute(path)||isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isBusinessDocumentRoute(path) || isAnnRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";
   const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password", "/reset-password":"forgot-password","/invite":"forgot-password" };

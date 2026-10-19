@@ -831,6 +831,34 @@ decision:
   routes and the non-indexable incomplete refund-policy page.
 - No database migration or automatic production release.
 
+### 2026-10-19: Separate platform operations dashboard
+
+- **Implementation:** Added a dedicated username/password admin entry point,
+  platform-wide store search and status filters, order/product counts, business
+  and GST verification, domains, integrations, subscription/payment modes and
+  store-level suspension history. Kept the console private, unindexed and free
+  of analytics.
+- **How:** Narrow database functions check an active administrator and live
+  session on every request. A separate operator-only credential provisioning
+  script uses Secrets and the existing peppered password hashing. Suspension
+  requires an exact store-address confirmation, reason and revision check.
+  Restoration returns a store to draft and retains its records and approval
+  boundaries. Private document review reuses its established safeguards.
+- **Verification:** The isolated real-DDL database tests passed sign-in, role
+  isolation, sanitised responses, protected assets, suspension, stale decision
+  rejection, audit records, restoration and access revocation. The browser
+  final regression run passed all three admin/business-review tests. Browser
+  verification passed login, search, review navigation and mobile detail.
+  After a preview reload invalidated its first synthetic session, a fresh
+  session passed suspension, both audit entries, restoration to draft, logout
+  and rejection of unauthenticated access. Non-blocking inline
+  style CSP warnings were observed; application assets loaded successfully.
+- **Release:** Migration and credential provisioning are staged, not executed
+  against production. No store was suspended in the live database, no private
+  merchant data was inspected, and no Worker publication was performed.
+- **Operations:** See [platform admin setup](platform-admin.md) and the
+  [command register](journal/COMMAND_REGISTER.md).
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

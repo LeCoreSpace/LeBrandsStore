@@ -470,6 +470,17 @@ not assign an unverified execution date to a command.
 | `node --experimental-test-module-mocks --test --test-concurrency=1 tests/sku-checkout.test.js tests/storefront-commerce-shell.test.js` | Local synthetic database and renderer verification, including driver-equivalent serialization. | All 20 tests passed. |
 | `pnpm run deploy` | Manual production Worker release of the correction. | Required next action; not executed by the assistant. |
 
+## Platform operations administration
+
+| Command (workspace root) | Purpose and target | Actual execution |
+| --- | --- | --- |
+| `node --test --test-concurrency=1 tests/platform-admin.test.js tests/business-review.test.js` | Isolated in-memory real-DDL authorization, password login, read sanitization, suspension/restore, revisions, audit and document-review regression verification. No live database. | All three tests passed. Browser verification also passed the synthetic suspension/restore/logout flow. |
+| `pnpm run db:migrate -- --staged-platform-admin` | Administrative database connection; adds the restricted platform console schema. Requires reviewed business-review and billing schema. | Staged only, not run against production. Creates no account or store suspension. |
+| `node db/admin-platform-access.js create` | Operator provisioning using chosen `PLATFORM_ADMIN_USERNAME` and `PLATFORM_ADMIN_PASSWORD` Secrets; stores the existing password hash format and grants private review access. | Documented only. No administrator provisioned by the assistant. |
+| `node db/admin-platform-access.js reset-password` | Operator credential rotation; terminates existing sessions. | Documented only. |
+| `node db/admin-platform-access.js revoke` | Operator platform/review access revocation; terminates existing sessions. | Documented only. |
+| `pnpm run deploy` | Established manual Cloudflare Worker publication. | Not executed by the assistant. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

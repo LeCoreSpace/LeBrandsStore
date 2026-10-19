@@ -320,7 +320,7 @@ export default {
         "content-type": "text/html; charset=utf-8" } });
     }
     const account = ["/signup", "/login", "/forgot-password", "/verify-email", "/reset-password", "/invite", "/account", "/logout", "/dashboard", "/stores/new", "/api/subdomain-check"]
-      .includes(original.pathname) || original.pathname.startsWith("/api/stores/") || /^\/stores\/[^/]+(?:\/|$)/.test(original.pathname);
+      .includes(original.pathname) || original.pathname==="/admin" || original.pathname.startsWith("/admin/") || original.pathname.startsWith("/api/stores/") || /^\/stores\/[^/]+(?:\/|$)/.test(original.pathname);
     const target = new URL(original);
     target.protocol = "https:";
     target.hostname = account ? "app.lebrands.store" : "lebrands.store";
