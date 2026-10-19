@@ -460,6 +460,15 @@ decision:
 
 ## Evidence and limitations
 
+### 19 October 2026: COGS navigation confirmed
+
+- The user confirmed **Catalogue → COGS**, rather than a separate top-level menu.
+- This records the agreed placement only. No COGS screen, product-cost field,
+  cost history or analytics report was implemented in this confirmation.
+- The earlier toolbar-readability work is now captured in checkpoint
+  [4b7d3c4](journal/COMMIT_REGISTER.md#commit-4b7d3c4). This documentation-only
+  confirmation is not yet captured at the time of writing.
+
 - [Complete checkpoint register](journal/COMMIT_REGISTER.md): all 272 commits
   captured for the initial reconstruction, ending at `9adc763`, plus subsequent
   available checkpoints recorded during ongoing maintenance.
