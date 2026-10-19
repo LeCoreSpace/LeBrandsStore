@@ -35,8 +35,8 @@ const offerStorageKey=`${storageKey}:offer-code`;
 let activeOfferCode="";
 try{activeOfferCode=sessionStorage.getItem(offerStorageKey)||"";}catch{}
 function offerControls(){
-  if(readOnly||!cart.length||validated?.offers_available===false)return "";
-  return `<div class="commerce-offer"><label>Offer code<input data-offer-code maxlength="32" value="${esc(activeOfferCode)}" autocomplete="off" placeholder="Enter code"></label><div><button type="button" class="commerce-text-link" data-offer-apply>Apply code</button>${activeOfferCode?'<button type="button" class="commerce-text-link" data-offer-remove>Remove code</button>':""}</div><p role="status">${validated?.discount_paise>0?`${esc(validated.offer?.code||validated.offer?.title||"Offer")} applied. You save ${money(validated.discount_paise)}.`:"The best eligible offer applies. Offers cannot be combined."}${validated?.offer_notice?` ${esc(validated.offer_notice)}`:""}</p></div>`;
+  if(readOnly||!cart.length||(validated?.offers_available===false&&!activeOfferCode))return "";
+  return `<div class="commerce-offer"><label>Offer code<input data-offer-code maxlength="32" value="${esc(activeOfferCode)}" autocomplete="off" placeholder="Enter code" aria-invalid="${validated?.offer_error?"true":"false"}"></label><div><button type="button" class="commerce-text-link" data-offer-apply>Apply code</button>${activeOfferCode?'<button type="button" class="commerce-text-link" data-offer-remove>Remove code</button>':""}</div>${validated?.offer_error?`<p class="commerce-error" role="alert">${esc(validated.offer_error)} Remove this code or try another before placing your order.</p>`:""}<p role="status">${validated?.discount_paise>0?`${esc(validated.offer?.code||validated.offer?.title||"Offer")} applied. You save ${money(validated.discount_paise)}.`:"The best eligible offer applies. Offers cannot be combined."}${validated?.offer_notice?` ${esc(validated.offer_notice)}`:""}</p></div>`;
 }
 function addOfferSummary(slot){
   if(!slot)return;
@@ -171,7 +171,7 @@ function showValidationError(text) {
 function updatePlaceOrderAvailability() {
   const button = document.querySelector("#checkout-form [type='submit']");
   if (!button || readOnly) return;
-  button.disabled = busy || !validated || !cart.length || Boolean(validated.issues?.length) || !methodAvailable(validated, selectedMethod());
+  button.disabled = busy || !validated || Boolean(validated.offer_error) || !cart.length || Boolean(validated.issues?.length) || !methodAvailable(validated, selectedMethod());
 }
 function productImage(url, title) {
   const safe = productImageUrl(url);
@@ -382,6 +382,7 @@ async function placeOrder(event) {
   if (busy) return;
   const form = event.currentTarget;
   clearCheckoutError();
+  if(validated?.offer_error){showCheckoutError("Remove the rejected offer code or apply a valid one before placing your order.");return;}
   const values = formValues(form);
   const errors = validateCheckout(form, values);
   if (errors.length) { showCheckoutError(errors[0]); form.querySelector('[name="phone"]')?.focus(); return; }

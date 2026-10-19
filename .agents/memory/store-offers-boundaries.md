@@ -35,3 +35,14 @@ duplicate an existing serialisation lock.
 
 **How to apply:** Keep the shared store lock as the documented transaction
 boundary and verify the write paths under the actual restricted role.
+
+Treat rejected discount codes as recoverable offer feedback, not a reason to
+hide the cart. Keep order submission blocked until the shopper explicitly
+removes or replaces the rejected code; actual order placement stays strict.
+
+**Why:** Hiding the cart made an ordinary invalid code look like lost items.
+Silently removing it and permitting checkout would risk an undiscounted order
+that the shopper did not intend.
+
+**How to apply:** Verify unknown/malformed codes, reloads, removal and valid
+replacement with current server prices, including any automatic offers.

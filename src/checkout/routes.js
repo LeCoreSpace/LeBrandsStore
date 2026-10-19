@@ -49,13 +49,18 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
     if (url.pathname === "/api/cart/validate") {
       const items = cartItems(body.items);
       if (body.state && !INDIAN_STATES.some((s) => s.code === body.state)) throw commerceError("Choose a valid state.",{state:"Choose your state."});
-      const code=offerCode(body.code??"");
+      let code="",codeError="";
+      try{code=offerCode(body.code??"");}catch(error){
+        if(error.status!==400)throw error;
+        codeError=error.message;
+      }
       if(code){
         const hash=await ipHash(request,env.SESSION_SECRET);
         if(!await db.withStore(store.store_id,tx=>consumeIpLimit(tx,store.store_id,hash,"checkout")))
           throw commerceError("Too many offer checks. Please wait a minute and try again.",undefined,429);
       }
-      return json(await db.withStore(store.store_id,(tx) => checkoutQuote(tx,store.store_id,items,body.state ?? "",code)));
+      const result=await db.withStore(store.store_id,(tx) => checkoutQuote(tx,store.store_id,items,body.state ?? "",code,{allowCodeError:true}));
+      return json(codeError?{...result,offer_error:codeError}:result);
     }
     const hash = await ipHash(request,env.SESSION_SECRET);
     const purpose = url.pathname === "/api/orders/track" ? "track" : "checkout";

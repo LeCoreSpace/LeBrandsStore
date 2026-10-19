@@ -66,6 +66,17 @@ export function allocateDiscount(lines,amount){
   return base;
 }
 export function applyBestOffer(quote,candidates,snapshot,{code="",state="",now=Date.now()}={}){
+  if(code){
+    const entered=candidates.find(o=>o.method==="code"&&o.code===code);
+    const reject=message=>{throw commerceError(message,{code:message});};
+    if(!entered)reject("This code is not active at this store. Check the spelling or try another code.");
+    const status=offerStatus(entered,now);
+    if(status==="scheduled")reject("This offer has not started yet.");
+    if(status==="expired")reject("This offer has expired.");
+    if(status!=="active")reject("This offer is not active.");
+    if(entered.usage_limit!=null&&Number(entered.used_count)>=Number(entered.usage_limit))
+      reject("This offer has reached its usage limit.");
+  }
   let winner=null,allocations=[],bestTotal=quote.total_paise;
   for(const offer of candidates){
     if(offerStatus(offer,now)!=="active"||!["percentage","fixed"].includes(offer.kind)||

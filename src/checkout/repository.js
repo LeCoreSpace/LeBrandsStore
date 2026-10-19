@@ -40,11 +40,11 @@ export async function inventoryFor(tx,id,items,lock = false) {
   }
   return result;
 }
-export async function checkoutQuote(tx,id,items,state = "",code="") {
+export async function checkoutQuote(tx,id,items,state = "",code="",{allowCodeError=false}={}) {
   if(items.some(i=>i.product_option_id))await requireSkuCheckout(tx);
   const context = await checkoutContext(tx,id);
   const quote=quoteCart(context.snapshot.products ?? [],await inventoryFor(tx,id,items),items,context.settings,state);
-  const discounted=await discountedQuote(tx,id,quote,context.snapshot,{code,state});
+  const discounted=await discountedQuote(tx,id,quote,context.snapshot,{code,state,allowCodeError});
   return {...discounted,online_available:discounted.total_paise>0&&await onlineAvailable(tx,id)};
 }
 export async function consumeIpLimit(tx,id,hash,purpose) {

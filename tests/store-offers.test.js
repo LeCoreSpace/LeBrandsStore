@@ -7,6 +7,7 @@ import {saveOffer,readOffers} from "../src/offers/repository.js";
 import {checkoutQuote,placeCodOrder,receiptOrder} from "../src/checkout/repository.js";
 import {sha256} from "../src/auth/passwords.js";
 import {migrationSelection} from "../db/migration-selection.js";
+import {handleCheckout} from "../src/checkout/routes.js";
 const base={title:"Weekend",method:"code",code:"SAVE10",scope:"order",kind:"percentage",value:1000,
   min_spend_paise:0,min_quantity:1,max_discount_paise:null,starts_at:null,ends_at:null,usage_limit:2,status:"active",target_ids:[]};
 test("integer allocations conserve paise and offer validation rejects unsupported activation",()=>{
@@ -51,6 +52,19 @@ test("real schema offers: tenant, role, revisions, checkout snapshots and usage"
       assert.equal(quote.total_paise,10800);assert.equal(quote.tax_paise,514);
       assert.equal(quote.items[0].cgst_paise+quote.items[0].sgst_paise,quote.items[0].tax_paise);
       await assert.rejects(db.withStore(id,tx=>checkoutQuote(tx,id,items,"33","BAD")),e=>e.status===400);
+      const rejected=await db.withStore(id,tx=>checkoutQuote(tx,id,items,"33","BAD",{allowCodeError:true}));
+      assert.match(rejected.offer_error,/not active/);
+      assert.equal(rejected.items.length,1);assert.equal(rejected.total_paise,12000);
+      assert.equal(rejected.discount_paise,0);assert.equal(rejected.offer,null);
+      const origin="https://fixture.lebrands.store";
+      for(const code of ["BAD","INVALID_CODE"]){
+        const response=await handleCheckout(new Request(`${origin}/api/cart/validate`,{method:"POST",
+          headers:{"content-type":"application/json",origin},body:JSON.stringify({items,state:"33",code})}),
+          {SESSION_SECRET:"synthetic-offer-check-secret-for-tests-only"},db,{store_id:id},f.data);
+        assert.equal(response.status,200);
+        const result=await response.json();
+        assert.ok(result.offer_error);assert.equal(result.items.length,1);assert.equal(result.total_paise,12000);
+      }
     });
     await t.test("order saves discount allocations once and retains historical evidence",async()=>{
       const input={items,contact:{name:"Offer Test",phone:"+919876540000",email:""},address:{line1:"Test road",line2:"",landmark:"",city:"Chennai",state:"33",pincode:"600001"},

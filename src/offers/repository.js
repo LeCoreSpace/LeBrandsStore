@@ -24,10 +24,19 @@ export async function readOffers(tx,id,{checkout=false,code=""}={}){
 }
 export async function discountedQuote(tx,id,quote,snapshot,options={}){
   if(!await offersEnabled(tx)){
-    if(options.code)throw commerceError("Offer codes are not available at this store yet.");
+    if(options.code&&!options.allowCodeError)throw commerceError("Offer codes are not available at this store yet.");
+    if(options.code)return{...quote,discount_paise:0,offer:null,offers_available:false,
+      offer_error:"Offer codes are not available at this store yet."};
     return{...quote,discount_paise:0,offer:null,offers_available:false};
   }
-  return applyBestOffer(quote,await readOffers(tx,id,{checkout:true,code:options.code}),snapshot,options);
+  const candidates=await readOffers(tx,id,{checkout:true,code:options.code});
+  try{return applyBestOffer(quote,candidates,snapshot,options);}
+  catch(error){
+    // A rejected code is not a failed cart. Return fresh, authoritative prices
+    // for display; actual order placement remains strict about the supplied code.
+    if(!options.allowCodeError||error.status!==400||!error.errors?.code)throw error;
+    return{...applyBestOffer(quote,candidates,snapshot,{...options,code:""}),offer_error:error.message};
+  }
 }
 export async function offerDashboard(tx,id){
   const [store]=await tx`SELECT store_id,name,subdomain,status,currency FROM public.stores WHERE store_id=${id}`;

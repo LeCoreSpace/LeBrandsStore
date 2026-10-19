@@ -352,6 +352,24 @@ not assign an unverified execution date to a command.
 
 ## Maintenance
 
+### 19 October: Offer-code rejection recovery
+
+- Ran a **read-only** Supabase administrative transaction using the existing
+  connection helper, with a 10-second statement timeout. Selected only offer
+  application/status/value and code configuration. Found a code-like promotion
+  title using automatic application, with no corresponding customer code.
+  Credentials were not printed; no rows were changed.
+- Managed deployment log lookup found no matching entries for this externally
+  deployed Worker.
+- `node --experimental-test-module-mocks --test --test-concurrency=1 tests/store-offers.test.js tests/sku-checkout.test.js`
+  exercised SKU regressions and the new recovery contract. The new HTTP test
+  initially failed because its synthetic session secret was below the existing
+  minimum length; the fixture secret was corrected, not the runtime guard.
+- `node --experimental-test-module-mocks --test --test-concurrency=1 tests/store-offers.test.js tests/browser-bundles.test.js`
+  passed 9/9, including complete quotes after unknown/malformed codes.
+- `git diff --check` passed. Restarted only the local managed API workflow;
+  no production migration/deployment was performed.
+
 ### 19 October: Store offers and dashboard tickets
 
 | Command / operation | Target / effect | Actual result |

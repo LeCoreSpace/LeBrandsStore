@@ -33,6 +33,13 @@ integration is added by this feature.
 - Codes are case-normalised and unique per store. Old codes remain reserved
   rather than being recycled into unrelated promotions. A used offer's code
   or automatic/code method cannot be changed.
+- An offer name is not a redeemable code. For example, naming an automatic
+  promotion `SAVE100` does not create a code. Select **With a discount code**
+  and enter the code explicitly if shoppers should type it.
+- A rejected code does not invalidate the bag display. Cart validation returns
+  current items/totals and a separate offer error, with any eligible automatic
+  discount. The shopper must remove or replace the rejected code before
+  ordering; server-side order creation still rejects invalid codes.
 - Checkout recalculates eligibility inside its store-locked transaction.
   Management uses the same lock. Usage and stock writes roll back together.
   Client-expected savings are checked before placing a new order.

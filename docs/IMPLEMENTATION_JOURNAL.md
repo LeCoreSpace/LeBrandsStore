@@ -681,6 +681,26 @@ decision:
   `pnpm run db:migrate -- --staged-store-offers`, then `pnpm run deploy`.
   See `docs/store-offers.md` for rules, safety and deferred capabilities.
 
+## 19 October 2026: Code rejection must not hide cart contents
+
+- **Reported:** Applying `SAVE100` replaced the bag's lines and totals with
+  duplicated generic code errors.
+- **Diagnosis:** Read-only inspection found the promotion was active but used
+  automatic application; `SAVE100` was its title, with no customer code record.
+  No live promotion was changed. Managed deployment logs had no matching
+  entries available for this externally deployed Worker.
+- **Fix:** Expected offer failures are separate cart feedback, not cart-fetch
+  failures. Items, quantities and authoritative totals remain visible.
+  Scheduled, expired, inactive and exhausted offers have clearer messages.
+  Removing/replacing the code recovers normally. Checkout stays blocked for a
+  rejected code, and actual order placement retains strict validation.
+- **Checks:** Real-schema SKU/checkout regression cases passed. New tests cover
+  unknown and malformed codes returning a complete quote with offer feedback;
+  strict quote validation still rejects an invalid code. Browser-bundle gate
+  and whitespace checks passed. An isolated mobile browser pass covers the
+  visual recovery flow without placing orders or touching merchant data.
+- **Release:** Worker update only, no new migration. Not deployed automatically.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 
