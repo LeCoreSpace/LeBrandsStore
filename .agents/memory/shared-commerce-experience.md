@@ -20,6 +20,16 @@ as is, while correcting the header/footer to follow the store's theme.
 content and cart overlay. Reuse actual theme framing rather than replacing it
 with another shared header/footer.
 
+The user also explicitly approved the order-confirmation page and matching
+merchant order-notification email, saying "good ui" after viewing both.
+
+**Why:** This confirms the shared visual direction is accepted, not awaiting
+another redesign.
+
+**How to apply:** Preserve that direction when extending receipts and order
+communications; retain merchant identity and the consistent LeBrands commerce
+surfaces.
+
 **Why:** The user compared the recognisability of Shopify checkout with the
 standard they want for LeBrands.Store and approved fixing defects before
 implementing shared commerce layouts. They repeatedly rejected minor styling
