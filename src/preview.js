@@ -272,6 +272,19 @@ export default {
       return new Response(request.method==="HEAD"?null:JSON.stringify(data),{headers:{
         ...SECURITY_HEADERS,"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
     }
+    // Read-only synthetic integration state for the existing local dashboard
+    // fixture. Production uses src/index.js and never serves this endpoint.
+    if(original.pathname==="/__integration-preview/launch"){
+      if(!["GET","HEAD"].includes(request.method))return new Response("Read-only preview",{status:405,headers:{"allow":"GET, HEAD","cache-control":"no-store"}});
+      return new Response(request.method==="HEAD"?null:JSON.stringify({
+        revision:0,can_edit:false,execution_available:true,included_address:"demo.example.invalid",
+        preferences:{address:"included",payments:"cod",delivery:"manual"},providers:{},jobs:[],
+        platform:{domains_available:true,domain_activation_available:false},
+        domain:{id:"00000000-0000-4000-8000-000000000099",hostname:"www.demo.example",status:"pending",
+          hostname_status:"pending",ssl_status:"pending",cname_verified:false,
+          dns_records:[{type:"CNAME",name:"www.demo.example",value:"brands.lebrands.store"}]}
+      }),{headers:{...SECURITY_HEADERS,"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
+    }
     if (["GET","HEAD"].includes(request.method) && original.pathname === "/__step4-preview") {
       const requested = original.searchParams.get("view") || "overview";
       const view = ["overview","orders","order","products","product","product-new","customers","invoices","settings","collections","collection-new","collection"].includes(requested) ? requested : "overview";

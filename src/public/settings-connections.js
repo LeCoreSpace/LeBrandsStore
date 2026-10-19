@@ -5,7 +5,8 @@ if(host) {
   const storeId=document.querySelector(".lb-app")?.dataset.storeId;
   const kind=host.dataset.connectionKind;
   if(storeId&&Object.hasOwn(CONNECTION_KINDS,kind)) {
-    const ui=attachAnnLaunch({api:`/api/stores/${encodeURIComponent(storeId)}/ann`,readOnly:false,settingsMode:true});
+    const preview=document.querySelector(".lb-app")?.dataset.preview==="true";
+    const ui=attachAnnLaunch({api:preview?"/__integration-preview":`/api/stores/${encodeURIComponent(storeId)}/ann`,readOnly:preview,settingsMode:true});
     ui.mount(CONNECTION_KINDS[kind],{customDomainOnly:kind==="domain"});
     window.addEventListener("beforeunload",e=>{if(ui.hasUnsavedChanges()){e.preventDefault();e.returnValue="";}});
   }

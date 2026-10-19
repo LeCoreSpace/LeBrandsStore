@@ -972,6 +972,25 @@ decision:
   its platform configuration remain necessary before custom-domain
   verification and live routing.
 
+### 2026-10-19: Separate ticket-style integration pages
+
+- **What:** Removed the cross-provider tab bar. Custom domain, Razorpay and
+  Shiprocket now each have their own content page reached from their existing
+  Settings sidebar item.
+- **How:** Added provider-specific ticket headers, setup instructions, related
+  links and responsive form styling. Credential panels stay visible in Settings
+  instead of opening in accordions. Provider status uses the existing saved
+  verification and activation state. Ann's conversational controls and the
+  underlying integration APIs, encryption and permission gates remain intact.
+- **Verification:** 24 isolated navigation, integration UI and preview checks
+  passed. Desktop Razorpay and mobile custom-domain screenshots showed the
+  complete live-rendered forms inside the new layout using read-only synthetic
+  preview data. That fixture rejects writes and does not access merchant data.
+  Both preview services restarted successfully; no runtime errors were observed.
+- **Outcome:** Each integration has independent menu content without tabs.
+  No database migration, merchant credential change or provider activation was
+  performed. Production publication remains the manual Cloudflare deploy step.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

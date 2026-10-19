@@ -368,14 +368,32 @@ function normalizeView(view) {
 
 function connectionSettingsPage(data) {
   const kind=data.connectionKind, root=`/stores/${encodeURIComponent(data.store?.store_id || "")}`;
-  const names={domain:"Custom domain integration",payments:"Razorpay integration",delivery:"Shiprocket integration"};
   if(!Object.hasOwn(CONNECTION_KINDS,kind))return settingsPage(data);
-  return `${pageHeading("Settings",names[kind],"Manage integrations here. Your Ann design and live storefront stay unchanged until you explicitly save or activate a service.")}
-    <nav class="lb-export-buttons" aria-label="Store connection settings">${Object.keys(CONNECTION_KINDS).map(k=>`<a class="lb-button lb-button-outline lb-button-small" href="${connectionHref(data.store.store_id,k)}"${k===kind?' aria-current="page"':""}>${names[k]}</a>`).join("")}</nav>
-    <section class="lb-card lb-connection-settings" data-connection-kind="${kind}">
-    <p>${kind==="domain"?`Included address: <strong>${esc(data.store?.subdomain ? `${data.store.subdomain}.lebrands.store` : "Not assigned")}</strong>. A custom domain is optional.`:kind==="payments"?'Cash on Delivery and online payments can be used together. Save COD availability in checkout settings.':'Manual tracking remains available in Order desk, with or without a shipping partner.'}</p>
+  const included=data.store?.subdomain ? `${data.store.subdomain}.lebrands.store` : "Not assigned";
+  const T={
+    domain:{name:"Custom domain integration",stub:"Domain",sub:"Store address",intro:"Point your own web address at your store. Your included address keeps working the whole time.",fact:["Included address",included],
+      steps:[["Add a subdomain","Use a name such as www.yourbrand.com. Bare domains are not supported."],["Update DNS","Add each record shown below at your domain provider."],["Verify and activate","Run the DNS and SSL check, then activate once it passes."]],
+      notes:["A custom domain is optional.","If you take online payments, approve the new domain with your payment provider before activating.","Removing a domain turns off its route only. Nothing is deleted at your domain host."],
+      links:[["Checkout & COD settings",`${root}/settings/checkout`],["Return to Ann",`${root}/build/ann`]]},
+    payments:{name:"Razorpay integration",stub:"Razorpay",sub:"Online payments",intro:"Connect your own Razorpay account so customers can pay online. Cash on Delivery can run alongside it.",fact:["Cash on Delivery","Set in checkout settings"],
+      steps:[["Choose payment methods","Pick Cash on Delivery, Razorpay or both."],["Connect your keys","Enter key ID, key secret and webhook secret. Keys are verified before storage."],["Add the webhook","Register the webhook URL in Razorpay, then turn on online checkout."]],
+      notes:["Stored secrets are encrypted and never shown again.","A live-mode key and a verified signed webhook are needed for online checkout.","Saving choices does not activate any service."],
+      links:[["Checkout & COD settings",`${root}/settings/checkout`],["Order desk",`${root}/orders`]]},
+    delivery:{name:"Shiprocket integration",stub:"Shiprocket",sub:"Delivery",intro:"Connect Shiprocket for automatic shipping, or keep adding tracking yourself from the order desk.",fact:["Manual tracking","Always available"],
+      steps:[["Choose delivery methods","Manual tracking, Shiprocket or both."],["Connect an API user","Use a separate Shiprocket API user, not your main login."],["Set package and limits","Pick a pickup location, parcel size and freight cap, then turn on automatic booking."]],
+      notes:["Manual tracking stays available with or without Shiprocket.","Automatic booking can incur Shiprocket charges, up to your limits.","Saving shipping settings does not turn on automatic shipping."],
+      links:[["Order desk",`${root}/orders`],["Checkout & COD settings",`${root}/settings/checkout`]]}
+  }[kind];
+  return `${pageHeading("Settings",T.name,T.intro)}
+    <div class="lbc-page" data-provider="${kind}">
+    <section class="lbc-ticket" aria-label="${esc(T.name)} summary"><div class="lbc-stub"><small>${esc(T.sub)}</small><strong>${esc(T.stub)}</strong><span>Merchant integration</span></div><div class="lbc-ticket-body"><h2>${esc(T.name)}</h2><p>Your Ann design and live storefront stay unchanged until you explicitly save or activate a service.</p></div><div class="lbc-ticket-side"><small>${esc(T.fact[0])}</small><strong>${esc(T.fact[1])}</strong></div></section>
+    <div class="lbc-grid">
+    <section class="lb-card lb-connection-settings lbc-surface" data-connection-kind="${kind}"><div class="lbc-surface-head"><h2>Integration setup</h2><small>Status is read from your store</small></div>
     <div id="ann-launch-slot" aria-live="polite"></div></section>
-    <div class="lb-export-buttons"><a href="${root}/settings/checkout">Checkout & COD settings</a><a href="${root}/orders">Order desk</a><a href="${root}/build/ann">Return to Ann</a><a href="${root}/settings">All settings</a></div>`;
+    <aside class="lbc-aside"><section class="lbc-note-card"><h3>How it works</h3><ol class="lbc-steps">${T.steps.map(([t,d])=>`<li><strong>${esc(t)}</strong><span>${esc(d)}</span></li>`).join("")}</ol></section>
+    <section class="lbc-note-card"><h3>Good to know</h3><ul class="lbc-notes">${T.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul></section>
+    <nav class="lbc-links" aria-label="Related pages">${T.links.map(([l,h])=>`<a href="${h}">${esc(l)}</a>`).join("")}<a href="${root}/settings">All settings</a></nav></aside>
+    </div></div>`;
 }
 
 

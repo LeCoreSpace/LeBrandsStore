@@ -523,6 +523,15 @@ not assign an unverified execution date to a command.
 | Replit preview workflow restarts for `artifacts/api-server: API Server` and `artifacts/lebrands-web: web` | Development Worker and web preview, not production publication. | Both restarted and served the public sign-in page without runtime errors. |
 | `pnpm run deploy` | Manual Cloudflare publication of the updated Worker, account page and integration screens. | Not run by the assistant; published site can continue to show the older Create button until publication. |
 
+### 19 October: Independent ticket-style integration pages
+
+| Command / operation | Target / effect | Actual result |
+| --- | --- | --- |
+| `node --check src/ui/dashboard.js` / `node --check src/public/ann-launch-ui.js` / `node --check src/public/settings-connections.js` | Workspace source syntax checks. | Passed. |
+| `node --test --test-concurrency=1 tests/dashboard-navigation.test.js tests/ann-launch-ui.test.js tests/dashboard-preview.test.js` | Separate integration pages, always-visible Settings panels, existing Ann controls and read-only fixtures. | Final run: 24 passed. Initial assertions for the old accordion markup were corrected to distinguish Ann from Settings. |
+| Replit workflow restarts: `artifacts/api-server: API Server`, `artifacts/lebrands-web: web` | Rebuild versioned browser assets and serve the updated preview. | Both running; desktop and mobile fixture pages loaded their forms. |
+| `pnpm run deploy` | Manual Cloudflare production publication. | Not run. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

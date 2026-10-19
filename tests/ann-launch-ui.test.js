@@ -189,12 +189,16 @@ test("integration setup is available in Settings before changing COD or manual d
   try{
     h.ui.mount(2);await flush();
     assert.match(h.slot.innerHTML,/Razorpay integration/);
-    assert.match(h.slot.innerHTML,/data-ln-provider="razorpay" open/);
+    assert.match(h.slot.innerHTML,/<section[^>]*data-ln-provider="razorpay"/);
+    assert.doesNotMatch(h.slot.innerHTML,/<details[^>]*data-ln-provider=/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln="sr\.email"|data-step="[13]"/);
     assert.match(h.slot.innerHTML,/data-ln="rz\.key_id"/);
     assert.match(h.slot.innerHTML,/data-ln="rz\.webhook_secret"/);
     h.ui.mount(3);await flush();
     assert.match(h.slot.innerHTML,/Shiprocket integration/);
-    assert.match(h.slot.innerHTML,/data-ln-provider="shiprocket" open/);
+    assert.match(h.slot.innerHTML,/<section[^>]*data-ln-provider="shiprocket"/);
+    assert.doesNotMatch(h.slot.innerHTML,/<details[^>]*data-ln-provider=/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln="rz\.key_id"|data-step="[12]"/);
     assert.match(h.slot.innerHTML,/data-ln="sr\.email"/);
     assert.match(h.slot.innerHTML,/data-ln="sr\.password"/);
   }finally{await h.close();}

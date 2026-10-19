@@ -81,3 +81,13 @@ workspace. Use Shopify only as a usability reference, not an exact visual copy.
 
 **How to apply:** Keep the editing tools organised and concise, while preserving
 the exact merchant design and existing on-canvas editing interactions.
+
+Custom domain, Razorpay and Shiprocket must each have separate menu content,
+not a shared tabbed integration screen. Their dashboard content should use the
+professional ticket-style design.
+
+**Why:** The user repeated that all three integrations need independent sidebar
+pages and explicitly rejected the tabbed content layout.
+
+**How to apply:** Preserve direct sidebar access and provider-specific setup
+content. Do not reintroduce cross-provider tabs when extending these pages.

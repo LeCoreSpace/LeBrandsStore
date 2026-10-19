@@ -88,6 +88,35 @@ test("escaping of store id, subdomain and status", () => {
   assert.equal(storeStatus({ status: "draft" }).label, "Not published");
   assert.equal(storeStatus({ status: "awaiting_approval" }).tone, "pending");
 });
+test("integration display fixtures cannot activate services or reach live merchant setup", async () => {
+  const {default:preview}=await import("../src/preview.js");
+  const response=await preview.fetch(new Request("http://localhost/__integration-preview/launch"),{},{});
+  assert.equal(response.status,200);
+  const state=await response.json();
+  assert.equal(state.can_edit,false);
+  assert.equal(state.domain.status,"pending");
+  assert.equal(state.platform.domain_activation_available,false);
+  const rejected=await preview.fetch(new Request("http://localhost/__integration-preview/launch",{method:"PATCH"}),{},{});
+  assert.equal(rejected.status,405);
+  const entry=await readFile("src/public/settings-connections.js","utf8");
+  assert.match(entry,/dataset\.preview==="true"/);
+  assert.match(entry,/readOnly:preview/);
+});
+test("integrations render separate ticket pages without a cross-provider tab bar", () => {
+  const names={domain:"Custom domain integration",payments:"Razorpay integration",delivery:"Shiprocket integration"};
+  for(const [kind,name] of Object.entries(names)){
+    const html=renderDashboard("settings",{...localDashboardFixture(),connectionKind:kind},{name:"Owner"});
+    assert.match(html,new RegExp(`class="lbc-page" data-provider="${kind}"`));
+    assert.match(html,new RegExp(`data-connection-kind="${kind}"`));
+    assert.match(html,new RegExp(`aria-label="${name} summary"`));
+    assert.equal((html.match(/id="ann-launch-slot"/g)||[]).length,1);
+    assert.equal((html.match(/data-connection-kind=/g)||[]).length,1);
+    assert.match(html,/class="lbc-stub"/);
+    assert.match(html,/class="lbc-steps"/);
+    assert.match(html,/Integration setup/);
+    assert.doesNotMatch(html,/aria-label="Store connection settings"|role="tablist"|Integration [123] of 3/);
+  }
+});
 test("shell keeps desktop collapse, mobile drawer, help and logo; module is served and safe", async () => {
   const html = renderDashboard("orders", localDashboardFixture(), { name: "Owner" });
   for (const a of ["data-sidebar-collapse", "data-menu-toggle", "data-drawer-close", "data-open-order-count", "data-sidebar-help", "data-global-search", "lb-logo", "lb-mark"]) assert.ok(html.includes(a), a);

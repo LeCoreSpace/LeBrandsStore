@@ -93,6 +93,10 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     if(n===1 && !state?.domain) status="Included address ready";
     return `<details class="ann-review-step ann-launch-step" data-step="${n}"${open[n] ? " open" : ""}><summary>${n}. ${esc(title)} <span class="ann-launch-st">${esc(status)}</span></summary>${body}</details>`;
   }
+  function providerPanel(provider,title,body,active,verified){
+    if(settingsMode)return `<section class="ann-provider-setup ann-integration-provider" data-ln-provider="${provider}"><div class="ann-integration-provider-heading"><h2>${esc(title)}</h2><span class="ann-integration-status" role="status" data-status="${active?"active":verified?"verified":"unverified"}">${active?"Active":verified?"Verified, not active":"Not connected"}</span></div>${body}</section>`;
+    return `<details class="ann-provider-setup" data-ln-provider="${provider}"${providerOpen[provider]?" open":""}><summary>${esc(title)}${active?" · active":""}</summary>${body}</details>`;
+  }
   const saveRow = next => `${msg("choose")}<div class="ann-actions ann-launch-actions"><button type="button" class="ann-btn alt sm" data-ln-a="choose"${dis(!prefsDirty)}>${busy === "choose" ? "Saving" : "Save choices"}</button>${settingsMode ? "" : `<button type="button" class="ann-btn sm" data-ln-a="next" data-next="${next}"${dis()}>${prefsDirty?"Save and continue":next===2?(customOnly?"Continue to review":"Continue to payments"):next===3?"Continue to delivery":"Review my store"}</button>`}</div><p class="ann-note">Choices saved here do not activate services.</p>`;
   function advance(next) {
     const move=()=>{
@@ -155,7 +159,8 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     const rzBlock = `<h3>Razorpay</h3>` + (rzp.verified
       ? rzVerified
       : `<p class="ann-note">Enter your merchant Razorpay key ID and key secret. Also create a webhook secret in Razorpay so signed payment events can be checked. We verify the keys before storing them encrypted; they are not displayed again.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify and save Razorpay"}</button></div>`);
-    const s2 = `${own}${pay}${settingsMode||prefs.payments==="razorpay"||prefs.payments==="both"||rzp.verified?`<details class="ann-provider-setup" data-ln-provider="razorpay"${providerOpen.razorpay?" open":""}><summary>Razorpay integration${rzOn?" · active":""}</summary>${rzBlock}</details>`:""}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${saveRow(3)}`;
+    const rzPanel=settingsMode||prefs.payments==="razorpay"||prefs.payments==="both"||rzp.verified?providerPanel("razorpay","Razorpay integration",rzBlock,rzOn,rzp.verified):"";
+    const s2 = `${own}${settingsMode?rzPanel+pay:pay+rzPanel}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${saveRow(3)}`;
 
     // Step 3: delivery
     const del = `<p class="ann-note">Choose one or both. Add manual tracking from Orders.</p>${opts("delivery", [["manual", "I'll add tracking myself", "Use your courier and add its tracking number in Orders."], ["shiprocket", "Shiprocket", "Connect your account for automatic shipping."]])}`;
@@ -169,7 +174,8 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     const srBlock = `<h3>Shiprocket</h3>` + (shp.verified
       ? `<p class="ann-callout">Account verified${shp.pickup_count != null ? `, ${esc(shp.pickup_count)} pickup location(s)` : ""}${srTime ? `, checked ${esc(srTime)}` : ""}.</p>${srForm}${srAuto}${jobsHtml}`
       : `<p class="ann-note">Create a separate API user in Shiprocket Settings → API. Enter its email and password, not your main account login. We verify the account and pickup locations before storing the credentials encrypted.</p>${inp("sr.email", "API user email", "email")}${inp("sr.password", "API user password", "password")}${msg("sr")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="sr"${dis(!v("sr.email") || !draftVals["sr.password"])}>${busy === "sr" ? "Checking" : "Verify and save Shiprocket"}</button></div>`);
-    const s3 = `${own}${del}${settingsMode||prefs.delivery==="shiprocket"||prefs.delivery==="both"||shp.verified?`<details class="ann-provider-setup" data-ln-provider="shiprocket"${providerOpen.shiprocket?" open":""}><summary>Shiprocket integration${srOn?" · active":""}</summary>${srBlock}</details>`:""}${msg("disc-shiprocket")}${confirmDisc === "shiprocket" ? discBox() : ""}${saveRow(4)}`;
+    const srPanel=settingsMode||prefs.delivery==="shiprocket"||prefs.delivery==="both"||shp.verified?providerPanel("shiprocket","Shiprocket integration",srBlock,srOn,shp.verified):"";
+    const s3 = `${own}${settingsMode?srPanel+del:del+srPanel}${msg("disc-shiprocket")}${confirmDisc === "shiprocket" ? discBox() : ""}${saveRow(4)}`;
 
     function discBox() { return `<div class="ann-conflict" role="alertdialog"><p>Disconnect ${esc(confirmDisc)}? Its saved credentials are removed.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="disc-yes"${dis()}>Yes, disconnect</button><button type="button" class="ann-btn alt sm" data-ln-a="disc-no">Keep connected</button></div></div>`; }
 
