@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFile} from "node:fs/promises";
 import {setupPlatformAdminFixture} from "../src/platform-admin-preview-fixture.js";
-import {handlePlatformAdmin} from "../src/admin/platform-routes.js";
+import {handlePlatformAdmin,isPlatformAdminRoute} from "../src/admin/platform-routes.js";
+import {handleBusinessReview} from "../src/admin/business-review-routes.js";
 import {sha256} from "../src/auth/passwords.js";
 import {migrationSelection} from "../db/migration-selection.js";
 import worker from "../src/index.js";
@@ -25,6 +26,29 @@ test("real admin schema enforces staff access, login, sanitized data and reversi
   const cookie=accepted.headers.get("set-cookie").split(";")[0],raw=cookie.split("=")[1],token=await sha256(raw);
   assert.match(accepted.headers.get("set-cookie"),/Secure; HttpOnly; SameSite=Lax/);
   assert.equal((await call(new Request(root,{headers:{cookie}}))).status,200);
+  for(const section of ["integrations","domains","gst","subscriptions","payments","suspensions"]){
+   assert.equal(isPlatformAdminRoute(`/admin/${section}`),true);
+   assert.equal((await call(new Request(`${root}/${section}`))).headers.get("location"),"/admin/login");
+   const response=await call(new Request(`${root}/${section}?q=Example&status=all&page=0`,{headers:{cookie}}));
+   assert.equal(response.status,200,section);
+   const html=await response.text();
+   assert.match(html,new RegExp(`href="/admin/${section}" aria-current="page"`));
+   assert.match(html,new RegExp(`action="/admin/${section}"`));
+   assert.match(html,/Example Studio/);
+   assert.match(html,/class="pa-side"/);
+   assert.match(html,/class="pa-main"/);
+   const invalid=await call(new Request(`${root}/${section}?page=-1`,{headers:{cookie}}));
+   assert.equal(invalid.status,400);
+  }
+  for(const suffix of ["",`/${f.store}`]){
+   const review=await handleBusinessReview(new Request(`${root}/business-reviews${suffix}`),f.env,f.db,f.user,token);
+   assert.equal(review.status,200);
+   const html=await review.text();
+   assert.match(html,/href="\/admin\/business-reviews" aria-current="page"/);
+   assert.match(html,/class="pa-side"/);
+   assert.match(html,/business-review\.css/);
+   assert.doesNotMatch(html,/<footer/);
+  }
   const overview=await f.db.account(async tx=>(await tx`SELECT public.platform_admin_overview(${token},${""},${"all"},${0}) AS data`)[0].data);
   const data=typeof overview==="string"?JSON.parse(overview):overview;
   assert.ok(data.stores.some(s=>s.store_id===f.store));

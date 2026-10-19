@@ -6,10 +6,12 @@ import {renderPlatformAdmin} from "../ui/platform-admin.js";
 
 const UUID="[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}";
 const DETAIL=new RegExp(`^/admin/stores/(${UUID})(/suspension)?$`,"i");
+const SECTIONS=["integrations","domains","gst","subscriptions","payments","suspensions"];
+const sectionFor=path=>SECTIONS.find(section=>path===`/admin/${section}`);
 const decode=v=>typeof v==="string"?JSON.parse(v):v;
 const HEADERS={...SECURITY_HEADERS,"x-robots-tag":"noindex, nofollow","referrer-policy":"no-referrer",
  "content-security-policy":"default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; script-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"};
-export const isPlatformAdminRoute=path=>["/admin","/admin/login","/admin/logout"].includes(path)||path.startsWith("/admin/stores/");
+export const isPlatformAdminRoute=path=>["/admin","/admin/login","/admin/logout"].includes(path)||!!sectionFor(path)||path.startsWith("/admin/stores/");
 const fail=(message,status)=>Object.assign(new Error(message),{status});
 const redirect=(location,cookie)=>new Response(null,{status:303,headers:{...HEADERS,location,...(cookie?{"set-cookie":cookie}:{})}});
 const page=(view,data={},status=200)=>new Response(renderPlatformAdmin(view,data),{status,headers:{...HEADERS,"content-type":"text/html; charset=utf-8"}});
@@ -66,13 +68,14 @@ async function dispatch(request,env,ctx,dependencies){
    await repo.revoke(token);return redirect("/admin/login",sessionCookie("",true));
   }
   const match=path.match(DETAIL);
-  if(path==="/admin"){
+  const section=sectionFor(path);
+  if(path==="/admin"||section){
    if(!read)throw fail("Method not allowed.",405);
    const query=url.searchParams.get("q")||"",status=url.searchParams.get("status")||"all",number=url.searchParams.get("page")||"0";
    if(query.length>100||!["all","draft","live","paused","suspended"].includes(status)||!/^\d{1,4}$/.test(number)||Number(number)>1000)
     throw fail("Choose a valid store filter.",400);
    const [row]=await db.account(tx=>tx`SELECT public.platform_admin_overview(${token},${query},${status},${Number(number)}) AS data`);
-   return page("overview",{...decode(row.data),admin});
+   return page(section?"section":"overview",{...decode(row.data),admin,...(section?{section}:{})});
   }
   if(!match)throw fail("Page not found.",404);
   const id=match[1];detailId=id;

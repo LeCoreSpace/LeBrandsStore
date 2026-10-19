@@ -60,20 +60,25 @@ function hostLine(r) {
 }
 const SUMMARY = [["stores", "Stores"], ["live", "Live"], ["draft", "Draft"], ["paused", "Paused"], ["suspended", "Suspended"], ["orders", "Orders"], ["pending_reviews", "Pending reviews"], ["custom_domains", "Custom domains"], ["payment_issues", "Payment issues"]];
 
-function head(title) {
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} | LeBrands.Store Operations</title><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin"><link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/platform-admin.css"><script src="/assets/platform-admin.js" defer></script></head>`;
+const NAV = [["stores", "Stores", ""], ["business-reviews", "Business reviews", "/business-reviews"], ["integrations", "Integrations", "/integrations"], ["domains", "Custom domains", "/domains"], ["gst", "GST verification", "/gst"], ["subscriptions", "Subscriptions", "/subscriptions"], ["payments", "Payments", "/payments"], ["suspensions", "Store suspension", "/suspensions"]];
+function head(title, extra) {
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} | LeBrands.Store Operations</title><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin"><link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/platform-admin.css">${extra || ""}<script src="/assets/platform-admin.js" defer></script></head>`;
 }
 const logo = `<img src="/img/REPLACE-lebrands-light-transparent.webp" alt="LeBrands.Store" width="150" height="32">`;
 
-function frame(title, inner, admin, active) {
+export function renderPlatformAdminFrame(title, inner, admin, active = "stores", extraHead = "") {
   const a = obj(admin);
-  return `${head(title)}<body class="pa-app"><a class="pa-skip" href="#pa-main">Skip to content</a>
+  const who = a.name || a.username || a.email || "Platform admin";
+  const sub = a.username || a.email || "";
+  const nav = NAV.map(([k, l, p]) => `<a href="${ROOT}${p}" ${active === k ? 'aria-current="page"' : ""}>${l}</a>`).join("");
+  return `${head(title, extraHead)}<body class="pa-app"><a class="pa-skip" href="#pa-main">Skip to content</a>
 <div class="pa-shell"><aside class="pa-side"><a class="pa-brand" href="${ROOT}" aria-label="LeBrands.Store Operations home">${logo}<span>Operations</span></a>
-<nav aria-label="Operations"><a href="${ROOT}" ${active === "stores" ? 'aria-current="page"' : ""}>Stores</a><a href="${ROOT}/business-reviews">Business reviews</a></nav>
-<div class="pa-who"><p class="pa-sub-d">Signed in as</p><strong>${esc(a.name || a.username || "Platform admin")}</strong><span>${esc(a.username || "")}</span>
-<form method="post" action="${ROOT}/logout"><button class="pa-btn pa-btn-ghost" type="submit">Sign out</button></form></div></aside>
+<nav aria-label="Operations">${nav}</nav>
+<div class="pa-who"><p class="pa-sub-d">Signed in as</p><strong>${esc(who)}</strong><span>${esc(sub && sub !== who ? sub : "")}</span>
+<form method="post" action="${active === "business-reviews" ? "/logout" : `${ROOT}/logout`}"><button class="pa-btn pa-btn-ghost" type="submit">Sign out</button></form></div></aside>
 <main id="pa-main" class="pa-main" tabindex="-1">${inner}</main></div></body></html>`;
 }
+const frame = renderPlatformAdminFrame;
 const alertBox = (msg, href) => `<div class="pa-alert" role="alert"><strong>${esc(msg)}</strong>${href ? `<a class="pa-link" href="${esc(href)}">Reload and retry</a>` : ""}</div>`;
 
 function login(d) {
@@ -138,7 +143,7 @@ function storeView(d) {
   const doms = list(s.domains);
   const domHtml = doms.length ? `<ul class="pa-rows">${doms.map((x) => `<li><span class="pa-strong pa-mono">${esc(x.hostname)}</span>${chip(x.status ? cap(x.status) : "Status unknown", x.status === "active" || x.status === "verified" ? "ok" : x.status ? "warn" : "unknown")}${x.is_primary ? chip("Primary", "neutral") : ""}<span class="pa-sub">Updated ${esc(when(x.updated_at))}</span></li>`).join("")}</ul>` : `<p class="pa-sub">No custom domains attached.</p>`;
   const histHtml = hist.length ? `<ol class="pa-history">${hist.map((h) => `<li><div class="pa-ev"><strong>${esc(cap(h.action))}</strong><span>${esc(h.from_status ? cap(h.from_status) : "Unknown")} to ${esc(h.to_status ? cap(h.to_status) : "Unknown")}</span></div><p class="pa-prose">${esc(h.reason || "No reason recorded")}</p><span class="pa-sub">${esc(h.actor_name || "Unknown actor")} / ${esc(when(h.created_at))}</span></li>`).join("")}</ol><p class="pa-sub">History is append only. Entries cannot be edited or removed.</p>` : `<p class="pa-sub">No suspension actions have been recorded for this store.</p>`;
-  const panel = `<section class="pa-card pa-action" data-mode="${action}"><h2>${suspended ? "Restore store" : "Suspend store"}</h2>
+  const panel = `<section id="pa-suspension" class="pa-card pa-action" data-mode="${action}"><h2>${suspended ? "Restore store" : "Suspend store"}</h2>
 ${suspended ? `<p>Restoring ends the suspension. <strong>The store is not republished.</strong> It returns to draft and the merchant must publish it again.</p>` : `<p>Suspending <strong>takes the storefront offline immediately</strong>. Orders, products, customers and every other record are preserved.</p>`}
 <p class="pa-sub">Suspension revision ${rev}. The action is rejected if another admin changed it first.</p>
 ${d.error ? alertBox(String(d.error), `${ROOT}/stores/${encodeURIComponent(sid)}`) : ""}
@@ -159,8 +164,8 @@ ${d.error ? alertBox(String(d.error), `${ROOT}/stores/${encodeURIComponent(sid)}
 ${d.error && !panel.includes("pa-alert") ? alertBox(String(d.error)) : ""}
 <div class="pa-grid"><div>
 <section class="pa-card"><h2>Health checks</h2><ul class="pa-checks">${checks}</ul><p class="pa-sub">Test mode payments are never counted as live subscription revenue. Unrecognised values are shown as such, never as healthy.</p></section>
-<section class="pa-card"><h2>Custom domains</h2>${domHtml}</section>
-<section class="pa-card"><h2>Integrations</h2>${integHtml}</section>
+<section id="pa-domains" class="pa-card"><h2>Custom domains</h2>${domHtml}</section>
+<section id="pa-integrations" class="pa-card"><h2>Integrations</h2>${integHtml}</section>
 <section class="pa-card"><h2>Platform audit history</h2>${histHtml}</section></div>
 <div class="pa-rail">${panel}${fallback}</div></div>`, d.admin, "stores");
 }
@@ -170,10 +175,44 @@ function errorView(d) {
   return frame(e.title || "Something went wrong", `<section class="pa-empty pa-error"><p class="pa-eyebrow">${esc(e.status ? "Error " + e.status : "Error")}</p><h1>${esc(e.title || "This page could not be shown")}</h1><p>${esc(e.error || e.message || "The request could not be completed.")}</p><div class="pa-row"><a class="pa-btn pa-btn-primary" href="${ROOT}">Back to stores</a></div></section>`, e.admin, "stores");
 }
 
+const SECTIONS = {
+  integrations: ["Integrations", "Provider connections", "Integration records per store, as last reported by each provider.", ["Integrations"], (r) => { const i = list(r.integrations); return `<td data-l="Integrations">${i.length ? `<ul class="pa-rows">${i.map((x) => `<li><span class="pa-strong">${esc(cap(x.provider))}</span>${chip(x.status ? cap(x.status) : "Status unknown", ["connected", "active", "verified"].includes(x.status) ? "ok" : ["error", "failed", "disconnected"].includes(x.status) ? "bad" : "unknown")}<span class="pa-sub">Updated ${esc(when(x.updated_at))}</span></li>`).join("")}</ul>` : chip("No integrations recorded", "neutral")}</td>`; }, "integrations"],
+  domains: ["Custom domains", "Domain attachments", "Hostnames attached to each store and their verification state.", ["Domains"], (r) => { const d = list(r.domains); return `<td data-l="Domains">${d.length ? `<ul class="pa-rows">${d.map((x) => `<li><span class="pa-strong pa-mono">${esc(x.hostname)}</span>${chip(x.status ? cap(x.status) : "Status unknown", ["active", "verified"].includes(x.status) ? "ok" : x.status ? "warn" : "unknown")}${x.is_primary ? chip("Primary", "neutral") : ""}<span class="pa-sub">Updated ${esc(when(x.updated_at))}</span></li>`).join("")}</ul>` : chip("No custom domain attached", "neutral")}</td>`; }, "domains"],
+  gst: ["GST verification", "GST and business checks", "GST state and business registration status. Decisions are made in business reviews, not here.", ["GST", "Business verification"], (r) => { const ok = r.gst_state === "verified" && r.gst_confirmed; return `<td data-l="GST">${r.gst_state ? chip(cap(r.gst_state) + (r.gst_confirmed ? ", confirmed" : ", not confirmed"), ok ? "ok" : "warn") : chip("No GST record", "neutral")}</td><td data-l="Business verification">${r.business_status ? chip(cap(r.business_status), r.business_status === "approved" ? "ok" : ["changes_requested", "pending_review"].includes(r.business_status) ? "warn" : "unknown") + ` <a class="pa-link" href="${ROOT}/business-reviews/${encodeURIComponent(r.store_id)}">Open review</a>` : chip("Not submitted", "neutral")}</td>`; }, "gst"],
+  subscriptions: ["Subscriptions", "Plans and billing state", "Subscription record per store. Test mode is labelled and is not live revenue.", ["Subscription"], (r) => `<td data-l="Subscription">${subscriptionCell(r.subscription, true)}</td>`, "subscriptions"],
+  payments: ["Payments", "Latest payments", "Most recent payment per store. Test payments are not subscriptions.", ["Latest payment"], (r) => `<td data-l="Payment">${paymentCell(r.payment)}</td>`, "payments"],
+  suspensions: ["Store suspension", "Suspension state", "Suspended and active stores. Actions use the guarded control on each store page.", ["Suspension", "Control"], (r) => { const sus = !!r.suspended || r.status === "suspended"; return `<td data-l="Suspension">${sus ? chip("Suspended", "bad") + `<span class="pa-sub">Revision ${esc(r.suspension_revision ?? 0)}</span>` : chip("Not suspended", "ok")}</td><td data-l="Control"><a class="pa-btn pa-btn-line" href="${ROOT}/stores/${encodeURIComponent(r.store_id)}#pa-suspension">${sus ? "Open restore control" : "Open suspend control"}</a></td>`; }, "suspensions"],
+};
+
+function section(d) {
+  const cfg = SECTIONS[d.section];
+  if (!cfg) return errorView({ ...d, title: "Section not found", status: 404 });
+  const [title, h1, lede, cols, cells, slug] = cfg;
+  const base = `${ROOT}/${slug}`;
+  const rows = list(d.stores);
+  const status = STATUSES.includes(d.status) ? d.status : "all";
+  const page = Math.max(0, parseInt(d.page, 10) || 0);
+  const q = String(d.query || "");
+  const href = (p, st = status) => `${base}?${new URLSearchParams({ ...(q ? { q } : {}), status: st, page: String(p) })}`;
+  const tabs = STATUSES.map((s) => `<a href="${esc(href(0, s))}" ${s === status ? 'aria-current="page"' : ""}>${cap(s)}</a>`).join("");
+  const filt = q || status !== "all";
+  let body;
+  if (d.error) body = alertBox(String(d.error), href(page));
+  else if (!rows.length) body = `<section class="pa-empty"><h2>${filt ? "No stores match these filters." : "No stores exist yet."}</h2><p>${filt ? "Check the spelling or clear the filters to see every store." : "Stores appear here as soon as a merchant creates one."}</p>${filt ? `<a class="pa-btn pa-btn-line" href="${base}">Clear filters</a>` : ""}</section>`;
+  else body = `<div class="pa-tablewrap"><table class="pa-table"><caption class="pa-sr">${esc(title)}, ${esc(cap(status))} stores, page ${page + 1}</caption><thead><tr><th scope="col">Store</th><th scope="col">Store status</th>${cols.map((c) => `<th scope="col">${esc(c)}</th>`).join("")}</tr></thead><tbody>${rows.map((r) => `<tr data-state="${esc(r.status)}"><th scope="row"><a class="pa-store" href="${ROOT}/stores/${encodeURIComponent(r.store_id)}">${esc(r.name || "Unnamed store")}</a><span class="pa-sub pa-mono">${esc(r.subdomain)}.lebrands.store</span></th><td data-l="Status">${statusChip(r.suspended ? "suspended" : r.status)}</td>${cells(r)}</tr>`).join("")}</tbody></table></div>
+<nav class="pa-pager" aria-label="Pagination">${page > 0 ? `<a class="pa-btn pa-btn-line" href="${esc(href(page - 1))}">Previous</a>` : "<span></span>"}<span>Page ${page + 1}</span>${d.has_more ? `<a class="pa-btn pa-btn-line" href="${esc(href(page + 1))}">Next</a>` : "<span></span>"}</nav>`;
+  return frame(title, `<header class="pa-head"><div><p class="pa-eyebrow">${esc(title)}</p><h1>${esc(h1)}</h1><p class="pa-sub">${esc(lede)}</p></div></header>
+<form class="pa-filters" method="get" action="${base}" role="search"><label class="pa-field" for="pa-q"><span>Search stores</span><input id="pa-q" type="search" name="q" value="${esc(q)}" maxlength="100" placeholder="Name or subdomain"></label>
+<label class="pa-field" for="pa-st"><span>Store status</span><select id="pa-st" name="status">${STATUSES.map((s) => `<option value="${s}" ${s === status ? "selected" : ""}>${cap(s)}</option>`).join("")}</select></label>
+<input type="hidden" name="page" value="0"><button class="pa-btn pa-btn-primary" type="submit">Apply filters</button></form>
+<nav class="pa-tabs" aria-label="Quick status filter">${tabs}</nav>${body}`, d.admin, slug === "stores" ? "stores" : slug);
+}
+
 export function renderPlatformAdmin(view, data = {}) {
   const d = obj(data);
   if (view === "login") return login(d);
   if (view === "overview") return overview(d);
   if (view === "store") return storeView(d);
+  if (view === "section") return section(d);
   return errorView(d);
 }

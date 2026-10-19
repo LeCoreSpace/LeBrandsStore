@@ -864,6 +864,26 @@ decision:
 - **Operations:** See [platform admin setup](platform-admin.md) and the
   [command register](journal/COMMAND_REGISTER.md).
 
+### 2026-10-19: Unified admin navigation and right-hand workspace
+
+- **What:** Added separate sidebar menus for integrations, custom domains, GST,
+  subscriptions, payments and store suspension alongside Stores and Business
+  reviews. Business-review queue and detail now stay in the same right-hand
+  workspace rather than using the merchant account header and footer.
+- **How:** Shared the existing admin shell, preserved review forms and private
+  download routes, and reused the guarded store-overview function for real
+  category-specific records. Search, store-status filters and pagination retain
+  the selected menu. Suspension keeps its existing confirmation and audit flow.
+  Payment pages show the latest payment/checkout evidence per store.
+- **Verification:** All three isolated platform-admin/business-review tests
+  passed, including six new protected section routes, active navigation,
+  route-specific search forms, shared review layout and existing permission,
+  review and suspension regression checks. Both workflows restarted and served
+  requests. The screenshot browser was not signed in and displayed a sign-in
+  page; authenticated visual layout was not browser-verified in this change.
+- **Release:** No database migration, live merchant mutation or production
+  publication. Publish the updated Worker manually.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

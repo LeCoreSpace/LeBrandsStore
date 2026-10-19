@@ -1,4 +1,6 @@
-import { escapeHtml as esc, layout, accountHeader, footer } from "./layout.js";
+import { renderPlatformAdminFrame } from "./platform-admin.js";
+
+const esc = (v) => String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 
 const BASE = "/admin/business-reviews";
 const STATUS = { pending_review: "Pending review", changes_requested: "Changes requested", approved: "Approved", all: "All" };
@@ -33,14 +35,7 @@ function notice(msg, retryHref) {
 }
 
 function shell(title, inner, user) {
-  return layout({
-    title: `${title} | LeBrands.Store`,
-    description: "Platform review of private business registration evidence.",
-    canonical: `https://app.lebrands.store${BASE}`,
-    noindex: true,
-    extraHead: '<link rel="stylesheet" href="/assets/business-review.css">',
-    body: `<a class="br-skip" href="#br-main">Skip to content</a>${accountHeader(user)}<main id="br-main" class="wrap br-main">${inner}</main>${footer()}`,
-  });
+  return renderPlatformAdminFrame(title, `<a class="br-skip" href="#br-main">Skip to content</a><div id="br-main" class="br-main pa-br">${inner}</div>`, user, "business-reviews", '<link rel="stylesheet" href="/assets/business-review.css">');
 }
 
 function queue(data, user) {
@@ -54,7 +49,7 @@ function queue(data, user) {
   else if (!rows.length) body = `<section class="br-empty"><h2>${status === "pending_review" ? "Nothing is waiting for review." : "No submissions in this view."}</h2><p>Submissions appear here when a store owner sends registration evidence. Try another filter to see other states.</p></section>`;
   else body = `<div class="br-table-wrap"><table class="br-table"><caption class="br-sr">Business registration submissions, ${esc(label(status))}</caption><thead><tr><th scope="col">Store</th><th scope="col">Legal name</th><th scope="col">Country</th><th scope="col">Status</th><th scope="col">Version</th><th scope="col">Submitted</th></tr></thead><tbody>${rows.map((r) => `<tr><th scope="row"><a class="br-link" href="${BASE}/${encodeURIComponent(r.store_id || "")}">${esc(r.store_name || "Unnamed store")}</a></th><td data-l="Legal name">${esc(r.legal_name || "Not provided")}</td><td data-l="Country">${esc(r.country_code || "n/a")}</td><td data-l="Status">${pill(r.status)}</td><td data-l="Version">v${esc(r.submission_version ?? "0")} / rev ${esc(r.revision ?? "0")}</td><td data-l="Submitted">${esc(when(r.submitted_at))}</td></tr>`).join("")}</tbody></table></div>
     <nav class="br-pager" aria-label="Pagination">${page > 0 ? `<a class="br-btn br-btn-outline" href="${esc(href(status, page - 1))}">Previous</a>` : '<span></span>'}<span>Page ${page + 1}</span>${data.has_more ? `<a class="br-btn br-btn-outline" href="${esc(href(status, page + 1))}">Next</a>` : '<span></span>'}</nav>`;
-  return shell("Business reviews", `<nav class="br-crumbs" aria-label="Breadcrumb"><a href="/account">Account</a><span aria-hidden="true">/</span><span>Business reviews</span></nav>
+  return shell("Business reviews", `<nav class="br-crumbs" aria-label="Breadcrumb"><a href="/admin">Stores</a><span aria-hidden="true">/</span><span>Business reviews</span></nav>
     <header class="br-head"><p class="br-eyebrow">Platform review workspace</p><h1>Business reviews</h1><p>Private registration evidence for platform reviewers${user?.name ? `. Signed in as ${esc(user.name)}` : ""}. Brand administrators cannot see this area.</p></header>
     <nav class="br-tabs" aria-label="Filter by status">${tabs}</nav>${body}`, user);
 }
@@ -92,7 +87,7 @@ function detail(data, user) {
     <button class="br-btn" type="submit">Record decision</button></form>` : `<p class="br-readonly" role="status">${v.status === "approved" ? "This submission is approved and read only in this phase." : "No decision can be recorded for this status."}</p>`;
   const err = data.error ? notice(String(data.error), `${BASE}/${encodeURIComponent(sid)}`) +
     (!actionable&&form.note?`<div class="br-alert"><strong>Your unsaved note</strong><p class="br-prose">${esc(form.note)}</p></div>`:"") : "";
-  return shell(`${store.name || "Submission"} review`, `<nav class="br-crumbs" aria-label="Breadcrumb"><a href="/account">Account</a><span aria-hidden="true">/</span><a href="${BASE}">Business reviews</a><span aria-hidden="true">/</span><span>${esc(store.name || "Store")}</span></nav>
+  return shell(`${store.name || "Submission"} review`, `<nav class="br-crumbs" aria-label="Breadcrumb"><a href="/admin">Stores</a><span aria-hidden="true">/</span><a href="${BASE}">Business reviews</a><span aria-hidden="true">/</span><span>${esc(store.name || "Store")}</span></nav>
     <header class="br-head"><p class="br-eyebrow">Submission v${esc(v.submission_version ?? "0")} / revision ${esc(v.revision ?? "0")}</p><h1>${esc(store.name || "Unnamed store")}</h1><p>${pill(v.status)} Store status: ${esc(label(store.status))}</p></header>${err}
     <section class="br-scope" aria-label="What this review covers"><h2>What this decision covers</h2><dl>${kv("Malware screening", "Automated per file. Shown beside each document.")}${kv("Manual business approval", "Your decision below.")}${kv("GST verification", "A separate check. Not changed here.")}${kv("Publication", "Separate. Approval does not publish, reactivate a store or change invoice status.")}</dl></section>
     <div class="br-grid"><div>

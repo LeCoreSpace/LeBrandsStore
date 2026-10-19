@@ -482,6 +482,14 @@ not assign an unverified execution date to a command.
 | `node db/admin-platform-access.js revoke` | Operator platform/review access revocation; terminates existing sessions. | Documented only. |
 | `pnpm run deploy` | Established manual Cloudflare Worker publication. | Not executed by the assistant. |
 
+### 19 October: Unified admin workspace and separate status menus
+
+| Command / operation | Target / effect | Actual result |
+| --- | --- | --- |
+| `node --test --test-concurrency=1 tests/platform-admin.test.js tests/business-review.test.js` | Workspace root, isolated synthetic real-schema database; new status routes and shared business-review shell plus existing authorization and action regressions. | All three tests passed. No live database access. |
+| Managed web and API workflow restarts | Local preview services after the complete route/UI edit batch. | Both running; preview requests served. Screenshot browser reached sign-in, not authenticated admin content. |
+| `pnpm run deploy` | Manual Cloudflare publication of the updated dashboard. | Not executed by the assistant. No additional migration required. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

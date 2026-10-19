@@ -60,3 +60,7 @@ input,select,textarea{font:inherit;color:var(--ink);background:#fff;border:1px s
 .pa-table{min-width:0}.pa-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.pa-table tr{display:block;padding:12px 14px;border-bottom:1px solid var(--line)}.pa-table th,.pa-table td{display:block;border:0;padding:5px 0}.pa-table td[data-l]:before{content:attr(data-l);display:block;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:var(--mute)}
 .pa-checks li{grid-template-columns:1fr;gap:4px}}
 @media(prefers-reduced-motion:no-preference){.pa-btn,.pa-table tbody tr{transition:background-color .15s}}
+.pa-br{--green:var(--bur);--green-dark:var(--bur-d);--muted:var(--mute);--line:#ded7d3;--lime:var(--neub);--white:var(--panel);--coral:#c4647e;--ink:#221c1e;--serif:"Instrument Sans",system-ui,sans-serif}
+.pa-br.br-main{padding:0;min-height:0}.pa-br .br-head h1{font-weight:600;letter-spacing:-.02em}.pa-br .br-table tbody th{font:600 16px var(--serif)}
+.pa-side nav{overflow-y:auto}.pa-rows{min-width:240px}.pa-table .pa-rows li{padding:6px 0}
+@media(max-width:820px){.pa-side nav{flex-wrap:wrap;width:100%}.pa-side nav a{flex:1 1 140px}}

@@ -74,6 +74,23 @@ Administrators cannot suspend or restore stores they belong to as merchants.
 No refunds, charges, subscription activation, deletion or impersonation control
 is included.
 
+## Navigation and content layout
+
+All operations pages share the left sidebar and right-hand content panel,
+including the business-review queue, document metadata and decision form.
+Separate menus are available for Stores, Business reviews, Integrations, Custom
+domains, GST verification, Subscriptions, Payments and Store suspension.
+
+The six status sections use the same authorised, sanitised store records as the
+overview, with their own category-specific columns, store search, store-status
+filters and pagination. Payment visibility is the latest payment or checkout
+attempt per store, not a full transaction ledger. Integration state is the stored
+connection state, not a live provider probe. Suspension actions continue through
+the existing confirmed, audited store control.
+
+These navigation changes require no additional database migration. Publication
+of the updated Worker code remains manual.
+
 ## Rotation and revocation
 
 Update the chosen credential Secrets, then run:
