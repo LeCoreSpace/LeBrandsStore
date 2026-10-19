@@ -532,6 +532,17 @@ not assign an unverified execution date to a command.
 | Replit workflow restarts: `artifacts/api-server: API Server`, `artifacts/lebrands-web: web` | Rebuild versioned browser assets and serve the updated preview. | Both running; desktop and mobile fixture pages loaded their forms. |
 | `pnpm run deploy` | Manual Cloudflare production publication. | Not run. |
 
+### 19 October: Merchant-wide ticket styling
+
+| Command / operation | Target / effect | Actual result |
+| --- | --- | --- |
+| `node --test --test-concurrency=1 tests/ticket-workspaces.test.js tests/dashboard.test.js tests/dashboard-redesign.test.js tests/dashboard-navigation.test.js tests/dashboard-preview.test.js tests/editor-render.test.js tests/ann-editor-panel.test.js tests/ann-editor-sections.test.js` | Workspace root; dashboard/editor render and interaction checks. | Initial run: 48 passed, three failed. The new fixture's missing settings were corrected and its checks passed separately; two unchanged Ann panel mocks still fail. |
+| `node --test --test-concurrency=1 tests/ann-design-workspace.test.js tests/ann-browser-preview.test.js` | Existing shared workspace and isolated browser-preview checks. | Ten passed; obsolete workspace assertion failed; browser-preview module mocking requires the flag below. |
+| `node --experimental-test-module-mocks --test tests/ann-browser-preview.test.js` | Correct Node invocation for browser-preview module mocks. | Five passed. |
+| `node --test tests/ticket-workspaces.test.js` | Final ticket contracts, custom page bodies, editor boundaries and checkout form fields. | Four passed. |
+| Replit preview workflow restarts | Rebuild existing versioned CSS bundles and serve the changed workspace. | Services running; public root returned HTTP 200. |
+| `pnpm run deploy` | Manual Cloudflare production publication. | Not run. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

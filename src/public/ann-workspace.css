@@ -72,3 +72,18 @@
   .aw-link-top input,.aw-link input,.aw-link select{font-size:16px}
 }
 @media(prefers-reduced-motion:reduce){.aw *{transition:none!important}}
+
+/* Ticket language: Ann + theme editor workspace chrome (panels only, never preview iframes). */
+.aw{--tk:#faf5f7;--tk-rule:#cbb9c1}
+.aw-drawer{border-left:4px solid var(--wine)}
+.aw-tablist{border-bottom:1px dashed var(--tk-rule);background:var(--tk)}
+.aw-tablist button[aria-selected=true]{background:#fff;border-bottom-color:var(--wine)}
+.aw-list,.aw-opt,.aw-link,.aw-slot .ann-design-card{border-radius:6px;border-left:4px solid var(--wine)}
+.aw-list .aw-sec,.aw-list .aw-row,.aw-sec{border-bottom-style:dashed}
+.aw-ph h3,.aw-gh,.aw-kicker{color:var(--wine-d)}
+.aw-ph{padding-bottom:6px;border-bottom:1px dashed var(--tk-rule)}
+.aw-pages select,.aw-field select,.aw-link input[type=text],.aw-link select,.aw-field input[type=color]{border-radius:4px}
+.aw-mini,.aw-add{border-radius:4px;border-color:var(--tk-rule)}
+.aw-close{border-radius:4px}
+.aw-error,.aw-ok{border-radius:4px;border-left-width:4px}
+.aw-slot{background:var(--tk);border-bottom-style:dashed}

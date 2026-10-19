@@ -991,6 +991,38 @@ decision:
   No database migration, merchant credential change or provider activation was
   performed. Production publication remains the manual Cloudflare deploy step.
 
+### 2026-10-19: Ticket styling across the merchant workspace
+
+- **What:** Extended the approved ticket treatment through implemented dashboard
+  destinations in sidebar order: Today, Catalogue and product/collection forms,
+  Stock, COGS, Offers, Order desk/customer details, invoices, Analytics, Settings,
+  integrations, business documents, checkout preferences, team and billing.
+  Disabled destinations remain disabled.
+- **Editors:** Applied the same visual language to Ann conversation and design
+  panels, inline text-editor containers, catalogue/plan/document dialogs, the
+  saved Ann theme-editor shell and the section-based editor. Storefront CSS,
+  merchant theme presets, iframe documents and saved design data were untouched.
+- **How:** Scoped accents, card edges, perforated dividers, controls and tables
+  through existing workspace stylesheets; standalone checkout preferences get
+  equivalent local styles. Kept selected controls high-contrast and supplied
+  workspace colour tokens to standalone dialogs and editor shells. No backend,
+  field contracts, permissions, save/publish logic or migrations changed.
+- **Verification:** Targeted suites produced 64 passing checks. Three unchanged
+  legacy Ann checks still fail: two editor-panel tests omit the current shared
+  workspace mock, and one workspace assertion expects an obsolete source
+  expression. Browser-preview tests pass with Node's required
+  `--experimental-test-module-mocks` flag. New ticket coverage passes.
+- **Visual checks:** Read-only dashboard and Ann screenshots showed the new
+  cards and readable selected controls. The standalone Ann editor fixture
+  returned its existing saved-design prerequisite; the section-editor mobile
+  fixture showed an empty preview with a resource 404. Those fixtures did not
+  establish visual verification of either full theme editor. Render checks
+  preserve both editor shells and iframe restrictions.
+- **Outcome:** Workspace styling is implemented; existing Ann checks and
+  standalone editor preview fixtures need separate maintenance. Preview
+  workflows restarted and assets rebuilt successfully. No production
+  publication or live merchant edits were performed.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

@@ -936,3 +936,71 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .lbc-page .lbc-surface,.lbc-page .ann-launch-step,.lbc-page .ann-provider-setup{min-width:0}
 @media(max-width:900px){.lbc-grid{grid-template-columns:1fr}.lbc-ticket-side{max-width:none}}
 @media(max-width:640px){.lbc-ticket{grid-template-columns:96px minmax(0,1fr)}.lbc-ticket-side{grid-column:1/-1;border-left:0;border-top:1px dashed #cbb9c1}#ann-launch-slot{padding:12px}#ann-launch-slot .ann-dns-row{grid-template-columns:1fr}#ann-launch-slot .ann-dns-head{display:none}}
+
+/* Ticket language rollout: shared across every dashboard screen (scoped to .lb-app). */
+.lb-app{--lb-tk:#faf5f7;--lb-tk-rule:#cbb9c1;--lb-plum-tint:#f1e5ea}
+.lb-app .lb-page-heading{position:relative;padding:16px 18px 16px 22px;background:var(--lb-surface);border:1px solid var(--lb-line);border-left:4px solid var(--lb-green);border-radius:6px;box-shadow:var(--lb-shadow);align-items:center}
+.lb-app .lb-page-heading::after{content:"";position:absolute;top:10px;bottom:10px;right:calc(var(--lb-heading-actions,0px));width:0}
+.lb-app .lb-page-heading h1{margin:0;font-size:22px;letter-spacing:-.02em}
+.lb-app .lb-page-heading p{margin:4px 0 0;font-size:12px}
+.lb-app .lb-heading-actions{padding-left:16px;border-left:1px dashed var(--lb-tk-rule)}
+.lb-app .lb-card,.lb-app .lb-side-box,.lb-app .lb-image-editor,.lb-app .pb-card,.lb-app .lb-table-wrap{border-radius:6px;box-shadow:var(--lb-shadow)}
+.lb-app .lb-card{border-top:3px solid var(--lb-green)}
+.lb-app .lb-card-heading,.lb-app .lb-section-title{background:var(--lb-tk);border-bottom:1px dashed var(--lb-tk-rule)}
+.lb-app .lb-card-heading{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.lb-app .lb-card-heading h2,.lb-app .lb-image-top h2,.lb-app .lb-side-box h2{font:700 15px/1.3 var(--lb-sans);letter-spacing:0}
+.lb-app .lb-section-title{padding:10px 14px;border:1px solid var(--lb-line);border-left:4px solid var(--lb-green);border-radius:6px 6px 0 0;margin-bottom:0}
+.lb-app .lb-section-title h2{font:700 15px var(--lb-sans)}
+.lb-app .lb-section-heading{font:700 11px var(--lb-sans);letter-spacing:.1em;text-transform:uppercase;color:var(--lb-muted);margin:22px 0 10px}
+.lb-app .lb-metric-grid{border:1px solid var(--lb-line);border-left:4px solid var(--lb-green);border-radius:6px;background:var(--lb-surface);box-shadow:var(--lb-shadow);margin-bottom:18px}
+.lb-app .lb-metric{background:linear-gradient(var(--lb-tk),var(--lb-tk)) top/100% 3px no-repeat;border-right:1px dashed var(--lb-tk-rule)}
+.lb-app .lb-metric-label,.lb-app .lb-customer-metrics small{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--lb-muted)}
+.lb-app .lb-metric strong{color:var(--lb-green-deep)}
+.lb-app .lb-customer-metrics{border:1px solid var(--lb-line);border-left:4px solid var(--lb-green);border-radius:6px;background:var(--lb-surface)}
+.lb-app .lb-customer-metrics>div{border-right:1px dashed var(--lb-tk-rule)}
+.lb-app .lb-customer-metrics strong{color:var(--lb-green-deep)}
+.lb-app .lb-filter-bar{background:var(--lb-tk);border:1px solid var(--lb-line);border-left:4px solid var(--lb-green);border-radius:6px}
+.lb-app .lb-filter-bar input,.lb-app .lb-filter-bar select,.lb-app .lb-field input,.lb-app .lb-field select,.lb-app .lb-field textarea,.lb-app .lb-order-form input,.lb-app .lb-order-form select{border-radius:4px;border-color:#d7cbd0}
+.lb-app :is(input,select,textarea):focus-visible{outline:2px solid var(--lb-green);outline-offset:1px}
+.lb-app .lb-table-wrap{border-left:4px solid var(--lb-green)}
+.lb-app .lb-table th{background:var(--lb-tk);border-bottom:1px dashed var(--lb-tk-rule);color:var(--lb-green-deep)}
+.lb-app .lb-table tbody tr:hover td{background:#fcf9fa}
+.lb-app .lb-button,.lb-app .lb-export-buttons button,.lb-app .lb-server-error button{border-radius:4px}
+.lb-app .lb-empty{position:relative;border:1px dashed var(--lb-tk-rule);border-left:4px solid var(--lb-green);border-radius:6px;background:var(--lb-tk)}
+.lb-app .lb-empty-mark{border-color:var(--lb-tk-rule);background:#fff}
+.lb-app .lb-empty h2{font:700 18px var(--lb-sans)}
+.lb-app .lb-clear-state strong{font:700 15px var(--lb-sans)}
+.lb-app .lb-status{border-radius:4px;border:1px solid transparent}
+.lb-app .lb-detail-head,.lb-app .lb-archived-notice{background:var(--lb-tk);border:1px solid var(--lb-line);border-left:4px solid var(--lb-green);border-radius:6px}
+.lb-app .lb-server-error,.lb-app .lb-validation-summary,.lb-app .lb-form-error{border-radius:6px;border-left-width:4px}
+.lb-app .lb-timeline-dot{background:var(--lb-green);box-shadow:0 0 0 3px var(--lb-plum-tint)}
+.lb-app .lb-shipment,.lb-app .lb-image-card{background:var(--lb-tk);border:1px dashed var(--lb-tk-rule);border-radius:4px}
+.lb-app .lb-totals .lb-total-final{border-top:1px dashed var(--lb-tk-rule)}
+.lb-app .lb-form-actions{border-top:1px dashed var(--lb-tk-rule)}
+.lb-app .lb-setting-link,.lb-app .lb-policy-list>div,.lb-app .lb-definition>div,.lb-app .lb-rank-row,.lb-app .lb-source-row,.lb-app .lb-action-row,.lb-app .lb-check-row{border-bottom-style:dashed;border-bottom-color:#e4d8de}
+.lb-app .lb-setting-icon{border-radius:4px;background:var(--lb-tk);border-color:var(--lb-tk-rule);color:var(--lb-green)}
+.lb-app .lb-rank{color:var(--lb-green)}
+.lb-app .lb-toast{border-radius:6px;border-left:4px solid var(--lb-gold)}
+.lb-app dialog,.lb-app [role=dialog]{border-radius:6px;border:1px solid var(--lb-line);border-left:4px solid var(--lb-green)}
+.lb-app .lb-account-panel,.lb-app .lb-search-results,.lb-app .lb-help-popover{border-radius:6px;border:1px solid var(--lb-line);box-shadow:var(--lb-shadow)}
+/* Plan & billing inside dashboard */
+.lb-app .pb-page{max-width:1180px}
+.lb-app .pb-heading{padding:16px 18px 16px 22px;background:var(--lb-surface);border:1px solid var(--lb-line);border-left:4px solid var(--lb-green);border-radius:6px;box-shadow:var(--lb-shadow)}
+.lb-app .pb-heading h1{font:700 22px var(--lb-sans);letter-spacing:-.02em;margin:4px 0}
+.lb-app .pb-card{border-top:3px solid var(--pb-brand);border-radius:6px}
+.lb-app .pb-card h2,.lb-app .pb-plan h3,.lb-app .pb-price strong,.lb-app .pb-price-line strong{font-family:var(--lb-sans);font-weight:700}
+.lb-app .pb-card h2{font-size:16px}
+.lb-app .pb-card-head{padding-bottom:12px;border-bottom:1px dashed var(--lb-tk-rule)}
+.lb-app .pb-current{border-left:4px solid var(--pb-brand)}
+.lb-app .pb-badge,.lb-app .pb-tag{border-radius:4px}
+.lb-app .pb-plan{border:1px solid var(--pb-line);border-top:3px solid var(--pb-brand);background:var(--lb-tk)}
+.lb-app .pb-dl div,.lb-app .pb-prices li,.lb-app .pb-price-line{border-top-style:dashed}
+.lb-app .pb-table th{background:var(--lb-tk);color:var(--lb-green-deep)}
+.lb-app .pb-toggle{border-radius:4px}.lb-app .pb-toggle button{border-radius:3px}
+.lb-app .pb-empty{background:var(--lb-tk);border-color:var(--lb-tk-rule)}
+.lb-app .lb-panel{background:var(--lb-surface);border:1px solid var(--lb-line);border-top:3px solid var(--lb-green);border-left:4px solid var(--lb-green);border-radius:6px;box-shadow:var(--lb-shadow);padding:0 0 16px;margin-bottom:18px;min-width:0}
+.lb-app .lb-panel>h2{margin:0 0 14px;padding:12px 18px;font:700 15px var(--lb-sans);background:var(--lb-tk);border-bottom:1px dashed var(--lb-tk-rule)}
+.lb-app .lb-panel>:not(h2){margin-left:18px;margin-right:18px}
+.lb-app .lb-panel form{display:grid;gap:10px}
+.lb-app .lb-panel input:not([type=checkbox]),.lb-app .lb-panel select{min-height:38px;padding:0 10px;border:1px solid #d7cbd0;border-radius:4px}
+.lb-app .lb-btn{min-height:40px;padding:0 16px;border:1px solid var(--lb-green);border-radius:4px;background:var(--lb-green);color:#fff;font-weight:700;cursor:pointer}

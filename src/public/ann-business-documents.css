@@ -31,3 +31,7 @@
 @keyframes abdSk{to{background-position:-200% 0}}
 @media(max-width:600px){.abd-dialog{width:100vw;max-height:100dvh;height:100dvh;border-radius:0;border:0}.abd-field input,.abd-field select,.abd-field textarea{font-size:16px}}
 @media(prefers-reduced-motion:reduce){.abd-skel{animation:none}}
+
+/* Ticket language */
+.abd-dialog{border-radius:6px;border-left:4px solid #6b1735}
+.abd-dialog :is(input,select,textarea){border-radius:4px}

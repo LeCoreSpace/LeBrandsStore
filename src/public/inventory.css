@@ -22,3 +22,14 @@
 .lbi-table thead{position:absolute;left:-9999px}.lbi-table,.lbi-table tbody,.lbi-table tr,.lbi-table td{display:block}
 .lbi-table tr{padding:10px 12px;border-top:1px solid var(--lb-line)}.lbi-table td{border:0;padding:4px 0}
 .lbi-table td[data-label]:before{content:attr(data-label) ": ";color:var(--lb-muted);font-size:11px}}
+
+/* Ticket language */
+.lb-app .lbi-summary,.lb-app .lbi-bulk,.lb-app .lbi-review,.lb-app .lbi-alert{border:1px solid #e3dadd;border-left:4px solid #6b1735;border-radius:6px;box-shadow:0 1px 2px rgba(23,32,28,.05)}
+.lb-app .lbi-summary div{border-right-style:dashed;border-color:#cbb9c1}
+.lb-app .lbi-bulk{background:#faf5f7}
+.lb-app .lbi-bulk input,.lb-app .lbi-bulk select,.lb-app .lbi-reason input,.lb-app .lbi-table input[type=number]{border-radius:4px;border-color:#d7cbd0}
+.lb-app .lbi-table td{border-top-style:dashed;border-top-color:#e4d8de}
+.lb-app .lbi-table tr.is-dirty{box-shadow:inset 4px 0 0 #6b1735}
+.lb-app .lbi-tag{border-radius:4px}
+.lb-app .lbi-dialog{border:1px solid #e3dadd;border-left:4px solid #6b1735;border-radius:6px}
+.lb-app .lbi-error{border-left-width:4px;border-radius:4px}

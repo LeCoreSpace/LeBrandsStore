@@ -75,3 +75,8 @@
 .pb-feats li[data-on=no]:before{content:"-"}
 .pb-btn[disabled]{cursor:not-allowed}
 @media(prefers-reduced-motion:reduce){.pb-toggle button{transition:none}}
+
+/* Ticket accents for plan pages outside the dashboard shell (picker, checkout dialog). */
+.pb-checkout-dialog{border-radius:6px;border-left:4px solid #6b1735}
+.pb-store{border-left:4px solid var(--pb-brand);border-radius:6px}
+.pb-badge,.pb-tag,.pb-initial{border-radius:4px}

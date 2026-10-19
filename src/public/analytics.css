@@ -51,3 +51,15 @@
 .lba-defs{background:#fff}
 .lba-card,.lba-wf,.lba-defs{break-inside:avoid}
 }
+
+/* Ticket language */
+.lb-app .lba-filters,.lb-app .lba-note,.lb-app .lba-defs,.lb-app .lba-wf,.lb-app .lba-detail,.lb-app .lba-alert,.lb-app .lba-error{border:1px solid #e3dadd;border-left:4px solid #6b1735;border-radius:6px;box-shadow:0 1px 2px rgba(23,32,28,.05)}
+.lb-app .lba-filters,.lb-app .lba-note{background:#faf5f7}
+.lb-app .lba-card{border:1px solid #e3dadd;border-top:3px solid #6b1735;border-radius:6px;box-shadow:0 1px 2px rgba(23,32,28,.05)}
+.lb-app .lba-card span{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#6b1735}
+.lb-app .lba-tabs button{border-radius:4px}
+.lb-app .lba-tabs button[aria-pressed="true"]{background:#6b1735;border-color:#6b1735;color:#fff}
+.lb-app .lba-table th{background:#faf5f7;border-bottom:1px dashed #cbb9c1}
+.lb-app .lba-table td{border-top-style:dashed;border-top-color:#e4d8de}
+.lb-app .lba-filters input,.lb-app .lba-filters select{border-radius:4px;border-color:#d7cbd0}
+@media print{.lb-app .lba-card,.lb-app .lba-wf,.lb-app .lba-defs{box-shadow:none}}
