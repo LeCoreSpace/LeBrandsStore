@@ -1046,6 +1046,45 @@ decision:
   language. No live account/store changes, database migrations or production
   publication were performed.
 
+### 2026-10-19: Public ticket styling, flat tables and analytics charts
+
+- **What:** Added consistent light ticket accents to Pricing, Compare, Blog
+  index/article layouts and shared public information/legal content. Removed
+  duplicate table boundaries inside dashboard panels, including Daily sales.
+  Each report now has one ticket surface rather than a ticket inside a ticket.
+- **Analytics:** Added selectable line, area, ordinary/grouped/stacked columns
+  and calendar heatmaps, plus merchandise waterfalls, captured-cost coverage
+  donuts and comparable-economics bars. Product reports include metric-selectable
+  rankings and units/value scatterplots; order reports include deduplicated
+  status and payment-method mixes. Daily AOV is derived from booked value per
+  accepted order, with zero-order days remaining unknown.
+- **How:** Lightweight native SVG projections use existing filtered daily,
+  summary, captured-cost and paginated report data. Whole-period charts and
+  current-page breakdowns are explicitly distinguished. Repeated order lines
+  never multiply whole-order counts or amounts. Unknown costs are not zero;
+  estimated product margin is not net profit. Each chart has exact-value table
+  disclosure, while the existing paginated report and CSV/XLSX/PDF paths remain.
+  A direct link jumps from charts to the report table.
+- **Safety:** No production schema, transaction, entitlement, private-data
+  cache or financial calculation changes. Added only the two named chart
+  modules to the Worker asset allowlist and validated both raw and bundled
+  delivery. Repaired a synthetic analytics fixture's obsolete empty email so
+  it follows the current mandatory-email input contract. No real account,
+  customer, order or cost record was modified.
+- **Verification:** Final chart and Worker bundle checks: nine passed. Existing
+  analytics/database, public comparison/blog/information and white-background
+  suites passed. The broader public suite had 38 passing checks and four
+  unchanged pricing-copy assertions that expect old proposal-era wording,
+  support-email purchase links and disabled automated billing. These failures
+  were recorded rather than changing current pricing content to satisfy them.
+  Screenshots verified Pricing, Compare, Blog, synthetic desktop analytics,
+  mobile calendar/volume charts and the single-boundary Daily sales table.
+  Preview services rebuilt and served chart assets successfully.
+- **Outcome:** Implemented in the working tree, not yet recorded as a committed
+  checkpoint. No production publication or live migration was performed.
+  Charts are limited to the reporting data actually available; no fabricated
+  traffic funnels, forecasts, cohorts or net-profit figures were added.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

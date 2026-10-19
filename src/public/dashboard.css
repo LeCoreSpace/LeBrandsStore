@@ -1004,3 +1004,6 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .lb-app .lb-panel form{display:grid;gap:10px}
 .lb-app .lb-panel input:not([type=checkbox]),.lb-app .lb-panel select{min-height:38px;padding:0 10px;border:1px solid #d7cbd0;border-radius:4px}
 .lb-app .lb-btn{min-height:40px;padding:0 16px;border:1px solid var(--lb-green);border-radius:4px;background:var(--lb-green);color:#fff;font-weight:700;cursor:pointer}
+
+/* Flat ticket: a table inside a panel or card shares the parent's single boundary and rail. */
+.lb-app .lb-panel .lb-table-wrap,.lb-app .lb-card .lb-table-wrap,.lb-app .lb-side-box .lb-table-wrap{border:0;border-left:0;border-radius:0;box-shadow:none;background:transparent}

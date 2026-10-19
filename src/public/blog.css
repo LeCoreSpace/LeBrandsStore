@@ -67,3 +67,10 @@
   .b-sec p, .b-sec li { font-size: 16px; }
 }
 @media (prefers-reduced-motion: reduce) { .b-card-img img { transition: none; } .b-card:hover .b-card-img img { transform: none; } }
+
+/* Ticket accents: light, one rail per surface. */
+.blog-page .b-card-img{border-radius:4px;border-top:3px solid var(--m-accent)}
+.blog-page .b-take{border-left:3px solid var(--m-accent);border-radius:4px}
+.blog-page .b-toc ol{border-left:3px solid var(--m-accent)}
+.blog-page .b-card-lead{border-bottom-style:dashed}
+.blog-page .b-q{border-bottom:1px dashed var(--m-line)}

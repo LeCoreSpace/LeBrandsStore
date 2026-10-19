@@ -38,3 +38,7 @@
   .c-actions { width: 100%; }
   .c-actions .m-pr-btn { width: 100%; }
 }
+
+/* Ticket accent: single rail on the table surface. */
+.m-pricing-page .c-scroll{border-left:3px solid var(--m-accent);border-radius:4px}
+.m-pricing-page .c-table .c-group th{border-bottom:1px dashed var(--m-line)}

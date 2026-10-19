@@ -1176,3 +1176,12 @@ body.m-home-document .m-nav:not(.is-solid) :is(.m-logo-dark,.m-logo-hero) { disp
 .m-ann-figure { margin: 0; }
 .m-ann-viewer .m-ann-figure img, .m-ann-viewer .m-ann-builder-image { display: block; width: 100%; height: auto; aspect-ratio: 1440 / 960; object-fit: contain; }
 .m-ann-viewer .m-responsive-media { display: block; }
+
+/* Ticket accents, public pages: one light rail per surface, no nesting. */
+.m-pricing-page .m-pr-scroll{border-left:3px solid var(--m-accent);border-radius:4px;box-shadow:0 1px 2px rgba(23,32,28,.05)}
+.m-pricing-page .m-pr-table thead th{border-bottom:1px dashed var(--m-line)}
+.m-pricing-page .m-pr-card{border-top:3px solid var(--m-accent);border-radius:4px}
+.m-pricing-page .m-pr-card.is-featured{box-shadow:none;border-top-color:var(--m-rose)}
+.m-pricing-page .m-pr-terms{border-left:3px solid var(--m-accent);padding-left:18px}
+.m-pricing-page .m-pr-terms>div{border-bottom-style:dashed}
+.m-pricing-page .m-faq-item{border-bottom-style:dashed}

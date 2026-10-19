@@ -16,7 +16,7 @@ export async function createAnalyticsFixture({now=new Date(),migrate=true}={}){
     async function order(kind,day,extra={}){
       const variant=f.product.variants[extra.variant??0];
       const input=orderInput({items:[{product_id:f.product.id,product_option_id:variant.id,quantity:1}],
-        contact:{name:"Synthetic analytics customer",phone:String(9000000000+orders.length),email:""},
+        contact:{name:"Synthetic analytics customer",phone:String(9000000000+orders.length),email:"analytics@example.invalid"},
         address:{line1:"12 Test Street",city:"Chennai",state:"33",pincode:"600001"},
         idempotency_key:crypto.randomUUID(),receipt_token:crypto.randomUUID().replaceAll("-","")+"e".repeat(32)});
       const result=await f.db.withStore(f.id,tx=>placeCodOrder(tx,f.id,input,crypto.randomUUID().replaceAll("-","").repeat(2),crypto.randomUUID().replaceAll("-","").repeat(2),"direct"));

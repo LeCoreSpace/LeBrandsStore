@@ -94,13 +94,26 @@ content. Do not reintroduce cross-provider tabs when extending these pages.
 
 The approved ticket language now applies to every implemented merchant
 dashboard destination, account entry and Your stores, Ann and theme-editor
-controls, including supporting dialogs. It is not a direction to restyle the
-merchant's actual storefront.
+controls, public Pricing/Compare/Blog and shared information pages, including
+supporting dialogs. It is not a direction to restyle the merchant's actual
+storefront.
 
 **Why:** The user explicitly requested the ticket treatment from the top of
 the dashboard menu to the bottom, plus Ann and the theme editor, then extended
-it to login, registration and the signed-in store list.
+it to login, registration, the signed-in store list and public platform pages.
 
 **How to apply:** New operational pages and editor controls should follow the
 same visual language. Keep merchant preview contents, chosen theme presets,
 saved design data, permissions and save/publication behavior independent.
+
+Use one ticket surface per content section, not nested bordered ticket
+containers. Analytics must offer appropriate chart views alongside tabular data,
+not replace the tables.
+
+**Why:** The user explicitly rejected container-inside-container styling in
+Daily sales and requested chart views along with tabular analytics.
+
+**How to apply:** Inner table scroll areas and pagers should share their parent
+surface without a second rail. Preserve accessible exact values and report
+exports. Label charts based on a paginated page as page-scoped, not whole-store
+breakdowns; do not invent unavailable metrics.

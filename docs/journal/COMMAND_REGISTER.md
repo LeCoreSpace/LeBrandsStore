@@ -552,6 +552,20 @@ not assign an unverified execution date to a command.
 | Replit preview workflow restarts | Rebuild browser assets and reload API/web preview. | Both running. Desktop login, mobile signup and synthetic store-list screenshots loaded successfully. |
 | `pnpm run deploy` | Manual Cloudflare publication. | Not run. |
 
+### 19 October: Public ticket layouts and analytics chart views
+
+All commands ran from the workspace root against local files and isolated
+synthetic database fixtures, not the production database.
+
+| Command / operation | Purpose / result |
+| --- | --- |
+| `node --check src/public/analytics.js` and `node --check src/public/analytics-charts.js` | Client syntax passed. |
+| `node --test --test-concurrency=1 tests/analytics-charts.test.js tests/commerce-analytics.test.js tests/browser-bundles.test.js` | Initial run exposed a missing named Worker asset allowlist entry and an outdated synthetic fixture's empty email. Both were corrected; no production guards were relaxed. |
+| `node --test --test-concurrency=1 tests/commerce-analytics.test.js tests/pricing.test.js tests/compare-page.test.js tests/platform-blog.test.js tests/platform-info.test.js tests/platform-white-backgrounds.test.js` | 38 passed, four legacy pricing-copy assertions failed. Actual analytics DDL, data, exports and permission checks passed. |
+| `node --test --test-concurrency=1 tests/analytics-charts.test.js tests/browser-bundles.test.js` | Final chart and raw/fingerprinted Worker module-delivery checks: nine passed. |
+| Replit managed API/web preview restarts | Rebuilt assets. Public pages and isolated analytics charts rendered in screenshots; chart modules and styles returned HTTP 200. |
+| `pnpm run deploy` | Not run. Production publication remains manual. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

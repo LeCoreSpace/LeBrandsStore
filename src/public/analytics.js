@@ -1,3 +1,4 @@
+import {renderAnalyticsCharts} from "./analytics-charts.js";
 const app = document.querySelector(".lb-app");
 const box = document.querySelector("[data-an-root]");
 if (app && box) {
@@ -27,6 +28,7 @@ if (app && box) {
     timezone: validTz(q.get("timezone")) ? q.get("timezone") : TZ,
     currency: /^[A-Z]{3}$/.test(q.get("currency") || "") ? q.get("currency") : currencyDefault,
     data: null, loading: false, loadedAt: 0, exporting: false,
+    charts: {style:q.get("chart")||"line",metric:q.get("metric")||"net_merchandise_paise",ranking:q.get("ranking")||"item_value_paise"},
   };
   if ((state.from || state.to) && state.preset !== "custom") state.preset = "custom";
   if (INITIAL) Object.assign(state, {
@@ -160,7 +162,8 @@ if (app && box) {
       <div class="lba-grid">${cards}</div>
       <h2>Merchandise waterfall</h2><div class="lba-wf">${wf}</div>
       <h2>Product cost coverage</h2>${costs}
-      <section class="lba-detail"><h2>${esc(names[f.report || state.report] || "Report")}</h2>${tbl}${pager}
+      ${renderAnalyticsCharts(a,state.charts,cur)}
+      <section class="lba-detail" id="an-report"><h2>${esc(names[f.report || state.report] || "Report")}</h2>${tbl}${pager}
       ${(f.report || state.report) === "sales" ? "" : `<details><summary>Daily totals</summary>${dailyHtml}</details>`}</section>`;
     print.hidden = false;
     print.innerHTML = `<strong>${esc(boot.store?.name || "")} | LeBrands.Store Analytics: ${esc(names[f.report || state.report] || "")}</strong><br>Period: ${esc(day(f.from))} to ${esc(day(f.to))}. Timezone: ${esc(f.timezone || state.timezone)}. Currency: ${esc(f.currency || cur)}.<br>Booked order value is the stored total including tax and shipping, not cash or profit. Merchandise amounts include tax and are order based; returned and refunded statuses are estimated reversals. Estimated margin covers only the comparable subset and is not net profit.<br>Summary only. Use CSV or XLSX for complete report rows.`;
@@ -213,6 +216,14 @@ if (app && box) {
     } catch (e) { alertBox(`<span>${esc(e.message)}</span>`); toast(e.message, true); }
     finally { state.exporting = false; btns.forEach((b) => { b.disabled = false; }); }
   };
+  box.addEventListener("change", (e) => {
+    const control=e.target.closest("[data-an-chart-control]");
+    if(!control||!["style","metric","ranking"].includes(control.dataset.anChartControl))return;
+    const key=control.dataset.anChartControl;
+    state.charts[key]=control.value;
+    render();
+    box.querySelector(`[data-an-chart-control="${key}"]`)?.focus();
+  });
   box.addEventListener("click", (e) => {
     const t = e.target;
     const r = t.closest("[data-an-report]");

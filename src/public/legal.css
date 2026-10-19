@@ -52,3 +52,7 @@
   .platform-info .info-navigation a[aria-current="page"] { border-color: var(--green); background: var(--lime); }
   .platform-info .info-content { max-width: none; }
 }
+
+/* Ticket accents for information pages: a rail on the heading rule, dashed section dividers. */
+.platform-info .info-heading{border-bottom-style:dashed;border-left:3px solid var(--green);padding-left:16px}
+.platform-info .info-section{border-bottom-style:dashed}
