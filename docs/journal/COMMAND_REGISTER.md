@@ -1,5 +1,14 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: PIN feedback colour correction
+
+- `node --check src/public/checkout-contact.js`: client syntax validation.
+- `node --test --test-name-pattern="postal lookup" tests/checkout-email-auth.test.js`:
+  focused postal mapping/failure regression check.
+- `git diff --check`: whitespace validation.
+- Managed API workflow restart: rebuild and serve the updated browser assets.
+- `pnpm run deploy`: required to release the correction; not executed by the agent.
+
 ## 19 October 2026: Shared commerce design and browser icons
 
 Workspace verification commands used:

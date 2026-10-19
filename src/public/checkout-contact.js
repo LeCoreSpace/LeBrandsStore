@@ -61,11 +61,15 @@ export function initializeCheckoutContact({api,apiRoot="",storageKey,security,on
     finally{pending=false;sync(status.textContent);}
   });
   code.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();confirm.click();}});
+  const pinFeedback=form.querySelector("[data-pincode-status]");
+  function postalStatus(message,state="idle"){
+    pinFeedback.textContent=message;
+    pinFeedback.dataset.state=state;
+  }
   async function lookup(){
     const value=pin.value.trim(),sequence=++pinSequence;
     if(!/^[1-9]\d{5}$/.test(value)||value===lastPin)return;
-    const feedback=form.querySelector("[data-pincode-status]");
-    feedback.textContent="Finding your city and state…";
+    postalStatus("Finding your city and state…","loading");
     try{
       const response=await fetch(`${apiRoot}/api/checkout/pincode?code=${encodeURIComponent(value)}`,{credentials:"same-origin",headers:{Accept:"application/json"}});
       const result=await response.json();
@@ -73,13 +77,13 @@ export function initializeCheckoutContact({api,apiRoot="",storageKey,security,on
       if(!response.ok)throw new Error(result.error||"Enter your city and state manually.");
       form.elements.city.value=result.city;
       form.elements.state.value=result.state;lastPin=value;
-      feedback.textContent="City and state filled from your PIN. Check and adjust the locality if needed.";
+      postalStatus("City and state filled from your PIN. Check and adjust the locality if needed.","success");
       onStateChange();
     }catch(error){
-      if(sequence===pinSequence)feedback.textContent=error.message||"PIN lookup is unavailable. Enter city and state manually.";
+      if(sequence===pinSequence&&pin.value.trim()===value)postalStatus(error.message||"PIN lookup is unavailable. Enter city and state manually.","error");
     }
   }
-  pin.addEventListener("input",()=>{clearTimeout(pinTimer);++pinSequence;pinTimer=setTimeout(lookup,450);});
+  pin.addEventListener("input",()=>{clearTimeout(pinTimer);++pinSequence;postalStatus("");pinTimer=setTimeout(lookup,450);});
   pin.addEventListener("change",lookup);
   // Browser autofill may complete after the script has loaded.
   pinTimer=setTimeout(lookup,700);

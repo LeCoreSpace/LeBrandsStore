@@ -703,6 +703,15 @@ decision:
 
 ## 19 October 2026: Verified shopper email and PIN-assisted checkout
 
+### Follow-up: PIN lookup status colours
+
+- Successful PIN lookup had inherited the theme accent, which looked like an
+  error in orange/red themes. Added explicit neutral loading, green success and
+  red error states for postal feedback, independent of theme accent.
+- Editing the PIN clears its stale feedback; failed responses for an older PIN
+  no longer replace the current status. Lookup, editable city/state and manual
+  fallback rules are unchanged. No database migration is needed.
+
 - **Request:** Explain disabled ordering, improve contact/address arrangement,
   fill city/state from PIN and require email authentication for transaction emails.
 - **UI:** First name plus optional last name, required mobile/email, inline send

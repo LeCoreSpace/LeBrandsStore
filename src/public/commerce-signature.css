@@ -395,6 +395,9 @@ body.commerce-lock{overflow:hidden;overscroll-behavior:none}
 .checkout-form .email-code-fields input{letter-spacing:.3em;font-variant-numeric:tabular-nums}
 .checkout-form .field-status{min-height:0;font-size:13px;font-weight:600;color:var(--cm-label)}
 .checkout-form .field-status:empty{display:none}
+.checkout-form [data-pincode-status]{color:var(--cm-mute,#555c57)}
+.checkout-form [data-pincode-status][data-state="success"]{color:#27603c}
+.checkout-form [data-pincode-status][data-state="error"]{color:var(--cm-bad,#a8432d)}
 .checkout-form input[readonly]{background:var(--cm-tint);color:var(--cm-mute)}
 .checkout-actions .field-status{text-align:center}
 @media(max-width:480px){.checkout-form .commerce-fields{grid-template-columns:minmax(0,1fr)}.checkout-form .email-group{grid-template-columns:minmax(0,1fr)}}
