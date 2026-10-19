@@ -188,6 +188,16 @@ must be actionable at the point where policy drafts are generated.
 point, but do not make it a prerequisite to leave Ann. Saving contact drafts
 must not bypass supplier identity locks or the separate publication checklist.
 
+Policy drafts must read as professional customer-facing D2C content pages, not
+short setup summaries or internal instructions to the merchant.
+
+**Why:** The user requested complete professional policy-page content after
+seeing setup warnings and very short drafts in the publication review.
+
+**How to apply:** Keep operational claims tied to confirmed merchant details.
+Do not invent return windows, dispatch deadlines or refund promises to make
+a draft appear finished; retain explicit merchant review before publication.
+
 **Why:** The user finalised a design but publication sent them back to an
 unneeded input form. The review handoff must not depend on old wizard progress.
 

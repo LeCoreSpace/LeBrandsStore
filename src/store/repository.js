@@ -314,6 +314,9 @@ export async function insertMedia(tx, id, key, type, size, metadata, alt) {
 export async function regeneratePolicies(tx, id) {
   const data = await loadDraft(tx, id), errors = validatePolicyDetails(data.settings);
   if (Object.keys(errors).length) throw badInput(`Complete these business details before generating policy drafts: ${Object.values(errors).join(" ")}`, errors);
+  const [schema] = await tx`SELECT to_regclass('public.checkout_settings') IS NOT NULL AS enabled`;
+  const [checkout] = schema?.enabled ? await tx`SELECT settings FROM public.checkout_settings WHERE store_id = ${id}` : [];
+  data.checkout_settings = checkout?.settings;
   for (const p of generatePolicies(data)) await tx`INSERT INTO public.policy_pages
     (store_id, slug, title, content) VALUES (${id}, ${p.kind}, ${p.title}, ${p.body})
     ON CONFLICT (store_id, slug) DO UPDATE SET content = EXCLUDED.content, title = EXCLUDED.title,

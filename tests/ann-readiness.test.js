@@ -77,6 +77,11 @@ test("Ann readiness reuses real business/policy/checkout rules with consent, sta
     for(const action of [["business"],["generate-policies"],{toString:"business"}])
       assert.equal((await call("PATCH",{...write(state,"business"),action})).status,400);
     assert.equal((await call("GET")).body.policies.find(p=>p.kind===policy.kind).body,policy.body);
+    result=await call("PATCH",write(state,"generate-policies"));
+    assert.equal(result.status,200,JSON.stringify(result.body));state=result.body;
+    assert.match(state.policies.find(p=>p.kind==="shipping").body,/₹99\.09/);
+    assert.match(state.policies.find(p=>p.kind==="shipping").body,/₹1,500\.00/);
+    assert.match(state.policies.find(p=>p.kind==="pricing").body,/₹3,000\.00/);
     assert.equal(Number((await pg.query("SELECT count(*) AS n FROM store_publications")).rows[0].n),0);
     assert.equal((await pg.query("SELECT status FROM stores WHERE store_id=$1",[id])).rows[0].status,"draft");
   } finally {await pg.close();}

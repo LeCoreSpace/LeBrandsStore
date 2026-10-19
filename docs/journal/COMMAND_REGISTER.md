@@ -1,5 +1,17 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: D2C policy content
+
+- Working directory: repository root.
+- **Executed locally:** `node --experimental-test-module-mocks --test --test-concurrency=1 tests/policies.test.js tests/ann-readiness.test.js tests/wizard.test.js tests/store-approval.test.js`.
+  Passed 31 checks after correcting the preservation/regeneration test sequence.
+  Database mutations used isolated synthetic databases, not live merchant data.
+- **Executed locally:** `git diff --check` passed after implementation.
+- **Suggested only, production mutation:** `pnpm run deploy`. No migration is
+  required. After deployment, explicitly regenerate drafts in Ann to replace
+  old policy wording; review all six again before publishing. Regeneration
+  overwrites draft customisations, so retain any wording you need first.
+
 ## 19 October 2026: Ann policy and contact fix
 
 - Working directory: repository root.

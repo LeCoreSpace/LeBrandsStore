@@ -577,6 +577,30 @@ decision:
   update or publication was performed. Deploy manually with `pnpm run deploy`.
 
 ## Evidence and limitations
+### 19 October 2026: Professional D2C policy draft content
+
+- **What:** Replaced short setup-oriented text with full customer-facing Privacy,
+  Terms, Shipping, Cancellation & Refund, Contact and Pricing policy drafts.
+  Each page has structured sections and the saved seller identity and contacts.
+- **How:** Shared deterministic templates are used by Ann and the publication
+  review. Explicit regeneration reads saved checkout delivery charges and COD
+  limits in the tenant transaction. Missing checkout configuration does not
+  become an invented free-delivery promise. Unknown return windows, delivery
+  estimates, refund deadlines, opening hours and payment partners are not made
+  up. Content no longer says checkout is unavailable or instructs the business
+  to complete setup inside a customer-facing policy.
+- **Outcome:** 31 focused policy, Ann readiness, wizard and approval checks
+  passed, including real isolated-database regeneration with saved delivery
+  charges and COD limits. Existing merchant edits remain intact until explicit
+  regeneration, which resets review. A first test run exposed a test-sequence
+  mismatch: its preservation assertion had been placed after intentional
+  regeneration; the assertion was moved before regeneration and the suite passed.
+- **Boundaries:** Templates are drafts, not legal advice or certification.
+  Merchant review is still required. Exact commercial return/refund timelines
+  and versioned order-time policy acceptance are separate future work.
+  No production policy content, migration or deployment was changed. Existing
+  stores must explicitly regenerate after deployment to adopt the new wording.
+
 ### 19 October 2026: Ann policy drafts and merchant contact entry
 
 - **What:** Added a direct support email/phone form to dashboard Settings and
