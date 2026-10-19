@@ -853,9 +853,14 @@ decision:
   session passed suspension, both audit entries, restoration to draft, logout
   and rejection of unauthenticated access. Non-blocking inline
   style CSP warnings were observed; application assets loaded successfully.
-- **Release:** Migration and credential provisioning are staged, not executed
-  against production. No store was suspended in the live database, no private
-  merchant data was inspected, and no Worker publication was performed.
+- **Activation:** With explicit user approval, applied the staged platform-admin
+  migration to the live Supabase database and provisioned the dedicated account
+  from Secrets. A read-only check confirmed the recorded migration, active
+  administrator, matching password hash, document-review access and absence of
+  merchant membership. Credentials and password hashes were not printed.
+- **Release:** Database activation is complete. No live store was suspended or
+  otherwise changed, no private merchant data was inspected, and no Worker
+  publication was performed. Publishing the dashboard code remains manual.
 - **Operations:** See [platform admin setup](platform-admin.md) and the
   [command register](journal/COMMAND_REGISTER.md).
 
