@@ -18,11 +18,20 @@ const FLAGS = [["bold", "b"], ["italic", "i"], ["underline", "u"], ["strike", "s
 
 const CSS = `.re{border:1px solid #cfc4c8;border-radius:10px;background:#fff;color:#2b2326;font:13px/1.45 system-ui,sans-serif;overflow:hidden}.re:focus-within{border-color:#6b1735;box-shadow:0 0 0 2px rgba(107,23,53,.25)}.re *{box-sizing:border-box}
 .re-bar{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:6px;background:#f7f1f3;border-bottom:1px solid #eadfe2}
-.re-grp{display:flex;gap:2px;align-items:center;padding-right:6px;margin-right:2px;border-right:1px solid #e2d5d9}.re-grp:last-child{border:0;margin:0;padding:0}
+.re-grp{display:flex;flex-wrap:wrap;max-width:100%;gap:2px;align-items:center;padding-right:6px;margin-right:2px;border-right:1px solid #e2d5d9}.re-grp:last-child{border:0;margin:0;padding:0}
+.re .re-type,.re .re-space{display:grid;flex:1 1 100%;gap:6px;padding:0;margin:0;border:0;align-items:end}
+.re .re-type{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) 60px}
+.re .re-space{grid-template-columns:repeat(2,minmax(0,1fr))}
+.re .re-control{display:flex;flex-direction:column;gap:3px;min-width:0;margin:0;padding:0}
+.re .re-caption{display:block;font:500 10px/1.3 system-ui,sans-serif;letter-spacing:normal;text-transform:none;color:#65535b}
+.re .re-history .re-btn{gap:4px;font-size:11px}
 .re-btn{min-width:30px;height:30px;padding:0 7px;display:inline-flex;align-items:center;justify-content:center;border:1px solid transparent;border-radius:7px;background:transparent;color:#4b1226;font:600 13px/1 system-ui,sans-serif;cursor:pointer}
 .re-btn:hover:not(:disabled){background:#efe1e6}.re-btn[aria-pressed=true]{background:#6b1735;color:#fff}.re-btn:disabled{opacity:.4;cursor:default}.re-btn:focus-visible,.re-sel:focus-visible,.re-col:focus-visible,.re-link input:focus-visible{outline:2px solid #6b1735;outline-offset:1px}
-.re-sel{height:30px;max-width:112px;border:1px solid #d9cfd2;border-radius:7px;background:#fff;color:#2b2326;font:12px system-ui,sans-serif;padding:0 4px}
-.re-size{width:64px;max-width:64px}.re-col{width:30px;height:30px;padding:2px;border:1px solid #d9cfd2;border-radius:7px;background:#fff;cursor:pointer}
+/* Outrank surrounding form rules: their padding/width clipped these controls. */
+.re .re-bar select.re-sel,.re .re-bar input.re-sel{box-sizing:border-box;display:block;width:100%;min-width:0;max-width:100%;height:32px;margin:0;border:1px solid #d9cfd2;border-radius:7px;background:#fff;color:#2b2326;font:400 11px/normal system-ui,sans-serif;letter-spacing:normal;text-transform:none;padding:0 4px;appearance:auto}
+.re .re-bar select.re-sel option{font:400 11px/1.3 system-ui,sans-serif;letter-spacing:normal;text-transform:none}
+.re .re-bar input.re-col{flex:0 0 30px;width:30px;min-width:30px;max-width:30px;height:32px;margin:0;padding:2px;border:1px solid #d9cfd2;border-radius:7px;background:#fff;cursor:pointer}
+.re-size{width:60px;max-width:60px}
 .re-lbl{font-size:11px;color:#6d5a61;margin-right:2px}
 .re-link{display:flex;flex-wrap:wrap;gap:6px;padding:6px;background:#fbf6f8;border-bottom:1px solid #eadfe2}.re-link[hidden]{display:none}.re-link input{flex:1 1 160px;height:30px;border:1px solid #cfc4c8;border-radius:7px;padding:0 8px;font:13px system-ui,sans-serif}
 .re-link .re-btn{border-color:#d9cfd2}.re-link .re-go{background:#6b1735;color:#fff;border-color:#6b1735}
@@ -31,7 +40,7 @@ const CSS = `.re{border:1px solid #cfc4c8;border-radius:10px;background:#fff;col
 .re-edit>div{min-height:1.2em}.re-edit.l-bullet>div::before{content:"\\2022";display:inline-block;width:1.4em;font-weight:700;color:#6b1735}.re-edit.l-number>div{counter-increment:rl}.re-edit.l-number>div::before{content:counter(rl) ".";display:inline-block;width:1.6em;color:#6b1735;font-weight:700}
 .re-edit a{color:#6b1735;text-decoration:underline}
 .re-hint{margin:0;padding:3px 10px 6px;font-size:11px;color:#6d5a61}
-@media(max-width:699px){.re-bar{position:sticky;bottom:0;order:2;border-top:1px solid #eadfe2;border-bottom:0}.re{display:flex;flex-direction:column}.re-btn{min-width:36px;height:36px}.re-sel,.re-col{height:36px}}`;
+@media(max-width:699px){.re-bar{position:sticky;bottom:0;order:2;border-top:1px solid #eadfe2;border-bottom:0}.re{display:flex;flex-direction:column}.re-btn{min-width:36px;height:36px}.re .re-bar select.re-sel,.re .re-bar input.re-sel,.re .re-bar input.re-col{height:36px}}`;
 
 function ensureCss() {
   if (document.getElementById("ann-rich-css")) return;
@@ -158,12 +167,15 @@ export function mountRichEditor(host, { text = "", document: doc = null, limit =
     const c = h("input", { type: "color", class: "re-col", "aria-label": name, title: name, value: def });
     const apply=()=>{const value=c.value;restoreSel();fn(value);};
     c.addEventListener("input",apply);c.addEventListener("change",apply);
-    const x = h("button", { type: "button", class: "re-btn", "aria-label": `Remove ${name.toLowerCase()}`, title: `Remove ${name.toLowerCase()}`, text: "x" });
+    const x = h("button", { type: "button", class: "re-btn", "aria-label": `Remove ${name.toLowerCase()}`, title: `Remove ${name.toLowerCase()}`, text: "Reset" });
     x.addEventListener("mousedown", e => e.preventDefault()); x.addEventListener("click", () => { restoreSel(); clearFn(); });
     btns[id] = c; return [c, x];
   };
   const T = t => document.createTextNode(t);
   const lab = (t, id) => { const s = h("b", { text: t, "aria-hidden": "true" }); return s; };
+  const labelled = (name, control) => h("label", { class: "re-control" }, [
+    h("span", { class: "re-caption", text: name }), control,
+  ]);
 
   function sizeInput() {
     const dl = h("datalist", { id: "re-sizes-" + Math.random().toString(36).slice(2) }, SIZES.map(n => h("option", { value: String(n) })));
@@ -172,30 +184,30 @@ export function mountRichEditor(host, { text = "", document: doc = null, limit =
     i.addEventListener("change", go); i.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); go(); } });
     btns.size = i; return h("span", {}, [i, dl]);
   }
-  const gType = h("div", { class: "re-grp", role: "group", "aria-label": "Type" }, [
-    sel("preset", "Text style", PRESETS, v => setStyle("preset", v === "body" ? undefined : v)),
-    sel("font", "Font", RICH_FONTS.map(f => [f.value, f.label]), v => setStyle("font", v === "theme" ? undefined : v)),
-    sizeInput(),
+  const gType = h("div", { class: "re-grp re-type", role: "group", "aria-label": "Type" }, [
+    labelled("Style", sel("preset", "Text style", PRESETS, v => setStyle("preset", v === "body" ? undefined : v))),
+    labelled("Font", sel("font", "Font", RICH_FONTS.map(f => [f.value, f.label]), v => setStyle("font", v === "theme" ? undefined : v))),
+    labelled("Size (px)", sizeInput()),
   ]);
   const bi = mk("bold", "Bold", h("b", { text: "B" }), () => toggleFlag("b"), true), it = mk("italic", "Italic", h("i", { text: "I" }), () => toggleFlag("i"), true);
   const un = mk("underline", "Underline", h("u", { text: "U" }), () => toggleFlag("u"), true), st = mk("strike", "Strikethrough", h("s", { text: "S" }), () => toggleFlag("s"), true);
   const gMark = h("div", { class: "re-grp", role: "group", "aria-label": "Emphasis" }, [bi, it, un, st]);
   const gCol = h("div", { class: "re-grp", role: "group", "aria-label": "Colour" }, [
     h("span", { class: "re-lbl", text: "Text" }), ...colour("color", "Text colour", "#2b2326", v => setChar("c", v.toLowerCase()), () => setChar("c", undefined)),
-    h("span", { class: "re-lbl", text: "Mark" }), ...colour("highlight", "Highlight colour", "#fff2a8", v => setChar("h", v.toLowerCase()), () => setChar("h", undefined)),
+    h("span", { class: "re-lbl", text: "Highlight" }), ...colour("highlight", "Highlight colour", "#fff2a8", v => setChar("h", v.toLowerCase()), () => setChar("h", undefined)),
   ]);
   const gAlign = h("div", { class: "re-grp", role: "group", "aria-label": "Alignment" }, ["left", "center", "right", "justify"].map(a => mk("a" + a, `Align ${a}`, icon(ICONS[a]), () => setStyle("align", a === "left" ? undefined : a), true)));
-  const gSpace = h("div", { class: "re-grp", role: "group", "aria-label": "Spacing" }, [
-    sel("lh", "Line height", [["", "Line"], ...LINE_HEIGHTS.map(n => [String(n), String(n)])], v => setStyle("lineHeight", v ? Number(v) : undefined)),
-    sel("ls", "Letter spacing", [["", "Track"], ...SPACINGS.map(n => [String(n), String(n)])], v => setStyle("letterSpacing", v ? Number(v) : undefined)),
+  const gSpace = h("div", { class: "re-grp re-space", role: "group", "aria-label": "Spacing" }, [
+    labelled("Line height", sel("lh", "Line height", [["", "Default"], ...LINE_HEIGHTS.map(n => [String(n), String(n)])], v => setStyle("lineHeight", v ? Number(v) : undefined))),
+    labelled("Letter spacing", sel("ls", "Letter spacing", [["", "Default"], ...SPACINGS.map(n => [String(n), `${n} px`])], v => setStyle("letterSpacing", v ? Number(v) : undefined))),
   ]);
   const gBlock = h("div", { class: "re-grp", role: "group", "aria-label": "Lists and links" }, [
     mk("bullet", "Bulleted list", icon(ICONS.bullet), () => setStyle("list", style.list === "bullet" ? undefined : "bullet"), true),
     mk("number", "Numbered list", icon(ICONS.number), () => setStyle("list", style.list === "number" ? undefined : "number"), true),
     mk("link", "Link", icon(ICONS.link), openLink, true),
   ]);
-  const gHist = h("div", { class: "re-grp", role: "group", "aria-label": "History" }, [
-    mk("undo", "Undo", icon(ICONS.undo), undo), mk("redo", "Redo", icon(ICONS.redo), redo), mk("clear", "Clear formatting", icon(ICONS.clear), clearAll),
+  const gHist = h("div", { class: "re-grp re-history", role: "group", "aria-label": "History" }, [
+    mk("undo", "Undo", [icon(ICONS.undo),T("Undo")], undo), mk("redo", "Redo", [icon(ICONS.redo),T("Redo")], redo), mk("clear", "Clear formatting", [icon(ICONS.clear),T("Clear")], clearAll),
   ]);
   bar.append(gType, gMark, gCol, gAlign, gSpace);
   if (allowBlocks) bar.append(gBlock);

@@ -391,6 +391,28 @@ required to publish these changes. No new migration or secret is required.
 checkpoint at the time of this entry. The earlier command-register update is now
 recorded in checkpoint [ee31045](journal/COMMIT_REGISTER.md#commit-ee31045).
 
+### Update: text-toolbar readability and analytics report review
+
+- **Changed:** reduced dropdown and option text to 11px, added persistent
+  Style/Font/Size and spacing labels, separated those controls into fitting grid
+  rows, constrained colour-picker widths, and labelled Undo/Redo/Clear/Reset.
+  Scoped selectors override surrounding form padding and widths that clipped
+  the previous controls. Editing and formatting-storage behaviour is unchanged.
+- **Analytics review only:** reviewed the supplied downloadable-report list.
+  Recommended commerce reports first, then India-specific tax/reconciliation
+  exports, then tracking/cohorts, and finally profitability/cash-flow reports
+  requiring complete costs, expenses, settlement and accounting inputs. No
+  analytics menu, reports, tracking or tax-filing capability was implemented.
+  Existing product cost fields are not proof of complete historical SKU costs.
+- **Scope:** no database migration, secrets change or production deployment.
+  The user has not yet approved an analytics implementation phase.
+- **Verification observed:** nine focused editor/module-delivery tests passed,
+  including a scoped-control CSS regression guard; JavaScript syntax and diff
+  checks passed. This is not a completed interactive toolbar/browser test.
+- **Checkpoint update:** the shared text editor is now captured in
+  [49d77ce](journal/COMMIT_REGISTER.md#commit-49d77ce). This readability update is
+  not yet captured at the time of writing.
+
 ## Current handover boundaries
 
 These are the boundaries recorded by the observed work, not a fresh production

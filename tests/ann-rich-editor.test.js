@@ -1,7 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { charsFromDoc, runsFromChars, safeLink, cpSlice, richEditorMarkup, replacementFormat, preserveTypedFormatting } from "../src/public/ann-rich-editor.js";
 import { validRichTextDocument } from "../src/public/ann-rich-text.js";
+
+test("toolbar controls override surrounding form padding and keep compact, labelled options",()=>{
+  const source=readFileSync(new URL("../src/public/ann-rich-editor.js",import.meta.url),"utf8");
+  assert.match(source,/\.re \.re-bar select\.re-sel,\.re \.re-bar input\.re-sel\{[^}]*font:400 11px\/normal[^}]*padding:0 4px/);
+  assert.match(source,/select\.re-sel option\{font:400 11px/);
+  assert.match(source,/\.re \.re-bar input\.re-col\{[^}]*flex:0 0 30px;[^}]*max-width:30px/);
+  for(const caption of ["Style","Font","Size (px)","Line height","Letter spacing"])
+    assert.ok(source.includes(`labelled("${caption}",`),`${caption} is visibly labelled`);
+});
 
 test("explicit false flags survive round trip", () => {
   const doc = { version: 1, runs: [{ text: "ab", bold: false }, { text: "c", bold: true, italic: false }], style: {} };
