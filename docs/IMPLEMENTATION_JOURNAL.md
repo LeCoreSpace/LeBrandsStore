@@ -1085,6 +1085,35 @@ decision:
   Charts are limited to the reporting data actually available; no fabricated
   traffic funnels, forecasts, cohorts or net-profit figures were added.
 
+### 2026-10-19: Checkout settings menu and compact Ann actions
+
+- **What:** Checkout settings now uses the existing merchant dashboard shell,
+  with an explicitly named Settings menu item and active-page marker. The old
+  detached account header and return-to-stores layout no longer wrap this form.
+  Non-owners see its existing owner-only restriction rather than a broken link.
+  Delivery, COD and GST fields, settings API and owner guard are unchanged.
+  Hidden delivery-mode fields remain hidden despite their grid styling.
+- **Ann:** Removed the repeated design summary/action card. Save draft, Publish
+  store and truthful Saved/Unsaved/Saving/error/conflict status now live in the
+  existing top header when editing the saved store design. The editing toggle,
+  contextual text/media editing, header Theme editor access and unsaved-change
+  protections remain. Publish store still saves and opens publication review,
+  not immediate publication. The theme editor keeps its own existing actions.
+- **Verification:** The focused checkout, navigation, Ann design/stage and
+  raw/versioned browser-asset checks passed. Two navigation assertions were
+  updated for the requested label change, then all 12 layout/navigation checks
+  passed on the targeted rerun. A separate older Ann handoff wording test
+  fails both with and without these changes, as reported by the design helper.
+  A screenshot verified the checkout sidebar, selected menu item, single
+  ticket form and correctly hidden delivery fields using a read-only local
+  synthetic preview. The browser tester stopped at the Ann synthetic fixture's
+  business-document gate; it could not verify relocated controls, saving,
+  reload persistence or review navigation interactively. No guard was bypassed.
+  Both managed preview workflows restarted and rebuilt assets. Local Workerd
+  logged disconnected-request errors while serving subsequent assets normally.
+- **Outcome:** Working-tree implementation, not yet a committed checkpoint.
+  No production database, migration, credentials or publication was changed.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

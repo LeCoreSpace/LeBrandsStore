@@ -12,6 +12,7 @@ import {skuCheckoutPreview} from "./sku-checkout-preview-fixture.js";
 import {inventoryPreview} from "./inventory-preview-fixture.js";
 import {cogsPreview} from "./cogs-preview-fixture.js";
 import {analyticsPreview} from "./analytics-preview-fixture.js";
+import {checkoutSettingsPreview} from "./checkout-settings-preview-fixture.js";
 import {annPlanPreview} from "./ann-plan-preview-fixture.js";
 import {billingPreview} from "./billing-preview-fixture.js";
 
@@ -52,6 +53,7 @@ export function createNativePreview(root, runtime = process.env) {
     [method,async (...args)=>(await bucket())[method](...args)]));
 
   const middleware = async (req, res, next) => {
+    if(await checkoutSettingsPreview(req,res))return;
     if(await billingPreview(req,res))return;
     if(await annPlanPreview(req,res))return;
     if(await inventoryPreview(req,res,env.REPLIT_DEV_DOMAIN?`https://${env.REPLIT_DEV_DOMAIN}`:undefined))return;

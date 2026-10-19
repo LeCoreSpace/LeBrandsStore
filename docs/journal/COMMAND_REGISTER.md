@@ -566,6 +566,18 @@ synthetic database fixtures, not the production database.
 | Replit managed API/web preview restarts | Rebuilt assets. Public pages and isolated analytics charts rendered in screenshots; chart modules and styles returned HTTP 200. |
 | `pnpm run deploy` | Not run. Production publication remains manual. |
 
+### 19 October: Checkout menu and Ann header actions
+
+Commands ran from the workspace root against local code and synthetic fixtures.
+
+| Command / operation | Purpose / result |
+| --- | --- |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/checkout-settings-layout.test.js tests/checkout.test.js tests/dashboard-navigation.test.js tests/ann-design-header-actions.test.js tests/ann-design.test.js tests/ann-builder-stage4.test.js tests/browser-bundles.test.js` | 34 passed; two navigation assertions required the explicitly requested Checkout settings label instead of Dispatch preferences. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/checkout-settings-layout.test.js tests/dashboard-navigation.test.js` | All 12 passed after updating label expectations. |
+| `git diff --check` | Passed. |
+| Managed API/web preview restart, screenshot and focused browser pass | Local checkout layout verified. Ann interactive save/review check blocked by synthetic business-document gate; no live data or publication attempted. |
+| `pnpm run deploy` | Not run. Production publication remains manual. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

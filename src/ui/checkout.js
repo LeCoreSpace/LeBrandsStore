@@ -1,5 +1,6 @@
 import { escapeHtml, layout, accountHeader, footer } from "./layout.js";
 import { INDIAN_STATES } from "../public/commerce-rules.js";
+import { documentPage as dashboardPage } from "./dashboard.js";
 
 const esc = escapeHtml;
 const rupees = (paise) => (Math.max(0, Number(paise) || 0) / 100).toFixed(2);
@@ -31,7 +32,16 @@ export function renderCheckoutSettings({ store = {}, settings = {} } = {}, user)
     <h2>GST location</h2><div class="settings-field"><label for="store-state">State or Union Territory</label><select id="store-state" class="settings-select" name="store_state"><option value="">Choose state or UT</option>${options}</select><span class="settings-help">Used to determine whether customer GST is intra-state or inter-state.</span></div>
     <p class="settings-error" data-settings-error role="alert" hidden></p><div class="settings-actions"><button type="submit" class="button">Save checkout settings</button><span class="settings-status" data-settings-status role="status"></span></div>
   </form>`;
-  return documentPage("Checkout settings", store, user, body, true);
+  const head = `${baseStyles}<style>
+    .lb-app .checkout-settings{max-width:900px}
+    .lb-app .checkout-settings .settings-card{padding:24px;border-top:1px solid #e3dadd}
+    .checkout-settings [hidden]{display:none!important}
+    .checkout-settings .settings-actions{padding-top:20px;border-top:1px dashed #cbb9c1}
+    .checkout-settings .settings-field input:focus,.checkout-settings .settings-field select:focus{outline:2px solid #6b1735;outline-offset:2px}
+    @media(max-width:600px){.lb-app .checkout-settings .settings-card{padding:16px}}
+    </style><script type="module" src="/assets/commerce.js"></script>`;
+  return dashboardPage("checkout-settings", {store,role:"owner",checkoutSettings:settings}, user,
+    `<div class="checkout-settings"><header class="lb-page-head"><div><h1>Checkout settings</h1><p class="lb-muted">Set delivery charges, Cash on Delivery and your GST location.</p></div></header>${body.replace('class="button"', 'class="button lb-button"')}</div>`, head);
 }
 export function renderOrders({ store = {}, orders = [] } = {}, user) {
   const rows = Array.isArray(orders) ? orders : [];

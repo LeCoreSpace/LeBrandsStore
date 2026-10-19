@@ -40,6 +40,7 @@ export function attachAnnDesign(o) {
   el.id = "ann-design"; el.className = "ann-design"; el.setAttribute("aria-label", "Your design");
   mount.parentNode.insertBefore(el, mount);
 
+  const top = o.themeEditor ? null : document.getElementById("ann-top-actions");
   let loaded = false, loadError = "", expected = "", images = [], videos = [], publishUrl = `${root}/setup?step=4`;
   let design = null, model = null, baseline = "", planDirty = false,menuSource={};
   let busy = "", error = "", conflict = false, ack = false, editMode = true, selected = null, uploadAlt = "", uploadNote = "",menuDraftError="";
@@ -359,15 +360,11 @@ export function attachAnnDesign(o) {
     const err = error ? `<div class="ann-callout" role="alert"><p>${esc(error)}</p>${conflict ? `<button type="button" class="ann-btn alt sm" data-design-act="reload">Reload the latest draft</button>` : ""}</div>` : "";
     if (cataloguePrompt) return catalogueChoice + err;
     if (browsing || !active()) return catalogueChoice + use + err;
-    return catalogueChoice + `<div class="ann-design-card">
-      <div class="ann-design-head"><div><p class="ann-design-title">Your design: ${esc(styleName(model.style))}</p><p class="ann-note" data-design-state></p></div>
-      <div class="ann-actions">
-        <button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>${editMode?"Editing on":"Editing off"}</button>
-        ${o.themeEditor?"":`<button type="button" class="ann-btn alt sm" data-design-act="theme"${readOnly?" disabled":""}>Open theme editor</button>`}
-        <button type="button" class="ann-btn alt sm" data-design-act="save" data-design-save>Save draft</button>
-        <button type="button" class="ann-btn sm" data-design-act="publish" data-design-publish>Review and publish</button></div></div>
-      ${readOnly ? `<p class="ann-note">${memberReadOnly?"You can look around. Only an owner or admin can edit this design.":"Your saved design is unchanged. Complete business verification in Ann to resume editing."}</p>` : editMode ? (selected ? (o.contextual ? ctxPanel() : panel()) : `<p class="ann-note${o.themeEditor?" ae-design-hint":""}">${o.themeEditor?"Click any text or photo on the page to edit it.":"Select any text or photo on the page to change it. Changes show instantly and are saved when you choose Save draft."}</p>`) : ""}
-      <p class="ann-note">${model.catalogue_mode==="sample"?(o.themeEditor?"Sample products shown. Choose your own before publishing.":"This draft preview uses sample products and illustrative prices. Add your real products and explicitly choose them before publishing."):"Products come from your catalogue."} <a href="${root}/products">Edit products</a></p></div>${err}`;
+    const toggle = `<div class="ann-actions ann-design-bar"><button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>${editMode?"Editing on":"Editing off"}</button></div>`;
+    return catalogueChoice + `<div class="ann-design-card ann-design-compact">
+      ${o.themeEditor ? `<p class="ann-note" data-design-state></p>` : ""}${toggle}
+      ${readOnly ? `<p class="ann-note">${memberReadOnly?"You can look around. Only an owner or admin can edit this design.":"Your saved design is unchanged. Complete business verification in Ann to resume editing."}</p>` : editMode && selected ? (o.contextual ? ctxPanel() : panel()) : ""}
+      ${model.catalogue_mode==="sample"?`<p class="ann-note">${o.themeEditor?"Sample products shown. Choose your own before publishing.":"Sample products and illustrative prices. Choose your own products before publishing."} <a href="${root}/products">Edit products</a></p>`:""}</div>${err}`;
   }
   function ctxPanel() {
     const s = selected, sid = sectionOfSelected(), st = sid ? o.sectionState?.(sid) : null;
@@ -433,18 +430,25 @@ export function attachAnnDesign(o) {
     try { doc = host.dataset.richDoc ? JSON.parse(host.dataset.richDoc) : null; } catch { doc = null; }
     richEditor = mountRichEditor(host, { text: host.dataset.richText || "", document: doc, limit: Number(host.dataset.richLimit) || 2000, label: host.dataset.richLabel || "Text", allowBlocks: Boolean(host.dataset.richBlocks), baseFlags, onChange: out => setRich(key, out) });
   }
+  function paintTop() {
+    if (!top) return;
+    const show = loaded && active() && sameStyle() && mode() === "store" && !cataloguePrompt;
+    if (!top.firstChild) top.innerHTML = `<span class="ann-save-state" data-design-state role="status"></span><button type="button" class="ann-btn alt sm" data-design-act="save" data-design-save>Save draft</button><button type="button" class="ann-btn sm" data-design-act="publish" data-design-publish>Publish store</button>`;
+    top.hidden = !show;
+  }
   function paintDynamic() {
-    const save = el.querySelector("[data-design-save]"), st = el.querySelector("[data-design-state]"), pub = el.querySelector("[data-design-publish]");
+    paintTop();
+    const root_ = top || el, save = root_.querySelector("[data-design-save]"), st = root_.querySelector("[data-design-state]") || el.querySelector("[data-design-state]"), pub = root_.querySelector("[data-design-publish]");
     const d = dirty();
     if (save) { save.disabled = readOnly || Boolean(busy) || Boolean(menuDraftError) || (!d && !error) || (conflict); save.textContent = busy === "save" ? "Saving" : error && !conflict ? "Retry save" : "Save draft"; }
     if (pub) pub.disabled = readOnly || Boolean(busy) || conflict || Boolean(menuDraftError);
-    if (st) st.textContent = busy === "save" ? "Saving your draft design" : d ? "Unsaved changes. The page already shows them." : "Saved to your draft. Your live site is unchanged.";
+    if (st) { st.textContent = busy === "save" ? "Saving" : error && !conflict ? "Not saved" : conflict ? "Draft conflict" : d ? "Unsaved" : "Saved"; st.dataset.state = busy === "save" ? "saving" : d || error ? "unsaved" : "saved"; }
     const input = el.querySelector("[data-design-input]");
     const c = el.querySelector("[data-design-count]");
     if (input && c) c.textContent = `${(input.value ?? String(model.copy[input.dataset.designInput] ?? "")).length} of ${getDesignCopyLimit(input.dataset.designInput)}`;
   }
 
-  el.addEventListener("click", e => {
+  const onClick = e => {
     const t = e.target.closest("[data-design-act],[data-design-pick],[data-design-child]"); if (!t) return;
     if (t.dataset.designChild) { const [kind, ...rest] = t.dataset.designChild.split(":"); select(kind, rest.join(":")); return; }
     if (t.dataset.designPick) { const m = (selected?.kind === "video" ? videos : images).find(i => i.id === t.dataset.designPick); if (m && selected) setMedia(selected.key, m); return; }
@@ -472,7 +476,9 @@ export function attachAnnDesign(o) {
     }
     if ((act === "use-video" || act === "goto-image") && t.dataset.designKey) { select(act === "use-video" ? "video" : "image", t.dataset.designKey); return; }
     if ((act === "reset-image" || act === "reset-video") && selected) setMedia(selected.key, null);
-  });
+  };
+  el.addEventListener("click", onClick);
+  top?.addEventListener("click", onClick);
   el.addEventListener("keydown",e=>{
     if(o.contextual&&selected&&e.key==="Escape"){e.preventDefault();e.stopPropagation();closeCtx();}
   });

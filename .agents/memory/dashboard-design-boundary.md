@@ -117,3 +117,15 @@ Daily sales and requested chart views along with tabular analytics.
 surface without a second rail. Preserve accessible exact values and report
 exports. Label charts based on a paginated page as page-scoped, not whole-store
 breakdowns; do not invent unavailable metrics.
+
+Checkout settings belongs inside the normal dashboard Settings menu and content
+shell, not on a detached account-style screen. Ann should have compact Save
+draft and Publish store actions with a truthful save status near the top, not
+a repeated design-summary/action card below the workspace.
+
+**Why:** The user explicitly requested menu placement for checkout settings
+and rejected repetition in Ann's saved-design panel.
+
+**How to apply:** Preserve the checkout owner's permissions and existing
+settings endpoint. Keep publication review and readiness checks; moving or
+renaming the Publish store action is not permission to publish immediately.

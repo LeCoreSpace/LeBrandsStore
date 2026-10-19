@@ -37,7 +37,7 @@ export function orderActionForm(storeId,orderId,transitions) {
     <p data-shipping-error hidden role="alert"><span></span> <a href="/stores/${storeId}/settings">Open Settings</a></p></div>`;
 }
 
-export function documentPage(view, data, user, body) {
+export function documentPage(view, data, user, body, extraHead = "") {
   const store = obj(data.store);
   const storeId = String(store.store_id || "");
   if(data.business_access?.allowed===false)
@@ -47,7 +47,7 @@ export function documentPage(view, data, user, body) {
     body=`<aside class="lb-card" role="alert"><strong>GSTIN needs attention</strong><p>Check your registration and registered supplier details before publishing or issuing new invoices.</p><a href="/stores/${esc(storeId)}/settings">Open Settings</a></aside>${body}`;
   }
   const title = ({
-    overview: "Home", orders: "Orders", order: "Order details", products: "Products", inventory: "Stock & SKUs", cogs: "Product costs", offers: "Offers & codes", analytics: "Analytics",
+    overview: "Home", "checkout-settings": "Checkout settings", orders: "Orders", order: "Order details", products: "Products", inventory: "Stock & SKUs", cogs: "Product costs", offers: "Offers & codes", analytics: "Analytics",
     "product-new": "Add product", product: "Edit product", collections: "Collections", "collection-new": "Add collection", collection: "Edit collection", customers: "Customers",
     customer: "Customer details", invoices: "Invoices", settings: "Settings", "ai-builder":"Legacy build", builder:"Build your store",
   })[view] || "Overview";
@@ -55,9 +55,9 @@ export function documentPage(view, data, user, body) {
   return layout({
     title: `${title} | ${store.name || "Your store"} | LeBrands.Store`,
     description: `${title} workspace for ${store.name || "your store"}.`,
-    canonical: `https://app.lebrands.store/stores/${encodeURIComponent(storeId)}/${view === "overview" ? "" : view === "builder" ? "build" : view}`,
+    canonical: `https://app.lebrands.store/stores/${encodeURIComponent(storeId)}/${view === "overview" ? "" : view === "builder" ? "build" : view === "checkout-settings" ? "settings/checkout" : view}`,
     noindex: true,
-    extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>' + (["product","product-new"].includes(view) ? '<link rel="stylesheet" href="/assets/product-media-editor.css">' : "") + (view === "settings" && !connectionKind ? '<link rel="stylesheet" href="/assets/ann-business-documents.css">' : "") + (view === "analytics" ? '<link rel="stylesheet" href="/assets/analytics.css"><script type="module" src="/assets/analytics.js"></script>' : "") + (view === "offers" ? '<script type="module" src="/assets/offers.js"></script>' : "") + (view === "cogs" ? '<link rel="stylesheet" href="/assets/cogs.css"><script type="module" src="/assets/cogs.js"></script>' : "") + (view === "inventory" ? '<link rel="stylesheet" href="/assets/inventory.css"><script type="module" src="/assets/inventory.js"></script>' : "") + (connectionKind ? '<link rel="stylesheet" href="/assets/ann-builder.css"><script type="module" src="/assets/settings-connections.js"></script>' : ""),
+    extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>' + (["product","product-new"].includes(view) ? '<link rel="stylesheet" href="/assets/product-media-editor.css">' : "") + (view === "settings" && !connectionKind ? '<link rel="stylesheet" href="/assets/ann-business-documents.css">' : "") + (view === "analytics" ? '<link rel="stylesheet" href="/assets/analytics.css"><script type="module" src="/assets/analytics.js"></script>' : "") + (view === "offers" ? '<script type="module" src="/assets/offers.js"></script>' : "") + (view === "cogs" ? '<link rel="stylesheet" href="/assets/cogs.css"><script type="module" src="/assets/cogs.js"></script>' : "") + (view === "inventory" ? '<link rel="stylesheet" href="/assets/inventory.css"><script type="module" src="/assets/inventory.js"></script>' : "") + (connectionKind ? '<link rel="stylesheet" href="/assets/ann-builder.css"><script type="module" src="/assets/settings-connections.js"></script>' : "") + extraHead,
     body: `<div class="lb-app" data-store-id="${esc(storeId)}" data-role="${esc(data.role || "editor")}">
       ${header(data, user, view)}
        <main class="lb-main"><div class="lb-content">${store.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline; your data is unchanged. ${esc(store.approval_revocation_note || "")}${store.status === "awaiting_approval" ? " Your renewed approval request is awaiting review." : ""}</p>` : store.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is offline until a LeBrands reviewer approves it.</p>' : ""}${body}</div></main></div></div>

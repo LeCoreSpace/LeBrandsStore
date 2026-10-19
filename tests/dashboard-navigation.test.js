@@ -17,7 +17,7 @@ test("eight groups plus Today with offers separate from Catalogue", () => {
   const model=navigationModel(`/stores/${ID}`,{role:"owner"});
   assert.equal(model.groups.find(g=>g.label==="Catalogue").items.some(i=>i.label==="Offers & codes"),false);
   assert.ok(model.groups.some(g=>g.label==="Offers & codes"));
-  for (const l of ["Products","Collections","Stock &amp; SKUs","Vendors","Offers &amp; codes","Media library","Order queue","Dispatch &amp; tracking","COD &amp; returns","Customer directory","Payments &amp; settlements","Refunds","Invoices &amp; credit notes","GST summaries","Build with Ann","Theme editor","Menus &amp; links","Pages &amp; policies","Browser preview","Email campaigns","WhatsApp messages","Social campaigns","Sales performance","Product performance","Customer insights","Shopping journey","Business &amp; invoice identity","Custom domain integration","Razorpay integration","Shiprocket integration","Email &amp; messaging integrations","Marketing integrations","Dispatch preferences","People &amp; access","Plan &amp; billing","Activity history","Data exports"]) assert.ok(html.includes(`<span>${l}</span>`), l);
+  for (const l of ["Products","Collections","Stock &amp; SKUs","Vendors","Offers &amp; codes","Media library","Order queue","Dispatch &amp; tracking","COD &amp; returns","Customer directory","Payments &amp; settlements","Refunds","Invoices &amp; credit notes","GST summaries","Build with Ann","Theme editor","Menus &amp; links","Pages &amp; policies","Browser preview","Email campaigns","WhatsApp messages","Social campaigns","Sales performance","Product performance","Customer insights","Shopping journey","Business &amp; invoice identity","Custom domain integration","Razorpay integration","Shiprocket integration","Email &amp; messaging integrations","Marketing integrations","Checkout settings","People &amp; access","Plan &amp; billing","Activity history","Data exports"]) assert.ok(html.includes(`<span>${l}</span>`), l);
   assert.doesNotMatch(html, /Growth|Sales channels|Apps|—|sparkle/i);
 });
 test("live routes map to real pages and planned items have no href", () => {
@@ -29,7 +29,7 @@ test("live routes map to real pages and planned items have no href", () => {
   assert.equal(byLabel["Theme editor"].href, `${r}/editor`);
   assert.equal(byLabel["Build with Ann"].href, `${r}/build/ann`);
   assert.equal(byLabel["People & access"].href, `${r}/team`);
-  assert.equal(byLabel["Dispatch preferences"].href, `${r}/settings/checkout`);
+  assert.equal(byLabel["Checkout settings"].href, `${r}/settings/checkout`);
   assert.equal(byLabel["Pages & policies"].href, `${r}/settings#policies`);
   assert.equal(byLabel["Razorpay integration"].href, `${r}/settings?connection=payments`);
   assert.equal(byLabel["Shiprocket integration"].href, `${r}/settings?connection=delivery`);

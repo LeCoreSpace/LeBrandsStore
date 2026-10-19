@@ -519,3 +519,5 @@ body.ann-browser-shell{margin:0;height:100dvh;display:flex;flex-direction:column
 .ann-plan-dialog,.lb-catalogue-confirm{border-radius:6px;border-left:4px solid #6b1735}
 .ann-plan-dialog .ann-btn,.ann-catalogue-modal .ann-btn{border-radius:4px}
 .re-host[data-rich-host]{border-left:4px solid #6b1735;border-radius:6px}
+.ann-top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ann-top-actions[hidden]{display:none}.ann-save-state{font:700 12px var(--sans);color:#5c4a50;padding-right:4px}.ann-save-state[data-state=unsaved]{color:#8a4b00}.ann-save-state[data-state=saved]::before,.ann-save-state[data-state=unsaved]::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:#2f7a4d}.ann-save-state[data-state=unsaved]::before{background:#c27a00}
+.ann-design-compact .ann-design-bar{margin:0}
