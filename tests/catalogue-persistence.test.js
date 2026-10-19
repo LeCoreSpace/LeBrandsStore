@@ -64,8 +64,8 @@ test("real tenant routes save and reload GST, SEO, collection membership and sta
     const duplicate=await call("products",{...payload,title:"Different serum",slug:"different-serum",sku:"SERUM2"});
     assert.equal(duplicate.status,400);
     const publication=await call("publish",{});
-    assert.equal(publication.status,400);
-    assert.match(publication.body.error,/SKU-level checkout/);
+    assert.equal(publication.status,409); // Missing SKU checkout capability is a rollout conflict.
+    assert.match(publication.body.error,/SKU checkout database update/);
     await pg.query("UPDATE public.products SET gst_rate=28 WHERE store_id=$1 AND id=$2",[store,product.id]);
     const legacy=await call(`products/${product.id}`,{catalogue:{...payload.catalogue,vendor:"Updated maker"}},"PATCH");
     assert.equal(legacy.status,200);

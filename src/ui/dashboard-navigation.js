@@ -19,6 +19,7 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
         live("Products", `${root}/products`, ["products", "product", "product-new"]),
         live("Collections", `${root}/collections`, ["collections", "collection", "collection-new"]),
         live("Stock & SKUs", `${root}/inventory`, ["inventory"]),
+        ...(role === "owner" || role === "admin" ? [live("COGS", `${root}/cogs`, ["cogs"], { hint: "Private" })] : []),
         planned("Vendors"), planned("Offers & codes"), planned("Media library")] },
       { key: "orders", label: "Order desk", icon: "orderDesk", items: [
         live("Order queue", `${root}/orders`, ["orders", "order"], { badge: true }),

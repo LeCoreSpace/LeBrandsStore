@@ -104,6 +104,18 @@ onboarding requirements.
 
 ## 4. Database migrations
 
+### 19 October: catalogue COGS
+
+All commands below run from the repository root.
+
+| Command | Effect and prerequisites | Execution evidence |
+| --- | --- | --- |
+| `pnpm run db:migrate -- --staged-catalogue-cogs` | Apply only reviewed `0041_catalogue_cogs.sql`; requires catalogue API migration `0021_catalogue_forms_api.sql`. Adds private cost metadata/history, prospective order-cost snapshots and a tenant index. Review/backup first; allow for index/DDL locks. | Prepared for the operator; **not executed against the live database**. |
+| `pnpm run deploy` | Existing Cloudflare Worker release, including browser assets; run after the staged database change is confirmed. Does not activate paid checkout or subscriptions. | Manual release instruction only; **not executed**. |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/catalogue-cogs.test.js tests/catalogue-form-model.test.js tests/catalogue-forms.test.js tests/catalogue-persistence.test.js tests/catalogue-modal.test.js tests/dashboard-navigation.test.js tests/inventory.test.js tests/browser-bundles.test.js` | Focused cost, catalogue, UI and inventory checks using isolated databases. | Executed. The first batch had 45/46 passing because of an old SKU-publication assertion. Corrected its status/message and confirmed all three checks in that file. New cost checks, including actual SKU COD checkout with the snapshot migration applied, also passed in their focused rerun. |
+| `pnpm run typecheck` | Check shared libraries and registered artifact workspaces. | Executed and passed. |
+| `git diff --check` | Check whitespace errors without changing files. | Executed and passed. |
+
 ### General commands
 
 | Command | Purpose and effect | Execution evidence |

@@ -11,6 +11,7 @@ import { dashboardIcon } from "./dashboard-icons.js";
 import { renderSidebarNav, storeStatus } from "./dashboard-navigation.js";
 import { richToText } from "../public/content-form.js";
 import { renderInventory } from "./inventory.js";
+import { renderCogs } from "./cogs.js";
 import {renderTodayStock} from "../public/today-stock.js";
 import { catalogueEnabled, renderCatalogueOrganisation, renderCatalogueOptions, renderSearchPreview } from "./catalogue-forms.js";
 
@@ -44,7 +45,7 @@ export function documentPage(view, data, user, body) {
     body=`<aside class="lb-card" role="alert"><strong>GSTIN needs attention</strong><p>Check your registration and registered supplier details before publishing or issuing new invoices.</p><a href="/stores/${esc(storeId)}/settings">Open Settings</a></aside>${body}`;
   }
   const title = ({
-    overview: "Home", orders: "Orders", order: "Order details", products: "Products", inventory: "Stock & SKUs",
+    overview: "Home", orders: "Orders", order: "Order details", products: "Products", inventory: "Stock & SKUs", cogs: "Product costs",
     "product-new": "Add product", product: "Edit product", collections: "Collections", "collection-new": "Add collection", collection: "Edit collection", customers: "Customers",
     customer: "Customer details", invoices: "Invoices", settings: "Settings", "ai-builder":"Legacy build", builder:"Build your store",
   })[view] || "Overview";
@@ -54,12 +55,12 @@ export function documentPage(view, data, user, body) {
     description: `${title} workspace for ${store.name || "your store"}.`,
     canonical: `https://app.lebrands.store/stores/${encodeURIComponent(storeId)}/${view === "overview" ? "" : view === "builder" ? "build" : view}`,
     noindex: true,
-    extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>' + (["product","product-new"].includes(view) ? '<link rel="stylesheet" href="/assets/product-media-editor.css">' : "") + (view === "settings" && !connectionKind ? '<link rel="stylesheet" href="/assets/ann-business-documents.css">' : "") + (view === "inventory" ? '<link rel="stylesheet" href="/assets/inventory.css"><script type="module" src="/assets/inventory.js"></script>' : "") + (connectionKind ? '<link rel="stylesheet" href="/assets/ann-builder.css"><script type="module" src="/assets/settings-connections.js"></script>' : ""),
+    extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>' + (["product","product-new"].includes(view) ? '<link rel="stylesheet" href="/assets/product-media-editor.css">' : "") + (view === "settings" && !connectionKind ? '<link rel="stylesheet" href="/assets/ann-business-documents.css">' : "") + (view === "cogs" ? '<link rel="stylesheet" href="/assets/cogs.css"><script type="module" src="/assets/cogs.js"></script>' : "") + (view === "inventory" ? '<link rel="stylesheet" href="/assets/inventory.css"><script type="module" src="/assets/inventory.js"></script>' : "") + (connectionKind ? '<link rel="stylesheet" href="/assets/ann-builder.css"><script type="module" src="/assets/settings-connections.js"></script>' : ""),
     body: `<div class="lb-app" data-store-id="${esc(storeId)}" data-role="${esc(data.role || "editor")}">
       ${header(data, user, view)}
        <main class="lb-main"><div class="lb-content">${store.approval_revoked_at ? `<p role="alert">Store approval was revoked. Your storefront is offline; your data is unchanged. ${esc(store.approval_revocation_note || "")}${store.status === "awaiting_approval" ? " Your renewed approval request is awaiting review." : ""}</p>` : store.status === "awaiting_approval" ? '<p role="status">Awaiting approval. Your storefront is offline until a LeBrands reviewer approves it.</p>' : ""}${body}</div></main></div></div>
       <div class="lb-toast" role="status" aria-live="polite" data-toast hidden></div>
-      <script type="application/json" id="dashboard-data">${safeJson({ store, role: data.role, draft: ["overview","orders","order","customers","customer","invoices","inventory"].includes(view)?undefined:data.draft, aura_skeleton_enabled: data.aura_skeleton_enabled === true, collection_id: data.collection_id || "", filters: data.filters, checkoutSettings: data.checkoutSettings })}</script>
+      <script type="application/json" id="dashboard-data">${safeJson({ store, role: data.role, draft: ["overview","orders","order","customers","customer","invoices","inventory","cogs"].includes(view)?undefined:data.draft, aura_skeleton_enabled: data.aura_skeleton_enabled === true, collection_id: data.collection_id || "", filters: data.filters, checkoutSettings: data.checkoutSettings })}</script>
     </div>`,
   });
 }
@@ -235,7 +236,7 @@ function productEditor(data, isNew) {
         <div class="lb-image-grid" data-images>${imageList.map((img, i) => { const mediaUrl = safeHttps(img.url), isVideo = img.type === "video"; return `<figure class="lb-image-card" data-image-id="${esc(img.id)}" data-media-type="${isVideo ? "video" : "image"}" data-media-url="${esc(mediaUrl)}"><div class="lb-media-slot">${!isVideo && mediaUrl ? `<img src="${esc(mediaUrl)}" alt="${esc(img.alt || "")}">` : !isVideo ? `<div class="lb-image-missing">Image unavailable</div>` : ""}</div><figcaption><label>Alt text<input value="${esc(img.alt || "")}" maxlength="200" data-image-alt></label><button type="button" class="lb-text-button" data-image-remove>Remove</button></figcaption></figure>`; }).join("")}</div>
       </section>
       <label class="lb-field">Tags<input name="tags" value="${esc(list(product.tags).join(", "))}" placeholder="Comma-separated tags"></label>
-       <section class="lb-side-box"><h2>Pricing</h2><label class="lb-field">Price (₹)<input name="price" inputmode="decimal" required value="${product.price_paise == null ? "" : esc((Number(product.price_paise)/100).toFixed(2))}" placeholder="1290.00"></label><label class="lb-field">Compare-at price (₹)<input name="compare_at" inputmode="decimal" value="${product.compare_at_paise == null ? "" : esc((Number(product.compare_at_paise)/100).toFixed(2))}" placeholder="Optional"></label></section>
+       <section class="lb-side-box"><h2>Pricing</h2><label class="lb-field">Price (₹)<input name="price" inputmode="decimal" required value="${product.price_paise == null ? "" : esc((Number(product.price_paise)/100).toFixed(2))}" placeholder="1290.00"></label><label class="lb-field">Compare-at price (₹)<input name="compare_at" inputmode="decimal" value="${product.compare_at_paise == null ? "" : esc((Number(product.compare_at_paise)/100).toFixed(2))}" placeholder="Optional"></label>${data.cogs_enabled===true&&data.can_edit_cogs===true?`<label class="lb-field" data-cogs-product-field>Cost per unit (${esc(data.store?.currency||"INR")}), private<input name="cost_price" inputmode="decimal" data-cogs-cost-input value="${product.cost_price_paise == null ? "" : esc((Number(product.cost_price_paise)/100).toFixed(2))}" placeholder="Leave blank if unknown"><input type="hidden" name="cost_revision" data-cogs-cost-revision value="${esc(Number.isInteger(product.cost_revision)?product.cost_revision:0)}"><small>Only owners and admins see this. Blank means unknown, not zero. Changes do not alter past sales.</small><span class="field-error" data-cogs-cost-error role="alert"></span></label>`:""}</section>
        <section class="lb-side-box"><h2>Inventory</h2><label class="lb-field">SKU<input name="sku" maxlength="80" value="${esc(product.sku || "")}"></label><label class="lb-field">Stock quantity<input name="stock" type="number" min="0" step="1" value="${product.stock == null ? "" : esc(product.stock)}" placeholder="Leave blank for always in stock"><small data-stock-help>Leave blank to sell without stock tracking.</small></label></section>
       ${renderCatalogueOptions({ enabled: catalogueOn, product })}
       ${catalogueOn ? renderSearchPreview({ kind: "product", slug: product.slug || "", seoTitle: obj(product.catalogue).seo_title || "", seoDescription: obj(product.catalogue).seo_description || "", storeSubdomain: data.store?.subdomain, fallbackTitle: product.title, fallbackDescription: product.description }) : ""}
@@ -345,6 +346,7 @@ function normalizeView(view) {
   if (["new-product", "new_product", "product-new", "products-new"].includes(v)) return "product-new";
   if (["edit-product", "product-edit", "product-editor", "product-detail", "product"].includes(v)) return "product";
   if (["inventory","stock"].includes(v)) return "inventory";
+  if (v === "cogs") return "cogs";
   if (["collections", "collection-new", "collection"].includes(v)) return v;
   if (["customer-detail", "customer"].includes(v)) return "customer";
   if (["orders", "products", "customers", "invoices", "settings","billing"].includes(v)) return v;
@@ -427,6 +429,7 @@ export function renderDashboard(view, data = {}, user = {}) {
     case "orders": body = ordersPage(data); break;
     case "order": body = orderDetail(data); break;
     case "inventory": body = renderInventory(data); break;
+    case "cogs": body = renderCogs(data, user); break;
     case "products": body = productsPage(data); break;
     case "product-new": body = productEditor(data, true); break;
     case "product": body = productEditor(data, false); break;

@@ -10,6 +10,7 @@ import {verificationState} from "../gstin/service.js";
 import { productContent, collectionContent, saveProductContent } from "./catalog.js";
 import { validCategoryPair } from "../public/aura-taxonomy.js";
 import {catalogueFormsEnabled,saveProductCatalogue} from "./catalogue-products.js";
+import {cogsEnabled,setCost} from "../dashboard/cogs.js";
 import {loadClassifications,writeClassification} from "./catalogue-classification.js";
 import { storefrontProduct } from "../public/product-details.js";
 import {requireSkuCheckout} from "../checkout/sku-inventory.js";
@@ -275,6 +276,10 @@ export async function saveProduct(tx, id, productId, patch, { returnDraft = true
   }
   if (patch.content) await saveProductContent(tx, id, uuid, patch.content);
   await saveProductCatalogue(tx,id,uuid,patch,existing,tokenHash);
+  if(Object.hasOwn(patch,"cost_price_paise")){
+    if(!await cogsEnabled(tx))throw Object.assign(new Error("Apply the catalogue COGS database update before saving costs."),{status:409});
+    await setCost(tx,id,tokenHash,{product_id:uuid,product_option_id:null,cost_price_paise:patch.cost_price_paise,expected_revision:patch.cost_revision});
+  }
   await invalidatePolicies(tx, id);
   return { ...(returnDraft ? await loadDraft(tx, id) : {}), saved_product_id: uuid };
 }

@@ -458,6 +458,45 @@ decision:
 7. Do not include secrets, customer/account identifiers, raw database exports,
    private document contents or sensitive production logs.
 
+### 19 October 2026: Stage 1 catalogue COGS
+
+- **Requested:** build analytics and COGS in stages, with COGS inside Catalogue
+  and optional costs in Ann and dashboard product forms.
+- **Implemented:** owner/admin-only COGS listing, search, missing-cost filtering,
+  product defaults, SKU overrides, atomic saves, revision conflicts, updated
+  dates and cost history. Shared product forms include optional cost entry.
+- **How:** reuse the existing product cost field; add private current-cost,
+  history and immutable order-cost capture tables behind tenant/session-checked
+  PostgreSQL functions. Existing order costs remain unknown rather than being
+  backfilled with today's costs. Cost edits do not republish prices or stock.
+- **Verification:** 47 focused checks cover the new cost path and catalogue,
+  inventory, modal, navigation and browser-bundle regressions. One old
+  publication assertion was corrected to the existing SKU rollout guard's 409
+  status and database-update message; no publication guard was relaxed.
+  Workspace type checks and diff/syntax checks passed.
+- **Browser outcome:** isolated desktop checks confirmed base and SKU cost
+  persistence, explicit zero, inheritance, history, atomic stale-write rejection
+  with retained edits, and custom discard/reload confirmation. Dashboard product
+  form saved/reloaded 24.68; the same form inside an Ann frame saved/reloaded
+  31.25. Search and missing-cost filters matched stored records.
+- **Responsive correction:** the browser found inherited table minimum sizing
+  pushed mobile save controls off-screen. Scoped grid/table/filter sizing and
+  action wrapping were corrected; a fresh 402 × 874 screenshot showed the
+  responsive layout fitting the viewport. This visual confirmation was not a
+  second full functional browser pass.
+- **Test limitations:** the Ann check used the shared form in a synthetic frame,
+  not a new real merchant onboarding. A fixture thumbnail/resource 404 remained
+  during the browser pass; it did not block saves, and media-upload behaviour
+  was not part of this COGS verification. No merchant data was queried.
+- **Release:** `--staged-catalogue-cogs` is prepared. No live database migration,
+  production deployment or paid feature activation was performed.
+- **Next:** first sales/order analytics and downloadable reports, with explicit
+  missing-cost coverage. Analytics itself is not yet implemented by this stage.
+- [Scope, data boundaries and release steps](catalogue-costs-and-analytics.md).
+- The earlier navigation-only confirmation is now recorded in checkpoint
+  [3d1ee10](journal/COMMIT_REGISTER.md#commit-3d1ee10). Current COGS changes were
+  not yet checkpointed at the time of this entry.
+
 ## Evidence and limitations
 
 ### 19 October 2026: COGS navigation confirmed

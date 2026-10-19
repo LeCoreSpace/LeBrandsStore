@@ -1,5 +1,8 @@
 export function migrationSelection(args) {
   const values = args.filter(value => value !== "--");
+  if(values.length===1&&values[0]==="--staged-catalogue-cogs"){
+    return {staged:true,filename:"0041_catalogue_cogs.sql",requires:"0021_catalogue_forms_api.sql"};
+  }
   if(values.length===1&&values[0]==="--staged-billing-test-checkout"){
     return {staged:true,filename:"0040_billing_test_checkout.sql",requires:"0039_ann_plan_selection.sql"};
   }

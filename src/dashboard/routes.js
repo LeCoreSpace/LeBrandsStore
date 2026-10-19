@@ -14,12 +14,15 @@ import {loadAnnSession, annReference} from "../store/ann-repository.js";
 import {onlineAvailable} from "../connections/payments.js";
 import {CONNECTION_KINDS} from "../public/store-essentials.js";
 import {listInventory,bulkInventory,inventoryFilters,inventoryCanEdit,inventoryAlerts} from "./inventory.js";
+import {handleCogsDashboard} from "./cogs-routes.js";
+import {cogsEnabled,cogsCanEdit,productCostFields} from "./cogs.js";
 import { dashboardAccess, overview, listOrders, orderDetail, listCustomers, customerDetail, listInvoices,
   invoiceDetail, changeOrderStatus, collectPayment, archiveProduct, adjustStock, exportRows, audit } from "./repository.js";
 
 export function isDashboardPath(path,method = "GET") {
   if (/^\/(?:api\/)?stores\/new(?:\/|$)/.test(path)) return false;
   if (/^\/(?:api\/)?stores\/[^/]+$/.test(path)) return true;
+  if(/^\/stores\/[^/]+\/cogs$/.test(path)||/^\/api\/stores\/[^/]+\/cogs(?:\/[^/]+\/history)?$/.test(path))return true;
   if(/^\/stores\/[^/]+\/inventory$/.test(path)||/^\/api\/stores\/[^/]+\/inventory(?:\/(?:bulk|alerts))?$/.test(path))return true;
   if (/^\/(?:api\/)?stores\/[^/]+\/(?:orders|customers|invoices)(?:\/[^/]+(?:\/(?:status|payment))?)?$/.test(path)) return true;
   if (/^\/stores\/[^/]+\/(?:(?:products|collections)(?:\/[^/]+)?|settings)$/.test(path)) return true;
@@ -35,6 +38,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
     if (!match || !UUID.test(match[1])) throw commerceError("Store not found.",undefined,404);
     if (!user || user.must_change_password) throw commerceError("Sign in to manage your store.",undefined,401);
     const [,id,section = "overview",child,action] = match;
+    if(section==="cogs")return await handleCogsDashboard(request,db,user,tokenHash,id,child,action);
     const connectionKind=Object.hasOwn(CONNECTION_KINDS,url.searchParams.get("connection") || "") ? url.searchParams.get("connection") : null;
     if (child && !UUID.test(child) && !(["products", "collections"].includes(section) && child === "new") &&
       !(section === "exports" && ["orders","products","customers"].includes(child)) &&
@@ -121,6 +125,12 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
       } else if (section === "products") {
         data.product = child === "new" ? null : child ? draft.products.find((p) => p.id === child) : undefined;
         if (child && child !== "new" && !data.product) throw commerceError("Product not found.",undefined,404);
+        data.cogs_enabled=await cogsEnabled(tx);data.can_edit_cogs=cogsCanEdit(role);
+        if(data.cogs_enabled&&data.can_edit_cogs){
+          const [currency]=await tx`SELECT currency FROM public.stores WHERE store_id=${id}`;
+          data.store={...data.store,currency:currency.currency};
+          if(data.product)data.product={...data.product,...await productCostFields(tx,id,tokenHash,child)};
+        }
       }
       return data;
     },{lockStore:!read});

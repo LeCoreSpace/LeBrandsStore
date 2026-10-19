@@ -38,13 +38,17 @@ and confirmed that the input was visible and editable.
 **How to apply:** Prefer this focused diagnostic over repeated source changes
 or rerunning the full browser journey.
 
-Keep all fixture navigation, including API-provided review destinations, inside
-the isolated preview. Mocked data alone does not isolate links or redirects.
+Keep all fixture navigation, client-computed API/reference requests and
+API-provided review destinations inside the isolated preview. Mocked HTML or
+data alone does not isolate requests, links or redirects.
 
 **Why:** A review destination escaped the fixture and reached the real sign-in
-surface. No credentials were entered and no live write was performed.
+surface. A successful HTML response also does not prove that browser-computed
+data endpoints use the fixture. No credentials were entered and no live write
+was performed.
 
-**How to apply:** Inspect navigation destinations before testing actions, keep
+**How to apply:** Inspect navigation destinations and configured read/write
+API bases before testing actions, keep
 test review pages incapable of publication, and never continue into real
 accounts when an isolated test unexpectedly redirects there.
 
@@ -58,6 +62,9 @@ adoption. The tester reached GST onboarding rather than the intended editor.
 **How to apply:** Confirm the fixture editor returns 200 before browser handoff.
 Keep setup synthetic, and check newly imported browser modules return 200 too;
 a unit-tested controller can still fail to initialize if a module is not served.
+Also confirm reference endpoints return JSON and seed ordinary required form
+data, including valid synthetic media when required. Preserve tenant context
+and normal validation rather than bypassing either to make a fixture save.
 
 Judge fixture isolation by its routing and storage, not by a realistic-looking
 business name in a checked-in GST sample.

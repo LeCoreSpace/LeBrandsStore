@@ -199,6 +199,19 @@ document.querySelectorAll("[data-unpublish]").forEach(button => {
   });
 });
 
+function readCostPayload(form) {
+  const input = form.querySelector("[data-cogs-cost-input]");
+  if (!input) return {};
+  const text = input.value.trim();
+  let cost = null;
+  if (text !== "") {
+    if (!/^\d+(?:\.\d{1,2})?$/.test(text)) throw new Error("Enter cost per unit with at most two decimals and no negatives.");
+    const [w, f = ""] = text.split(".");
+    cost = Number(w + f.padEnd(2, "0"));
+    if (!Number.isSafeInteger(cost) || cost > 1000000000000) throw new Error("Cost per unit is too large.");
+  }
+  return { cost_price_paise: cost, cost_revision: Number(form.querySelector("[data-cogs-cost-revision]")?.value || 0) };
+}
 function productPayload(form) {
   const fd = new FormData(form);
   const price = moneyToPaise(fd.get("price"));
@@ -222,6 +235,7 @@ function productPayload(form) {
     hsn_code: String(fd.get("hsn_code") || "").trim(),
     gst_rate: fd.get("gst_rate") === "" || fd.get("gst_rate") == null ? null : Number(fd.get("gst_rate")),
     ...(form.querySelector("[data-content-form]") ? { content: contentPayload(form).content } : {}),
+    ...readCostPayload(form),
     ...readCataloguePayload(form),
     ...(!isNewForm(form) ? { expected_stock: form.dataset.expectedStock === "null" ? null : Number(form.dataset.expectedStock) } : {}),
   };

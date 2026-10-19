@@ -79,6 +79,14 @@ export function productPatch(value) {
       if(!["draft","active"].includes(val))throw badInput("Choose Draft or Active.",{status:"Choose a valid listing status."});
       result.status=val;continue;
     }
+    if(key==="cost_price_paise"){
+      if(val!==null&&(!Number.isSafeInteger(val)||val<0||val>1000000000000))throw badInput("Use a valid non-negative cost per unit.",{cost_price_paise:"Use a valid cost with at most two decimal places."});
+      result[key]=val;continue;
+    }
+    if(key==="cost_revision"){
+      if(!Number.isSafeInteger(val)||val<0||val>2147483646)throw badInput("Reload the product before saving its cost.");
+      result[key]=val;continue;
+    }
     if(key==="classification"){result.classification=validateClassification(val);continue;}
     if(key==="catalogue"){result.catalogue=validateCatalogue(val);continue;}
     if(key==="variants"){
@@ -114,6 +122,7 @@ export function productPatch(value) {
     }
     throw badInput("Unknown product field.");
   }
+  if(Object.hasOwn(result,"cost_price_paise")!==Object.hasOwn(result,"cost_revision"))throw badInput("Include the cost and its revision together.");
   return result;
 }
 export async function readBody(request, limit = 65536) {
