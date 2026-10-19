@@ -144,7 +144,7 @@ function catalogue(cat, requestedPlan, requestedInterval) {
   }).join("")}</div>` : `<p class="pb-muted">No paid plans are listed for this store's country.</p>`;
   return `<section class="pb-card" aria-labelledby="pb-cat-title"><div class="pb-card-head"><div><p class="pb-kicker">Proposal only</p><h2 id="pb-cat-title">Paid plans</h2></div></div>
     <p>These are proposed plans. Paid checkout is not available, so there is nothing to buy, cancel or renew here. Feature readiness is shown as provided.</p>${req}${body}
-    <p class="pb-muted">The first paid collection is planned as a one-time payment with manual renewal. There is no recurring payment and no automatic debit.</p></section>`;
+    <p class="pb-muted">Test checkout uses a one-time payment with manual renewal. There is no recurring payment and no automatic debit.</p></section>`;
 }
 
 function history(payments, invoices, sub) {

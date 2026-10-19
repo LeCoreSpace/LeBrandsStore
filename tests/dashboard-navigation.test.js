@@ -40,7 +40,8 @@ test("live routes map to real pages and planned items have no href", () => {
   const html = nav();
   assert.equal((html.match(/is-planned/g) || []).length, all.filter(i => i.kind === "planned").length);
   assert.doesNotMatch(html, /<span class="lbn-leaf is-planned"[^>]*href/);
-  assert.match(html, /<small>Planned<\/small>/);
+  assert.match(html, /<small>Not enabled<\/small>/);
+  assert.doesNotMatch(html.replace(/<[^>]*>/g,""),/\b(upcoming|planned)\b/i);
   for (const [, href] of html.matchAll(/<a [^>]*href="([^"]*)"/g)) assert.ok(href.startsWith(r) || href.startsWith("https://demo.lebrands.store"), href);
 });
 test("current matching works on child views and opens the owning group", () => {

@@ -161,7 +161,7 @@ export const COMPARISON_ROWS = [
     "Ad spend on top",
     "More plugins on higher plans") },
   { section: "Included tools", label: "COD and RTO tools", cells: cells(
-    "COD by default; returns reasons, RTO tracking and analysis planned",
+    "COD by default; returns reasons, RTO tracking and analysis not enabled",
     "COD supported; RTO through apps",
     "COD; confirm RTO analytics",
     "Team-managed RTO; partial COD and early COD payout advertised",
@@ -179,7 +179,7 @@ export const COMPARISON_ROWS = [
     "Run through ShopDeck; confirm account ownership",
     "Dukaan Pay or your Razorpay; Dukaan Delivery or your own") },
   { section: "Find customers", label: "Built-in discovery", cells: cells(
-    "LeBrands.Space mall placement planned",
+    "LeBrands.Space mall placement depends on plan and approval",
     "Shop app; AI chat availability varies by region",
     "No general marketplace; ONDC channel listed",
     "Managed paid ads",

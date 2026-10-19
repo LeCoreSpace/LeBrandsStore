@@ -65,7 +65,7 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
 function leaf(item, view) {
   const current = item.href && item.views.includes(view);
   const label = esc(item.label);
-  const hint = item.kind === "planned" ? "Planned" : item.hint;
+  const hint = item.kind === "planned" ? "Not enabled" : item.hint;
   const small = hint ? `<small>${esc(hint)}</small>` : "";
   if (!item.href) return `<li><span class="lbn-leaf is-${item.kind === "planned" ? "planned" : "disabled"}" aria-disabled="true"><span>${label}</span>${small}</span></li>`;
   const ext = item.kind === "external" ? ' target="_blank" rel="noopener"' : "";

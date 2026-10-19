@@ -69,7 +69,7 @@ test("disabled and foreign-country cards never expose an actionable checkout pri
 test("features have readable readiness labels, while quotes and escaped content cannot create payment buttons",()=>{
   const html=render();
   assert.match(html,/Published products: up to 500/);
-  assert.match(html,/>Planned<\/small>/);
+  assert.match(html,/>Not enabled<\/small>/);
   assert.doesNotMatch(html,/>Enforcement not implemented<\/small>/);
   assert.match(html,/Quotation required/);
   const escaped=render({...billing,catalogue:[{code:"flagship",name:'<script>alert("unsafe")</script>',contract_required:true,features:[]}]});

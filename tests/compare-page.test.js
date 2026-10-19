@@ -86,7 +86,7 @@ test("differentiators are complete, grouped, concise rows with five platform col
   const groups = [...new Set(COMPARISON_ROWS.map(r => r.section))];
   assert.deepEqual(COMPARISON_ROWS.map(r => r.label), [
     "How easy to build", "Who builds it", "Guided conversation languages", "Hiring needed", "Theme options",
-    "How much you can customise", "Catalogue and buying options", "Product and collection SEO",
+    "How much you can customise", "Catalogue and variants", "Product and collection SEO",
     "Free offer and domains", "Commission on sales", "Paid extras",
     "COD and RTO tools", "You own customer data", "Payment and courier accounts",
     "Built-in discovery", "Who runs marketing", "Built for India", "GST documents",
@@ -105,8 +105,9 @@ test("differentiators are complete, grouped, concise rows with five platform col
   }
   assert.match(html, /GST-verified onboarding/);
   assert.match(html, /live preview/);
-  assert.match(html, /RTO tracking and analysis planned/);
-  assert.match(html, /LeBrands.Space mall placement planned/);
+  assert.match(html, /RTO tracking and analysis not enabled/);
+  assert.match(html, /LeBrands.Space mall placement depends on plan and approval/);
+  assert.doesNotMatch(html.replace(/<[^>]*>/g,""),/\b(upcoming|planned)\b/i);
   assert.doesNotMatch(html, /2 themes at launch|Monthly cost at|Monthly subscription<\/th>/);
 });
 

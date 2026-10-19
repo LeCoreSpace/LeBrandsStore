@@ -749,6 +749,42 @@ decision:
   `pnpm run deploy`. Neither production command was executed automatically.
   See `docs/checkout-customer-identity.md`.
 
+## 19 October 2026: Public platform blog and discovery files
+
+- Added `/blog` and ten original, structured editorial articles on launching,
+  catalogue pages and media, checkout, COD/RTO, GST invoices, offers, costs,
+  ecommerce SEO and the payment/logistics roadmap.
+- Reused the public platform header/footer and typography, with desktop and
+  mobile article layouts, summaries, takeaways, linked contents, FAQs, author,
+  publication date, calculated reading time and related guides. All essential
+  content is in server-rendered HTML, without a crawler needing JavaScript.
+- Created ten original topic-specific SVG illustrations and PNG derivatives
+  for social previews. Added only those known assets to the Worker image gate.
+  No external image hosting, stock-image licences or AI-image API is required.
+- Added canonical and social metadata, Blog/BlogPosting, breadcrumb and
+  matching visible FAQ structured data. Updated `sitemap.xml` and `llms.txt`
+  with the blog index and ten article URLs, retaining private-route exclusions.
+- Public copy records Razorpay website approval as complete and partner OAuth
+  and a logistics connection as upcoming. Corrected the machine-readable
+  LeBrands.Space description so the Free plan does not promise placement.
+- Verification: eleven blog/SEO tests passed, including all article routes,
+  HEAD responses, schema/content alignment, original and social image serving,
+  unknown-article 404, script escaping and crawler-file consistency.
+- Existing Cloudflare release remains manual: `pnpm run deploy`. No database
+  migration, live payment enablement, OAuth connection or logistics setup was
+  performed by this editorial change.
+
+## 19 October 2026: Public wording correction
+
+- Removed the user's prohibited roadmap words from blog prose and metadata,
+  Pricing, Compare, dashboard navigation and billing labels, plus Ann's related
+  product-idea copy. Aligned `llms.txt` with the same language.
+- Used direct availability/setup descriptions rather than implying unavailable
+  services are live. Preserved all existing permissions and activation gates.
+- Added regression assertions for blog records, machine-facing copy and
+  rendered Compare/dashboard text.
+- No migration is required. The Worker release remains manual.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

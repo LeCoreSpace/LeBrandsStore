@@ -38,7 +38,7 @@ export function validateApplication(body, answers) {
       body.pages.some(p => !ANN_DRAFT_PAGES.includes(p))) fail("Choose editable store pages, not policy pages.");
   for (const [kind, source] of [["products", answers.product_ideas || []], ["collections", answers.collections || []]]) {
     const rows = body[kind];
-    if (!Array.isArray(rows) || rows.length !== source.length || new Set(rows.map(r => r?.key)).size !== rows.length) fail("Confirm each planned product and collection.");
+    if (!Array.isArray(rows) || rows.length !== source.length || new Set(rows.map(r => r?.key)).size !== rows.length) fail("Confirm each product and collection.");
     for (const row of rows) {
       keys(row, kind === "products" ? ["key", "target", "price_paise", "gst_rate", "hsn_code", "stock", "media_id"] : ["key", "target"]);
       if (!source.some(item => item.key === row.key) ||

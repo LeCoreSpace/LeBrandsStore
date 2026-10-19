@@ -1,5 +1,25 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: Public wording correction
+
+- `node --test --test-concurrency=1 tests/platform-blog.test.js tests/platform-seo.test.js tests/platform-billing-cards.test.js tests/compare-page.test.js tests/dashboard-navigation.test.js`: scoped content, metadata and UI regression verification.
+- `git diff --check`: whitespace validation.
+- Managed API workflow restart: rebuild changed browser modules and serve updated copy.
+- `pnpm run deploy`: manual release required; not executed by the agent. No migration.
+- An older Compare test still expected the retired "buying options" label;
+  aligned it with the existing "variants" terminology. Production terminology
+  was not changed.
+
+## 19 October 2026: Platform blog and search discovery
+
+| Command / operation | Purpose | Actual outcome |
+| --- | --- | --- |
+| `bash scripts/build-blog-images.sh` | Rasterise the ten original SVGs with existing ImageMagick for social previews. | Ten PNG derivatives generated; all twenty blog image assets total about 416 KB. |
+| `node --test --test-concurrency=1 tests/platform-blog.test.js tests/platform-seo.test.js` | Check article routes, structure, metadata, schema, asset gates, HEAD/404 behaviour, escaping and crawler files. | Eleven tests passed. An initial test expectation omitted HTML apostrophe escaping; corrected the expectation to match safe rendering. |
+| `git diff --check` | Validate whitespace. | Passed. |
+| Managed API workflow restart | Build and serve updated website and assets. | Local preview running; desktop index and mobile article checked. |
+| `pnpm run deploy` | Release the public blog, image assets and crawler files to the existing Worker. | Required next action; not executed by the agent. No migration required. |
+
 ## 19 October 2026: PIN feedback colour correction
 
 - `node --check src/public/checkout-contact.js`: client syntax validation.

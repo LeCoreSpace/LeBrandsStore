@@ -1,9 +1,10 @@
 import { PLATFORM_COMPANY, PLATFORM_EMAIL, PLATFORM_INFO } from "./platform-info.js";
+import {BLOG_POSTS,getBlogPost} from "../content/blog.js";
 
 // Confirmed production domain in root wrangler.jsonc, not the preview origin.
 export const PLATFORM_ORIGIN = "https://lebrands.store";
 export const PLATFORM_DESCRIPTION = "Build an online store for your Indian D2C brand with product catalogues, COD orders, customer records and GST invoices. Zero sales commission.";
-export const PUBLIC_PLATFORM_PATHS = ["/", "/pricing", "/compare", "/terms", "/privacy", "/contact", "/support"];
+export const PUBLIC_PLATFORM_PATHS = ["/", "/pricing", "/compare", "/terms", "/privacy", "/contact", "/support", "/blog", ...BLOG_POSTS.map(post=>`/blog/${post.slug}`)];
 export const ACCOUNT_ROBOTS = "User-agent: *\nDisallow: /\n";
 
 // One source for both the visible, server-rendered answers and FAQ schema.
@@ -69,7 +70,7 @@ export function platformSeoHead({ canonical, title, description, includeImage = 
       })),
     });
   } else {
-    const name = url.pathname === "/pricing" ? "Pricing" : url.pathname === "/compare" ? "Compare platforms" : PLATFORM_INFO[url.pathname.slice(1)].title;
+    const name = url.pathname === "/pricing" ? "Pricing" : url.pathname === "/compare" ? "Compare platforms" : url.pathname === "/blog" ? "Blog" : url.pathname.startsWith("/blog/") ? getBlogPost(url.pathname.slice(6))?.title || "Blog" : PLATFORM_INFO[url.pathname.slice(1)].title;
     graph.push({
       "@type": "BreadcrumbList",
       itemListElement: [

@@ -201,7 +201,7 @@ export function pricingMain() {
   </section>
   <section class="m-pr-billing" aria-labelledby="billing-title">
     <div class="m-pr-wrap">
-      <header class="m-pr-head"><h2 id="billing-title">Billing terms</h2><p class="m-pr-lede">Terms for the planned subscription service. Automated billing is not enabled yet.</p></header>
+      <header class="m-pr-head"><h2 id="billing-title">Billing terms</h2><p class="m-pr-lede">Subscription billing terms. Automated billing is not enabled.</p></header>
       <dl class="m-pr-terms">${BILLING_TERMS.map(([name, detail]) => `<div><dt>${name}</dt><dd>${detail}</dd></div>`).join("")}</dl>
     </div>
   </section>

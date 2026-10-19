@@ -46,10 +46,10 @@ function featList(features) {
     const readiness = String(f.availability || "");
     const pending = readiness && !["available", "ready", "live", "active"].includes(readiness);
     const status = /conditional_on/.test(readiness) ? "Setup required"
-      : /not_implemented|acceptance_required|fulfilment_confirmation/.test(readiness) ? "Planned"
+      : /planned|upcoming|not_implemented|acceptance_required|fulfilment_confirmation/.test(readiness) ? "Not enabled"
       : "Verification pending";
     const on = f.included !== false;
-    return `<li data-on="${on ? "yes" : "no"}"><span class="pb-sr">${on ? "Included: " : "Not included: "}</span>${esc(featText(f))}${pending && on ? ` <small class="pb-planned" title="${esc(human(readiness))}">${status}</small>` : ""}</li>`;
+    return `<li data-on="${on ? "yes" : "no"}"><span class="pb-sr">${on ? "Included: " : "Not included: "}</span>${esc(featText(f))}${pending && on ? ` <small class="pb-planned" title="${esc(status)}">${status}</small>` : ""}</li>`;
   }).join("")}</ul>`;
 }
 function freeFeatures(ents) {
@@ -137,5 +137,5 @@ export function renderPlanCards(billing, st, access, id, canFree) {
     <div class="pb-plans">${free}${paid}</div>
     ${cat.length ? "" : `<p class="pb-muted">No paid plans are listed for this store's country.</p>`}
     <p class="pb-callout">Razorpay test mode only. No real money is charged, paid benefits are not activated, and there is no automatic renewal. Yearly amounts are simulated totals paid upfront. Tax is not assessed in this sandbox.</p>
-    <p class="pb-muted">Paid checkout is not available as live service. Paid features remain proposals subject to setup and release verification. Features marked Planned are not delivered yet.</p></section>`;
+    <p class="pb-muted">Paid checkout is not available as a live service. Review each feature's availability and setup requirements. Features marked Not enabled cannot be used.</p></section>`;
 }

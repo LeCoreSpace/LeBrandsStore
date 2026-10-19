@@ -7,6 +7,8 @@ import { SECURITY_HEADERS } from "./auth/security.js";
 import { GOOGLE_TAG_HEAD, googleTagCsp } from "./ui/google-tag.js";
 import { renderHome, renderLegal } from "./ui/home.js";
 import { renderPricing, renderCompare } from "./ui/marketing.js";
+import {renderBlogIndex,renderBlogArticle} from "./ui/blog.js";
+import {BLOG_POSTS,getBlogPost} from "./content/blog.js";
 import { FAVICON_SVG, FAVICON_CSP } from "./ui/favicon.js";
 import { SECTION_SCHEMAS } from "./public/aura-layout.js";
 import { LE_BRANDS_LOGO } from "./ui/brand.js";
@@ -113,7 +115,7 @@ export default {
       const starterAsset = isStarterImage(url.pathname) || isShowcaseImage(url.pathname) || showcaseAsset || ["product-media-editor.js","product-media-processing.js","product-media-editor.css","catalogue-confirm.js","catalogue-modal.js","ann-language.js","ann-language-regional.js","ann-language-onboarding.js","ann-preview-navigation.js","ann-menu-model.js","ann-workspace.css","catalogue-reference.js","catalogue-form.js","catalogue-model.js","aura-taxonomy.js","aura-taxonomy-data.js","aura-starters.js","aura-starter-data.js","aura-starter-assets.js"].includes(filename);
       const builderAsset = isBrowserBundle(filename) || ["registration.js","ann-business-gate.js","ann-business-documents-ui.js","ann-business-documents.css","builder-choice.css","aura-styles.js","aura-styles.css","aura-extra-styles.css","aura-motion.js","aura-showcase-assets.js","aura-showcase.js","aura-showcase.css","ann-config.js","ann-builder.js","ann-builder.css","ann-projection.js","ann-category-copy.js","ann-application-ui.js","ann-readiness-ui.js","ann-launch-ui.js","ann-products-ui.js","ann-money.js","style-demo-copy.js","style-preview.js","style-preview-interactions.js","style-studio.js","style-studio.css"].includes(filename);
       const sectionAsset = settingsAsset || ["compare.js","compare.css","compare-data.js","compare-engine.js","pricing-plans.js","sections/index.js", "sections/schema-helpers.js"].includes(filename) || Object.keys(SECTION_SCHEMAS).some(type => filename === `sections/${type}.schema.js`);
-      if (!inventoryAsset && !sectionAsset && !starterAsset && !builderAsset && !["ai-builder.js","ai-builder-prefill.js","ai-builder.css","catalog-page.js","content-form.js","catalog-content.js","account-home.css","editor.js","editor.css","editor-state.js","gstin-ui.js","aura.js", "aura.css", "aura-sections.js", "aura-layout.js", "aura-skeleton.js", "aura-ui.js", "aura-upload.js", "aura-editorial.ttf", "aura-classic.ttf", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce-options.js", "commerce.js", "checkout-contact.js", "commerce.css", "commerce-signature.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "dashboard-navigation.js", "marketing.css", "marketing.js", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
+      if (!inventoryAsset && !sectionAsset && !starterAsset && !builderAsset && !["ai-builder.js","ai-builder-prefill.js","ai-builder.css","catalog-page.js","content-form.js","catalog-content.js","account-home.css","editor.js","editor.css","editor-state.js","gstin-ui.js","aura.js", "aura.css", "aura-sections.js", "aura-layout.js", "aura-skeleton.js", "aura-ui.js", "aura-upload.js", "aura-editorial.ttf", "aura-classic.ttf", "validation.js", "wizard.js", "wizard.css", "commerce-rules.js", "commerce-options.js", "commerce.js", "checkout-contact.js", "commerce.css", "commerce-signature.css", "commerce-view.js", "dashboard.js", "dashboard.css", "dashboard-rules.js", "dashboard-view-model.js", "dashboard-navigation.js", "marketing.css", "marketing.js", "blog.css", "legal.css", "instrument-sans-latin.woff2"].includes(filename)) return new Response("Not found", { status: 404 });
       if (!env.ASSETS) return new Response("Assets unavailable", { status: 503 });
       url.pathname = `/${filename}`;
       const asset = await env.ASSETS.fetch(new Request(url, request));
@@ -167,7 +169,8 @@ export default {
       if (!["GET", "HEAD"].includes(request.method)) return page("Method not allowed", "Method not allowed", "", 405);
       if (url.pathname.startsWith("/img/")) {
         const annLanguageCapture = /^\/img\/ann-skincare-(?:boutique-builder-home-en|architectural-builder-home-hi)(?:-(?:640|1280))?\.webp$/.test(url.pathname);
-        if(!annLanguageCapture&&!/^\/img\/(?:stonescence-(?:desktop-(?:640|1200)|mobile-(?:260|390))\.webp|ann-(?:skincare-boutique-(?:(?:desktop|product|builder)(?:-(?:640|1280))?|(?:mobile|checkout)(?:-260)?)|store-editorial-(?:desktop(?:-(?:640|1280))?|mobile(?:-260)?)|conversation-builder(?:-(?:640|1280))?)\.(?:jpg|webp)|REPLACE-[a-z0-9-]+\.(?:jpg|webp|avif|png|webm|mp4))$/.test(url.pathname))return notFound();
+        const blogImage = BLOG_POSTS.some(post=>post.image===url.pathname||post.image.replace(/\.svg$/,".png")===url.pathname);
+        if(!annLanguageCapture&&!blogImage&&!/^\/img\/(?:stonescence-(?:desktop-(?:640|1200)|mobile-(?:260|390))\.webp|ann-(?:skincare-boutique-(?:(?:desktop|product|builder)(?:-(?:640|1280))?|(?:mobile|checkout)(?:-260)?)|store-editorial-(?:desktop(?:-(?:640|1280))?|mobile(?:-260)?)|conversation-builder(?:-(?:640|1280))?)\.(?:jpg|webp)|REPLACE-[a-z0-9-]+\.(?:jpg|webp|avif|png|webm|mp4))$/.test(url.pathname))return notFound();
         if(!env.ASSETS)return new Response("Assets unavailable",{status:503});
         const asset=await env.ASSETS.fetch(request);
         const headers=new Headers(asset.headers);
@@ -176,12 +179,14 @@ export default {
         return new Response(request.method==="HEAD"?null:asset.body,{status:asset.status,headers});
       }
       const legal = { "/terms": "terms", "/privacy": "privacy", "/contact": "contact", "/support": "support", "/refund-policy":"refund-policy" };
-      if (url.pathname !== "/" && url.pathname!=="/pricing" && url.pathname!=="/compare" && !legal[url.pathname]) return notFound();
-      const marketing=url.pathname==="/" || url.pathname==="/pricing" || url.pathname==="/compare";
+      const blogPost=url.pathname.startsWith("/blog/")?getBlogPost(url.pathname.slice(6)):null;
+      const blog=url.pathname==="/blog"||Boolean(blogPost);
+      if (url.pathname !== "/" && url.pathname!=="/pricing" && url.pathname!=="/compare" && !blog && !legal[url.pathname]) return notFound();
+      const marketing=url.pathname==="/" || url.pathname==="/pricing" || url.pathname==="/compare" || blog;
       const headers={ ...SECURITY_HEADERS, "cache-control": "public, max-age=300", "content-type": "text/html; charset=utf-8" };
       if(marketing)headers["content-security-policy"]=headers["content-security-policy"].replace("font-src https://fonts.gstatic.com","font-src 'self' https://fonts.gstatic.com");
       headers["content-security-policy"]=googleTagCsp(headers["content-security-policy"]);
-      const html=withNavigation(url.pathname === "/" ? renderHome() : url.pathname==="/pricing"?renderPricing():url.pathname==="/compare"?renderCompare():renderLegal(legal[url.pathname]));
+      const html=withNavigation(url.pathname === "/" ? renderHome() : url.pathname==="/pricing"?renderPricing():url.pathname==="/compare"?renderCompare():url.pathname==="/blog"?renderBlogIndex():blogPost?renderBlogArticle(blogPost):renderLegal(legal[url.pathname]));
       return new Response(request.method==="HEAD"?null:html.replace("</head>",`${GOOGLE_TAG_HEAD}</head>`), {
         headers,
       });

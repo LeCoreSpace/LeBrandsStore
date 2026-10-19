@@ -9,6 +9,9 @@ const DESCRIPTION = PLATFORM_DESCRIPTION;
 const SIGNUP = "https://app.lebrands.store/signup";
 const LOGIN = "https://app.lebrands.store/login";
 
+// Public editorial pages reuse platform framing, never merchant storefronts.
+export {shell as platformShell,nav as platformNav,footer as platformFooter};
+
 function imageMarkup(media, { eager = false, className = "", alt = media.alt } = {}) {
   if (!media.available) {
     return `<div class="m-asset-placeholder${className ? ` ${className}` : ""}" role="img" aria-label="${alt}. Awaiting supplied image at ${media.src}."><span><strong>Image awaiting supply</strong>${media.src}</span></div>`;
@@ -27,7 +30,7 @@ function imageMarkup(media, { eager = false, className = "", alt = media.alt } =
   return `<img class="${className}" src="${media.src}"${srcset} width="${media.width}" height="${media.height}" alt="${alt}" ${priority} decoding="async">`;
 }
 
-function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://lebrands.store", pageClass = "", body, head = "" }) {
+function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://lebrands.store", pageClass = "", body, head = "", seo = true, ogType = "website" }) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -39,16 +42,16 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
   <meta name="description" content="${description}">
   <meta name="robots" content="index,follow">
   <link rel="canonical" href="${canonical}">
-  <meta property="og:type" content="website">
+  <meta property="og:type" content="${ogType}">
   <meta property="og:site_name" content="LeBrands.Store">
   <meta property="og:title" content="${title}">
   <meta property="og:description" content="${description}">
   <meta property="og:url" content="${canonical}">
-  <meta property="og:image" content="https://lebrands.store/img/ann-skincare-boutique-desktop.jpg">
+  ${seo ? `<meta property="og:image" content="https://lebrands.store/img/ann-skincare-boutique-desktop.jpg">
   <meta property="og:image:width" content="1440">
   <meta property="og:image:height" content="900">
   <meta name="twitter:card" content="summary_large_image">
-  ${platformSeoHead({ canonical, title, description })}
+  ${platformSeoHead({ canonical, title, description })}` : ""}
   <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
   <script src="/assets/marketing.js"></script>
   <link rel="stylesheet" href="/assets/marketing.css">
@@ -68,6 +71,7 @@ function nav({ pricing = false } = {}) {
       <a href="${pricing ? "/#features" : "#features"}">Features</a>
       <a href="/pricing">Pricing</a>
       <a href="/compare">Compare</a>
+      <a href="/blog">Blog</a>
       <a href="${pricing ? "/#faq" : "#faq"}">FAQ</a>
       <a class="m-nav-login" href="${LOGIN}">Log in</a>
       <button class="m-theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false"><span class="m-theme-icon" aria-hidden="true"></span><span data-theme-label>Dark</span></button>
@@ -87,6 +91,7 @@ function footer({ pricing = false } = {}) {
         <a href="${homePrefix}#features">Features</a>
         <a href="/pricing">Pricing</a>
         <a href="/compare">Compare</a>
+        <a href="/blog">Blog</a>
         <a href="${homePrefix}#faq">FAQ</a>
         <a href="/privacy">Privacy</a>
         <a href="/terms">Terms</a>
