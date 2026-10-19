@@ -884,6 +884,22 @@ decision:
 - **Release:** No database migration, live merchant mutation or production
   publication. Publish the updated Worker manually.
 
+### 2026-10-19: Shared sans-serif typography across platform and stores
+
+- **What:** Replaced serif presentation defaults with locally hosted Instrument
+  Sans across account forms, platform pages, dashboard/Ann, theme previews and
+  merchant storefronts, including product, cart, checkout and confirmation.
+- **How:** Added one shared typography stylesheet and allowed it through the
+  Worker asset gate. It overrides older literal serif styles and theme font
+  tokens without changing sizes, weights, layouts or saved merchant records.
+  Explicit inline rich-text font selections and code-style text remain intact.
+- **Verification:** All 27 shared-typography, homepage, Aura layout and commerce
+  shell checks passed. Coverage includes each store style and the shared CSS/font
+  Worker responses. The sign-in screenshot visibly confirms sans-serif headings
+  and form content; local logs confirm both assets return HTTP 200.
+- **Release:** No database changes or production publication. Publish the updated
+  Worker manually to update live stores.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

@@ -1,0 +1,27 @@
+/* Shared default typography. Merchant-authored rich-text font selections remain
+   on their own text runs; this does not rewrite saved designs or copy. */
+@font-face {
+  font-family: "Instrument Sans";
+  src: url("/assets/instrument-sans-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+:root, body, .ae-head, .ae-grid, .sc {
+  --sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  --serif: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  --display: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  --disp: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  --body: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  --lb-serif: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+  --lb-sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+}
+/* Legacy theme selectors also set literal serif fonts on prices, navigation
+   and captions. Low-specificity importance replaces those presentation defaults,
+   while explicit rich-text inline font choices (also important) retain priority. */
+:where(body, body *) {
+  font-family: "Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif !important;
+}
+code, pre, kbd, samp {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace !important;
+}

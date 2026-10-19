@@ -157,6 +157,7 @@ export function renderAura(data = {}, options = {}) {
       ${options.commerce || designed?.cm ? `<link rel="stylesheet" href="/assets/${designed ? "commerce-signature" : "commerce"}.css">` : ""}
       ${!designed && STYLE_IDS.includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-styles.css">' : ""}
       ${!designed && ["minimal", "vintage"].includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-extra-styles.css">' : ""}
+      <link rel="stylesheet" href="/assets/typography.css">
     </head>
     <body ${designed ? `class="${designed.bodyClass}" data-style="${designed.style}" data-design-page="${esc(page)}"` : "data-aura"} data-preset="${preset}" ${!designed && STYLE_IDS.includes(settings.style_preset) ? `data-style="${settings.style_preset}"` : ""} data-font="${esc(fonts[settings.font_preset] ? settings.font_preset : "modern")}">${body}${options.commerce && !commercePage ? `<template data-commerce-config data-store-key="${esc(store.store_id || options.storeKey || "")}" data-site-key="${esc(options.siteKey || "")}" data-page="${esc(page)}" data-read-only="${options.readOnly === true ? "true" : "false"}"></template>` : ""}${options.embeddedPreview ? "" : '<script type="module" src="/assets/aura-ui.js"></script>'}${options.commerce ? `<div id="commerce-mount"></div>${options.embeddedPreview ? "" : '<script type="module" src="/assets/commerce.js"></script>'}` : ""}</body>
   </html>`;

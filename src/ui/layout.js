@@ -47,6 +47,7 @@ export function layout({ title, description, canonical, body, noindex = false, e
   </style>
   ${navigationHead()}
   ${extraHead}
+  <link rel="stylesheet" href="/assets/typography.css">
 </head>
 <body>${NAVIGATION_BODY}${body}</body>
 </html>`;

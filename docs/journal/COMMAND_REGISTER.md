@@ -490,6 +490,14 @@ not assign an unverified execution date to a command.
 | Managed web and API workflow restarts | Local preview services after the complete route/UI edit batch. | Both running; preview requests served. Screenshot browser reached sign-in, not authenticated admin content. |
 | `pnpm run deploy` | Manual Cloudflare publication of the updated dashboard. | Not executed by the assistant. No additional migration required. |
 
+### 19 October: Shared platform and storefront typography
+
+| Command / operation | Target / effect | Actual result |
+| --- | --- | --- |
+| `node --test --test-concurrency=1 tests/shared-typography.test.js tests/homepage-typography.test.js tests/aura-layout.test.js tests/storefront-commerce-shell.test.js` | Workspace root, local rendering and actual Worker asset-gate checks, no live DB. | All 27 tests passed. |
+| Managed web and API workflow restarts | Local preview code/build refresh. | Running; sign-in screenshot confirms sans-serif headings, CSS/font requests return HTTP 200. |
+| `pnpm run deploy` | Manual Cloudflare publication of shared typography changes. | Not executed by the assistant. No database migration needed. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

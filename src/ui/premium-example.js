@@ -4,6 +4,7 @@ const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
 const money = (paise) => `₹${(Number(paise || 0) / 100).toLocaleString("en-IN")}`;
 
 const styles = `<style>
+@import url("/assets/typography.css");
 @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;1,400&display=swap");
 :root{color-scheme:light;--paper:#f2eee7;--paper-deep:#e9e1d7;--ink:#2f242b;--muted:#786d70;--line:#d7cbc3;--wine:#692b43;--clay:#a45846;--serif:"Playfair Display",Georgia,serif;--sans:"DM Sans",sans-serif}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:86px}body{margin:0;background:var(--paper);color:var(--ink);font:14px/1.65 var(--sans);-webkit-font-smoothing:antialiased}body,button,a{ -webkit-tap-highlight-color:transparent}a{color:inherit;text-decoration:none}button{font:inherit;color:inherit}img{display:block;width:100%;max-width:100%}.ps-wrap{width:min(1380px,calc(100% - 112px));margin:auto}

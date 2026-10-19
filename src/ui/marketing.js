@@ -56,6 +56,7 @@ function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://
   <script src="/assets/marketing.js"></script>
   <link rel="stylesheet" href="/assets/marketing.css">
   ${head}
+  <link rel="stylesheet" href="/assets/typography.css">
 </head>
 <body class="${pageClass}">
 ${body}

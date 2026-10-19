@@ -435,7 +435,7 @@ export function renderShowcase(data, settings, options = {}) {
   main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${kindOf(x.style)}"`)
     .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${kindOf(x.style)}"`);
   const { overrides, font, preset } = themeOverrides(x.style, settings);
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>${esc(x.brand)} style demo</title><style>${CSS}${RICH_CSS}${NICHE_SECTION_CSS}${overrides}</style></head>
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex, nofollow"><title>${esc(x.brand)} style demo</title><style>${CSS}${RICH_CSS}${NICHE_SECTION_CSS}${overrides}</style><link rel="stylesheet" href="/assets/typography.css"></head>
 <body data-aura data-showcase="${x.style}" data-style="${x.style}" data-font="${font}" data-preset="${preset}" data-page="${page}" class="sc sc-${x.style}"><div class="sc-demo">Style demo. Sample ${esc(x.world)} products and illustrative prices. Nothing is saved, ordered or published.</div>${header(x)}<main class="sc-main sc-p-${page}">${main}</main>${footer(x)}</body></html>`;
 }
 
