@@ -93,11 +93,13 @@ pages and explicitly rejected the tabbed content layout.
 content. Do not reintroduce cross-provider tabs when extending these pages.
 
 The approved ticket language now applies to every implemented merchant
-dashboard destination, Ann and theme-editor controls, including supporting
-dialogs. It is not a direction to restyle the merchant's actual storefront.
+dashboard destination, account entry and Your stores, Ann and theme-editor
+controls, including supporting dialogs. It is not a direction to restyle the
+merchant's actual storefront.
 
 **Why:** The user explicitly requested the ticket treatment from the top of
-the dashboard menu to the bottom, plus Ann and the theme editor.
+the dashboard menu to the bottom, plus Ann and the theme editor, then extended
+it to login, registration and the signed-in store list.
 
 **How to apply:** New operational pages and editor controls should follow the
 same visual language. Keep merchant preview contents, chosen theme presets,

@@ -21,7 +21,7 @@ function accountDoc(title, body, extraHead = "") {
     canonical: `${APP_ORIGIN}${routes[title] || "/"}`,
     noindex: true,
     body,
-    extraHead,
+    extraHead: `<link rel="stylesheet" href="/assets/account-home.css">${extraHead}`,
   });
 }
 
@@ -30,7 +30,7 @@ function alertBlock(error, notice) {
 }
 
 function authFrame({ eyebrow, heading, intro, title, description, form, after, user, extraHead = "" }) {
-  return accountDoc(title, `${accountHeader(user)}<main class="wrap auth-shell">
+  return accountDoc(title, `${accountHeader(user)}<main class="wrap auth-shell account-ticket">
     <section class="auth-intro"><div class="eyebrow">${escapeHtml(eyebrow)}</div><h1>${escapeHtml(heading)}</h1><p>${escapeHtml(intro)}</p>
       <div class="auth-stamp"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#f1e5ea"/><path d="M12 20h16M20 12v16" stroke="#6b1735" stroke-width="1.5"/></svg><span>Built for independent Indian brands</span></div>
     </section>
@@ -129,7 +129,7 @@ function dashboard(data) {
       <div class="store-meta"><span class="status-pill" data-status="${status}">${status}</span><span class="store-role">${escapeHtml(store.role || "member")}</span></div>
       <nav class="store-actions" aria-label="Store links"><a class="inline-link primary-link" href="/stores/${id}">Open dashboard ${arrow}</a><a class="inline-link" href="/stores/${id}/build">Build your store</a>${store.role === "owner" ? `<a class="inline-link" href="/stores/${id}/settings/checkout">Checkout settings</a>` : ""}${store.status === "live" ? `<a class="inline-link" href="https://${subdomain}.lebrands.store" target="_blank" rel="noopener">View store</a>` : ""}</nav></article>`;
   }).join("");
-  return accountDoc("Your stores", `${accountHeader(user)}<main class="wrap dashboard-main">
+  return accountDoc("Your stores", `${accountHeader(user)}<main class="wrap dashboard-main account-ticket">
     ${forcedNotice(data)}
     <div class="dashboard-title"><div><div class="eyebrow">Your LeBrands account</div><h1>Good to see you, ${escapeHtml(name)}.</h1><p>Your stores, gathered in one place.</p></div>
       <div class="dashboard-actions">${!user.must_change_password&&policy.canCreate ? `<a class="button" href="/stores/new">${policy.creationLabel} <span aria-hidden="true">+</span></a>` : ""}</div>
@@ -141,7 +141,7 @@ function dashboard(data) {
       ? `<section aria-label="Your stores" class="store-list">${rows}</section>`
       : `<section class="empty-card"><div class="empty-mark" aria-hidden="true">+</div><h2>Your first store starts here.</h2><p>Claim a store address for your brand and start shaping its home online.</p><a class="button" href="/stores/new">Create your store <span aria-hidden="true">↗</span></a></section>`}
     <div class="form-foot" style="text-align:left;margin-top:27px"><a href="/account">Account and password</a></div>
-  </main>${footer()}`, '<link rel="stylesheet" href="/assets/account-home.css">');
+  </main>${footer()}`);
 }
 
 function newStore(data) {

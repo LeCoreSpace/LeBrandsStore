@@ -543,6 +543,15 @@ not assign an unverified execution date to a command.
 | Replit preview workflow restarts | Rebuild existing versioned CSS bundles and serve the changed workspace. | Services running; public root returned HTTP 200. |
 | `pnpm run deploy` | Manual Cloudflare production publication. | Not run. |
 
+### 19 October: Account entry and store-list ticket styling
+
+| Command / operation | Target / effect | Actual result |
+| --- | --- | --- |
+| `node --check src/ui/accounts.js` | Account template syntax. | Passed. |
+| `node --test --test-concurrency=1 tests/account-ticket-style.test.js tests/auth.test.js tests/registration-contact.test.js tests/browser-bundles.test.js` | Shared account styling, account-state restrictions, existing auth and registration contracts, fingerprinted CSS delivery. | 22 passed. Test database fixtures were isolated; no live accounts were changed. |
+| Replit preview workflow restarts | Rebuild browser assets and reload API/web preview. | Both running. Desktop login, mobile signup and synthetic store-list screenshots loaded successfully. |
+| `pnpm run deploy` | Manual Cloudflare publication. | Not run. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

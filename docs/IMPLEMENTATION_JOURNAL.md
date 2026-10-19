@@ -1023,6 +1023,29 @@ decision:
   workflows restarted and assets rebuilt successfully. No production
   publication or live merchant edits were performed.
 
+### 2026-10-19: Ticket-style login, registration and account home
+
+- **What:** Extended the approved ticket treatment to login, registration and
+  the signed-in Your stores screen. Shared account shells also carry the same
+  treatment for password changes, recovery and store creation.
+- **How:** Load one scoped account stylesheet across account views, preserving
+  registration's existing validation script and styles. Added plum ticket rails,
+  perforated dividers and edge notches, matching store-card actions, accessible
+  focus states and mobile layouts. Registered the existing account stylesheet
+  in the fingerprinted browser build so updated styling is delivered safely.
+- **Safety:** Existing form contracts, validation, password handling, ownership
+  limits, live/draft statuses, empty states, mandatory password-reset gating
+  and the legacy live-store selection remain unchanged. Marketing and merchant
+  storefront styles were not changed.
+- **Verification:** All 22 targeted account styling, authentication,
+  registration and browser-bundle checks passed. Screenshots verified desktop
+  login, the complete mobile registration page and the synthetic read-only
+  account store list. Both workflows restarted; stylesheet and registration
+  modules loaded successfully without runtime errors.
+- **Outcome:** Account entry and account home now match the merchant ticket
+  language. No live account/store changes, database migrations or production
+  publication were performed.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 
