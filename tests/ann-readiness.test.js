@@ -50,8 +50,17 @@ test("Ann readiness reuses real business/policy/checkout rules with consent, sta
     }}));
     assert.equal(result.status,200);state=result.body;
     assert.equal(state.settings.support_phone,"+919876543210");assert.match(state.settings.address,/Chennai/);
+    result=await call("PATCH",write(state,"business",{settings:{
+      logo_media_id:null,description:"",support_email:"care@example.invalid",support_phone:"9888888888",
+    }}));
+    assert.equal(result.status,200);state=result.body;
+    assert.equal(state.settings.support_email,"care@example.invalid");
+    assert.equal(state.settings.support_phone,"+919888888888");
+    assert.equal(state.business_errors.logo_media_id,"Upload your brand logo.");
     result=await call("PATCH",write(state,"generate-policies"));
     assert.equal(result.status,200,JSON.stringify(result.body));state=result.body;assert.equal(state.policies.length,6);
+    assert.match(state.policies.find(p=>p.kind==="contact").body,/care@example.invalid.*\+91/);
+    assert.equal(state.checklist.every(item=>item.complete),false);
     assert.ok(state.policies.every(p=>!p.reviewed));
     const stale=state, policy={...state.policies[0],body:"Merchant-edited policy with real delivery, privacy and contact terms.",reviewed:true};
     result=await call("PATCH",write(state,"policy",{policy:{kind:policy.kind,body:policy.body,reviewed:true}}));

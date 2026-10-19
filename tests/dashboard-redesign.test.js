@@ -31,6 +31,9 @@ test("financial settings keep readonly prefix in the real form, required GSTIN e
   assert.match(owner,/name="invoice_prefix"[^>]*value="DEMO"[^>]*readonly/);
   assert.doesNotMatch(owner,/name="invoice_prefix"[^>]*disabled/);
   assert.match(owner,/data-tax-settings-form/);
+  assert.match(owner,/data-contact-settings-form/);
+  assert.match(owner,/name="support_email"/);
+  assert.match(owner,/name="support_phone"/);
   assert.match(owner,/data-tax-error="gstin"/);
   assert.match(owner,/data-signature-upload/);
   const viewer=renderDashboard("settings",{...data,role:"viewer"},{});

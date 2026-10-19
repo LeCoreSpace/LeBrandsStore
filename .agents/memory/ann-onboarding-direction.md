@@ -176,6 +176,18 @@ merchants to enter them again. Keep missing-requirement checks and explicit
 policy-review/publication confirmation; link corrections back to their proper
 editing surfaces.
 
+Merchants must be able to enter customer-facing support contacts and generate,
+edit and review policy drafts within Ann's readiness/final-review flow. Do not
+send them to Settings to complete those steps.
+
+**Why:** The user repeated that policy generation was blocked and explicitly
+said not to redirect to Settings for contact details. Missing support contacts
+must be actionable at the point where policy drafts are generated.
+
+**How to apply:** Keep the dedicated dashboard contact form as a second entry
+point, but do not make it a prerequisite to leave Ann. Saving contact drafts
+must not bypass supplier identity locks or the separate publication checklist.
+
 **Why:** The user finalised a design but publication sent them back to an
 unneeded input form. The review handoff must not depend on old wizard progress.
 

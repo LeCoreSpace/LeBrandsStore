@@ -139,6 +139,28 @@ taxForm?.addEventListener("submit",async event => {
     message.textContent = error.message || "Business details could not be saved.";
   } finally {busy(button,false);}
 });
+const contactForm = document.querySelector("[data-contact-settings-form]");
+contactForm?.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!["owner", "admin"].includes(role)) return;
+  const values = Object.fromEntries(new FormData(contactForm));
+  const settings = Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value).trim()]));
+  const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const error = contactForm.querySelector("[data-contact-form-error]");
+  const status = contactForm.querySelector("[data-contact-form-status]");
+  error.textContent = ""; status.textContent = "";
+  const invalid = !email.test(settings.support_email) ? "Enter a valid support email."
+    : !/^\+?[0-9 ()-]{7,25}$/.test(settings.support_phone) ? "Enter a valid support phone."
+    : settings.notification_email && !email.test(settings.notification_email) ? "Enter a valid order notification email." : "";
+  if (invalid) { error.textContent = invalid; return; }
+  const button = contactForm.querySelector('button[type="submit"]');
+  busy(button, true);
+  try {
+    await postJson(`${api}/setup`, { settings }, "PATCH");
+    status.textContent = "Contact details saved to your store draft. Policy reviews must be completed again before publishing.";
+  } catch (e) { error.textContent = e.message || "Contact details could not be saved."; }
+  finally { busy(button, false); }
+});
 
 document.querySelector("[data-menu-toggle]")?.addEventListener("click", event => {
   const button = event.currentTarget;

@@ -1,6 +1,6 @@
 import { mediaUrl } from "./media.js";
 import { generatePolicies } from "./policies.js";
-import { validateBasics, validateTheme, validateProduct, publishChecklist, POLICY_KINDS } from "../public/validation.js";
+import { validateBasics, validatePolicyDetails, validateTheme, validateProduct, publishChecklist, POLICY_KINDS } from "../public/validation.js";
 import { badInput } from "./input.js";
 import { validateSubdomain } from "../auth/security.js";
 import { CURRENT_GST_RATES, businessGSTINErrors } from "../public/commerce-rules.js";
@@ -312,7 +312,7 @@ export async function insertMedia(tx, id, key, type, size, metadata, alt) {
   return mediaRecord(row);
 }
 export async function regeneratePolicies(tx, id) {
-  const data = await loadDraft(tx, id), errors = validateBasics(data.settings);
+  const data = await loadDraft(tx, id), errors = validatePolicyDetails(data.settings);
   if (Object.keys(errors).length) throw badInput(`Complete these business details before generating policy drafts: ${Object.values(errors).join(" ")}`, errors);
   for (const p of generatePolicies(data)) await tx`INSERT INTO public.policy_pages
     (store_id, slug, title, content) VALUES (${id}, ${p.kind}, ${p.title}, ${p.body})

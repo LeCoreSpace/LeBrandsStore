@@ -322,12 +322,21 @@ function settingsPage(data) {
     <p class="lb-muted">Registered details are checked and frozen when an invoice is issued. Storefront changes remain drafts until policies are reviewed and changes published.</p>
     <p data-tax-form-error role="alert"></p><button class="lb-button lb-button-outline" type="submit">Save business details</button>
     </fieldset></form>`;
+  const contactForm = `<form data-contact-settings-form novalidate><fieldset ${["owner","admin"].includes(data.role) ? "" : "disabled"}>
+    <p class="lb-muted">These customer-facing details appear in your policy drafts. Saving them does not publish changes or mark policies reviewed.</p>
+    <label class="lb-field">Support email<input name="support_email" type="email" required maxlength="254" value="${esc(settings.support_email || "")}" autocomplete="email"></label>
+    <label class="lb-field">Support phone or WhatsApp<input name="support_phone" type="tel" required maxlength="25" value="${esc(settings.support_phone || "")}" autocomplete="tel"></label>
+    <label class="lb-field">Order notification email (optional)<input name="notification_email" type="email" maxlength="254" value="${esc(settings.notification_email || "")}" autocomplete="email"></label>
+    <p data-contact-form-error role="alert"></p><p data-contact-form-status role="status"></p>
+    <button class="lb-button lb-button-outline" type="submit">Save contact details</button>
+  </fieldset></form>`;
   return `${pageHeading("", "Settings", "",`<button class="lb-button" type="submit" form="lb-business-form" ${["owner","admin"].includes(data.role)?"":"disabled"}>Save business details</button>`)}${actionError(data)}
     <div class="lb-settings-layout"><nav class="lb-settings-index" aria-label="Settings sections">
-      <a href="#store-details">Store details</a><a href="#business-gst">Business &amp; GST</a><a href="#business-documents">Business documents</a><a href="#policies">Policies</a>
+       <a href="#store-details">Store details</a><a href="#contact-details">Contact details</a><a href="#business-gst">Business &amp; GST</a><a href="#business-documents">Business documents</a><a href="#policies">Policies</a>
       <a href="${`/stores/${id}/settings/checkout`}">Checkout</a><a href="/stores/${id}/settings?connection=domain">Store connections</a><span>Users <small>Unavailable</small></span>
     </nav><div class="lb-settings-panels">
       <div id="store-details">${card("Store details", `<dl class="lb-definition"><div><dt>Store name</dt><dd>${esc(store.name || settings.brand_name || "Not set")}</dd></div><div><dt>Store address</dt><dd>${store.subdomain ? `${esc(store.subdomain)}.lebrands.store` : "Not set"}</dd></div><div><dt>Status</dt><dd>${esc(store.status === "awaiting_approval" ? "Awaiting approval" : store.status || "Setup in progress")}</dd></div><div><dt>Store setup</dt><dd><a class="lb-inline-link" href="/stores/${id}/setup">Open store setup</a></dd></div></dl>`)}</div>
+       <div id="contact-details">${card("Customer contact details", contactForm)}</div>
       <div id="business-gst">${card("Business & GST", taxForm)}</div>
       <div id="business-documents">${card("Business documents", ["owner","admin"].includes(data.role)
         ? '<div data-business-documents-panel aria-busy="true"><p role="status" data-business-documents-loading>Loading business verification status…</p></div>'

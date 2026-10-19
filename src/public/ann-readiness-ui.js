@@ -76,20 +76,23 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
       msgs[section] = { type: "ok", text: "Saved. Checks below show what is stored now." };
       lastSection = section;
       try { onSaved?.(result); } catch { /* host callback must not break the panel */ }
-    } catch (e) { msgs[section] = { type: "err", text: e.message }; }
-    finally { busy = ""; draw(); if(refreshPending){refreshPending=false;storeChanged();} }
+      return true;
+    } catch (e) { msgs[section] = { type: "err", text: e.message }; return false; }
+    finally { busy = ""; draw(); if(refreshPending){refreshPending=false;await storeChanged();} }
   }
   function saveBusiness() {
     const settings = {};
     for (const k of BIZ) {
       if (lockedOn() && LOCKED.includes(k)) continue;
       const v = String(biz[k] ?? "").trim();
+      if (v === String(data.settings[k] ?? "").trim()) continue;
       if (k === "logo_media_id") {
         if (v && !UUID.test(v)) { msgs.business = { type: "err", text: "Choose a logo from your uploads." }; return draw(); }
         settings[k] = v || null;
       } else settings[k] = v;
     }
-    void submit("business", { action: "business", settings }, () => { biz = bizFrom(data.settings); ackBiz = false; });
+    if (!Object.keys(settings).length) return Promise.resolve(true);
+    return submit("business", { action: "business", settings }, () => { biz = bizFrom(data.settings); ackBiz = false; });
   }
   function saveCheckout() {
     try {
@@ -107,19 +110,21 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     const p = pol[kind];
     void submit(`policy:${kind}`, { action: "policy", policy: { kind, body: p.body, reviewed: !!p.reviewed } }, () => { const n = data.policies.find(x => x.kind === kind); if (n) pol[kind] = polFrom(n); });
   }
-  function generate() {
-    if (!ackGen) return;
-    void submit("generate", { action: "generate-policies" }, () => { pol = Object.fromEntries(data.policies.map(p => [p.kind, polFrom(p)])); ackGen = false; });
+  async function generate() {
+    if (readOnly || busy || loading || conflict) return;
+    if ((data.policies || []).some(p => p.body?.trim()) && !await confirmCatalogueAction("This replaces all current policy drafts and clears their review status. Live policies stay unchanged until publication.", {title:"Replace policy drafts?",confirmLabel:"Generate drafts",cancelLabel:"Keep drafts"})) return;
+    if (bizDirty() && !await saveBusiness()) return;
+    await submit("generate", { action: "generate-policies" }, () => { pol = Object.fromEntries(data.policies.map(p => [p.kind, polFrom(p)])); ackGen = false; });
   }
   async function reload() {
     if (busy || productUI.isUploading()) return;
     if (anyDirty() && !await confirmCatalogueAction("Reloading discards your unsaved readiness edits.", { title: "Reload saved details?", confirmLabel: "Discard edits and reload" })) return;
     void load(true);
   }
-  function storeChanged(){
+  async function storeChanged(){
     if(busy||loading||productUI.isUploading()){refreshPending=true;return;}
     if(anyDirty()){conflict=true;draw();return;}
-    void load(true);
+    await load(true);
   }
 
   /* ---------- drawing ---------- */
@@ -170,7 +175,8 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
     const bd = bizDirty();
     const business = `<fieldset class="ann-item"><legend>Business details</legend>
       ${Object.keys(errs).length ? `<div class="ann-callout" role="status"><strong>Business details still needed</strong><ul>${Object.values(errs).map(message=>`<li>${esc(message)}</li>`).join("")}</ul>You can still save an incomplete draft.</div>` : ""}
-       ${lockNote}${f("brand_name")}${f("tagline")}${f("description", { area: true })}${f("legal_name")}${f("trade_name")}${f("address", { area: true })}${f("business_line1")}${f("business_line2")}${f("business_city")}${f("business_pincode", { mode: "numeric" })}${f("business_state", {state:true})}${f("gstin")}${f("support_email", { type: "email" })}${f("support_phone", { type: "tel" })}${f("notification_email", { type: "email" })}${logoSel}
+       <h3>Support and contact details</h3><p class="ann-note">Enter customer-facing contacts here. Generate drafts saves these edits first; no Settings page is needed.</p>${f("support_email", { type: "email" })}${f("support_phone", { type: "tel" })}${f("notification_email", { type: "email" })}
+       ${lockNote}${f("brand_name")}${f("tagline")}${f("description", { area: true })}${f("legal_name")}${f("trade_name")}${f("address", { area: true })}${f("business_line1")}${f("business_line2")}${f("business_city")}${f("business_pincode", { mode: "numeric" })}${f("business_state", {state:true})}${f("gstin")}${logoSel}
       <label class="ann-check"><input type="checkbox" data-rd-key="ack-biz" data-rd-ack="biz"${ackBiz ? " checked" : ""}${dis(!bd)}><span>I confirm saving these business details to my store. Incomplete drafts can be saved.</span></label>
       ${msg("business")}
       <div class="ann-actions"><button type="button" class="ann-btn" data-rd="save-business"${dis(!bd || !ackBiz)}>${busy === "business" ? "Saving business details" : "Save business details"}</button></div></fieldset>`;
@@ -199,9 +205,8 @@ export function attachAnnReadiness({ api, root, readOnly, onSaved }) {
           ${msg(`policy:${k}`)}
           <button type="button" class="ann-btn alt" data-rd="save-policy" data-kind="${esc(k)}"${dis(!d)}>${busy === `policy:${k}` ? "Saving" : `Save ${esc(name.toLowerCase())} policy`}</button></div>`; }).join("")}
       <div class="ann-callout"><p>Regenerating replaces all ${pols.length || KINDS_ORDER} policy texts with standard drafts, discarding every edit you made, and clears all reviewed ticks. Your unsaved policy edits are also lost.</p>
-      <label class="ann-check"><input type="checkbox" data-rd-key="ack-gen" data-rd-ack="gen"${ackGen ? " checked" : ""}${dis()}><span>I understand this overwrites all policies and resets all reviews.</span></label>
       ${msg("generate")}
-      <button type="button" class="ann-btn alt" data-rd="generate"${dis(!ackGen)}>${busy === "generate" ? "Regenerating" : "Regenerate all policies"}</button></div></fieldset>`;
+      <p>Changed business/contact details above are saved before generating. Review each draft before publication.</p><button type="button" class="ann-btn alt" data-rd="generate"${dis(conflict)}>${busy === "generate" ? "Generating drafts" : bizDirty() ? "Save details and generate policy drafts" : "Generate policy drafts"}</button></div></fieldset>`;
     const list = `<h3>Current checks</h3>${saved && lastSection ? `<p class="ann-note" role="status">${esc(saved)}</p>` : ""}<ul>${chk.map(x => `<li>${x.complete ? "Complete" : "Needs attention"}: ${esc(x.label)}</li>`).join("")}</ul>
       <p class="ann-note">${allDone ? "Every check is complete. That does not mean the store is live. " : ""}Platform review, GST verification and supplier supply stay authoritative, and the editor checks everything again when you publish. There is no publish button here.</p>`;
     return `${head}

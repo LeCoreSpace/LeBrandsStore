@@ -52,6 +52,12 @@ export function validateTheme(s = {}) {
   if (!["rounded", "square", "pill"].includes(s.button_style)) errors.button_style = "Choose a button style.";
   return errors;
 }
+// Draft policies need supplier/contact facts, not a completed design or catalogue.
+export function validatePolicyDetails(settings = {}) {
+  const errors = validateBasics(settings);
+  const fields = ["brand_name", "legal_name", "address", "support_email", "support_phone", "gstin", "business_state"];
+  return Object.fromEntries(Object.entries(errors).filter(([key]) => fields.includes(key)));
+}
 export function validateProduct(p = {}) {
   const errors = {};
   if (length(p.title) < 3 || length(p.title) > 80) errors.title = "Use 3 to 80 characters for the product title.";

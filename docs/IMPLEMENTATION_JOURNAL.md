@@ -577,6 +577,32 @@ decision:
   update or publication was performed. Deploy manually with `pnpm run deploy`.
 
 ## Evidence and limitations
+### 19 October 2026: Ann policy drafts and merchant contact entry
+
+- **What:** Added a direct support email/phone form to dashboard Settings and
+  inline contact editing in Ann readiness and publication review. The Ann
+  readiness button saves changed business/contact details and generates six
+  policy drafts without sending the merchant to Settings; each draft can be
+  edited and reviewed within Ann or the publication review.
+- **How:** The existing tenant-protected setup/Ann endpoints save only changed
+  values, preserve verified supplier locks, and refresh the revision before
+  generating. Policy drafts require valid supplier identity and support
+  contacts, not completed design metadata, a logo or a brand description.
+  Regeneration uses an in-app confirmation when it replaces existing drafts.
+  Full go-live validation still requires logo, description, product and policy
+  review. Contact changes invalidate policy review, not published live content.
+- **Verification:** 27 focused Ann, wizard and dashboard tests passed. One
+  test uses an isolated database to save changed contacts, generate drafts
+  without a logo/description and confirm the resulting policy contact text.
+  Type checks and whitespace checks passed. An isolated browser check confirmed
+  dashboard contact save, HTTP 200 and persistence across reload with phone
+  normalisation. The browser could not enter Ann's final Review step because
+  its isolated fixture lacked required business-document evidence. Do not treat
+  that attempt as an Ann end-to-end pass or infer any live store approval state.
+  The native dashboard preview visibly renders the contact form.
+- **Release:** Uncommitted at this update. No migration, live merchant write
+  or production deployment was performed. Cloudflare deployment remains manual.
+
 ### 19 October 2026: Google Analytics public platform tag
 
 - **What:** Added the supplied GA4 measurement tag to public LeBrands.Store

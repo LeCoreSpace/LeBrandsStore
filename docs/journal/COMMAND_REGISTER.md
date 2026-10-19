@@ -1,5 +1,18 @@
 # Integration, migration and deployment command register
 
+## 19 October 2026: Ann policy and contact fix
+
+- Working directory: repository root.
+- **Executed locally:** `node --experimental-test-module-mocks --test --test-concurrency=1 tests/ann-readiness.test.js tests/dashboard-redesign.test.js tests/wizard.test.js` passed 27 focused checks, including isolated DB mutations.
+- **Executed locally:** `pnpm run typecheck` and `git diff --check` passed.
+- **Executed in isolated browser fixture:** dashboard Settings contact save and reload
+  under `/__ann-builder-preview/catalogue/settings`; HTTP 200, with phone
+  normalized and both fields persisted. Ann Review browser attempt was blocked
+  by the fixture's business-document prerequisite; no live merchant data was used.
+- **Suggested only, production mutation:** `pnpm run deploy`. Requires the
+  intended Cloudflare credentials/configuration; no migration is needed for
+  this change. Not executed by the agent.
+
 ## 19 October 2026: Google Analytics platform tag
 
 - Working directory: repository root.
