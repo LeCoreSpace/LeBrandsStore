@@ -1,5 +1,12 @@
 # Complete implementation checkpoint register
 
+### Admin session recovery published
+
+Owner-approved Cloudflare version `ea196084-e792-4501-bdea-3ac6482ba20f`
+serves all traffic. Live sign-in explanation, idempotent sign-out, origin
+protection and unchanged bindings verified. No database migration or manual
+commit created.
+
 ### Admin session recovery, local
 
 Added correct admin sign-in recovery for brand/expired sessions and

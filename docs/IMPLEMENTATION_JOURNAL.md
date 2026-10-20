@@ -1,5 +1,17 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Admin session recovery published
+
+- With explicit owner approval, published version
+  `ea196084-e792-4501-bdea-3ac6482ba20f` to the existing Cloudflare Worker;
+  confirmed 100% traffic and unchanged 25 bindings, 14 secrets and compatibility.
+- Live admin login serves the new brand/admin explanation. Anonymous admin,
+  support and review routes remain protected and no-store. POST admin logout
+  without a session clears the cookie and returns to admin sign-in;
+  cross-origin logout remains HTTP 403. Admin CSS/JS return HTTP 200.
+- No migration, credential reset, privilege grant or real-account session/data
+  operation was performed during publication verification.
+
 ## 2026-10-20: Admin session recovery, local verification
 
 - Diagnosed a brand session being rendered inside the admin support error frame.

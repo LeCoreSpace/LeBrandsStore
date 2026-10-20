@@ -1,5 +1,17 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Approved admin session recovery publication
+
+```sh
+pnpm exec wrangler deploy --keep-vars
+```
+
+Version `ea196084-e792-4501-bdea-3ac6482ba20f` serves 100% traffic.
+Read-only Cloudflare fingerprints confirm unchanged bindings, encrypted
+secrets and compatibility. Live login copy, no-session cookie clearing,
+cross-origin sign-out rejection, anonymous route protection and admin assets
+verified without a real-account login. No SQL or credential operation.
+
 ## 20 October 2026: Local admin session recovery verification
 
 ```sh
