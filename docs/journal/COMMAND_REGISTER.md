@@ -986,6 +986,20 @@ Workspace root, local source and Worker asset checks only:
 | `git diff --check` | Passed. |
 | Managed API preview restart | Rebuilt updated assets. No production publication or migration. |
 
+### 20 October 2026: Approved marketing integration release
+
+All commands below ran from the workspace root following explicit approval.
+Credentials were consumed internally and were not recorded.
+
+| Command / operation | Target, prerequisites, purpose and observed result |
+| --- | --- |
+| `node --test --test-concurrency=1 tests/marketing-integrations.test.js tests/checkout.test.js` | Local disposable data, no providers. All 27 passed, including the manual single-file migration selector. |
+| Selected Supabase ledger/checksum and Cloudflare settings preflight | Shared Supabase/production Worker, read-only. Prerequisites recorded, OAuth checksums matched, new marketing schema absent; captured existing binding and Razorpay-record fingerprints. Optional DNS-list metadata was unavailable; deployed Worker routes were verified. |
+| `node db/migrate.js --staged-marketing-integrations` | Approved shared Supabase administrative migration. Applied only the new additive migration atomically; committed successfully. Historical ledger checksums untouched. |
+| Post-migration metadata/permission verification | Shared Supabase, read-only. New checksum matched; three tables have forced RLS; API roles denied private access; zero configurations/jobs; existing Razorpay records unchanged. |
+| `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` | Approved production Cloudflare publication. Successful Worker/assets upload, regular routes, queue bindings and five-minute schedule. Preserved existing secrets and variables. |
+| Cloudflare settings comparison and live HTTP probes | Production, read-only. All non-asset bindings/runtime settings unchanged; login and new script/CSS assets and bundles returned 200; anonymous marketing-settings API returned 401 with no-store. No provider event or purchase was created. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

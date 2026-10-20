@@ -12,6 +12,12 @@ import{handleMarketingDashboard}from"../src/dashboard/marketing-routes.js";
 import{processMarketingStore}from"../src/marketing/worker.js";
 import{sha256}from"../src/auth/passwords.js";
 import{readMarketing,saveMarketing,metaToken,settingsResult}from"../src/marketing/service.js";
+import{migrationSelection}from"../db/migration-selection.js";
+test("manual marketing migration selects only the reviewed additive file",()=>{
+  assert.deepEqual(migrationSelection(["--staged-marketing-integrations"]),{
+    staged:true,filename:"0050_marketing_integrations.sql",requires:"0018_commerce_runtime.sql"
+  });
+});
 const A="10000000-0000-4000-8000-000000000001",B="20000000-0000-4000-8000-000000000001",V="30000000-0000-4000-8000-000000000001";
 const env={SESSION_SECRET:"isolated-test-encryption-material-not-a-secret"},pixel="123456789012345";
 test("minimal setup, strict input formats and optional advanced dependencies",()=>{

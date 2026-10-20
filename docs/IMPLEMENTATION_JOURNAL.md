@@ -1871,3 +1871,18 @@ decision:
   rejection, confirmed receipt values/deduplication, read-only roles and mobile.
   Cloudflare production-build dry run passed without publishing.
 - Setup, privacy boundaries and rollout guidance: `docs/marketing-integrations.md`.
+
+## 2026-10-20: Approved marketing production release
+
+- Applied only `0050_marketing_integrations.sql` through the manual migration
+  runner, then verified its ledger checksum, forced tenant RLS and effective
+  restricted application/API-role privileges.
+- Confirmed zero marketing configurations/jobs after migration and an unchanged
+  fingerprint of the existing Razorpay integration records.
+- Published the updated Cloudflare Worker with `--keep-vars`. Confirmed every
+  non-asset binding, secret name, variable and runtime compatibility setting was
+  preserved. The regular domain routes and five-minute schedule remain.
+- Verified live account login, new asset stubs and their versioned bundles,
+  plus rejection of unauthenticated marketing-settings access.
+- Release verification included 27 passing automated checks. Prior isolated
+  browser results remain valid; no merchant provider event or payment was sent.

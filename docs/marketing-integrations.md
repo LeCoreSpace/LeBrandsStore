@@ -2,13 +2,15 @@
 
 ## Release boundary
 
-This feature is prepared locally. Applying its shared-database migration and
-publishing the updated Cloudflare Worker require separate approval. No existing
-store is automatically opted into Meta or Google tracking.
+The shared-database migration and Cloudflare publication were separately
+approved and completed on 20 October 2026. No existing store was automatically
+opted into Meta or Google tracking. Future migrations and publications still
+require their own approval.
 
 The additive migration is `db/staged/0050_marketing_integrations.sql`. Use the
 existing migration/checksum procedure and apply this new file only. Do not
 reapply or rewrite historical migrations to make their recorded names match.
+The reviewed command is `node db/migrate.js --staged-marketing-integrations`.
 Existing Razorpay authorisations, payment activation, COD and invoice rules
 must remain unchanged.
 
