@@ -2,6 +2,7 @@
  * Visual section library dialog. Browse every section family across themes; add or remove
  * only the optional sections the current page supports, through the injected onToggle.
  */
+import { bindingFor, needsRecord, usableKinds, bindingKinds, KIND_LABEL } from "./section-insert-rules.js";
 import { SECTION_CATEGORIES, SECTION_THEMES, libraryEntries, sectionDisplayName } from "./section-library.js";
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -30,7 +31,8 @@ export function openSectionLibrary(o) {
   const prev = document.activeElement;
   const previousOverflow=document.body.style.overflow;
   document.body.style.overflow="hidden";
-  const st = { query: "", category: "", theme: "", detail: null, msg: "", err: false };
+  const inst = o.instances || null;
+  const st = { query: "", category: "", theme: "", detail: null, msg: "", err: false, kind: "", rec: "" };
   const root = document.createElement("div");
   root.className = "sl-back";
   root.innerHTML = `<div class="sl" role="dialog" aria-modal="true" aria-labelledby="sl-title" tabindex="-1"></div>`;
@@ -38,10 +40,23 @@ export function openSectionLibrary(o) {
   const dlg = root.firstElementChild;
   const can = () => !o.readOnly && Boolean(o.ready());
   const themes = () => [...new Set((o.themes || []).concat(libraryEntries({ allowedTypes: allowed, selectedTypes: [] }).flatMap(e => e.themeIds || [])))];
-  const list = () => libraryEntries({ query: st.query, category: st.category, theme: st.theme, allowedTypes: allowed, selectedTypes: o.selectedTypes() });
+  const lift = items => inst ? items.map(e => ({ ...e, available: e.kind !== "global" && bindingKinds(e.id, page).length > 0, selected: false })) : items;
+  const list = () => lift(libraryEntries({ query: st.query, category: st.category, theme: st.theme, allowedTypes: allowed, selectedTypes: o.selectedTypes?.() || [] }));
+  const full = () => inst && inst.count() >= inst.limit;
+  const recs = () => inst.records();
+  function bindingUi(e) {
+    const u = usableKinds(e.id, page, recs());
+    if (!u.kinds.length) return { html: `<p class="sl-note" data-sl-why>${esc(u.reason)}</p>`, ok: false };
+    if (!u.kinds.includes(st.kind)) st.kind = u.kinds[0];
+    const r = recs(), pool = st.kind === "product" ? r.products : r.collections;
+    if (needsRecord(st.kind) && !pool.some(x => x.id === st.rec)) st.rec = pool[0]?.id || "";
+    const kindSel = u.kinds.length > 1 ? `<label class="sl-bind">Shows<select data-sl-kind>${u.kinds.map(k => `<option value="${k}"${k === st.kind ? " selected" : ""}>${esc(KIND_LABEL[k])}</option>`).join("")}</select></label>` : `<p class="sl-note">${esc(KIND_LABEL[st.kind])}.</p>`;
+    const recSel = needsRecord(st.kind) ? `<label class="sl-bind">${st.kind === "product" ? "Product" : "Collection"}<select data-sl-rec>${pool.map(x => `<option value="${esc(x.id)}"${x.id === st.rec ? " selected" : ""}>${esc(x.name)}</option>`).join("")}</select></label>` : "";
+    return { html: kindSel + recSel, ok: true };
+  }
 
   function card(e) {
-    const act = e.available
+    const act = inst ? `<span class="sl-tag ${e.available ? "is-on" : ""}">${e.available ? "Can add here" : "View only"}</span>` : e.available
       ? `<span class="sl-tag ${e.selected ? "is-on" : ""}">${e.selected ? "On this page" : "Available on this page"}</span>`
       : `<span class="sl-tag">View only</span>`;
     return `<li class="sl-item"><button type="button" class="sl-open" data-sl-open="${esc(e.id)}">${layoutIllustration(e.id)}<strong>${esc(e.name)}</strong><span class="sl-desc">${esc(e.description)}</span>${act}</button></li>`;
@@ -49,6 +64,12 @@ export function openSectionLibrary(o) {
   function detail(e) {
     const names = (e.layouts || []).map(l => `<li>${esc(l.name)}<small>${l.themeId === "shared" ? "Shared layout" : esc(themeName(l.themeId))}</small></li>`).join("");
     const canAct = e.available && can();
+    if (inst) {
+      const b = e.available ? bindingUi(e) : { html: `<p class="sl-note">View only. This section cannot be added to the ${esc(cap(page))} page.</p>`, ok: false };
+      const lim = full(), dis = !(can() && b.ok && !lim);
+      const where = inst.afterId ? "after the selected section" : "at the start of the page";
+      return `<button type="button" class="sl-back-btn" data-sl-back>Back to all sections</button><div class="sl-detail">${layoutIllustration(e.id)}<div><h3>${esc(e.name)}</h3><p>${esc(e.description)}</p><p class="sl-note">Layout diagram, not a screenshot of your store. Your theme decides the final look.</p></div></div>${e.available ? `<div class="sl-binds">${b.html}</div>` : b.html}<p class="sl-note">${inst.count()} of ${inst.limit} added sections used. Adding places it ${where}. You can add the same section more than once.</p>${lim ? `<p class="sl-note" role="alert">This page has reached its limit of ${inst.limit} added sections. Delete one to add another.</p>` : ""}<button type="button" class="sl-primary" data-sl-insert="${esc(e.id)}"${dis ? " disabled" : ""}>Add to ${esc(cap(page))} page</button>${can() ? "" : `<p class="sl-note">An editable saved design is required to add sections.</p>`}`;
+    }
     const btn = !e.available ? `<p class="sl-note">View only. This section cannot be added to the ${esc(cap(page))} page in this release.</p>`
       : `<button type="button" class="sl-primary" data-sl-add="${esc(e.optionalType)}" data-on="${e.selected ? "0" : "1"}"${canAct ? "" : " disabled"}>${e.selected ? "Remove from " : "Add to "}${esc(cap(page))} page</button>${canAct ? "" : `<p class="sl-note">An editable saved design on this page is required to change sections.</p>`}`;
     return `<button type="button" class="sl-back-btn" data-sl-back>Back to all sections</button><div class="sl-detail">${layoutIllustration(e.id)}<div><h3>${esc(e.name)}</h3><p>${esc(e.description)}</p><p class="sl-note">Layout illustration, not a screenshot of your store.</p></div></div><h4>Existing layouts</h4><ul class="sl-layouts">${names || "<li>No layouts listed</li>"}</ul>${btn}`;
@@ -57,10 +78,10 @@ export function openSectionLibrary(o) {
     const input=dlg.querySelector("[data-sl-q]");
     const keepQ = input === document.activeElement;
     const selection=keepQ?[input.selectionStart,input.selectionEnd]:null;
-    const all = list(), cur = st.detail ? libraryEntries({ allowedTypes: allowed, selectedTypes: o.selectedTypes() }).find(e => e.id === st.detail) : null;
+    const all = list(), cur = st.detail ? lift(libraryEntries({ allowedTypes: allowed, selectedTypes: o.selectedTypes?.() || [] })).find(e => e.id === st.detail) : null;
     const th = themes();
     dlg.innerHTML = `<div class="sl-head"><h2 id="sl-title">Section library</h2><button type="button" class="sl-x" data-sl-close>Close</button></div>
-<p class="sl-note">Browse every section family. Only optional sections supported on the ${esc(cap(page))} page can be added. Browsing never changes your store style. Header and footer are global and are not added here.</p>
+<p class="sl-note">${inst ? `Add any section family to the ${esc(cap(page))} page as its own copy.` : `Browse every section family. Only optional sections supported on the ${esc(cap(page))} page can be added.`} Browsing never changes your store style. Header and footer are global and are not added here.</p>
 <div class="sl-msg ${st.err ? "is-err" : ""}" role="status">${esc(st.msg)}</div>
 ${cur ? detail(cur) : `<div class="sl-filters"><label>Search<input type="search" data-sl-q value="${esc(st.query)}" placeholder="Search sections"></label><label>Category<select data-sl-cat><option value="">All categories</option>${SECTION_CATEGORIES.map(c => `<option value="${esc(c.id)}"${st.category === c.id ? " selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label><label>Theme<select data-sl-theme><option value="">All themes</option>${th.map(t => `<option value="${esc(t)}"${st.theme === t ? " selected" : ""}>${esc(themeName(t))}</option>`).join("")}</select></label></div>
 <p class="sl-count">${all.length} section ${all.length === 1 ? "family" : "families"}</p>${all.length ? `<ul class="sl-grid">${all.map(card).join("")}</ul>` : `<p class="sl-empty">No sections match. Clear the search or filters.</p>`}`}`;
@@ -82,8 +103,19 @@ ${cur ? detail(cur) : `<div class="sl-filters"><label>Search<input type="search"
     const b = e.target.closest("button"); if (!b || b.disabled) return;
     const d = b.dataset;
     if ("slClose" in d) close();
-    else if (d.slOpen) { st.detail = d.slOpen; st.msg = ""; paint("[data-sl-back]"); }
+    else if (d.slOpen) { st.detail = d.slOpen; st.msg = ""; st.kind = ""; st.rec = ""; paint("[data-sl-back]"); }
     else if ("slBack" in d) { const id = st.detail; st.detail = null; st.msg = ""; paint(`[data-sl-open="${id}"]`); }
+    else if (d.slInsert && inst) {
+      if (!can() || full()) return;
+      const fam = d.slInsert, u = usableKinds(fam, page, recs()); if (!u.kinds.includes(st.kind)) return;
+      const name = sectionDisplayName(fam, cap(fam));
+      try {
+        const id = inst.add(fam, bindingFor(st.kind, needsRecord(st.kind) ? st.rec : undefined));
+        st.err = !id; st.msg = id ? `${name} added to the ${cap(page)} page. ${inst.count()} added ${inst.count() === 1 ? "section" : "sections"} on this page. Save draft to keep it.` : `${name} could not be added.`;
+        if (id) inst.afterId = id;
+      } catch (err) { st.err = true; st.msg = `${name} could not be added. ${String(err?.message || "").slice(0, 140)}`; }
+      paint("[data-sl-insert]");
+    }
     else if (d.slAdd) {
       if (!can()) return;
       const entry=libraryEntries({allowedTypes:allowed,selectedTypes:o.selectedTypes()}).find(item=>item.available&&item.optionalType===d.slAdd);
@@ -100,6 +132,8 @@ ${cur ? detail(cur) : `<div class="sl-filters"><label>Search<input type="search"
   root.addEventListener("change", e => {
     let selector;
     if (e.target.matches("[data-sl-cat]")) {st.category = e.target.value;selector="[data-sl-cat]";}
+    else if (e.target.matches("[data-sl-kind]")) { st.kind = e.target.value; selector = "[data-sl-kind]"; }
+    else if (e.target.matches("[data-sl-rec]")) { st.rec = e.target.value; selector = "[data-sl-rec]"; }
     else if (e.target.matches("[data-sl-theme]")) {st.theme = e.target.value;selector="[data-sl-theme]";}
     else return;
     paint(selector);

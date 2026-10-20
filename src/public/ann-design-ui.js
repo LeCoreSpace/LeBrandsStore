@@ -9,6 +9,8 @@ import {validateDesignMenus,defaultDesignMenus} from "./ann-menu-model.js";
 import { designNeutralCopy } from "./aura-showcase.js";
 import { AURA_STYLES } from "./aura-styles.js";
 import { mountRichEditor, richEditorMarkup } from "./ann-rich-editor.js";
+import {createSectionInstance,insertSectionInstance,removeSectionInstance,copyInstanceFields,clearInstanceFields} from "./section-instance-model.js";
+import {validDesignSections} from "./ann-section-layout.js";
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export function designToolsMarkup(content) {
@@ -62,7 +64,7 @@ export function attachAnnDesign(o) {
   const editing = () => active() && !readOnly && editMode && mode() === "store" && sameStyle();
   const captureHistory=()=>model?structuredClone({copy:model.copy,formatting:model.formatting,media:model.media,sections:model.sections,catalogue_mode:model.catalogue_mode,menus:model.menus,plan:planPayload()}):null;
   function remember(group=""){
-    if(!o.themeEditor||readOnly||!model)return;
+    if(readOnly||!model)return;
     const next=captureHistory();
     if(JSON.stringify(next)===JSON.stringify(historyState))return;
     const now=Date.now(),typing=group.startsWith("copy:");
@@ -71,7 +73,13 @@ export function attachAnnDesign(o) {
     }
     historyState=next;historyGroup=group;historyTime=now;
   }
-  const canUndo=()=>Boolean(o.themeEditor&&!readOnly&&model&&!busy&&!conflict&&undoStack.length);
+  function canEditSections(){return Boolean(!readOnly&&model&&active()&&!busy&&!conflict&&!menuDraftError);}
+  function requireSectionEdit(){if(!canEditSections())throw new Error("Editing is unavailable right now. Your existing draft is unchanged.");}
+  function commitSectionModel(next){
+    if(!validDesignSections(next.sections))throw new Error("Choose a valid section arrangement.");
+    model=next;planDirty=true;selected=null;remember();paint(true);o.onChange?.();
+  }
+  const canUndo=()=>Boolean(canEditSections()&&undoStack.length);
   function undo(){
     if(!canUndo())return;
     const previous=undoStack.pop();
@@ -82,6 +90,7 @@ export function attachAnnDesign(o) {
     planDirty=JSON.stringify(planPayload())!==savedPlan;
     historyState=captureHistory();historyGroup="";selected=null;error="";menuDraftError="";menuRevision++;
     paint(true);markSelected();say("Last edit undone. Save draft to keep this version.");o.onChange?.();
+    return true;
   }
 
   async function call(method, payload) {
@@ -157,6 +166,8 @@ export function attachAnnDesign(o) {
       if(key.startsWith("section.")&&!Object.hasOwn(live.copy,key))live.copy[key]=null;
     for(const key of Object.keys(design?.formatting||{}))
       if(!Object.hasOwn(live.formatting,key))live.formatting[key]=null;
+    for(const key of Object.keys(design?.media||{}))
+      if(key.startsWith("section.")&&!Object.hasOwn(live.media,key))live.media[key]=null;
     try {
       const { res, body } = await call("PATCH", { expected_draft: expected, confirm: true, copy: live.copy, formatting: { ...live.formatting }, media: mediaIds(live.media),sections:model.sections,menus:structuredClone(model.menus),catalogue_mode:model.catalogue_mode, answers: sentPlan });
       if (res.status === 409) { conflict = true; throw new Error("Another window changed this draft. Your edits are kept here and nothing was overwritten."); }
@@ -552,7 +563,36 @@ export function attachAnnDesign(o) {
       if (!active() || !sameStyle()) return null;
       return { version: 1, style: model.style, media_pack: model.media_pack,catalogue_mode:model.catalogue_mode,sections:structuredClone(model.sections),...(model.menus===null?{}:{menus:structuredClone(model.menus)}), plan: planPayload(), copy: { ...model.copy }, formatting: { ...model.formatting }, media: { ...model.media } };
     },
-    setSections(value){if(readOnly||!model)return;model.sections=structuredClone(value);planDirty=true;remember();paintDynamic();o.onChange?.();},
+    canEditSections:()=>canEditSections(),
+    setSections(value){
+      if(!canEditSections()||!validDesignSections(value))return false;
+      model.sections=structuredClone(value);planDirty=true;remember();paintDynamic();o.onChange?.();return true;
+    },
+    addSection(page,family,binding,afterId,order){
+      requireSectionEdit();
+      const instance=createSectionInstance(family,binding);
+      const next=insertSectionInstance(model.sections,page,instance,order,afterId);
+      commitSectionModel({...model,sections:next});
+      return instance.id;
+    },
+    duplicateSection(page,id,order){
+      requireSectionEdit();
+      const source=model.sections?.[page]?.instances?.find(i=>i.id===id);
+      if(!source)throw new Error("Choose an added section to duplicate.");
+      const instance=createSectionInstance(source.family,source.binding);
+      const next=copyInstanceFields(model,page,id,instance.id);
+      next.sections=insertSectionInstance(model.sections,page,instance,order,id);
+      commitSectionModel(next);
+      return instance.id;
+    },
+    removeSection(page,id){
+      requireSectionEdit();
+      const sections=removeSectionInstance(model.sections,page,id);
+      if(!sections)return false;
+      const next=clearInstanceFields(model,page,id);next.sections=sections;
+      commitSectionModel(next);
+      return true;
+    },
     getMenus(){return structuredClone(model?.menus??defaultDesignMenus(menuSource));},
     getMenuRevision:()=>menuRevision,
     setMenus(value,{typing=false}={}){if(readOnly||!model||conflict)return;const next=value===null?null:validateDesignMenus(value);menuDraftError="";if(JSON.stringify(next)===JSON.stringify(model.menus)){o.onChange?.();return;}model.menus=next;remember(typing?"copy:menus":"menus");paintDynamic();o.onChange?.();},

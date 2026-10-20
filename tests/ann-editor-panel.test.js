@@ -2,11 +2,14 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import vm from "node:vm";
+import {instanceOnlySections} from "../src/public/section-instance-model.js";
+import {sectionMeta,nextSections} from "../src/public/ann-design-workspace.js";
 
 // Execute the real page controller with small DOM/dependency doubles. No
 // account, network or merchant data is involved in sidebar navigation checks.
 function editor(role="owner"){
   const events=new Map(),nodes=new Map(),calls=[];
+  let workspaceOptions,refreshes=0;
   const node=()=>({
     dataset:{},attrs:{},style:{},disabled:false,hidden:false,innerHTML:"",
     querySelectorAll:()=>[],querySelector:()=>null,contains:()=>false,
@@ -30,7 +33,9 @@ function editor(role="owner"){
       addEventListener:(type,fn)=>{const list=events.get(type)||[];list.push(fn);events.set(type,list);}},
     window:{addEventListener(){}},CSS:{escape:v=>v},ResizeObserver:class{observe(){}},structuredClone,setTimeout,clearTimeout,queueMicrotask,
     attachAnnDesign:()=>controller,designPreviewData:(source,d)=>({...source,settings:{...source.settings,ann_design:d}}),
-    renderStylePreview:()=>"<main>Preview</main>",designSections:()=>({sections:[{id:"main-hero-0",label:"Hero"}]}),
+    attachAnnWorkspace:options=>{workspaceOptions=options;return{slot:()=>get("#context-slot"),refresh(){refreshes++;}};},
+    sectionMeta,nextSections,instanceOnlySections,
+    renderStylePreview:()=>"<main><section><h1>Preview</h1></section></main>",designSections:()=>({sections:[{id:"main-0",label:"Hero"}]}),
     annPreviewConfiguration:()=>({theme:{}}),ANN_EXTRA_SECTIONS:{home:["lookbook"]},
     ANN_SECTION_LABELS:{lookbook:"Lookbook"},DESIGN_COPY_LIMITS:{title:100},DESIGN_MEDIA_KEYS:["hero"],
   });
@@ -39,40 +44,32 @@ function editor(role="owner"){
   const emit=(type,target,extra={})=>{
     for(const fn of events.get(type)||[])fn({target:{...target,closest:()=>target},preventDefault(){},...extra});
   };
-  return {get,tabs,calls,emit,controller};
+  return {get,tabs,calls,emit,controller,workspace:workspaceOptions,get refreshes(){return refreshes;}};
 }
 
-test("editor panels switch with clicks and keyboard and survive page/canvas refresh",()=>{
+test("standalone editor delegates sidebar lifecycle and page changes to the shared workspace",()=>{
   const h=editor();
-  h.emit("click",h.tabs[2]);
-  assert.equal(h.get("#ae-tools").dataset.tab,"style");
-  assert.equal(h.get("#ae-content").attrs["aria-labelledby"],"ae-tab-style");
-  assert.equal(h.tabs[2].attrs["aria-selected"],true);
-  h.emit("change",{id:"ae-page-select",value:"about"});
-  assert.equal(h.get("#ae-page-select").value,"about");
-  assert.equal(h.get("#ae-tools").dataset.tab,"style","Preview refresh retains the selected panel");
-  h.emit("keydown",h.tabs[2],{key:"Home"});
-  assert.equal(h.get("#ae-tools").dataset.tab,"sections");
-  assert.equal(h.tabs[0].focused,true);
-  h.emit("keydown",h.tabs[0],{key:"ArrowRight"});
-  assert.equal(h.get("#ae-tools").dataset.tab,"content");
-  assert.equal(h.get("#ae-content").attrs["aria-labelledby"],"ae-tab-content");
-  h.emit("click",{dataset:{aeEdit:"copy",key:"title"}});
-  assert.deepEqual(h.calls,[["select","copy","title"]]);
+  assert.equal(h.workspace.variant,"sidebar");
+  assert.equal(h.workspace.mount,h.get("#ae-tools"));
+  assert.equal(h.workspace.controller(),h.controller);
+  assert.equal(h.workspace.getPage(),"home");
+  const count=h.refreshes;
+  h.workspace.setPage("about");
+  assert.equal(h.workspace.getPage(),"about");
+  assert.ok(h.refreshes>count,"Page changes refresh the existing shared panel, not an old separate tab bar");
+  assert.equal(h.workspace.readOnly,false);
 });
 
 test("new section controls preserve editing hooks and read-only boundaries",()=>{
   const h=editor();
-  assert.match(h.get("#ae-sections").innerHTML,/data-ae-edit="section" data-key="main-hero-0"/);
-  assert.match(h.get("#ae-sections").innerHTML,/data-ae-extra="lookbook"/);
-  h.emit("click",{dataset:{aeSection:"main-hero-0"},hasAttribute:()=>true});
+  assert.ok(h.workspace.sectionInfo().meta.has("main-0"));
+  h.workspace.onSectionAction("main-0","toggle");
   assert.deepEqual(h.calls,[["sections"]]);
   const viewer=editor("viewer");
-  viewer.emit("change",{dataset:{aeExtra:"lookbook"},checked:true});
-  viewer.emit("click",{dataset:{aeSection:"main-hero-0"},hasAttribute:()=>true});
+  assert.equal(viewer.workspace.readOnly,true);
+  viewer.workspace.setExtra("lookbook",true);
+  viewer.workspace.onSectionAction("main-0","toggle");
   assert.deepEqual(viewer.calls,[]);
-  assert.match(viewer.get("#ae-sections").innerHTML,/data-ae-extra="lookbook" disabled/);
-  assert.equal(viewer.get("#ae-own").disabled,true);
-  viewer.emit("change",{id:"ae-page-select",value:"product"});
-  assert.equal(viewer.get("#ae-page-select").value,"product","Read-only members can still preview pages");
+  viewer.workspace.setPage("product");
+  assert.equal(viewer.workspace.getPage(),"product","Read-only members can still preview pages");
 });

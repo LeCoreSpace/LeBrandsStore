@@ -16,6 +16,7 @@ import { prefilledSection } from "../public/aura-starters.js";
 import { validDesignSections } from "../public/ann-section-layout.js";
 import {validateDesignMenus} from "../public/ann-menu-model.js";
 import {validRichTextDocument,richTextPlain} from "../public/ann-rich-text.js";
+import {sectionBindingError} from "../public/section-instance-model.js";
 
 const plain = value => value !== null && typeof value === "object" && !Array.isArray(value);
 const conflict = () => { throw Object.assign(new Error("Your store draft changed in another window. Reload the saved design before trying again. Your unsaved edits are kept."), { status: 409 }); };
@@ -136,7 +137,11 @@ export async function saveAnnDesign(tx, storeId, userId, raw, creating = false) 
     }
     if(!Object.keys(design.formatting).length)delete design.formatting;
   }
-  if(body.sections)design.sections=structuredClone(body.sections);
+  if(body.sections){
+    const bindingError=sectionBindingError(body.sections,data);
+    if(bindingError)throw badInput(bindingError);
+    design.sections=structuredClone(body.sections);
+  }
   if(body.menus===null)delete design.menus;
   else if(body.menus!==undefined)design.menus=structuredClone(body.menus);
   if(body.catalogue_mode)design.catalogue_mode=body.catalogue_mode;

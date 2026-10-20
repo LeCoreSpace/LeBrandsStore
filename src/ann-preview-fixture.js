@@ -142,6 +142,40 @@ export async function setupAnnFixtureDatabase({samplePolicies=false,sampleCatalo
   } catch (error) { await pg.close(); throw error; }
 }
 const getDatabase = () => database ||= setupAnnFixtureDatabase({samplePolicies:true,sampleCatalogue:true,verifiedBusiness:true,businessDocuments:true,businessAccess:true,catalogueApi:true,sampleClassification:true,catalogueCustomValues:true}).catch(error => { database = null; throw error; });
+let sectionEditorReady;
+async function prepareSectionEditorPreview(db){
+  return sectionEditorReady||= (async()=>{
+    // Fictional PGlite records only. Exercise the actual evidence and design
+    // handlers instead of disabling either production editor guard.
+    const user={id:ownerId},hash="a".repeat(64);
+    const access=await db.withMemberStore(storeId,hash,tx=>businessEditorAccess(tx,storeId,hash));
+    if(!access.allowed){
+      const {handleBusinessDocumentRoutes}=await import("./store/business-document-routes.js");
+      const metadataResponse=await handleBusinessDocumentRoutes(new Request(`${APP_ORIGIN}/api/stores/${storeId}/business-verification`),
+        {},db,user,hash);
+      const metadata=await metadataResponse.json();
+      const form=new FormData();
+      form.set("details",JSON.stringify({expected_revision:0,country_code:"IN",legal_name:metadata.gst.legal_name,
+        registration_type:"gst_registered",registration_number:metadata.gst.gstin,document_type:"gst_certificate",explanation:""}));
+      form.set("file",new Blob(["%PDF-1.4\n1 0 obj << /Type /Catalog >> endobj\n%%EOF\n"],{type:"application/pdf"}),"fictional-proof.pdf");
+      const response=await handleBusinessDocumentRoutes(new Request(`${APP_ORIGIN}/api/stores/${storeId}/business-verification`,
+        {method:"POST",headers:{origin:APP_ORIGIN},body:form}),
+        {BUSINESS_DOCUMENT_RETENTION_DAYS:"90",BUSINESS_DOCUMENT_SCANNER:{async fetch(){return Response.json({clean:true,engine:"configured"});}},BUSINESS_DOCUMENTS:fixtureBusinessStorage},
+        db,user,hash);
+      if(!response.ok)throw new Error(`Synthetic document submission failed: ${await response.text()}`);
+    }
+    const call=(method,body)=>handleAnnRoutes(new Request(`${APP_ORIGIN}/api/stores/${storeId}/ann/design`,
+      {method,headers:{origin:APP_ORIGIN,"content-type":"application/json"},...(body?{body:JSON.stringify(body)}:{})}),{},db,user,hash);
+    const response=await call("GET"),state=await response.json();
+    if(!response.ok)throw new Error("Synthetic design state could not be read.");
+    if(!state.design){
+      const saved=await call("POST",{confirm:true,expected_draft:state.expected_draft,catalogue_mode:"own",
+        answers:{category_id:1,subcategory_id:1,style_preset:"boutique",store_name:"Example Studio",
+          tagline:"Preview collection",description:"Fictional catalogue for isolated section editing tests."}});
+      if(!saved.ok)throw new Error(`Synthetic design adoption failed: ${await saved.text()}`);
+    }
+  })().catch(error=>{sectionEditorReady=null;throw error;});
+}
 export function annFixtureAdapter(pg) {
   return { withMemberStore: async (id, hash, fn) => {
     if (id !== storeId || !["a".repeat(64), "b".repeat(64)].includes(hash))
@@ -250,7 +284,8 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     }else if(url.pathname===`${prefix}/review`&&["GET","HEAD"].includes(req.method)){
       const draft=await db.withMemberStore(storeId,hash,tx=>loadDraft(tx,storeId));
       response=new Response(renderWizard(draft,{}, {reviewOnly:true}).replace('id="wizard"','id="wizard" data-visual-only="true"'),{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});
-    } else if(url.pathname===`${prefix}/editor`&&["GET","HEAD"].includes(req.method)){
+    } else if([`${prefix}/editor`,`${prefix}/sections-editor`].includes(url.pathname)&&["GET","HEAD"].includes(req.method)){
+      if(url.pathname===`${prefix}/sections-editor`)await prepareSectionEditorPreview(db);
       const draft=await db.withMemberStore(storeId,hash,tx=>loadEditorDraft(tx,storeId));
       if(!draft.settings.ann_design)response=new Response("Save an Ann design in the isolated preview first.",{status:409});
       else response=new Response(renderAnnThemeEditor({...draft,role:readonly?"editor":"owner",ann_api_root:`${prefix}/${readonly?"read-only-api":"api"}`,ann_root:prefix},user),{headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store"}});

@@ -2,6 +2,7 @@
 // merchants send bounded identifiers, never HTML.
 import { ANN_SECTION_LABELS } from "./ann-config.js";
 import { sectionLibraryEntry } from "./section-library.js";
+import { INSTANCE_ID,validInstanceDocument } from "./section-instance-model.js";
 const SECTION_NAMES = {
   hero:"Hero",top:"Introduction",offers:"Offers and promotions",badges:"Payment, delivery and trust",
   stats:"Store highlights",quote:"Brand statement",band:"Brand statement",statement:"Brand statement",
@@ -30,7 +31,8 @@ function sectionEntry(body,index,page,seen){
   const label=(family?.name||semantic||accessible||heading?.replace(/<[^>]+>/g,"")||name.replace(/-/g," ")||"Content block")
     .replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"').slice(0,100);
   const n=seen.get(name)||0;seen.set(name,n+1);
-  return {id:required?`slot-core-${page}-0`:name?`slot-${name}-${n}`:`main-${index}`,label,html:body,required,type};
+  const instanceId=/data-section-instance=["']([^"']+)["']/.exec(root)?.[1];
+  return {id:required?`slot-core-${page}-0`:INSTANCE_ID.test(instanceId||"")?instanceId:name?`slot-${name}-${n}`:`main-${index}`,label,html:body,required,type};
 }
 export function designSections(html,page="home") {
   if(!PAGES.includes(page))return {sections:[],before:html,after:""};
@@ -49,9 +51,9 @@ export function designSections(html,page="home") {
 export function validDesignSections(value) {
   if(!value||typeof value!=="object"||Array.isArray(value)||Object.keys(value).some(k=>!PAGES.includes(k)))return false;
   return Object.entries(value).every(([page,entry])=>entry&&typeof entry==="object"&&!Array.isArray(entry)&&
-    Object.keys(entry).every(k=>["order","hidden"].includes(k))&&["order","hidden"].every(k=>entry[k]===undefined||
+    Object.keys(entry).every(k=>["order","hidden","instances"].includes(k))&&["order","hidden"].every(k=>entry[k]===undefined||
       Array.isArray(entry[k])&&entry[k].length<=40&&new Set(entry[k]).size===entry[k].length&&entry[k].every(id=>typeof id==="string"&&SLOT.test(id)))&&
-    (!["product","contact"].includes(page)||!entry.hidden?.some(id=>["main-0",`slot-core-${page}-0`].includes(id))&&(!entry.order?.length||["main-0",`slot-core-${page}-0`].includes(entry.order[0]))));
+    (!["product","contact"].includes(page)||!entry.hidden?.some(id=>["main-0",`slot-core-${page}-0`].includes(id))&&(!entry.order?.length||["main-0",`slot-core-${page}-0`].includes(entry.order[0]))))&&validInstanceDocument(value);
 }
 export function applyDesignSections(html,value,page="home") {
   if(!value?.[page]||!validDesignSections(value)||html.includes('data-ann-arranged="true"'))return html;

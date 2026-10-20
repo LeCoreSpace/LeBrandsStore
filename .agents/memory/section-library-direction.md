@@ -23,3 +23,13 @@ correct storefront navigation and transactions.
 **How to apply:** Preserve old saved identities when changing display names.
 Browsing a section must not imply that it can already be inserted: insertion
 still needs a supported data model, page context and edit permission.
+
+The user specifically wants inserting and moving sections to feel "very smooth
+drag and drop like butter", while retaining the compact ticket-style editor.
+
+**Why:** The user made interaction quality an explicit condition of the next
+phase, not just the availability of an Add button or reorder arrows.
+
+**How to apply:** Preserve direct insertion points, clear drag feedback and
+cancel/Undo behaviour. Treat mouse, touch and keyboard handling as part of the
+same editing experience, without filling the workspace with extra toolbars.

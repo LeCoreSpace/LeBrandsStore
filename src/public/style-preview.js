@@ -1,5 +1,6 @@
 import { renderAura } from "./aura.js";
 import { applyDesignSections } from "./ann-section-layout.js";
+import { injectSectionInstances,SECTION_INSTANCE_CSS } from "./section-instances.js";
 import { applyDesignContent } from "./ann-section-content.js";
 import { applyRichDesignText } from "./ann-rich-text.js";
 import { starterPreview, prefilledSection } from "./aura-starters.js";
@@ -54,6 +55,7 @@ export function designPreviewData(source, design) {
   const defaults = starterLayouts(data);
   data.layouts = Object.fromEntries(Object.entries(defaults).map(([key, value]) => [key, data.layouts?.[key]?.length ? data.layouts[key] : value]));
   data.settings = { ...(data.settings || {}), ann_design: structuredClone(design) };
+  data.section_source={products:structuredClone(source.products||[]),collections:structuredClone(source.collections||[])};
   data.style_demo = design.catalogue_mode==="sample";
   return data;
 }
@@ -62,6 +64,8 @@ export function renderStylePreview(data, settings, options = {}) {
   const merged = { ...styled.settings, ...settings };
   const logo=safeImage(merged.logo_url);
   const finish=html=>{
+    html=injectSectionInstances(html,data.settings?.ann_design?.sections,data,options);
+    html=html.replace("</head>",`<style>${SECTION_INSTANCE_CSS}</style></head>`);
     html=applyDesignContent(html,data.settings?.ann_design,options.page||"home",Boolean(options.designEdit));
     html=applyDesignSections(html,data.settings?.ann_design?.sections,options.page||"home");
     html=applyRichDesignText(html,data.settings?.ann_design);

@@ -1,6 +1,7 @@
 import { resolveShowcasePack } from "./aura-showcase-assets.js";
 import { ANN_STEPS, ANN_PALETTES, ANN_FONTS, ANN_EXTRA_SECTIONS, annPreviewConfiguration, annNavigationSteps, annNavigationKey } from "./ann-config.js";
 import { AURA_STYLES, styleSettings } from "./aura-styles.js";
+import {instanceOnlySections} from "./section-instance-model.js";
 import { stylePreviewData, renderStylePreview, designPreviewData } from "./style-preview.js";
 import { attachAnnDesign } from "./ann-design-ui.js";
 import { attachAnnWorkspace, sectionMeta, nextSections } from "./ann-design-workspace.js";
@@ -231,12 +232,12 @@ designUI = attachAnnDesign({ api, root, readOnly, businessAllowed:editorAccess.a
 
 let wsCache = { key: "", value: { meta: new Map(), map: new Map() } };
 function baseHtml() {
-  const d = current?.settings?.ann_design; if (!d) return "";
-  const b = structuredClone(current); b.settings.ann_design.sections = {};
+  const d = designUI?.previewDesign()||current?.settings?.ann_design; if (!d||!current) return "";
+  const b = structuredClone(current); b.settings.ann_design = {...structuredClone(d),sections:instanceOnlySections(d.sections)};
   return renderStylePreview(b, config().theme, { page, productId, collectionId, policyKind, designEdit: true });
 }
 function sectionInfo() {
-  const d = current?.settings?.ann_design, key = JSON.stringify([page, productId, collectionId, d?.style, d?.sections, answers.section_options, displayedKey]);
+  const d = designUI?.previewDesign()||current?.settings?.ann_design, key = JSON.stringify([page, productId, collectionId, d?.style, d?.sections, answers.section_options, displayedKey]);
   if (!d) return { meta: new Map(), map: new Map() };
   if (wsCache.key !== key) wsCache = { key, value: sectionMeta(baseHtml(), d.sections || {}, page) };
   return wsCache.value;

@@ -1,4 +1,5 @@
 import {attachAnnDesign} from "./ann-design-ui.js";
+import {instanceOnlySections} from "./section-instance-model.js";
 import {designPreviewData,renderStylePreview} from "./style-preview.js";
 
 import {openAnnBrowserPreview,browserPreviewLocation} from "./ann-browser-preview.js";
@@ -17,7 +18,7 @@ let controller,workspace;
 
 let addedSection=null,previewScroll=0;
 let wsCache={key:"",value:{meta:new Map(),map:new Map()}};
-function baseHtml(){const s=snapshot(),b=structuredClone(s.data);b.settings.ann_design.sections={};return renderStylePreview(b,s.theme,{...s.route,designEdit:true});}
+function baseHtml(){const s=snapshot(),b=structuredClone(s.data);b.settings.ann_design.sections=instanceOnlySections(b.settings.ann_design.sections);return renderStylePreview(b,s.theme,{...s.route,designEdit:true});}
 function sectionInfo(){
   const d=snapshot().data.settings.ann_design,key=JSON.stringify([page,productId,collectionId,d?.style,d?.sections,plan.section_options,plan.style_preset]);
   if(wsCache.key!==key)wsCache={key,value:sectionMeta(baseHtml(),d?.sections||{},page)};
@@ -54,6 +55,7 @@ function sectionAction(id,act){
   if(next){controller.setSections(next);workspace.refresh();}
 }
 function setExtra(type,on){
+  if(readOnly)return;
   plan.section_options||={};const values=new Set(plan.section_options[page]||[]);
   on?values.add(type):values.delete(type);plan.section_options[page]=[...values];
   if(on){addedSection=type;const sections=structuredClone(controller.previewDesign()?.sections||{});if(sections[page]?.hidden){sections[page].hidden=sections[page].hidden.filter(id=>id!==`slot-${type}-0`);controller.setSections(sections);}}

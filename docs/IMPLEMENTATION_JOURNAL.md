@@ -1,5 +1,40 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Section library, phase 2
+
+- Added independent, bounded content-section instances inside the existing
+  saved design JSON. Existing native section IDs, order, content and hidden
+  settings remain compatible; no database migration is required.
+- Shared Ann and standalone theme-editor library now inserts all 37 content
+  families on Home, Collection, Product, About and Contact. Product/collection
+  sections bind to actual store records or explicit current-page context.
+  Header/footer remain global; transaction pages are not content canvases.
+- Added between-section insertion controls, independent duplicate/delete,
+  direct content editing and session Undo in both editors. Draft writes still
+  happen only through Save draft and existing optimistic-concurrency guards.
+- Implemented handle-only pointer/touch sorting, drag ghost, insertion marker,
+  edge scrolling, drop animation, keyboard grab/move/drop and cancellation.
+  Protected product/contact core sections stay first and cannot be hidden.
+- Preview and storefront rendering use the same trusted instance renderer.
+  Product prices/cards remain catalogue-owned rather than free text. Explicit
+  bindings are checked against the tenant's draft catalogue on the server.
+- Added isolated preview setup through the real synthetic evidence/design
+  handlers, plus model, renderer, ownership, persistence and controller tests.
+  Updated legacy test doubles to the current shared-workspace architecture.
+- Verification: all 70 scoped automated checks passed, including restricted-role
+  save/reload, stale-write, ownership and actual Worker browser-asset checks.
+  One isolated browser journey passed insertion, independent text edits,
+  keyboard/pointer reordering, Escape, delete/Undo, save/reload and continuation
+  in Ann. Mobile touch start/cancel and width checks passed; protected cores
+  and transaction-page exclusions were confirmed. No live order was placed.
+- Browser evidence included desktop Ann and a 390px mobile editor. Expected
+  sandboxed-srcdoc script warnings remained; no blocked module asset was
+  observed. The tester noted intermittent blank/washed preview captures, with
+  accessible content present and the final Ann desktop preview rendering.
+- No live merchant data, migration, production publication or external service
+  mutations were performed. Existing theme-specific layout variants remain a
+  separate phase; the library illustrations are explicitly labelled diagrams.
+
 ## 20 October 2026: Section library, phase 1
 
 - Added a presentation-only catalogue of 39 universal section families, eight

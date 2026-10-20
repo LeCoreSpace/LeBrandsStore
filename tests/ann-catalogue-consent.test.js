@@ -6,6 +6,28 @@ import { attachAnnDesign } from "../src/public/ann-design-ui.js";
 
 const source = await readFile(new URL("../src/public/ann-builder.js", import.meta.url), "utf8");
 const tick = () => new Promise(resolve => setImmediate(resolve));
+test("Ann and standalone editors keep insertion, duplication, deletion and Undo in one draft model",async()=>{
+  for(const themeEditor of [false,true]){
+    const h=harness({themeEditor});
+    try{
+      await tick();h.ui.resumeEditing();
+      const first=h.ui.addSection("home","brand-story",{kind:"none"},null,["slot-ed-hero-0"]);
+      const key=`section.home.${first}.text0`;
+      h.input(key,"Independent story title");
+      const second=h.ui.duplicateSection("home",first,[first,"slot-ed-hero-0"]);
+      assert.notEqual(first,second);
+      assert.equal(h.ui.previewDesign().copy[`section.home.${second}.text0`],"Independent story title");
+      assert.equal(h.ui.previewDesign().sections.home.instances.length,2);
+      assert.equal(h.ui.removeSection("home",first),true);
+      assert.equal(h.ui.previewDesign().copy[key],undefined);
+      assert.equal(h.ui.canUndo(),true);
+      assert.equal(h.ui.undo(),true);
+      assert.equal(h.ui.previewDesign().copy[key],"Independent story title");
+      assert.equal(h.ui.previewDesign().sections.home.instances.length,2);
+      assert.equal(h.requests.length,1,"Local section changes never write until Save draft");
+    }finally{h.close();}
+  }
+});
 
 function harness({ saved = true, readOnly = false, themeEditor = false, contextual = false } = {}) {
   const previous = { document: globalThis.document, fetch: globalThis.fetch };
@@ -13,7 +35,7 @@ function harness({ saved = true, readOnly = false, themeEditor = false, contextu
   let confirmed = 0, mode = themeEditor ? "store" : "showcase";
   const el = { innerHTML: "", setAttribute() {}, scrollIntoView() {},
     querySelector: () => null, addEventListener: (name, fn) => events.set(name, fn) };
-  globalThis.document = { activeElement: null, createElement: () => el };
+  globalThis.document = { activeElement: null, createElement: () => el, getElementById:()=>null };
   const design = { version: 1, style: "editorial", media_pack: "editorial",
     plan: { style_preset: "editorial" }, copy: {}, media: {} };
   globalThis.fetch = async (url, opts) => {

@@ -1,5 +1,35 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Section library phase 2
+
+- Working directory: repository root. Target: local preview and isolated
+  fictional PGlite fixtures only. Prerequisite: existing workspace packages.
+- Ran focused `node --test --test-concurrency=1` checks for section instances,
+  drag helpers, library UI, Ann workspace/controller and standalone editor.
+  Latest combined client/model pass: 48 tests, all passing.
+- Ran `tests/section-instances-persistence.test.js` against the real restricted
+  role handlers in isolated PGlite. Save/reload, stale revision rejection,
+  foreign binding rejection and protected-core validation passed.
+- Ran existing rendering/Worker bundle checks. Browser graph check passed,
+  including the new raw-module asset gates. No package installation.
+- Restarted the two managed API/web workflows after the application batch.
+  Used development-only curl on `/__ann-builder-preview/sections-editor`.
+  Synthetic document setup initially failed closed on an incorrect scanner
+  test response; corrected its engine to the real configured-scanner contract.
+  Subsequent isolated preview returned HTTP 200.
+- Final coherent `node --test --test-concurrency=1` run covered 13 scoped test
+  files and passed all 70 cases. No failing or skipped cases.
+- Captured desktop preview. One bounded browser journey confirmed insertion,
+  independent edits, keyboard/pointer ordering, cancel, delete/Undo, draft
+  save/reload, continuation in Ann and protected/transaction-page boundaries.
+  Mobile 390px view had no measured horizontal overflow; CDP touch start and
+  cancellation preserved saved order. The explicit browser PATCH status was
+  not captured, but UI/reload persistence and isolated API HTTP assertions
+  passed. Existing sandbox warnings and intermittent preview capture behaviour
+  are noted in the implementation journal.
+- `git diff --check` passed. No production database, migration or deployment
+  commands were executed.
+
 ## 20 October 2026: Section library phase 1
 
 - `node --test --test-concurrency=1 tests/section-library.test.js tests/section-library-ui.test.js tests/ann-design-workspace.test.js tests/ann-editor-sections.test.js tests/ann-section-content.test.js tests/browser-bundles.test.js`: 29 passed; two existing label assertions then updated for intentional universal names.
