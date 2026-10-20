@@ -3,8 +3,13 @@ name: Partner integration direction
 description: Public integration copy must focus on merchant benefits, without internal implementation-status language or invented availability.
 ---
 
-The user reports that the website has been approved by Razorpay, partner OAuth
-integration is on the way, and one logistics partner will also be integrated.
+The user reports that the website has been approved by Razorpay and has now
+created the Razorpay technology-partner OAuth application. One logistics partner
+will also be integrated.
+
+**Why:** The user confirmed creating the application while asking for the next
+merchant OAuth integration steps. Application creation alone does not establish
+a released or connected merchant payment flow.
 
 Do not use the words "upcoming" or "planned" in any blog or in the dashboard,
 Pricing or Compare pages.

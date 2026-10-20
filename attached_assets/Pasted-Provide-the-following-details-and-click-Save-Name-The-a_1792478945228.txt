@@ -1,0 +1,106 @@
+Provide the following details and click Save.
+Name: The application name provided here is displayed on the Razorpay authorisation interface.
+Website: Enter the URL of the application’s website.
+Logo: Upload a square image for application logo. If logo is absent, a default logo is used.
+Add Application Details
+The following fields are displayed after the application is created, for development and production clients. These are read-only:
+Client ID: Publicly exposed identifier of the client which is generated uniquely. It helps identify your application on Razorpay.
+Client Secret: Privately shared string between the application and Razorpay. It helps to authenticate the identity of the application on server-to-server API calls. Do not expose the client secret publicly.
+Redirect URIs: A whitelisted set of URIs defined during creation. Production clients can only use secure HTTPS URIs to prevent man-in-the-middle attacks. You can define multiple redirect URIs.
+View Production and Development Credentials for Application
+Edit the Redirect URIs for your clients if needed.
+Click Save.
+​
+2. Get Authorisation from Sub-merchant
+Following the steps to receive sub-merchant authorisation.
+​
+2.1 Initiate Authorisation Using URL
+A request is sent to redirect your sub-merchants to Razorpay’s authorisation service. You will receive a code upon authorisation from the sub-merchant. You can exchange this code for an access token.
+​
+Example
+
+Request
+
+Success Response
+
+Access Denied
+
+Merchant Rejected
+https://auth.razorpay.com/authorize
+    ?client_id=8DXCMTshWSWECc
+    &response_type=code
+    &redirect_uri=https://example.com/razorpay_callback
+    &scope=read_write
+    &state=NOBYtv8r6c75ex6WZ
+Query Parameters
+
+Success Response Parameters
+
+​
+Authorisation Response
+After completion, the sub-merchant’s browser is redirected to URI specified in the redirect_uri parameter. Once the [sub-merchant authorises](https://razorpay.com/docs/partners/technology-partners/onboard-businesses/integrate-oauth/integration-steps/sub-merchants), you can proceed with the steps ahead.
+​
+2.2 Get Access Token
+Exchange the authorisation code received in the previous step for an access token.
+Handy Tips
+The authorisation code is URL-encoded. Decode it before sending in this request.
+POST [https://auth.razorpay.com/token“](https://auth.razorpay.com/token%60%60)
+Given below is the sample request to be made from the application’s backend server.
+
+Request
+
+Response
+curl -X POST https://auth.razorpay.com/token
+-H "Content-type: application/json"
+-d '{
+  "client_id": "<YOUR_CLIENT_ID>",
+  "client_secret": "<YOUR_CLIENT_SECRET>",
+  "grant_type": "authorization_code",
+  "redirect_uri": "http://example.com/razorpay_callback",
+  "code": "def50200d844dc80cc44dce2c665d07a374d76802",
+  "mode": "test"
+}'
+Request Parameters
+
+Response Parameters
+
+Store the access_token received above on your server. Using this token, you can access the sub-merchant’s data on Razorpay APIs based on the level of access granted.
+For using RazorpayX as a resource, check [Access Resources using Access Token](https://razorpay.com/docs/partners/technology-partners/onboard-businesses/add-on-features/add-submerchants-from-dashboard#razorpayx).
+​
+About Tokens
+Refresh Token API
+
+Revoke Token API
+
+​
+Error Response Parameters
+Refer to our errors page for the list of errors and solutions.
+​
+3. Access Resources using Access Token
+After you obtain an access token, you can use it to access the sub-merchant’s data on Razorpay APIs. The access is controlled based on the scope requested for and granted by the user during the authorisation process.
+For Payments
+
+For RazorpayX
+
+​
+4. Process Payments
+As a Technology Partner, you can allow sub-merchants to accept payments through various Payment Methods and channels. after getting access_token.
+Access Payment APIs using OAuth
+
+Public Token
+
+Verify Payment Signature
+
+​
+5. Subscribe to Authorization Revoked Webhook
+Sub-merchants can revoke access to your application from the Dashboard at any time. Once revoked, your application will no longer have the capability to perform any operations on the sub-merchant account.
+We recommend subscribing to the account.app.authorization_revoked webhook event. This ensures that you receive real-time notifications whenever a sub-merchant revokes access to your connected application.
+Follow these steps to subscribe to webhooks.
+Given below is the sample payload:
+
+account.app.authorization_revoked
+{
+  "event": "account.app.authorization_revoked",
+  "account_id": "acc_Dhk2qDbmu6FwZH", // merchant account id
+  "contains": [],
+  "created_at": 1678282666
