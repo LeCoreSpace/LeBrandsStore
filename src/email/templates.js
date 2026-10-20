@@ -34,6 +34,14 @@ function itemMeta(i){
   return p;
 }
 export function renderEmail(type,data={}){
+  if(type==="ticket_created"||type==="ticket_closed"){
+    const closed=type==="ticket_closed",admin=data.audience==="admin";
+    const description=closed
+      ?(admin?"A support ticket has been closed. Open the ticket to review its resolution.":"Your support ticket has been closed. Open it to read the resolution or reply if you still need help.")
+      :(admin?"A brand has raised a support request. Sign in to review the ticket.":"We have received your support request. You can follow its progress and reply from your account.");
+    return renderEmail("verification",{...data,support:true,support_title:closed?"Support ticket closed":"Support ticket created",
+      support_description:description,support_number:`SUP-${String(data.ticket_number).padStart(6,"0")}`});
+  }
   if(!(type in titles))throw new Error("Unknown email template");
   const platform=["reset","invite","verification"].includes(type),brand=platform?"LeBrands.Store":String(data.brand_name||"Your store");
   const colour=/^#[0-9a-f]{6}$/i.test(data.accent_colour||"")?data.accent_colour:"#702440";
@@ -41,8 +49,8 @@ export function renderEmail(type,data={}){
   const orderish=["confirmed","new_order"].includes(type);
   const pending=orderish&&data.status==="pending_payment";
   const inactive=orderish&&["cancelled","failed","expired","payment_failed","refunded"].includes(data.status);
-  const title=pending?"Your payment is pending":inactive?"Your order status has changed":titles[type],number=data.order_number?`Order ${data.order_number}`:"";
-  const introduction=pending?"Your order is not confirmed yet. Check the latest payment status using the order link.":inactive?`Current order status: ${data.status}. Check the latest details using the order link.`:intro[type];
+  const title=data.support?data.support_title:pending?"Your payment is pending":inactive?"Your order status has changed":titles[type],number=data.support?data.support_number:data.order_number?`Order ${data.order_number}`:"";
+  const introduction=data.support?data.support_description:pending?"Your order is not confirmed yet. Check the latest payment status using the order link.":inactive?`Current order status: ${data.status}. Check the latest details using the order link.`:intro[type];
   const cod=data.payment_method==="cod",paid=["paid","captured"].includes(data.payment_status)&&!cod&&!pending&&!inactive;
   const payText=inactive?"This order is not active. Check the latest order details.":pending?"Awaiting payment confirmation.":cod?"Cash on delivery. Pay when your order arrives; no online payment has been taken.":paid?"Paid online.":data.payment_method&&data.payment_method!=="online"?String(data.payment_method):"Online payment";
   // blocks: {h: html, t: text}
@@ -87,7 +95,7 @@ export function renderEmail(type,data={}){
     if(data.credit_amount_paise!=null)para(`Credit note amount: ${money(data.credit_amount_paise)}`);
     if(data.refund_paise==null)para("Any refund due is handled separately. This email does not confirm a payment refund.");
   }
-  const link=https(data.action_url),label=labels[type]||"Track your order";
+   const link=https(data.action_url),label=data.support?"Open support ticket":labels[type]||"Track your order";
   const contact=data.contact_email||(platform?"https://lebrands.store/support":""),policy=https(data.policy_url||(platform?"https://lebrands.store/terms":"")),logo=https(data.logo_url);
   const prefs=https(data.preferences_url);
   const prefNote="Essential order, payment and security messages cannot be disabled. Optional delivery updates can be turned off.";

@@ -1,4 +1,29 @@
-# Support ticketing: proposed schema
+# Support ticketing: schema and implementation
+
+## Implementation status
+
+The initial implementation is complete locally. The operator-applied migration
+is `db/staged/0051_support_tickets.sql`; it has not been applied to the shared
+database or published to Cloudflare.
+
+Implemented: pre-store/account and store tickets, the three requested statuses,
+brand conversations, platform-admin inbox, assignment, priority, internal notes,
+public closing resolutions, reopening, and durable created/closed email intents
+for the brand and configured support inbox. Account creation, the dashboard,
+Ann and the theme editor link to support. Private attachment upload remains a
+later phase; its metadata table is reserved but there is no upload UI or route.
+
+The SQL migration is the source of truth for exact DDL. All eight new tables
+have creation/update timestamps, forced RLS and no direct application/API-role
+access. Narrow functions enforce current membership, admin authority, immutable
+scope, idempotency and optimistic revisions. Existing email-job claiming keeps
+its callable identity and existing verification/reset guards. The migration
+fails closed if that existing function body differs from the reviewed baseline.
+
+Verified with 58 scoped checks and an isolated synthetic browser lifecycle.
+No shared data, real email delivery or production configuration was changed.
+
+---
 
 Status: design only. No migration, application changes, emails or publication
 are included in this document.

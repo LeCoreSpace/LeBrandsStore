@@ -16,6 +16,7 @@ import {checkoutSettingsPreview} from "./checkout-settings-preview-fixture.js";
 import {annPlanPreview} from "./ann-plan-preview-fixture.js";
 import {billingPreview} from "./billing-preview-fixture.js";
 import {marketingPreview} from "./marketing-preview-fixture.js";
+import {supportPreview} from "./support-preview-fixture.js";
 import {isPreviewAccountPath} from "./preview-live.js";
 
 const types = { js:"text/javascript; charset=utf-8", css:"text/css; charset=utf-8",
@@ -63,6 +64,7 @@ export function createNativePreview(root, runtime = process.env) {
 
   const middleware = async (req, res, next) => {
     if(await checkoutSettingsPreview(req,res))return;
+    if(await supportPreview(req,res))return;
     if(await marketingPreview(req,res))return;
     if(await billingPreview(req,res))return;
     if(await annPlanPreview(req,res))return;

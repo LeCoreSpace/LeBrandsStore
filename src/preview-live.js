@@ -2,11 +2,12 @@
 import { createDb } from "./db.js";
 import { APP_ORIGIN } from "./auth/security.js";
 import {isRazorpayOAuthRoute,oauthAvailable} from "./connections/razorpay-oauth.js";
+import {isSupportRoute} from "./support/routes.js";
 
 export const isPreviewAccountPath=path=>
   ["/signup","/login","/forgot-password","/verify-email","/reset-password","/invite","/account","/logout","/dashboard","/stores/new","/api/subdomain-check"].includes(path)||
   path==="/admin"||path.startsWith("/admin/")||path.startsWith("/api/stores/")||
-  /^\/stores\/[^/]+(?:\/|$)/.test(path)||isRazorpayOAuthRoute(path);
+  /^\/stores\/[^/]+(?:\/|$)/.test(path)||isRazorpayOAuthRoute(path)||isSupportRoute(path);
 
 export const isLivePreview = env => Boolean(env && Object.hasOwn(env, "PREVIEW_LIVE_DATABASE") && env.PREVIEW_LIVE_DATABASE === "enabled");
 

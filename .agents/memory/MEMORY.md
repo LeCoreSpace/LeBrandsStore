@@ -62,3 +62,4 @@
 - [Cloudflare binding updates](cloudflare-binding-updates.md) — targeted Secret updates preserve code; inherited settings PATCH failed, and version annotations change independently of runtime settings.
 - [Migration checksum history](migration-checksum-history.md) — recorded filenames do not prove SQL alignment; preserve historical checksums and separate UI releases from schema repair.
 - [Support ticketing](support-ticketing-direction.md) — pre-store/all-feature support, Created/Pending/Closed, admin inbox and emails to both parties on creation and closure.
+- [Browser CSP verification](browser-csp-verification.md) — inspect response markup and violation sources before attributing automated-overlay warnings or weakening policy.

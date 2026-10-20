@@ -6,6 +6,7 @@ import {platformDeliveryKey} from "./tokens.js";
 import {renderEmail,maskRecipient} from "./templates.js";
 import {emailPreferencesUrl,optionalUpdatesAllowed,OPTIONAL_EMAIL_TYPES} from "./preferences.js";
 import {runtimeAvailable} from "../connections/payments.js";
+import {prepareSupportEmails} from "../support/email.js";
 export async function emailsEnabled(tx){
   const[row]=await tx`SELECT to_regprocedure('public.email_pending_stores()') IS NOT NULL AS enabled`;
   return row?.enabled===true;
@@ -15,6 +16,7 @@ export async function schedulePendingEmails(env){
   const db=createDb(env);
   try{
     if(!await db.account(emailsEnabled))return;
+    await prepareSupportEmails(env,db);
     const stores=await db.account(tx=>tx`SELECT public.email_pending_stores() AS id`);
     for(const store of stores)await env.AI_BUILD_QUEUE.send({type:"email",store_id:store.id});
     const pending=await db.account(tx=>tx`SELECT * FROM public.email_platform_pending()`);

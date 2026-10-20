@@ -60,7 +60,7 @@ function hostLine(r) {
 }
 const SUMMARY = [["stores", "Stores"], ["live", "Live"], ["draft", "Draft"], ["paused", "Paused"], ["suspended", "Suspended"], ["orders", "Orders"], ["pending_reviews", "Pending reviews"], ["custom_domains", "Custom domains"], ["payment_issues", "Payment issues"]];
 
-const NAV = [["stores", "Stores", ""], ["business-reviews", "Business reviews", "/business-reviews"], ["integrations", "Integrations", "/integrations"], ["domains", "Custom domains", "/domains"], ["gst", "GST verification", "/gst"], ["subscriptions", "Subscriptions", "/subscriptions"], ["payments", "Payments", "/payments"], ["suspensions", "Store suspension", "/suspensions"]];
+const NAV = [["stores", "Stores", ""], ["business-reviews", "Business reviews", "/business-reviews"], ["integrations", "Integrations", "/integrations"], ["domains", "Custom domains", "/domains"], ["gst", "GST verification", "/gst"], ["subscriptions", "Subscriptions", "/subscriptions"], ["payments", "Payments", "/payments"], ["suspensions", "Store suspension", "/suspensions"], ["support", "Support inbox", "/support"]];
 function head(title, extra) {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)} | LeBrands.Store Operations</title><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="same-origin"><link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="/assets/platform-admin.css">${extra || ""}<script src="/assets/platform-admin.js" defer></script></head>`;
 }

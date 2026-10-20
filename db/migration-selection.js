@@ -1,4 +1,7 @@
 export function migrationSelection(args) {
+  if(args.length===1&&args[0]==="--staged-support-tickets"){
+    return{staged:true,filename:"0051_support_tickets.sql",requires:"0046_platform_admin.sql"};
+  }
   if(args.length===1&&args[0]==="--staged-marketing-integrations"){
     return{staged:true,filename:"0050_marketing_integrations.sql",requires:"0018_commerce_runtime.sql"};
   }

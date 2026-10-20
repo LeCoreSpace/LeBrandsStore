@@ -1,5 +1,32 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Support ticketing implementation
+
+- Implemented account/pre-store and store-scoped support, with Created, Pending
+  and Closed status, conversations, closing resolutions and reopening.
+- Added the platform-admin inbox, assignment/priority/waiting controls and
+  internal notes excluded from brand conversations and public activity.
+- Added transactional creation/closure notification intents and private,
+  recoverable preparation through the existing service-email queue. Recipient
+  access is checked again before delivery; no real emails were sent.
+- Prepared operator-applied migration `0051_support_tickets.sql`, including
+  forced RLS, effective API-role revocation, private helpers, callable RPC
+  allowlists and preserved email-claim function identity.
+- Added flat ticket-style support screens and contextual entry points in
+  account/store creation, dashboard, Ann and the theme editor. Attachments remain
+  schema-only in this phase.
+- Verification: 58 scoped support, admin, dashboard and email checks pass;
+  browser creation/persistence, in-app draft protection, assignment, private
+  notes, closing/reopening and phone layout were verified with synthetic data.
+  Fixed the post-create busy guard, shared account-style CSP compatibility,
+  a competing page-loader timeout and nullable metadata rendering.
+- Browser tooling still emitted unmapped inline-style CSP warnings with empty
+  source files. Raw ticket HTML contains only a nonce-protected style block,
+  no inline style attributes and the self-hosted support module. No policy was
+  weakened to silence those warnings. Application assets returned HTTP 200.
+- The shared database migration and Cloudflare publication are pending explicit
+  approval. No production data, deployment, secrets or provider settings changed.
+
 ## 20 October 2026: Merchant integration cleanup published
 
 - Removed the receipt-inspection form, client request handler and technical

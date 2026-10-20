@@ -30,7 +30,7 @@ ${accountHeader(user)}
 <main class="ann" id="ann-app" data-view="chat">
   <header class="ann-top">
     <div><p class="ann-eyebrow">Your store, built with Ann</p><h1>Build ${esc(store.name || "your store")} with Ann</h1></div>
-    <nav class="ann-links" aria-label="Store builder"><a href="${root}">Back to dashboard</a></nav>
+    <nav class="ann-links" aria-label="Store builder"><a href="${root}">Back to dashboard</a><a href="/support/new?source=ann&amp;store_id=${esc(id)}">Help &amp; support</a></nav>
     <div class="ann-top-actions" id="ann-top-actions" aria-label="Design actions" hidden></div>
   </header>
   <aside id="ann-business-access" class="ann-note" role="status"${data.business_access?.allowed===false?"":" hidden"}>${esc(data.business_access?.message||"")} ${data.business_access?.reason==="plan_required"?`<button type="button" class="ann-link" data-ann-plan-open${data.business_access?.plan_access?.name_confirmed?"":" disabled"}>Choose your Free plan</button>`:'<button type="button" class="ann-link" data-business-open>Open business documents</button>'}</aside>

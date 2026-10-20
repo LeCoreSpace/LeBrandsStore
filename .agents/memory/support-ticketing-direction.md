@@ -14,3 +14,13 @@ must receive emails when a ticket is created and closed.
 **How to apply:** Support cannot depend on a store already existing. Preserve
 these requirements when designing the schema and implementing brand/admin
 workflows; a design request is not approval to migrate or publish.
+
+Creation and closure notices are essential support-service messages, not
+optional marketing updates. Keep private note content and sensitive context out
+of email; direct recipients to the authenticated ticket.
+
+**Why:** Brands need confirmation and resolution of a request independently of
+optional campaign preferences, without copying private conversations into email.
+
+**How to apply:** Reuse durable transactional delivery, recheck recipient access
+at delivery, and preserve the creation/closure event distinction after reopening.

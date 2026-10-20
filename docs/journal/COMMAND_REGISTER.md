@@ -1,5 +1,24 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Local support ticket implementation
+
+Executed against local/synthetic fixtures only:
+
+```sh
+node --test --test-concurrency=1 tests/support-shell.test.js tests/support-tickets.test.js tests/platform-admin.test.js tests/dashboard-navigation.test.js tests/dashboard.test.js tests/email.test.js tests/email-preferences.test.js
+git diff --check
+```
+
+Result: 58 passing checks. Managed web/API workflows were restarted; subsequent
+source changes rebuilt automatically. The API's existing custom build,
+`node scripts/build-browser-assets.mjs`, completed with 31 versioned entries.
+Synthetic browser checks covered the ticket lifecycle and phone layout; the
+preview-only fixture has no real email queue.
+
+Prepared, **not executed**: the staged support migration and Cloudflare
+publication. No live provider calls, email sends, secret changes or shared
+database writes were performed.
+
 ## 20 October 2026: Transient partner receiver diagnostics
 
 - Read-only Worker settings query: persistent Observability/Logpush not enabled.

@@ -1,6 +1,7 @@
 import { createDb } from "../db.js";
 import {isRazorpayOAuthRoute,handleRazorpayOAuth} from "../connections/razorpay-oauth.js";
 import {handlePlatformAdmin,isPlatformAdminRoute} from "../admin/platform-routes.js";
+import {handleSupport,isSupportRoute} from "../support/routes.js";
 import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
 import {ownedStorePolicy} from "./store-policy.js";
@@ -46,6 +47,7 @@ const nameValue = (value) => typeof value === "string" && value.trim().length >=
 export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const url = new URL(request.url);
   const path = url.pathname;
+  if(isSupportRoute(path))return handleSupport(request,env,ctx,dependencies);
   if(isPlatformAdminRoute(path))return handlePlatformAdmin(request,env,ctx,dependencies);
   const editorMatch=path.match(/^\/stores\/([0-9a-f-]{36})\/editor$/i);
   const storeRoute = isRazorpayOAuthRoute(path)||isBillingPagePath(path)||isBusinessReviewRoute(path)||isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isBusinessDocumentRoute(path) || isAnnRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";

@@ -140,7 +140,7 @@ function dashboard(data) {
     ${user.must_change_password ? "" : stores.length
       ? `<section aria-label="Your stores" class="store-list">${rows}</section>`
       : `<section class="empty-card"><div class="empty-mark" aria-hidden="true">+</div><h2>Your first store starts here.</h2><p>Claim a store address for your brand and start shaping its home online.</p><a class="button" href="/stores/new">Create your store <span aria-hidden="true">↗</span></a></section>`}
-    <div class="form-foot" style="text-align:left;margin-top:27px"><a href="/account">Account and password</a></div>
+    <div class="form-foot" style="text-align:left;margin-top:27px"><a href="/account">Account and password</a> &middot; <a href="/support">Help &amp; support</a></div>
   </main>${footer()}`);
 }
 
@@ -152,7 +152,7 @@ function newStore(data) {
     title:"Start building with Ann",
     description:"Add your business details, choose a look and bring your products together. You can fine-tune everything in the theme editor later.",
     form:`${alertBlock(data.error,data.notice)}<form method="post" action="/stores/new"><input type="hidden" name="start_with_ann" value="1"><button class="button" type="submit">Build my store with Ann</button></form><p class="form-help">This creates an unpublished draft. Your store only goes live after you review and publish.</p>`,
-    after:'<div class="form-foot"><a href="/">Back to your stores</a></div>',
+    after:'<div class="form-foot"><a href="/support/new?source=onboarding">Help &amp; support</a> &middot; <a href="/">Back to your stores</a></div>',
   });
 }
 function account(data) {

@@ -1,6 +1,7 @@
 // Inline so navigation feedback never waits for another browser module fetch.
-export function navigationHead(){
-  return `<style>
+export function navigationHead(nonce=""){
+  const attribute=/^[a-zA-Z0-9+/_=-]{16,128}$/.test(nonce)?` nonce="${nonce}"`:"";
+  return `<style${attribute}>
   #lb-navigation{display:none;position:fixed;inset:0 0 auto;min-height:100px;overflow:hidden;z-index:2147483000;pointer-events:none;font:500 13px/1.4 system-ui,sans-serif}
   html[data-navigation-loading] #lb-navigation{display:block}
   #lb-navigation::before{content:"";display:block;height:3px;background:var(--accent,#711b3b);width:35%;animation:lb-navigation-progress 1.2s ease-in-out infinite}
@@ -8,7 +9,7 @@ export function navigationHead(){
   @keyframes lb-navigation-progress{from{transform:translateX(-100%)}to{transform:translateX(386%)}}
   @media(prefers-reduced-motion:reduce){#lb-navigation::before{animation:none;width:65%}}
   @media print{#lb-navigation{display:none!important}}
-  </style><script>${NAVIGATION_SCRIPT}</script>`;
+  </style><script${attribute}>${NAVIGATION_SCRIPT}</script>`;
 }
 export const NAVIGATION_BODY='<div id="lb-navigation" role="status" aria-live="polite" aria-atomic="true"><span>Loading page…</span></div>';
 export function withNavigation(html){
