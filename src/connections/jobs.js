@@ -1,5 +1,6 @@
 import { createDb } from "../db.js";
 import { openCredentials } from "./providers.js";
+import {refreshOAuth} from "./razorpay-oauth.js";
 import { keyFor, razorpayClient, shiprocketClient, failure } from "./runtime-client.js";
 import { shippingSettings, shippingOrder, serviceable } from "./shipping.js";
 import { recordCapture, recordRefund, restoreReservedStock } from "./payments.js";
@@ -41,7 +42,7 @@ async function finish(db,id,job,status="done",minutes=60) {
 async function refundJob(db,id,job,o,p,env,fetcher) {
   const attempt=await locked(db,id,async tx=>(await tx`SELECT * FROM public.payment_attempts WHERE store_id=${id} AND order_id=${o.id}`)[0]);
   if (!attempt?.captured_payment_id) throw failure("No captured online payment is available to refund.");
-  const credentials=await openCredentials(keyFor(env),id,"razorpay",attempt.credentials_ciphertext),api=razorpayClient(credentials,fetcher);
+  const credentials=await locked(db,id,async tx=>refreshOAuth(tx,id,await openCredentials(keyFor(env),id,"razorpay",attempt.credentials_ciphertext),env,fetcher)),api=razorpayClient(credentials,fetcher);
   let payment=await api(`/payments/${attempt.captured_payment_id}`);
   if (payment.order_id!==attempt.provider_order_id || payment.amount!==Number(o.total_paise) || payment.currency!=="INR") throw failure("Refund payment does not match the order.");
   if (payment.amount_refunded===payment.amount && payment.status==="refunded") {

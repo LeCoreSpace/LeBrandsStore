@@ -1,4 +1,5 @@
 import { createDb } from "../db.js";
+import {isRazorpayOAuthRoute,handleRazorpayOAuth} from "../connections/razorpay-oauth.js";
 import {handlePlatformAdmin,isPlatformAdminRoute} from "../admin/platform-routes.js";
 import { renderAccount } from "../ui/accounts.js";
 import { accountRepository } from "./repository.js";
@@ -47,7 +48,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
   const path = url.pathname;
   if(isPlatformAdminRoute(path))return handlePlatformAdmin(request,env,ctx,dependencies);
   const editorMatch=path.match(/^\/stores\/([0-9a-f-]{36})\/editor$/i);
-  const storeRoute = isBillingPagePath(path)||isBusinessReviewRoute(path)||isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isBusinessDocumentRoute(path) || isAnnRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";
+  const storeRoute = isRazorpayOAuthRoute(path)||isBillingPagePath(path)||isBusinessReviewRoute(path)||isStaffPath(path)||isStoreRoute(path) || isPageRoute(path) || isGSTINRoute(path) || isBusinessDocumentRoute(path) || isAnnRoute(path) || isAiRoute(path) || isBuilderRoute(path) || isStyleStudioRoute(path) || !!editorMatch || path==="/editor";
   const publicViews = { "/signup": "signup", "/login": "login", "/forgot-password": "forgot-password", "/reset-password":"forgot-password","/invite":"forgot-password" };
   if (!["GET", "POST", "HEAD", ...(storeRoute ? ["PATCH", "PUT", "DELETE"] : [])].includes(request.method)) return html("error", { error: "Method not allowed." }, 405);
   if (!["GET", "HEAD"].includes(request.method) && !isValidOrigin(request)) {
@@ -104,6 +105,7 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
       const next=billingContinuation(url.searchParams.get("next"))||billingContinuation(path+url.search);
       return path.startsWith("/api/") ? json({ available: false, error: "Change your password first." }, 403) : redirect(`/account${next?`?next=${encodeURIComponent(next)}`:""}`);
     }
+    if(isRazorpayOAuthRoute(path))return await handleRazorpayOAuth(request,env,db,user,tokenHash,dependencies.razorpayOAuth);
     if (isBillingRoute(path)) return await handleBillingRoutes(request,db,user,tokenHash,env,dependencies.billing);
     if(isBillingPagePath(path))return await handleBillingPages(request,db,user,tokenHash,session.stores);
     if (isBusinessReviewRoute(path)) return await handleBusinessReview(request,env,db,user,tokenHash);

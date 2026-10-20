@@ -31,3 +31,13 @@ connection or universal payment availability.
 connection status and verified payments distinct internally. Do not publish
 internal integration-status commentary in blogs or imply that every provider
 supports OAuth.
+
+The user approved merchant Razorpay OAuth alongside existing API-key
+integrations, not a forced conversion of those integrations.
+
+**Why:** They selected “Implement OAuth and preserve existing API-key
+connections.”
+
+**How to apply:** Keep existing merchant key connections usable and separate
+from platform subscription billing credentials. Adding OAuth must not silently
+replace or reactivate an existing connection.

@@ -1,11 +1,13 @@
 import { openCredentials } from "./providers.js";
+import {refreshOAuth} from "./razorpay-oauth.js";
 export const keyFor = env => env.INTEGRATION_ENCRYPTION_KEY || env.SESSION_SECRET;
 export const failure = (message, status = 409) => Object.assign(new Error(message), { status });
 export async function connection(tx, storeId, provider, env) {
   const [row] = await tx`SELECT status,credentials_ciphertext,metadata::text FROM public.integrations WHERE store_id=${storeId} AND provider=${provider}`;
   if (row?.status !== "connected") throw failure(`Reconnect ${provider} before continuing.`);
-  return { ...row, metadata: JSON.parse(row.metadata),
-    credentials: await openCredentials(keyFor(env), storeId, provider, row.credentials_ciphertext) };
+  let credentials=await openCredentials(keyFor(env), storeId, provider, row.credentials_ciphertext);
+  if(provider==="razorpay")credentials=await refreshOAuth(tx,storeId,credentials,env);
+  return { ...row, metadata: JSON.parse(row.metadata),credentials };
 }
 export async function remoteJson(url, options = {}, fetcher = fetch) {
   let response;

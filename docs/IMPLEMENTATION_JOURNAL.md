@@ -1,5 +1,28 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Razorpay merchant OAuth implementation
+
+- Added owner-only authorisation, session/store-bound one-use state, encrypted
+  tokens, explicit replacement confirmation, cancellation/replay protection and
+  the existing separate Razorpay integration menu's Connect control.
+- Preserved merchant API-key connections and platform billing keys. OAuth
+  authorisation is not payment activation; test mode cannot accept customer
+  payments. Checkout uses OAuth public tokens, Bearer API calls and the
+  application-secret signature contract.
+- Added committed refresh leases and token rotation outside financial
+  transactions, local-first disconnect with explicit remote-revocation retry,
+  and signed account/mode-isolated partner webhook routing.
+- Staged the restricted read-only routing/refresh migration and documented
+  development/Cloudflare secrets and webhook release steps in
+  `docs/RAZORPAY_OAUTH.md`. This is source implementation, not a production
+  migration, deployment or real provider authorisation.
+- The isolated browser check covered Connect, test-mode activation denial,
+  refresh, OAuth disconnect, read-only controls and mobile width. It found a
+  stale callback-success notice after disconnect; the notice is now reconciled
+  with actual grant state and has a focused regression test.
+- Real consent, public webhook delivery and production release remain separate
+  operations requiring configuration and approval.
+
 ## 20 October 2026: Section library, phase 4
 
 - Implemented typed grid settings for ten reusable grid families: product and

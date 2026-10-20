@@ -5,6 +5,7 @@ import { runtimeAvailable } from "../connections/payments.js";
 import { connection, shiprocketClient } from "../connections/runtime-client.js";
 import { shippingSettings, pickupLocations } from "../connections/shipping.js";
 import { domainPlatform } from "../connections/domain-platform.js";
+import {oauthAvailable,OAUTH_WEBHOOK} from "../connections/razorpay-oauth.js";
 
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 const plain = v => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -34,8 +35,11 @@ export async function prepareAnnLaunch(tx, id, userId, env = {}) {
     providers[provider] = { verified: row?.status === "connected" && meta.credentials_verified === true,
       checked_at: meta.checked_at || null, runtime_ready: execution_available && row?.status==="connected" && meta.enabled===true &&
         meta.credentials_verified===true && (provider==="razorpay"?meta.mode==="live" && meta.webhook_verified===true:Boolean(meta.shipping)),
-      ...(provider === "razorpay" ? { mode: meta.mode || null, webhook_verified: meta.webhook_verified===true,
-        webhook_url:`https://app.lebrands.store/webhooks/razorpay/${id}` } : { pickup_count: meta.pickup_count || 0,
+      ...(provider === "razorpay" ? { mode: meta.mode || null,auth_type:meta.auth_type==="oauth"?"oauth":"api_key",
+        account_id:meta.account_id||null,token_expires_at:meta.token_expires_at||null,
+        revocation_pending:meta.revocation_pending===true,refresh_attention:meta.oauth_refresh_attention===true,
+        webhook_verified: meta.webhook_verified===true,
+        webhook_url:meta.auth_type==="oauth"?`https://app.lebrands.store${OAUTH_WEBHOOK}`:`https://app.lebrands.store/webhooks/razorpay/${id}` } : { pickup_count: meta.pickup_count || 0,
         shipping:meta.shipping||null,pickup_locations:meta.pickup_locations||[] }) };
   }
   const jobs=execution_available?await tx`SELECT j.id,o.order_number,j.kind,j.status,j.last_error,j.updated_at FROM public.commerce_jobs j
@@ -44,7 +48,7 @@ export async function prepareAnnLaunch(tx, id, userId, env = {}) {
     preferences: state.preferences, providers, optional: true, cod_enabled: parse(checkout?.settings)?.cod_enabled === true,
     domain: state.domain ? { id: state.domain.id, hostname: state.domain.hostname, status: state.domain.status,
       primary: state.domain.is_primary, ...state.evidence } : null,
-    platform: { domains_available: domainTargetAvailable(env),
+    platform: { razorpay_oauth_available:oauthAvailable(env),domains_available: domainTargetAvailable(env),
       domain_activation_available: cloudflareAvailable(env),
       diagnostics:state.evidence.platform_diagnostics||[{label:"Cloudflare credentials and zone configured",complete:cloudflareAvailable(env)}] } };
 }
@@ -133,6 +137,10 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
       ON CONFLICT(store_id,provider) DO UPDATE SET status='connected',credentials_ciphertext=EXCLUDED.credentials_ciphertext,metadata=EXCLUDED.metadata,updated_at=now()`;
   } else if (body.action === "disconnect") {
     if (!["razorpay", "shiprocket"].includes(body.provider)) fail("Choose a supported provider.");
+    if(body.provider==="razorpay"){
+      const provider=current.providers.find(p=>p.provider==="razorpay");
+      if(parse(provider?.metadata)?.auth_type==="oauth")fail("Use the Razorpay authorisation disconnect control.");
+    }
     await tx`UPDATE public.integrations SET status='disconnected',credentials_ciphertext='',metadata='{}'::jsonb,updated_at=now()
       WHERE store_id=${id} AND provider=${body.provider}`;
     if (body.provider === "razorpay") preferences.payments = "cod"; else preferences.delivery = "manual";

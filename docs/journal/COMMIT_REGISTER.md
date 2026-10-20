@@ -1,5 +1,12 @@
 # Complete implementation checkpoint register
 
+### OAuth source work, 20 October 2026
+
+Razorpay OAuth code, tests, integration controls and manual release guidance were
+updated in the workspace. No manual Git commit was created for this work; do
+not infer a commit identifier, migration application or deployment from this
+entry. Automatic checkpoint history is maintained separately by Replit.
+
 Captured on 19 October 2026 from the surviving project history. Times use Africa/Cairo.
 
 This register contains all **287 commits** available at this capture on 19 October, including the initial 272-commit backfill ending at `9adc763` and subsequent checkpoints `19919a1`, `ee31045`, `49d77ce`, `4b7d3c4`, `3d1ee10`, `1a3bfd4`, `75e3293`, `0db33ad`, `7712d0e`, `e993b5e`, `264f93b`, `d4378df`, `de261bf`, `4152eff` and `b899b66`. Original subjects are retained, including the historical use of “announcement” for Ann. File scopes describe evidence, not proof of working runtime behaviour. A versioned migration is not an applied migration, and a test-file change is not a passing test result. Production deployment is not established per commit.

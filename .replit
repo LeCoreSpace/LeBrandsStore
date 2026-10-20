@@ -25,3 +25,9 @@ channel = "stable-25_05"
 [[ports]]
 localPort = 8080
 externalPort = 8080
+
+[userenv]
+
+[userenv.development]
+RAZORPAY_OAUTH_MODE = "test"
+RAZORPAY_OAUTH_REDIRECT_URI = "https://ec4a2267-dc81-4742-aff6-207881f757ff-00-14j68edikd01l.pike.replit.dev/integrations/razorpay/callback"

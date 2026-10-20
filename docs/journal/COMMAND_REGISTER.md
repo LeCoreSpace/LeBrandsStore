@@ -1,5 +1,31 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Razorpay OAuth verification
+
+- Ran seven focused Node test files serially: OAuth backend/UI, Ann launch
+  backend/UI, commerce runtime, dashboard navigation and migration selection.
+  The combined pass initially identified a missing launch-state row in the new
+  first-connection path; fixed connection completion to create it.
+- Re-ran the changed OAuth backend/UI scope: all 11 checks passed. Together with
+  the unchanged passing regression scope, 39 checks are covered. `git diff
+  --check` was clean.
+- One isolated browser pass mocked every private API and provider navigation,
+  using only the public fictional integration preview. Connect, refresh,
+  disconnect, activation denial, read-only fallback and mobile width worked.
+  The stale callback success message it found was fixed and verified with a
+  targeted regression. No real provider consent or signed network delivery was
+  claimed.
+- Restarted the existing managed workflows after source/configuration batches.
+  The local API started with redacted OAuth client/mode/callback bindings; the
+  synthetic integration page and versioned browser assets returned 200 and were
+  visually checked.
+- Set only development non-secret mode/callback variables through the environment
+  tooling. The client secrets were supplied by the user through the secure form;
+  their values were never inspected. Webhook signing still needs a separately
+  supplied secret and binding.
+- No live database read/migration, real merchant/provider operation, production
+  secret update, package installation or deployment command was performed.
+
 ## 20 October 2026: Grid cells and defaults, phase 4
 
 - Ran `node --test --test-concurrency=1` over 17 section/grid/layout/controller/

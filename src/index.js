@@ -21,6 +21,8 @@ import { CRAWLER_FILES, serveCrawlerFile } from "./crawler-files.js";
 import { processAiMessage } from "./ai/worker.js";
 import { scheduleCommerce } from "./connections/jobs.js";
 import { razorpayWebhook } from "./connections/payments.js";
+import {razorpayOAuthWebhook} from "./connections/razorpay-oauth-webhook.js";
+import {scheduleOAuthRefresh} from "./connections/razorpay-oauth-refresh.js";
 import {withNavigation} from "./ui/navigation-loader.js";
 import {isBrowserBundle} from "./browser-assets.js";
 
@@ -89,10 +91,15 @@ export default {
       }catch{message.retry({delaySeconds:Math.min(900,10*2**Math.min(message.attempts||1,6))});}
     }
   },
-  async scheduled(event,env,ctx){ctx.waitUntil(schedulePendingEmails(env));ctx.waitUntil(scheduleCommerce(env));},
+  async scheduled(event,env,ctx){ctx.waitUntil(schedulePendingEmails(env));ctx.waitUntil(scheduleCommerce(env));ctx.waitUntil(scheduleOAuthRefresh(env));},
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const hostname = url.hostname;
+    if(hostname==="app.lebrands.store"&&url.pathname==="/webhooks/razorpay/oauth"){
+      const db=createDb(env);
+      try{return await razorpayOAuthWebhook(request,env,db);}
+      finally{ctx.waitUntil(db.close());}
+    }
     if(hostname==="app.lebrands.store"&&url.pathname==="/webhooks/resend")return handleEmailWebhook(request,env);
     if(hostname==="app.lebrands.store"&&url.pathname==="/email-preferences"){
       const preferencesDb=createDb(env);

@@ -1,5 +1,6 @@
 import {restoreSkuStock} from "../checkout/sku-inventory.js";
 import { connection, keyFor, failure, razorpayClient, verifyHmac, boundedText } from "./runtime-client.js";
+import {refreshOAuth,oauthSignatureSecret,oauthConfig} from "./razorpay-oauth.js";
 import { openCredentials, sealCredentials } from "./providers.js";
 import { sha256 } from "../auth/passwords.js";
 
@@ -16,6 +17,9 @@ export async function onlineAvailable(tx, id) {
 }
 export async function reservePayment(tx, id, orderId, env) {
   const c = await connection(tx, id, "razorpay", env);
+  if(c.credentials.auth_type==="oauth"&&c.credentials.mode!=="live")throw failure("Test authorisation cannot take customer payments.");
+  if(c.credentials.auth_type==="oauth"&&(!env.RAZORPAY_OAUTH_WEBHOOK_SECRET||env.RAZORPAY_OAUTH_WEBHOOK_SECRET.length<16))
+    throw failure("Partner payment-event verification is unavailable.",503);
   const encrypted = await sealCredentials(keyFor(env), id, "razorpay", c.credentials);
   await tx`INSERT INTO public.payment_attempts(store_id,order_id,credentials_ciphertext)
     VALUES(${id},${orderId},${encrypted}) ON CONFLICT DO NOTHING`;
@@ -30,7 +34,7 @@ export async function checkoutPayment(tx, id, input, env, fetcher = fetch) {
   if (o.status !== "pending_payment") return { order_number:o.order_number,receipt_url:`/orders/${input.receipt_token}`,pending:false,
     paid:["paid","processing","packed","shipped","delivered"].includes(o.status) && o.payment_state==="captured",payment_status:o.payment_state };
   if (new Date(o.expires_at).getTime() <= Date.now()) throw Object.assign(failure("This payment window expired. Your bag is kept. If you paid, check your order before paying again; a late capture is queued for refund."),{restart_checkout:true});
-  const credentials = await openCredentials(keyFor(env),id,"razorpay",o.credentials_ciphertext);
+  const credentials = await refreshOAuth(tx,id,await openCredentials(keyFor(env),id,"razorpay",o.credentials_ciphertext),env,fetcher);
   const api = razorpayClient(credentials,fetcher);
   let remoteId = o.provider_order_id;
   if (!remoteId) {
@@ -47,7 +51,7 @@ export async function checkoutPayment(tx, id, input, env, fetcher = fetch) {
   }
   const [store] = await tx`SELECT name FROM public.stores WHERE store_id=${id}`;
   return {order_number:o.order_number,total_paise:Number(o.total_paise),receipt_url:`/orders/${input.receipt_token}`,
-    payment:{key_id:credentials.key_id,order_id:remoteId,amount:Number(o.total_paise),currency:"INR",name:store.name,verification_url:"/api/checkout/verify"}};
+    payment:{key_id:credentials.public_token||credentials.key_id,order_id:remoteId,amount:Number(o.total_paise),currency:"INR",name:store.name,verification_url:"/api/checkout/verify"}};
 }
 export async function restoreReservedStock(tx,id,order) {
   if (order.stock_restored_at) return;
@@ -96,8 +100,9 @@ export async function verifyCheckout(tx,id,body,env,fetcher=fetch) {
     JOIN public.payment_attempts a ON a.store_id=o.store_id AND a.order_id=o.id
     WHERE o.store_id=${id} AND o.confirmation_hash=${hash} AND a.provider_order_id=${body.razorpay_order_id}`;
   if (!o) throw failure("Order not found.",404);
-  const credentials=await openCredentials(keyFor(env),id,"razorpay",o.credentials_ciphertext);
-  if (!await verifyHmac(credentials.key_secret,`${o.provider_order_id}|${body.razorpay_payment_id}`,body.razorpay_signature)) throw failure("Payment signature could not be verified.",400);
+  const credentials=await refreshOAuth(tx,id,await openCredentials(keyFor(env),id,"razorpay",o.credentials_ciphertext),env,fetcher);
+  if(credentials.auth_type==="oauth"&&credentials.mode!=="live")throw failure("Test payments cannot confirm customer orders.");
+  if (!await verifyHmac(oauthSignatureSecret(credentials,env),`${o.provider_order_id}|${body.razorpay_payment_id}`,body.razorpay_signature)) throw failure("Payment signature could not be verified.",400);
   const api=razorpayClient(credentials,fetcher);
   let payment=await api(`/payments/${encodeURIComponent(body.razorpay_payment_id)}`);
   if (payment.order_id!==o.provider_order_id) throw failure("Payment does not match the order.",400);
@@ -116,7 +121,7 @@ export async function verifyCheckout(tx,id,body,env,fetcher=fetch) {
   return {pending:fresh.status==="pending_payment",paid:a.state==="captured" && ["paid","processing","packed","shipped","delivered"].includes(fresh.status),
     payment_status:a.state,receipt_url:`/orders/${body.receipt_token}`};
 }
-export async function razorpayWebhook(request,env,db,storeId) {
+export async function razorpayWebhook(request,env,db,storeId,fetcher=fetch,partner=false) {
   try {
     if (request.method!=="POST") return new Response("Method not allowed",{status:405});
     const raw=await boundedText(request), body=JSON.parse(raw);
@@ -124,12 +129,30 @@ export async function razorpayWebhook(request,env,db,storeId) {
     if (!supported.includes(body.event)) throw failure("Unsupported payment event.",400);
     const payment=body.payload?.payment?.entity, refund=body.payload?.refund?.entity;
     return await db.withStore(storeId,async tx=>{
-      const [attempt]=refund ? await tx`SELECT a.* FROM public.payment_attempts a WHERE store_id=${storeId} AND captured_payment_id=${String(refund.payment_id||"")}` :
+      let [attempt]=refund ? await tx`SELECT a.* FROM public.payment_attempts a WHERE store_id=${storeId} AND captured_payment_id=${String(refund.payment_id||"")}` :
         await tx`SELECT a.* FROM public.payment_attempts a WHERE store_id=${storeId} AND provider_order_id=${String(payment?.order_id||body.payload?.order?.entity?.id||"")}`;
       let credentials;
       if (attempt) credentials=await openCredentials(keyFor(env),storeId,"razorpay",attempt.credentials_ciphertext);
-      else credentials=(await connection(tx,storeId,"razorpay",env)).credentials;
-      if (!await verifyHmac(credentials.webhook_secret,raw,request.headers.get("x-razorpay-signature"))) throw failure("Invalid webhook signature.",400);
+      else{
+        const [current]=await tx`SELECT status,credentials_ciphertext FROM public.integrations WHERE store_id=${storeId} AND provider='razorpay'`;
+        if(current?.status!=="connected")throw failure("Reconnect Razorpay before continuing.");
+        credentials=await openCredentials(keyFor(env),storeId,"razorpay",current.credentials_ciphertext);
+      }
+      if(partner&&credentials.auth_type!=="oauth"){
+        // Legacy attempts keep their per-store webhook authority. A partner
+        // event can verify a current OAuth grant, but cannot settle that old
+        // API-key attempt through a different signature channel.
+        attempt=null;
+        const [current]=await tx`SELECT status,credentials_ciphertext FROM public.integrations WHERE store_id=${storeId} AND provider='razorpay'`;
+        if(current?.status!=="connected")return Response.json({received:true});
+        credentials=await openCredentials(keyFor(env),storeId,"razorpay",current.credentials_ciphertext);
+        if(credentials.auth_type!=="oauth"||credentials.account_id!==body.account_id)return Response.json({received:true});
+      }
+      const oauth=credentials.auth_type==="oauth";
+      if(oauth&&(credentials.mode!==oauthConfig(env).mode||body.account_id!==credentials.account_id))
+        throw failure("Webhook account or mode does not match.",400);
+      const signingSecret=oauth?env.RAZORPAY_OAUTH_WEBHOOK_SECRET:credentials.webhook_secret;
+      if(!signingSecret||!await verifyHmac(signingSecret,raw,request.headers.get("x-razorpay-signature"))) throw failure("Invalid webhook signature.",400);
       await tx`SELECT store_id FROM public.stores WHERE store_id=${storeId} FOR UPDATE`;
       const eventId=request.headers.get("x-razorpay-event-id") || await sha256(raw);
       if (eventId.length>200) throw failure("Invalid event ID.",400);
@@ -140,14 +163,18 @@ export async function razorpayWebhook(request,env,db,storeId) {
       // An old credential snapshot may settle its own orders after disconnection,
       // but cannot verify a newly connected account's webhook.
       try {
-        const current=await connection(tx,storeId,"razorpay",env);
-        if (current.credentials.key_id===credentials.key_id && current.credentials.webhook_secret===credentials.webhook_secret) {
+        const [saved]=await tx`SELECT status,credentials_ciphertext FROM public.integrations WHERE store_id=${storeId} AND provider='razorpay'`;
+        if(saved?.status!=="connected")throw failure("Disconnected account.");
+        const current={credentials:await openCredentials(keyFor(env),storeId,"razorpay",saved.credentials_ciphertext)};
+        if (oauth?current.credentials.auth_type==="oauth"&&current.credentials.account_id===credentials.account_id&&current.credentials.mode===credentials.mode:
+          current.credentials.auth_type!=="oauth"&&current.credentials.key_id===credentials.key_id && current.credentials.webhook_secret===credentials.webhook_secret) {
           await tx`UPDATE public.integrations SET metadata=jsonb_set(metadata,'{webhook_verified}','true'::jsonb),updated_at=now() WHERE store_id=${storeId} AND provider='razorpay'`;
         }
       } catch(e) { if (e.status!==409) throw e; }
-      if (attempt && payment && ["payment.captured","order.paid"].includes(body.event)) await recordCapture(tx,storeId,payment);
-      if (attempt && refund?.status==="processed") {
-        const api=razorpayClient(credentials);
+      if (attempt && payment && ["payment.captured","order.paid"].includes(body.event)&&(!oauth||credentials.mode==="live")) await recordCapture(tx,storeId,payment);
+      if (attempt && refund?.status==="processed"&&(!oauth||credentials.mode==="live")) {
+        credentials=await refreshOAuth(tx,storeId,credentials,env,fetcher);
+        const api=razorpayClient(credentials,fetcher);
         const actual=await api(`/payments/${encodeURIComponent(attempt.captured_payment_id)}`);
         if (actual.id===attempt.captured_payment_id && actual.status==="refunded" && actual.amount_refunded===actual.amount) {
           await recordRefund(tx,storeId,attempt.order_id,actual);

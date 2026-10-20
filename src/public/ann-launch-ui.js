@@ -2,6 +2,13 @@ const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": 
 const HOST = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.){2,}[a-z]{2,63}$/;
 const when = v => { if (!v) return ""; const d = new Date(v); return isNaN(d) ? "" : d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }); };
 
+export function oauthCallbackNotice(result,provider={}){
+  if(result==="connected")return provider.verified&&provider.auth_type==="oauth"?
+    "Razorpay authorised successfully. Review the account and payment activation status below.":"";
+  if(result==="cancelled")return "Authorisation was cancelled. Your existing integration is unchanged.";
+  if(result==="failed")return "We could not confirm authorisation. Review the integration status below, then reconnect if needed.";
+  return "";
+}
 export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settingsMode = false }) {
   let state = null, loading = false, loadError = "", busy = "", stale = false;
   const msgs = {}, open = { 1: true, 2: false, 3: false };
@@ -74,6 +81,30 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       try { onSaved?.(result); } catch { /* host error */ }
     } catch (e) { msgs[key] = { text: e.message }; }
     finally { busy = ""; draw(); }
+  }
+  async function oauth(action){
+    if(!canEdit()||busy||!storeId)return;
+    const replacing=action==="start"&&state?.providers?.razorpay?.verified;
+    if(replacing&&!window.confirm("Replace the current Razorpay integration? Existing orders keep their payment records. Online checkout will stay off after authorisation until you enable it again."))return;
+    busy="oauth";msgs.oauth=null;draw();
+    try{
+      const response=await fetch(`${api.replace(/\/ann$/,"/integrations/razorpay")}/${action}`,{
+        method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},
+        body:JSON.stringify({confirm:true,...(replacing?{replace_existing:true}:{})})});
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||"Razorpay authorisation could not be completed.");
+      if(action==="start"){
+        const target=new URL(result.authorize_url);
+        if(target.origin!=="https://auth.razorpay.com"||target.pathname!=="/authorize")throw new Error("Invalid authorisation destination.");
+        window.location.assign(target.href);return;
+      }
+      const updated=await request("GET");
+      if(!updated.res.ok)throw new Error("Your change was saved. Reload this page to refresh its status.");
+      take(updated.result);
+      msgs.oauth={ok:!result.revocation_pending,text:result.revocation_pending?
+        "Online checkout is off. Razorpay could not confirm revoked access. Retry disconnection or remove LeBrands.Store from your Razorpay authorised apps.":"Razorpay authorisation updated."};
+    }catch(e){msgs.oauth={text:e.message||"Razorpay authorisation is temporarily unavailable."};}
+    finally{busy="";draw();}
   }
 
   const off = x => !canEdit() || !!busy || loading || !!x;
@@ -152,13 +183,22 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     const execOff = s.execution_available === false;
     const execNote = execOff ? `<p class="ann-note">Activation is unavailable until the platform database migration is applied. Ask the platform team. Nothing here has been turned on.</p>` : "";
     const rzOn = !!rzp.runtime_ready, rzLive = rzp.mode === "live";
-    const rzNeeds = [!rzLive && "A live-mode key is required to take online payments.", !rzp.webhook_verified && "A signed webhook has not been verified yet."].filter(Boolean);
+    const rzNeeds = [!rzLive && "Live-mode authorisation is required to take online payments.", !rzp.webhook_verified && "A signed webhook has not been verified yet."].filter(Boolean);
     const rzVerified = `<p class="ann-callout">Account verified${rzp.mode ? ` (${esc(rzp.mode)} mode)` : ""}${rzTime ? `, checked ${esc(rzTime)}` : ""}. Webhook: ${rzp.webhook_verified ? "verified" : "not verified yet"}. Online checkout: <strong>${rzOn ? "active" : "off"}</strong>.</p>`
-      + (rzOn ? "" : `<p class="ann-note">To finish: in your Razorpay dashboard add this webhook URL${rzp.webhook_url ? ` <code>${esc(rzp.webhook_url)}</code>` : " (not provided yet)"} with the events payment.captured, order.paid, payment.failed and refund.processed, using the webhook secret you saved here. Then send a signed test webhook from Razorpay and reload status. Your stored secrets are never shown again.</p>${rzNeeds.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${execNote}<label class="ann-check"><input type="checkbox" data-ln-ack="pay"${ackPay ? " checked" : ""}${dis()}><span>Razorpay has approved my KYC and this domain for live payments.</span></label>`)
+      + (rzOn ? "" : `<p class="ann-note">${rzp.auth_type==="oauth"?"Payment events are managed by LeBrands.Store. Reload status after Razorpay delivers a signed event for this account.":`To finish: in your Razorpay dashboard add this webhook URL${rzp.webhook_url ? ` <code>${esc(rzp.webhook_url)}</code>` : " (not provided yet)"} with the events payment.captured, order.paid, payment.failed and refund.processed, using the webhook secret you saved here. Then send a signed test webhook from Razorpay and reload status. Your stored secrets are never shown again.`}</p>${rzNeeds.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${execNote}<label class="ann-check"><input type="checkbox" data-ln-ack="pay"${ackPay ? " checked" : ""}${dis()}><span>Razorpay has approved my KYC and this domain for live payments.</span></label>`)
       + `${msg("act-rz")}<div class="ann-actions">${rzOn ? `<button type="button" class="ann-btn sm" data-ln-a="pay-off"${dis(execOff)}>${busy === "act-rz" ? "Saving" : "Turn off online checkout"}</button>` : `<button type="button" class="ann-btn sm" data-ln-a="pay-on"${dis(execOff || !!rzNeeds.length || !ackPay)}>${busy === "act-rz" ? "Saving" : "Turn on online checkout"}</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="disc" data-p="razorpay"${dis(!!confirmDisc)}>Disconnect</button></div>`;
-    const rzBlock = `<h3>Razorpay</h3>` + (rzp.verified
+    const oauthReady=!!plat.razorpay_oauth_available;
+    const oauthNotice=oauthCallbackNotice(new URLSearchParams(globalThis.location?.search||"").get("oauth"),rzp);
+    const oauthBlock=`${oauthNotice?`<p class="ann-callout" role="status">${esc(oauthNotice)}</p>`:""}<p class="ann-note">Securely authorise your own Razorpay account without sharing API keys with LeBrands.Store.</p>
+      ${rzp.auth_type==="oauth"&&rzp.account_id?`<p class="ann-note">Account <strong>${esc(rzp.account_id)}</strong>${rzp.mode?` · ${esc(rzp.mode)} mode`:""}${rzp.token_expires_at?` · Authorisation expires ${esc(when(rzp.token_expires_at))}`:""}</p>`:""}
+      ${rzp.refresh_attention?'<p class="ann-error" role="alert">Razorpay needs a fresh authorisation. Reconnect your account.</p>':""}
+      <div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="oauth-start"${dis(!oauthReady)}>${busy==="oauth"?"Please wait":rzp.auth_type==="oauth"?"Reconnect to Razorpay":"Connect to Razorpay"}</button>
+      ${rzp.auth_type==="oauth"&&rzp.verified?`<button type="button" class="ann-btn alt sm" data-ln-a="oauth-refresh"${dis(!oauthReady)}>Refresh authorisation</button>`:""}
+      ${rzp.revocation_pending?`<button type="button" class="ann-btn alt sm" data-ln-a="oauth-disconnect"${dis(!oauthReady)}>Retry disconnection</button>`:""}</div>
+      ${oauthReady?"":'<p class="ann-note">Secure authorisation is unavailable in this environment. Existing API-key integrations continue to work.</p>'}${msg("oauth")}`;
+    const rzBlock = `<h3>Razorpay</h3>${oauthBlock}` + (rzp.verified
       ? rzVerified
-      : `<p class="ann-note">Enter your merchant Razorpay key ID and key secret. Also create a webhook secret in Razorpay so signed payment events can be checked. We verify the keys before storing them encrypted; they are not displayed again.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify and save Razorpay"}</button></div>`);
+      : `<details><summary>Use API keys instead</summary><p class="ann-note">Enter your merchant Razorpay key ID and key secret. Also create a webhook secret in Razorpay so signed payment events can be checked. We verify the keys before storing them encrypted; they are not displayed again.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify and save Razorpay"}</button></div></details>`);
     const rzPanel=settingsMode||prefs.payments==="razorpay"||prefs.payments==="both"||rzp.verified?providerPanel("razorpay","Razorpay integration",rzBlock,rzOn,rzp.verified):"";
     const s2 = `${own}${settingsMode?rzPanel+pay:pay+rzPanel}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${saveRow(3)}`;
 
@@ -257,7 +297,10 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     else if (a === "refresh") void act("act-sr", { action: "refresh-provider", provider: "shiprocket" });
     else if (a === "disc") { confirmDisc = b.dataset.p; draw(); }
     else if (a === "disc-no") { confirmDisc = ""; draw(); }
-    else if (a === "disc-yes") { const pr = confirmDisc; confirmDisc = ""; if (pr) void act("disc-" + pr, { action: "disconnect", provider: pr }); }
+    else if (a === "oauth-start") void oauth("start");
+    else if (a === "oauth-refresh") void oauth("refresh");
+    else if (a === "oauth-disconnect") void oauth("disconnect");
+    else if (a === "disc-yes") { const pr = confirmDisc; confirmDisc = ""; if(pr==="razorpay"&&state?.providers?.razorpay?.auth_type==="oauth")void oauth("disconnect");else if (pr) void act("disc-" + pr, { action: "disconnect", provider: pr }); }
     else if (a === "dadd") { if (hostOk()) void act("dom", { action: "domain-add", hostname: v("host").toLowerCase() }, () => clear(["host"])); }
     else if (a === "dchk" && id) void act("dom", { action: "domain-check", id });
     else if (a === "dact" && id && ack && domVerified() && !domLive()) void act("dom", { action: "domain-activate", id, provider_domain_confirmed: true }, () => { ack = false; });
