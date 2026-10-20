@@ -1,5 +1,32 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Native Preview and OAuth configuration repair
+
+Working directory: workspace root. User reported an unavailable Connect button
+and a native Preview missing-route error.
+
+- Read current artifact service definitions and confirmed the web entry owns
+  `/`, while the internal API owns `/__worker`.
+- Used `verifyAndReplaceDotReplit` on a temporary complete configuration to
+  remove the lone legacy external-port mapping. No direct protected-file edit
+  was accepted.
+- Used `verifyAndReplaceArtifactToml` to rename the API artifact without changing
+  its identity, port, command or paths.
+- `node --test --test-concurrency=1 tests/native-oauth-preview.test.js tests/live-preview.test.js`:
+  seven checks passed for bounded bindings and account/callback routing.
+- Restarted `artifacts/lebrands-web: web` once after the changes. Logs confirmed
+  Vite readiness and successful proxied asset/page responses.
+- Unauthenticated external requests: root/login HTTP 200, dashboard/callback
+  HTTP 303 to `/login`. Native readiness reported connected=true,
+  restricted application role=true and razorpay_oauth_available=true.
+  The readiness check reads role/schema metadata only.
+- Native Preview screenshot of `/login` showed the real ticket-style sign-in
+  page rather than a router error.
+- `git diff --check`: clean.
+
+No migration, customer/store-record mutation, production credential change,
+main Worker deployment or financial action was performed.
+
 ## 20 October 2026: Refreshed Development credentials
 
 Working directory: workspace root. User supplied the OAuth Development client

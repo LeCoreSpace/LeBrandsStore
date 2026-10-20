@@ -1,5 +1,13 @@
 # Complete implementation checkpoint register
 
+### Native Preview OAuth availability repair, 20 October 2026
+
+Fixed the native account adapter's missing OAuth bindings and callback routing,
+validated removal of a legacy port mapping and distinguished the API artifact
+title. Synthetic checks, external routes, actual native metadata readiness and
+a login screenshot were verified. No manual Git commit or main Worker
+deployment was performed.
+
 ### Development OAuth configuration refresh, 20 October 2026
 
 Updated the isolated Test receiver's client-pair bindings after user confirmation

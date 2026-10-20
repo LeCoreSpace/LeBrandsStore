@@ -34,6 +34,13 @@ though this allowlist passes it to Wrangler alongside credentials. This does not
 alter the production Worker. A browser-accessible development preview is not
 proof that Razorpay can reach a private webhook endpoint.
 
+Account requests in the web preview also pass through the native Node adapter
+to avoid local Workerd TCP/TLS limitations. Its separate explicit allowlist
+must receive the same Development OAuth configuration; Wrangler's binding log
+alone does not prove native-account availability. Restart the web workflow
+after changes to these values. The development-only database readiness response
+includes a non-secret `razorpay_oauth_available` boolean for this actual path.
+
 ## Database change
 
 Manual, separately approved release step:

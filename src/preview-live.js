@@ -1,7 +1,7 @@
 // Development-only bridge. Never imported by the production Worker.
 import { createDb } from "./db.js";
 import { APP_ORIGIN } from "./auth/security.js";
-import {isRazorpayOAuthRoute} from "./connections/razorpay-oauth.js";
+import {isRazorpayOAuthRoute,oauthAvailable} from "./connections/razorpay-oauth.js";
 
 export const isPreviewAccountPath=path=>
   ["/signup","/login","/forgot-password","/verify-email","/reset-password","/invite","/account","/logout","/dashboard","/stores/new","/api/subdomain-check"].includes(path)||
@@ -61,7 +61,7 @@ export async function previewDatabaseStatus(env) {
         to_regclass('public.store_gstin_verifications') IS NOT NULL AS gstin_available`;
       return row;
     });
-    return Response.json({ connected: true, ...result }, { headers: { "cache-control": "no-store" } });
+    return Response.json({ connected: true, ...result,razorpay_oauth_available:oauthAvailable(env) }, { headers: { "cache-control": "no-store" } });
   } catch (error) {
     // Never return database messages, connection strings or provider URLs.
     const code = /^[A-Z0-9_]{1,50}$/.test(error?.code || "") ? error.code : "CONNECTION_FAILED";

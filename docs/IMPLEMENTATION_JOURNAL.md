@@ -1,5 +1,29 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Native Preview routing and OAuth availability fixed
+
+- The user's screenshots showed the Test redirect/webhook URLs configured,
+  OAuth unavailable on the live dashboard, and a native Preview routing error.
+  Kept Production OAuth configuration separate from the Test environment.
+- Removed a legacy partial external-port mapping through schema validation and
+  renamed the internal API artifact to distinguish it from the web preview.
+  Managed service paths and ports were preserved.
+- Found that the native Node account adapter had a separate environment
+  allowlist without the OAuth settings. Added only the required OAuth/encryption
+  bindings, preserving exclusion of administrative and platform billing secrets.
+  Reused account-path classification so callback/session processing stays on
+  the same native database path as login and authorisation start.
+- Added synthetic regressions for configuration propagation and callback routing;
+  seven focused checks passed. Restarted the web workflow to refresh its actual
+  runtime and checked clean startup logs.
+- External checks confirmed root/login HTTP 200 and dashboard/callback redirects
+  to sign-in. The actual native readiness endpoint confirmed the restricted
+  application role, database connectivity and OAuth availability. Verification
+  queried system/schema metadata only, not merchant records.
+- Captured the real login page in native Preview. No real OAuth consent,
+  provider-sent delivery, live payment activation or main Worker deployment
+  occurred. Owner consent remains the next step.
+
 ## 20 October 2026: Development pair refreshed, consent still required
 
 - The user supplied the Development client pair again. Restarted the API

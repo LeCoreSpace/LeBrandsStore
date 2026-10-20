@@ -1,6 +1,6 @@
 kind = "api"
 previewPath = "/__worker"
-title = "LeBrands.Store"
+title = "LeBrands.Store API"
 version = "1.0.0"
 id = "3B4_FFSkEVBkAeYMFRJ2e"
 

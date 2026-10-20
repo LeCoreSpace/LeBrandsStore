@@ -69,3 +69,15 @@ plans must not create or alter real merchant data just to verify the interface.
 **How to apply:** Keep fixture imports outside the production Worker graph.
 When exercising account-origin-only handlers, translate only a verified
 same-origin development request; leave foreign origins rejected.
+
+Wrangler binding logs alone do not establish that provider settings reached
+the native account preview.
+
+**Why:** OAuth settings were present in Wrangler while the separate native
+account adapter omitted them, leaving Connect disabled. Checking only the
+callback's fallback route also missed the separate session/database path.
+
+**How to apply:** Verify capabilities through the actual native account runtime,
+not only a direct Worker or shell configuration check. Keep login, provider
+start and callback on the same native path. Refresh the web workflow when its
+captured environment changes; refreshing only Wrangler is insufficient.

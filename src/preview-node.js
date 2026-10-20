@@ -15,20 +15,28 @@ import {analyticsPreview} from "./analytics-preview-fixture.js";
 import {checkoutSettingsPreview} from "./checkout-settings-preview-fixture.js";
 import {annPlanPreview} from "./ann-plan-preview-fixture.js";
 import {billingPreview} from "./billing-preview-fixture.js";
+import {isPreviewAccountPath} from "./preview-live.js";
 
 const types = { js:"text/javascript; charset=utf-8", css:"text/css; charset=utf-8",
   svg:"image/svg+xml", png:"image/png", jpg:"image/jpeg", jpeg:"image/jpeg",
   webp:"image/webp", avif:"image/avif", ico:"image/x-icon",
   woff2:"font/woff2", ttf:"font/ttf", json:"application/json" };
-const accountPath = path => ["/__database-status","/signup","/login","/forgot-password","/account",
-  "/logout","/dashboard","/stores/new","/api/subdomain-check","/editor","/plans"].includes(path) ||
-  path.startsWith("/admin") || path.startsWith("/api/stores/") || /^\/stores\/[^/]+(?:\/|$)/.test(path);
+export const nativeAccountPath = path => isPreviewAccountPath(path) ||
+  ["/__database-status","/editor","/plans"].includes(path);
+
+export function nativePreviewBindings(runtime){
+  const env={PREVIEW_LIVE_DATABASE:"enabled"};
+  for(const key of ["SUPABASE_APP_DB_URL","PASSWORD_PEPPER","SESSION_SECRET","GSTIN_KEY","REPLIT_DEV_DOMAIN",
+    "RAZORPAY_OAUTH_CLIENT_ID","RAZORPAY_OAUTH_CLIENT_SECRET","RAZORPAY_OAUTH_MODE",
+    "RAZORPAY_OAUTH_REDIRECT_URI","RAZORPAY_OAUTH_WEBHOOK_SECRET","INTEGRATION_ENCRYPTION_KEY"])
+    if(typeof runtime[key]==="string")env[key]=runtime[key];
+  return env;
+}
 
 export function createNativePreview(root, runtime = process.env) {
   // Never copy process.env wholesale: the administrative URL/API token must
   // not become application bindings.
-  const env = { PREVIEW_LIVE_DATABASE: "enabled" };
-  for (const key of ["SUPABASE_APP_DB_URL","PASSWORD_PEPPER","SESSION_SECRET","GSTIN_KEY","REPLIT_DEV_DOMAIN"]) env[key] = runtime[key];
+  const env = nativePreviewBindings(runtime);
   const publicRoot = resolve(root, "src/public");
   env.ASSETS = { async fetch(request) {
     const pathname = decodeURIComponent(new URL(request.url).pathname);
@@ -64,7 +72,7 @@ export function createNativePreview(root, runtime = process.env) {
     if(await businessReviewPreview(req,res))return;
     if (await annPreviewFixture(req, res, env.REPLIT_DEV_DOMAIN ? `https://${env.REPLIT_DEV_DOMAIN}` : undefined)) return;
     const pathname = new URL(req.url || "/", "http://localhost").pathname;
-    if (!accountPath(pathname)) return next();
+    if (!nativeAccountPath(pathname)) return next();
     try {
       const headers = new Headers();
       for (const [key,value] of Object.entries(req.headers)) {
