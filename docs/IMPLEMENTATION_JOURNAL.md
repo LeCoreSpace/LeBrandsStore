@@ -1,5 +1,39 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Section library, phase 3
+
+- Added eight theme-inspired section arrangements plus Original, available for
+  all 37 reusable content families. These are rendered adaptations of the
+  trusted content model, not claims that legacy theme fragments were extracted.
+- Library details now render a real sandboxed section preview using current
+  store data and saved edits. One selected preview is rendered at a time.
+  Source-theme browsing and the original neutral browse illustrations remain.
+- Added a compact Layout action on independently added sections in the shared
+  Ann/theme-editor workspace. Previewing or cancelling does not mutate drafts.
+  Applying changes only the chosen instance's optional, allowlisted layout.
+  IDs, text/media/formatting fields, source bindings, order and hiding remain
+  unchanged; duplication retains the layout and session Undo can reverse it.
+- Kept the original nested instance version compatible with existing drafts.
+  Unknown layouts are rejected by the same server-side design validation.
+  Cart/checkout and protected native cores are not made editable by this work.
+- Added responsive scoped layout CSS and a script-free preview document using
+  the same section renderer. Current page product/collection context is passed
+  explicitly rather than always previewing the first record.
+- Kept browser imports static under the existing cross-deployment bundle
+  strategy. Initial optional-module imports exceeded the bounded graph check;
+  static imports restored Ann to 11 versioned requests. Preview DOM creation
+  remains deferred until a section detail opens.
+- Verification: 80 scoped model/UI/rendering/persistence regressions passed,
+  plus the actual Worker browser-graph test. One isolated browser journey passed
+  real preview, cancellation, apply, Undo, save/reload and Ann/editor continuity;
+  the 390px chooser had no horizontal overflow. Made Layout an accessible icon
+  to avoid wrapping row labels. Browser evidence caught opaque-frame font CORS;
+  corrected anonymous CORS on the three already-public, allowlisted font files
+  without weakening iframe sandbox permissions or changing private responses.
+  A focused Worker regression verifies the font-only boundary.
+- No live merchant data, external-service mutations, database migrations or
+  production deployment were performed.
+
 ## 20 October 2026: Section library, phase 2
 
 - Added independent, bounded content-section instances inside the existing

@@ -249,6 +249,7 @@ function sectionAction(id, act) {
 }
 workspaceUI = attachAnnWorkspace({ mount: $("#ann-tools"), variant: "drawer", pages: PAGES, readOnly,
   setPage: p => { page = p; renderPreview(); }, getData: () => previewSource, onOwn: () => { requestOwnProducts(); }, controller: () => designUI,
+  getSectionContext:()=>({productId,collectionId}),
   canEdit: () => editorAccess.allowed && previewMode === "store" && Boolean(designUI?.previewDesign()),
   getPage: () => page, getPlan: () => ({ ...config().theme, section_options: { ...extrasNow, ...answers.section_options } }),
   sectionInfo, onSectionAction: sectionAction,

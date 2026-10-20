@@ -48,7 +48,7 @@ test("source contracts: pointer capture, handle-only touch action, cleanup, aria
   for (const s of ["setPointerCapture", "lostpointercapture", "pointercancel", "requestAnimationFrame", "Escape", "prefers-reduced-motion"]) assert.match(d, new RegExp(s));
   assert.doesNotMatch(d, /draggable/);
   assert.match(css, /\.aw-grip\{[^}]*touch-action:none/); assert.doesNotMatch(css, /\.aw-sec\{[^}]*touch-action/);
-  assert.match(w, /aria-live="polite"/); assert.match(w, /addSection\(pg, family, binding, instances\.afterId, order\)/);
+  assert.match(w, /aria-live="polite"/); assert.match(w, /addSection\(pg, family, binding, instances\.afterId, order, layout\)/);
   assert.match(w, /duplicateSection/); assert.match(w, /removeSection/);
   assert.doesNotMatch(d + w, /\u2014/);
 });

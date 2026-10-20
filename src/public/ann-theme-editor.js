@@ -42,6 +42,7 @@ function fit(){const area=frame.parentElement,w=device==="mobile"?390:1280,scale
 function render() {clearTimeout(timer);previewScroll=frame.contentDocument?.scrollingElement?.scrollTop||0;const s=snapshot();frame.classList.toggle("is-mobile",device==="mobile");frame.srcdoc=renderStylePreview(s.data,s.theme,{...s.route,designEdit:controller?.editing()});controls();fit();}
 function schedule(){clearTimeout(timer);timer=setTimeout(render,160);}
 workspace=attachAnnWorkspace({mount:$("#ae-tools"),variant:"sidebar",readOnly,controller:()=>controller,canEdit:()=>true,
+  getSectionContext:()=>({productId,collectionId}),
   getPage:()=>page,setPage:p=>{page=p;render();},getData:()=>source,getNote:()=>source.ann_design_pending?"Your saved Ann plan is shown here. Save it as a draft to start editing. Your live site stays unchanged.":"",
   getPlan:()=>({color_preset:plan.color_preset||source.settings.color_preset||"white",font_preset:plan.font_preset||source.settings.font_preset||"modern",accent_color:plan.accent_color||source.settings.accent_color||"#661329",section_options:plan.section_options||{}}),
   setPlan:(k,v)=>{plan[k]=v;controller.planChanged();render();},setExtra,sectionInfo,onSectionAction:sectionAction,onOwn:()=>{if(!readOnly)controller.requestCatalogue();}});

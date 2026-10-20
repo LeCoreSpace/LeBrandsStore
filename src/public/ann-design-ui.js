@@ -9,7 +9,7 @@ import {validateDesignMenus,defaultDesignMenus} from "./ann-menu-model.js";
 import { designNeutralCopy } from "./aura-showcase.js";
 import { AURA_STYLES } from "./aura-styles.js";
 import { mountRichEditor, richEditorMarkup } from "./ann-rich-editor.js";
-import {createSectionInstance,insertSectionInstance,removeSectionInstance,copyInstanceFields,clearInstanceFields} from "./section-instance-model.js";
+import {createSectionInstance,insertSectionInstance,removeSectionInstance,copyInstanceFields,clearInstanceFields,setInstanceLayout} from "./section-instance-model.js";
 import {validDesignSections} from "./ann-section-layout.js";
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -568,9 +568,9 @@ export function attachAnnDesign(o) {
       if(!canEditSections()||!validDesignSections(value))return false;
       model.sections=structuredClone(value);planDirty=true;remember();paintDynamic();o.onChange?.();return true;
     },
-    addSection(page,family,binding,afterId,order){
+    addSection(page,family,binding,afterId,order,layout="original"){
       requireSectionEdit();
-      const instance=createSectionInstance(family,binding);
+      const instance=createSectionInstance(family,binding,layout);
       const next=insertSectionInstance(model.sections,page,instance,order,afterId);
       commitSectionModel({...model,sections:next});
       return instance.id;
@@ -579,7 +579,7 @@ export function attachAnnDesign(o) {
       requireSectionEdit();
       const source=model.sections?.[page]?.instances?.find(i=>i.id===id);
       if(!source)throw new Error("Choose an added section to duplicate.");
-      const instance=createSectionInstance(source.family,source.binding);
+      const instance=createSectionInstance(source.family,source.binding,source.layout||"original");
       const next=copyInstanceFields(model,page,id,instance.id);
       next.sections=insertSectionInstance(model.sections,page,instance,order,id);
       commitSectionModel(next);
@@ -591,6 +591,13 @@ export function attachAnnDesign(o) {
       if(!sections)return false;
       const next=clearInstanceFields(model,page,id);next.sections=sections;
       commitSectionModel(next);
+      return true;
+    },
+    setSectionLayout(page,id,layout){
+      requireSectionEdit();
+      const sections=setInstanceLayout(model.sections,page,id,layout);
+      if(JSON.stringify(sections)===JSON.stringify(model.sections))return true;
+      commitSectionModel({...model,sections});
       return true;
     },
     getMenus(){return structuredClone(model?.menus??defaultDesignMenus(menuSource));},

@@ -109,7 +109,7 @@ export default {
     if (url.pathname.startsWith("/assets/")) {
       if (!["GET", "HEAD"].includes(request.method)) return new Response("Method not allowed", { status: 405 });
       const filename = url.pathname.slice("/assets/".length);
-      const reusableSectionAsset=["section-instance-model.js","section-instances.js","section-drag.js","section-insert-rules.js"].includes(filename);
+      const reusableSectionAsset=["section-instance-model.js","section-instances.js","section-drag.js","section-insert-rules.js","section-layouts.js","section-layout-css.js","section-layout-preview.js"].includes(filename);
       const inventoryAsset=["billing-test.js","plan-billing.js","plan-billing.css","inventory.js","inventory.css","today-stock.js","product-details.js"].includes(filename);
       const settingsAsset = ["platform-admin.js","platform-admin.css","analytics.js","analytics-charts.js","analytics-chart-model.js","analytics.css","cogs.js","cogs.css","offers.js","business-review.css","settings-connections.js","settings-business-documents.js","store-essentials.js","catalogue-classification-ui.js","catalogue-classification-model.js","catalogue-custom-values.js"].includes(filename);
       const showcaseAsset = ["section-library.js","section-library-ui.js","ann-rich-text.js","ann-rich-editor.js","ann-plan-ui.js","ann-reply-fields.js","ann-section-layout.js","ann-section-content.js","ann-onboarding-ui.js","ann-theme-editor.js","ann-branding-ui.js","ann-browser-preview.js","aura-showcase-interactions.js","aura-showcase-profiles.js","aura-showcase-sections.js","aura-showcase-rich-css.js","aura-conversion-styles.js","ann-design-model.js","ann-design-ui.js","ann-design-workspace.js","aura-design.js"].includes(filename);
@@ -123,6 +123,10 @@ export default {
       const headers = new Headers(asset.headers);
       headers.set("cache-control", isBrowserBundle(filename)&&((asset.status>=200&&asset.status<300)||asset.status===304)?"public, max-age=31536000, immutable":"no-cache");
       headers.set("x-content-type-options", "nosniff");
+      // These allowlisted fonts are public. Opaque sandbox previews need CORS,
+      // without granting the iframe script or same-origin permissions.
+      if(["instrument-sans-latin.woff2","aura-editorial.ttf","aura-classic.ttf"].includes(filename))
+        headers.set("access-control-allow-origin","*");
       return new Response(asset.body, { status: asset.status, headers });
     }
     if (["GET", "HEAD"].includes(request.method) && ["/favicon.svg", "/favicon.ico"].includes(url.pathname) && ["lebrands.store", "app.lebrands.store"].includes(hostname)) {

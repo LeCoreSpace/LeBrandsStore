@@ -144,6 +144,11 @@ export function attachAnnWorkspace(o) {
 
   const instancesOn = () => !readOnly && typeof o.controller()?.addSection === "function" && INSTANCE_PAGES.includes(o.getPage());
   const canEditSecs = () => { const c = o.controller(); return !readOnly && ready() && (typeof c?.canEditSections === "function" ? c.canEditSections() !== false : c?.canPublish?.() !== false); };
+  function layoutContext(pg) {
+    const r = selectableRecords(o.getData?.() || {});
+    const route=o.getSectionContext?.()||{};
+    return { data: o.getData?.() || {}, design: o.controller()?.previewDesign?.(), page: pg, productId: route.productId||r.products?.[0]?.id, collectionId: route.collectionId||r.collections?.[0]?.id };
+  }
   const say = text => { const l = q("[data-ws-live]"); if (l) l.textContent = text; };
   function sectionsPanel() {
     const page = o.getPage(), plan = o.getPlan(), { meta } = o.sectionInfo(), extras = ANN_EXTRA_SECTIONS[page] || [], inst = instancesOn();
@@ -151,7 +156,7 @@ export function attachAnnWorkspace(o) {
     const gap = after => canGap ? `<button type="button" class="aw-gap" data-ws-insert="${esc(after)}" aria-label="Insert a section ${after ? "after " + esc(meta.get(after)?.label || "this section") : "at the start"}"><span>${I_ADD}Insert here</span></button>` : "";
     const rows = ids.map((id, n) => { const x = meta.get(id), lock = readOnly || x.required, nm = esc(x.label), k = esc(id), mine = isInstanceId(id);
       const grip = x.required || readOnly ? `<span class="aw-grip is-off" aria-hidden="true"></span>` : `<button type="button" class="aw-grip" data-ws-grip="${k}" aria-pressed="false" title="Drag to reorder" aria-label="Reorder ${nm}. Press Space to pick up, arrows to move, Space to drop."${""}>${I_GRIP}</button>`;
-      const acts = mine ? `<button type="button" data-ws-dup="${k}" title="Duplicate" aria-label="Duplicate ${nm}"${lock || used >= SECTION_INSTANCE_LIMIT ? " disabled" : ""}>${I_DUP}</button><button type="button" data-ws-del="${k}" title="Delete section" aria-label="Delete ${nm}"${lock ? " disabled" : ""}>${I_DEL}</button>`
+      const acts = mine ? `<button type="button" class="aw-lay" data-ws-layout="${k}" title="Change layout" aria-label="Change layout of ${nm}"${lock ? " disabled" : ""}><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true"><rect x="2" y="2" width="12" height="12" rx="1"/><path d="M2 6h12M8 6v8"/></svg></button><button type="button" data-ws-dup="${k}" title="Duplicate" aria-label="Duplicate ${nm}"${lock || used >= SECTION_INSTANCE_LIMIT ? " disabled" : ""}>${I_DUP}</button><button type="button" data-ws-del="${k}" title="Delete section" aria-label="Delete ${nm}"${lock ? " disabled" : ""}>${I_DEL}</button>`
         : `<button type="button" data-ws-sec="${k}" data-act="toggle" title="${x.hidden ? "Restore section" : "Remove section"}" aria-label="${x.hidden ? "Restore" : "Remove"} ${nm}"${lock ? " disabled" : ""}>${x.hidden ? I_ADD : I_DEL}</button>`;
       const row = `<div class="aw-sec${x.hidden ? " is-off" : ""}${mine ? " is-mine" : ""}${x.required ? " is-core" : ""}" data-sec-row="${k}">${grip}<button type="button" class="aw-sec-name" data-ws-edit="section" data-key="${k}"${off()}>${nm}${x.hidden ? "<small>Removed</small>" : x.required ? "<small>Protected</small>" : mine ? "<small>Added section</small>" : ""}</button><span class="aw-acts"><button type="button" data-ws-sec="${k}" data-act="up" title="Move up" aria-label="Move ${nm} up"${lock || x.index <= 0 ? " disabled" : ""}>${I_UP}</button><button type="button" data-ws-sec="${k}" data-act="down" title="Move down" aria-label="Move ${nm} down"${lock || x.index >= x.count - 1 ? " disabled" : ""}>${I_DOWN}</button>${acts}</span></div>`;
       return (n === 0 && x.required ? "" : n === 0 ? gap("") : "") + row + gap(id); }).join("");
@@ -207,8 +212,8 @@ export function attachAnnWorkspace(o) {
       const common = { host: document.body, page: pg, allowedTypes: ANN_EXTRA_SECTIONS[pg] || [], ready: () => ready() && o.getPage() === pg, readOnly, returnFocus: () => q("[data-ws-library]"), onClose: () => paintPanel() };
       if (modern) {
         const instances = { afterId: after, limit: SECTION_INSTANCE_LIMIT, records: () => selectableRecords(o.getData?.() || {}), count: () => instanceCount(o.sectionInfo().meta.keys()),
-          add(family, binding) { const order = [...o.sectionInfo().meta.keys()], id = o.controller().addSection(pg, family, binding, instances.afterId, order); paintPanel(); return id; } };
-        openSectionLibrary({ ...common, instances });
+          add(family, binding, layout) { const order = [...o.sectionInfo().meta.keys()], id = o.controller().addSection(pg, family, binding, instances.afterId, order, layout); paintPanel(); return id; } };
+        openSectionLibrary({ ...common, instances, context: () => layoutContext(pg) });
       } else openSectionLibrary({
         ...common,
         selectedTypes: () => selectedLibraryTypes(o.getPlan().section_options?.[pg],o.sectionInfo()),
@@ -221,6 +226,13 @@ export function attachAnnWorkspace(o) {
           }
         },
       });
+    }
+    else if (d.wsLayout && !readOnly) {
+      const pg = o.getPage(), id = d.wsLayout, inst = c?.previewDesign?.()?.sections?.[pg]?.instances?.find(x => x.id === id);
+      if (!inst || typeof c.setSectionLayout !== "function" || !canEditSecs()) { say("Layout cannot be changed right now."); return; }
+      openSectionLibrary({ host: document.body, page: pg, allowedTypes: [], ready: () => ready() && o.getPage() === pg, readOnly, editInstance: inst, context: () => layoutContext(pg),
+        onLayout: layout => { const ok = c.setSectionLayout(pg, id, layout); if (ok !== true) throw new Error("not applied"); say("Layout changed. Save draft to keep it."); paintPanel(); return true; },
+        returnFocus: () => mount.querySelector(`[data-ws-layout="${CSS.escape(id)}"]`) || q("[data-ws-library]"), onClose: () => paintPanel() });
     }
     else if ("wsUndo" in d && !readOnly) { let ok = false; try { if (c.canUndo?.()) { c.undo(); ok = true; } } catch { ok = false; } say(ok ? "Last edit undone." : "Nothing to undo."); paintPanel(); mount.querySelector("[data-ws-undo]")?.focus?.({ preventScroll: true }); }
     else if (d.wsDup && !readOnly) { if (!canEditSecs()) { say("Editing is unavailable right now."); return; } try { const id = c.duplicateSection(o.getPage(), d.wsDup, [...o.sectionInfo().meta.keys()]); say(id ? "Section duplicated. Save draft to keep it." : "Section could not be duplicated."); paintPanel(); if (id) mount.querySelector(`[data-ws-edit][data-key="${CSS.escape(id)}"]`)?.focus?.({ preventScroll: true }); } catch (err) { say("Section could not be duplicated. " + String(err?.message || "")); paintPanel(); } }

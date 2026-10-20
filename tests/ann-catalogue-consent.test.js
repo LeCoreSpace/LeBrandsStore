@@ -14,8 +14,15 @@ test("Ann and standalone editors keep insertion, duplication, deletion and Undo 
       const first=h.ui.addSection("home","brand-story",{kind:"none"},null,["slot-ed-hero-0"]);
       const key=`section.home.${first}.text0`;
       h.input(key,"Independent story title");
+      h.ui.setSectionLayout("home",first,"boutique");
+      assert.equal(h.ui.previewDesign().sections.home.instances[0].layout,"boutique");
+      h.ui.setSectionLayout("home",first,"editorial");
+      assert.equal(h.ui.previewDesign().copy[key],"Independent story title");
+      h.ui.undo();
+      assert.equal(h.ui.previewDesign().sections.home.instances[0].layout,"boutique");
       const second=h.ui.duplicateSection("home",first,[first,"slot-ed-hero-0"]);
       assert.notEqual(first,second);
+      assert.equal(h.ui.previewDesign().sections.home.instances[1].layout,"boutique");
       assert.equal(h.ui.previewDesign().copy[`section.home.${second}.text0`],"Independent story title");
       assert.equal(h.ui.previewDesign().sections.home.instances.length,2);
       assert.equal(h.ui.removeSection("home",first),true);

@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {setupAnnFixtureDatabase,annFixtureAdapter} from "../src/ann-preview-fixture.js";
 import {handleAnnRoutes} from "../src/store/ann-routes.js";
-import {createSectionInstance} from "../src/public/section-instance-model.js";
+import {createSectionInstance,setInstanceLayout} from "../src/public/section-instance-model.js";
 import {renderSavedDesign} from "../src/public/aura-design.js";
 
 test("restricted-role section save/reload keeps drafts isolated, checks ownership and rejects stale ordering writes",async()=>{
@@ -44,5 +44,15 @@ test("restricted-role section save/reload keeps drafts isolated, checks ownershi
     assert.equal(after.expected_draft,loaded.expected_draft);
     assert.equal(after.draft.store.status,initial.draft.store.status);
     assert.deepEqual(after.draft.products,initial.draft.products);
+    const changed=setInstanceLayout(after.design.sections,"about",b.id,"vintage");
+    const layoutSave=await call("PATCH",{confirm:true,expected_draft:after.expected_draft,sections:changed});
+    assert.equal(layoutSave.status,200);
+    const reloaded=(await call("GET")).body;
+    assert.equal(reloaded.design.sections.about.instances[1].layout,"vintage");
+    assert.deepEqual(reloaded.design.copy,after.design.copy);
+    assert.deepEqual(reloaded.design.sections.about.order,after.design.sections.about.order);
+    assert.ok(renderSavedDesign(reloaded.draft,{page:"about"}).body.includes('data-section-layout="vintage"'));
+    const invalid=structuredClone(changed);invalid.about.instances[1].layout="arbitrary-css";
+    assert.equal((await call("PATCH",{confirm:true,expected_draft:reloaded.expected_draft,sections:invalid})).status,400);
   }finally{await pg.close();}
 });

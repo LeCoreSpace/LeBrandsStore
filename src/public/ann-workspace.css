@@ -137,3 +137,17 @@
 .sl-binds{display:grid;gap:8px;margin-top:12px}.sl-bind{display:grid;gap:4px;font:700 11px system-ui;letter-spacing:.08em;text-transform:uppercase;color:#7a6a6c}
 .sl-bind select{border:1px solid #cbb9c1;border-radius:4px;background:#fff;padding:9px;min-height:40px;color:#38282b;text-transform:none;letter-spacing:0;font-weight:400}
 @media(prefers-reduced-motion:reduce){.aw-gap,.aw-gap span{transition:none}}
+
+/* Section layout chooser: real preview, ticket language. */
+.sl-lay{margin:12px 0 0;padding:0;border:0;min-width:0}.sl-lay legend{font:700 11px system-ui;letter-spacing:.1em;text-transform:uppercase;color:#4d1026;padding:0}
+.sl-lays{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:6px;margin-top:6px}
+.sl-lay-b{text-align:left;border:1px solid #cbb9c1;border-left:4px solid #cbb9c1;border-radius:4px;background:#fff;color:#38282b;padding:7px 9px;min-height:44px;cursor:pointer;display:grid;gap:2px}
+.sl-lay-b strong{font-size:13px}.sl-lay-b small{font-size:11.5px;color:#7a6a6c}
+.sl-lay-b[aria-pressed=true]{border-left-color:#6b1735;background:#f3e8ec}
+.sl-lay-b:hover{background:#f3e8ec}
+.sl-prev{margin-top:10px;border:1px dashed #cbb9c1;border-radius:4px;background:#fff}
+.sl-prev-h{display:flex;justify-content:space-between;gap:8px;padding:6px 8px;font-size:12px;color:#7a6a6c;border-bottom:1px dashed #cbb9c1}
+.sl-frame{display:block;width:100%;height:360px;border:0;background:#fff}
+.sl-prev-wait{padding:28px 12px;font-size:12.5px;color:#7a6a6c}
+.aw-lay svg{width:16px;height:16px}
+@media(max-width:700px){.sl-frame{height:300px}}

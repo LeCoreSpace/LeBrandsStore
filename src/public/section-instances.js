@@ -2,6 +2,7 @@ import { sectionLibraryEntry } from "./section-library.js";
 import { validSectionInstances } from "./section-instance-model.js";
 import { productHref } from "./commerce-options.js";
 import { safeImage } from "./aura-sections.js";
+import {SECTION_LAYOUT_CSS} from "./section-layout-css.js";
 
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=v=>`₹${(Math.max(0,Number(v)||0)/100).toLocaleString("en-IN",{maximumFractionDigits:2})}`;
@@ -17,6 +18,7 @@ export const SECTION_INSTANCE_CSS=`
 .lb-section dl{margin:0}.lb-section dl>div{display:grid;grid-template-columns:1fr 2fr;gap:20px;padding:12px 0;border-bottom:1px solid color-mix(in srgb,currentColor 12%,transparent)}.lb-section dd{margin:0}
 .lb-message{text-align:center}.lb-message p{margin-inline:auto}.lb-empty{font-size:13px!important;opacity:.7}.lb-section blockquote{margin:0;padding:16px;border-left:2px solid currentColor}.lb-section blockquote footer{font-size:12px}
 @media(max-width:640px){.lb-split{grid-template-columns:1fr}.lb-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.lb-grid img{height:190px}.lb-section dl>div{grid-template-columns:1fr;gap:4px}}
+${SECTION_LAYOUT_CSS}
 `;
 function collectionUrl(c){return `/collections/${encodeURIComponent(c.slug||c.id)}`;}
 function selection(instance,data,options){
@@ -105,12 +107,14 @@ function contents(instance,data,options){
     default:return "";
   }
 }
+export function renderSectionInstance(instance,data={},options={}){
+  if(!validSectionInstances([instance],options.page||"home"))return "";
+  const content=contents(instance,data,options);
+  return content?`<section class="lb-section" data-section-instance="${esc(instance.id)}" data-section-type="${esc(instance.family)}" data-section-family="${esc(instance.family)}" data-section-layout="${esc(instance.layout||"original")}" data-library-instances="true">${content}</section>`:"";
+}
 export function injectSectionInstances(html,sections,data={},options={}){
   const page=options.page||"home",instances=sections?.[page]?.instances;
   if(!instances?.length||!validSectionInstances(instances,page)||!html.includes("</main>")||html.includes('data-library-instances="true"'))return html;
-  const body=instances.map(instance=>{
-    const content=contents(instance,data,options);
-    return content?`<section class="lb-section" data-section-instance="${esc(instance.id)}" data-section-type="${esc(instance.family)}" data-library-instances="true">${content}</section>`:"";
-  }).join("");
+  const body=instances.map(instance=>renderSectionInstance(instance,data,options)).join("");
   return html.replace("</main>",body+"</main>");
 }

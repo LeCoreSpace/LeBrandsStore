@@ -1,5 +1,33 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Section layout previews, phase 3
+
+- Working directory: repository root. Target: local development and fictional
+  PGlite fixtures only. Prerequisite: existing workspace packages.
+- Ran `node --test --test-concurrency=1` for 14 focused layout, insertion,
+  controller, workspace, rendering, persistence and styling test files:
+  all 80 cases passed.
+- Ran `tests/browser-bundles.test.js` separately with the new preview modules:
+  passed the actual Worker raw and versioned asset gates, static import graph,
+  request limits and immutable/public cache boundaries. Ann uses 11 requests.
+  Initial optional-import graph exceeded the limit; static imports fixed it.
+- Restarted the existing managed web and API workflows once after the batch.
+  Development curl on `/__ann-builder-preview/sections-editor` returned 200.
+  Only the synthetic fixture readiness flow was used.
+- The single isolated browser journey passed layout preview, cancel, apply,
+  Undo, HTTP-200 save, reload and continuity in Ann, plus 390px dialog overflow
+  and scrollability checks. Evidence identified anonymous font CORS from the
+  opaque iframe; fixed only the three public allowlisted font responses.
+  Added `tests/public-fonts.test.js`, checked the corrected header directly,
+  and kept sandbox permissions unchanged. The font/UI/asset correction batch
+  passed 20 checks, bringing distinct scoped coverage to 82 cases. Restarted
+  the API for this fix; development HEAD with `Origin: null` returned 200,
+  `Content-Type: font/woff2` and `Access-Control-Allow-Origin: *`. Final
+  screenshot confirmed the editor remained available after Vite's automatic
+  restart (which intentionally resets the fictional fixture).
+- `git diff --check` passed. No dependency install, schema migration, live
+  database read/write, production deployment or publishing command was run.
+
 ## 20 October 2026: Section library phase 2
 
 - Working directory: repository root. Target: local preview and isolated

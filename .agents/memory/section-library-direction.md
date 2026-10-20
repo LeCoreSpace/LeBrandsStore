@@ -33,3 +33,15 @@ phase, not just the availability of an Add button or reorder arrows.
 **How to apply:** Preserve direct insertion points, clear drag feedback and
 cancel/Undo behaviour. Treat mouse, touch and keyboard handling as part of the
 same editing experience, without filling the workspace with extra toolbars.
+
+Section layout changes must preserve the identities of saved text and media
+fields, not just the section's visible name and position.
+
+**Why:** The editor identifies editable leaves by their order within a section.
+Replacing a section with a different theme's raw markup can silently attach a
+saved heading, caption or image to a different field.
+
+**How to apply:** Use presentation changes that keep editable DOM leaves in the
+same order. A future structurally different renderer needs an explicit field
+mapping or migration before it can replace an already edited section. Never
+change the whole store theme as a side effect of choosing one section layout.
