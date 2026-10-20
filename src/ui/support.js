@@ -43,10 +43,10 @@ function listView(data, base) {
     : `<section class="sp-empty"><h2>${filtered ? "No tickets match these filters." : admin ? "The inbox is clear." : "You have no tickets yet."}</h2><p>${filtered ? "Clear the filters to see every ticket." : admin ? "New tickets from brands will appear here." : "Ask us anything, with or without a store. Replies appear in this list."}</p>${filtered ? `<a class="sp-btn" href="${base}">Clear filters</a>` : admin ? "" : `<a class="sp-btn sp-primary" href="${base}/new">Start a ticket</a>`}</section>`;
   return `<header class="sp-head"><div><p class="sp-eyebrow">${admin ? "Operations" : "Help &amp; support"}</p><h1>${admin ? "Support inbox" : "My tickets"}</h1></div>${admin ? "" : `<a class="sp-btn sp-primary" href="${base}/new">New ticket</a>`}</header>
 ${alertBox(data.error, data.notice)}${data.error ? `<p><a class="sp-btn" href="${esc(href(page))}">Try again</a></p>` : ""}
-<form class="sp-filters" method="get" action="${base}" role="search"><label class="sp-field"><span>Search</span><input type="search" name="q" value="${esc(q)}" maxlength="100" placeholder="Subject or ticket number"></label>
+<section class="sp-ticket sp-list" aria-label="Support tickets"><form class="sp-filters" method="get" action="${base}" role="search"><label class="sp-field"><span>Search</span><input type="search" name="q" value="${esc(q)}" maxlength="100" placeholder="Subject or ticket number"></label>
 <label class="sp-field"><span>Topic</span><select name="category"><option value="all">All topics</option>${list(data.categories).map((c) => `<option value="${esc(c.code)}"${c.code === category ? " selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label>
 <input type="hidden" name="status" value="${esc(status)}"><input type="hidden" name="page" value="0"><button class="sp-btn sp-primary" type="submit">Apply</button></form>
-<nav class="sp-tabs" aria-label="Status filter">${tabs}</nav>${body}`;
+<nav class="sp-tabs" aria-label="Status filter">${tabs}</nav>${body}</section>`;
 }
 
 function newView(data, base) {
@@ -55,7 +55,7 @@ function newView(data, base) {
   return `<nav class="sp-crumbs" aria-label="Breadcrumb"><a href="${base}">My tickets</a><span aria-hidden="true">/</span><span>New ticket</span></nav>
 <header class="sp-head"><div><p class="sp-eyebrow">Help &amp; support</p><h1>New ticket</h1><p class="sp-sub">You do not need a store to ask for help. Never include passwords, API secrets or card details.</p></div></header>
 ${alertBox(data.error, data.notice)}
-<form class="sp-form" data-new-form novalidate data-source="${esc(src)}">
+<form class="sp-form sp-ticket sp-new" data-new-form novalidate data-source="${esc(src)}">
 <label class="sp-field"><span>Topic</span><select name="category_code" required aria-describedby="e-category_code"><option value="">Choose a topic</option>${cats.map((c) => `<option value="${esc(c.code)}">${esc(c.name)}</option>`).join("")}</select><small class="sp-err" id="e-category_code" data-error="category_code" hidden></small></label>
 <label class="sp-field"><span>Related store <em>(optional)</em></span><select name="store_id" aria-describedby="h-store"><option value="">No store, account question</option>${stores.map((s) => `<option value="${esc(s.store_id)}"${String(data.store_id || "") === String(s.store_id) ? " selected" : ""}>${esc(s.name)}</option>`).join("")}</select><small id="h-store">Choosing a store makes the ticket visible to that store's authorised team. Leave empty to keep it private to you.</small><small class="sp-err" data-error="store_id" hidden></small></label>
 <label class="sp-field"><span>Subject</span><input name="subject" required minlength="5" maxlength="160" autocomplete="off" aria-describedby="e-subject"><small class="sp-err" id="e-subject" data-error="subject" hidden></small></label>
@@ -110,7 +110,7 @@ ${admin ? '<fieldset class="sp-radio"><legend class="sp-sr">Visibility</legend><
   return `<nav class="sp-crumbs" aria-label="Breadcrumb"><a href="${base}">${admin ? "Support inbox" : "My tickets"}</a><span aria-hidden="true">/</span><span>${esc(ticketNo(t.ticket_number))}</span></nav>
 <header class="sp-head"><div><p class="sp-eyebrow sp-mono">${esc(ticketNo(t.ticket_number))}</p><h1 data-subject>${esc(t.subject)}</h1></div><div data-status-chip>${chip(t.status)}</div></header>
 ${alertBox(data.error, data.notice)}<div class="sp-live" data-conflict></div>
-<div class="sp-detail"><div class="sp-main"><ol class="sp-thread" data-thread aria-label="Conversation">${p.thread}</ol>${reply}</div>
+<div class="sp-detail"><div class="sp-main sp-ticket"><h2 class="sp-ticket-title">Conversation</h2><ol class="sp-thread" data-thread aria-label="Conversation">${p.thread}</ol>${reply}</div>
 <aside class="sp-aside"><dl class="sp-meta" data-meta>${metaHtml(t, admin, assignee, wait)}</dl>${workflow}
 <section class="sp-box"><h2>Activity</h2><ol class="sp-events" data-events>${p.events || '<li class="sp-sub">No activity recorded.</li>'}</ol></section>
 <section class="sp-box"><h2>Email status</h2><ol class="sp-events" data-notes>${p.notes || '<li class="sp-sub">No email activity recorded yet.</li>'}</ol></section></aside></div>`;

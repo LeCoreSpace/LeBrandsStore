@@ -571,3 +571,12 @@ body.ann-browser-shell{margin:0;height:100dvh;display:flex;flex-direction:column
   .ann-tb-preview span{display:none}
   .ann-tb-step>summary{max-width:46vw}
 }
+
+/* Adaptive split: conversation 50/50 or preview ~25/75. Desktop only; phones use the existing switch. */
+@media(min-width:901px){
+  .ann[data-split] .ann-grid{grid-template-columns:minmax(320px,1fr) minmax(0,1fr);transition:grid-template-columns .3s cubic-bezier(.2,.8,.2,1)}
+  .ann[data-split=preview] .ann-grid{grid-template-columns:minmax(320px,1fr) minmax(0,3fr)}
+}
+[data-layout-lock][aria-pressed=true]{background:var(--a);border-color:var(--a);color:#fff}
+@media(max-width:900px){[data-layout-lock]{display:none!important}}
+@media(prefers-reduced-motion:reduce){.ann[data-split] .ann-grid{transition:none}}

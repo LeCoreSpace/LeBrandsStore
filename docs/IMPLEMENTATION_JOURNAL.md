@@ -1,5 +1,47 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Support ticket visual alignment, local
+
+- Matched Help & support headers, list/filter/table surface, new-ticket form,
+  conversation and side sections to the flat dashboard ticket treatment.
+  Inner filters, tables, messages and replies do not add nested card boundaries.
+- Preserved routes, forms, status workflow, email behavior and authorization.
+- Four support-shell checks passed; browser asset build succeeded and the
+  synthetic owner dashboard screenshot confirmed the ticket list appearance.
+  The isolated fixture intentionally blocks dashboard store-data requests.
+- Not published; no database migration needed.
+
+## 2026-10-20: Adaptive Ann layout published
+
+- User approved publication. Published `lebrands-store` using
+  `wrangler deploy --keep-vars`; version
+  `0462d949-825d-4e64-b0b6-1c8f32b6eeaa` serves 100% of production traffic.
+- All 25 binding fingerprints, including 14 encrypted secrets, and runtime
+  compatibility settings match the pre-publication snapshot.
+- All 32 Ann entry assets and discovered dependencies returned HTTP 200;
+  the live bundle includes the adaptive layout controller.
+- Anonymous Ann access redirects to login with no-store; the support API
+  continues to reject anonymous requests. No database migration or account,
+  checkout, payment or email changes were performed.
+
+## 2026-10-20: Ann adaptive conversation and preview split
+
+- Added a layout-only controller: conversation focus uses an equal split and
+  preview focus uses approximately 25/75, with a usable 320px conversation minimum.
+  The desktop grid animates over 300ms and respects reduced motion.
+- Added an accessible Lock layout toggle to the existing More menu. It preserves
+  the current split and resumes the latest focused panel when unlocked. Phones
+  retain their existing conversation/preview switch.
+- Same-origin iframe document events are rebound after existing preview loads;
+  stale listeners and pending gesture timers are cleaned up. Drag gestures defer
+  resizing until completion. No iframe reload, draft mutation or forced focus.
+- Existing fixed 1280px desktop preview fitting remains unchanged, preserving the
+  selected viewport mode as workspace width changes.
+- All 18 focused layout, toolbar, conversation and header checks passed.
+  Refreshed stale conversation-test fixture bindings for existing plan/navigation
+  helpers. The browser build and desktop/phone synthetic screenshots succeeded.
+- No database migration. Subsequently published with approval as recorded above.
+
 ## 2026-10-20: Dashboard support placement published
 
 - User explicitly approved publishing the dashboard integration.

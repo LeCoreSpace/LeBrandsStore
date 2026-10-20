@@ -1,5 +1,21 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Approved adaptive Ann publication
+
+Working directory: repository root. Target: existing Cloudflare production
+Worker. Prerequisites: explicit owner approval and the completed 18 focused
+checks, browser build and desktop/phone layout screenshots.
+
+```sh
+pnpm exec wrangler deploy --keep-vars
+```
+
+Observed version: `0462d949-825d-4e64-b0b6-1c8f32b6eeaa`, 100% traffic.
+Read-only Cloudflare API comparisons confirmed all 25 bindings, including 14
+encrypted secrets, and compatibility settings unchanged. HTTPS checks verified
+32 Ann assets/dependencies, the adaptive controller in the live bundle and
+anonymous access protection. No SQL or payment operation was executed.
+
 ## 20 October 2026: Approved dashboard support publication
 
 Working directory: repository root. Target: existing Cloudflare production

@@ -26,6 +26,16 @@ ticket/email links through authorized redirects. Keep account-level support
 available before the brand has its first store; the admin inbox stays in the
 admin dashboard.
 
+Help & support must also use the shared flat ticket visual style across the
+list, new-ticket form and conversation, not merely sit inside the dashboard.
+
+**Why:** The user explicitly reported that support was missing the ticket style
+after its dashboard integration.
+
+**How to apply:** Match the plum rail, tinted headers and dashed separators.
+Use one surface per section; do not frame filters, tables or replies in nested
+cards.
+
 Creation and closure notices are essential support-service messages, not
 optional marketing updates. Keep private note content and sensitive context out
 of email; direct recipients to the authenticated ticket.

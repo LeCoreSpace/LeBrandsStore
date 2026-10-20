@@ -42,6 +42,7 @@
 - [Migration test foundations](migration-test-foundations.md) — use real foundational DDL; invented fixtures can mask incompatibilities with the existing database.
 - [Offline test memory](offline-test-memory.md) — keep concurrent PGlite tests bounded so verification does not exhaust the running workspace.
 - [Ann preview lifecycle](ann-preview-fixture-lifecycle.md) — backend edits can restart Vite and reset its in-memory store; stabilize the server before persistence checks.
+- [Ann workspace layout](ann-workspace-layout.md) — focus-adaptive preview space, equal conversation split and compact locking; preserve drafts and preview mode.
 - [Image generation framing](image-generation-framing.md) — verify output dimensions; wide hero prompts can still return square images.
 - [Platform typography](platform-typography.md) — homepage font changes apply throughout the page; align with Pricing/Compare without changing merchant designs.
 - [Browser module delivery](browser-module-delivery.md) — blocked transitive modules can leave Ann blank; verify the actual Worker asset gate, not just uploaded files.

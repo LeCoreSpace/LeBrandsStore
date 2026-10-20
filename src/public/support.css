@@ -95,3 +95,26 @@
 .lb-app .sp-root .sp-sub,.lb-app .sp-root .sp-field small{color:var(--sp-mut)}
 .lb-app .sp-root :is(a.sp-btn,a.sp-btn:hover){text-decoration:none}
 .lb-app .sp-root a.sp-primary{color:#fff}
+
+/* One flat ticket surface per section, matching the operational dashboard. */
+.sp-root{--sp-rule:#d8c5cd;--sp-ticket-tint:#faf5f7}
+.sp-head{padding:16px 20px;border:1px solid var(--sp-line);border-left:4px solid var(--sp-a);border-radius:6px;background:var(--sp-bg);align-items:center}
+.sp-head h1{font-size:22px;letter-spacing:-.02em}
+.sp-ticket,.sp-aside>.sp-meta,.sp-aside>.sp-side,.sp-aside>.sp-box{min-width:0;background:var(--sp-bg);border:1px solid var(--sp-line);border-top:3px solid var(--sp-a);border-radius:6px;padding:18px}
+.sp-list{padding:0;overflow:hidden}
+.sp-list .sp-filters{margin:0;padding:16px 18px;background:var(--sp-ticket-tint);border:0;border-bottom:1px dashed var(--sp-rule)}
+.sp-list .sp-tabs{margin:0;padding:12px 18px;border-bottom:1px solid var(--sp-line)}
+.sp-list .sp-tablewrap{border:0}
+.sp-list .sp-empty{border:0;background:transparent}
+.sp-list .sp-pager{margin:0;padding:14px 18px;border-top:1px dashed var(--sp-rule)}
+.sp-new{max-width:800px;padding:20px;gap:18px}
+.sp-ticket-title,.sp-aside>.sp-side>h2,.sp-aside>.sp-box>h2{margin:-18px -18px 16px;padding:12px 18px;background:var(--sp-ticket-tint);border-bottom:1px dashed var(--sp-rule);font-size:14px}
+.sp-main>.sp-form{max-width:none;padding-top:18px;border-top:1px dashed var(--sp-rule)}
+.sp-aside>.sp-meta{padding:8px 18px}
+.sp-meta>div:first-child{border-top:0}
+.sp-aside>.sp-side,.sp-aside>.sp-box{margin:0}
+.sp-thread{gap:0}
+.sp-msg{border-left:0;border-bottom:1px solid var(--sp-line);padding:14px 0}
+.sp-msg[data-mine]{border-left:0}
+.sp-msg[data-visibility=internal]{border-left:3px dashed #b88f1e;padding-left:12px}
+@media(max-width:640px){.sp-head{padding:14px 16px}.sp-new{padding:16px}.sp-list .sp-filters,.sp-list .sp-tabs,.sp-list .sp-pager{padding:12px}.sp-pager{flex-wrap:wrap}.sp-head h1{font-size:22px}}

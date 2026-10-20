@@ -20,6 +20,7 @@ import {requiredAnnBusinessPrompt,annBusinessPosition} from "./ann-business-gate
 import { attachAnnReadiness } from "./ann-readiness-ui.js";
 import { attachStoreEssentials, connectionHref } from "./store-essentials.js";
 import { openAnnBrowserPreview,browserPreviewLocation } from "./ann-browser-preview.js";
+import { mountAnnAdaptiveLayout } from "./ann-adaptive-layout.js";
 import { attachAnnBranding } from "./ann-branding-ui.js";
 import { prefilledSection } from "./aura-starters.js";
 import { initialAnswers, diffAnswers, changeCategory, changeSubcategory, nextKey, planProblems, projectAnnPreview, currentExtras, annAnsweredStages } from "./ann-projection.js";
@@ -381,6 +382,7 @@ frame.addEventListener("load", () => {
 });
 if (typeof ResizeObserver !== "undefined") new ResizeObserver(fit).observe(canvas);
 window.addEventListener("resize", fit);
+mountAnnAdaptiveLayout({ app, frame });
 
 /* ---------- attributes ---------- */
 async function loadAttrs(subId) {

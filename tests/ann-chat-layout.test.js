@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
 import { readFile } from "node:fs/promises";
+import {annNavigationSteps,annNavigationKey} from "../src/public/ann-config.js";
 
 const source = await readFile(new URL("../src/public/ann-builder.js", import.meta.url), "utf8");
 const composerCode = source.slice(source.indexOf("function composerKeyFor("), source.indexOf("/* ---------- panel drawing"));
@@ -23,6 +24,7 @@ function harness(kind = "choice", readOnly = false) {
     prompts: () => [prompt], cur: () => prompt, def: () => definition,
     ref: {}, step: "category", curIdx: () => 0, reachedIdx: () => 0,
     UI_STEPS: [["category", "Category"]], notice: "", feeds: {},
+    annNavigationSteps,annNavigationKey,planAccess:{available:false},planLocked:()=>false,
     annBubble: (text, cls, attrs = "") => `<div class="${cls}"${attrs}><p>${escape(text)}</p></div>`,
     meBubble: html => html, listHtml: () => "<ul>Items</ul>", feedHtml: () => "",
     editQ: () => "New name?", reviewStep: () => "<p>Review plan</p>",

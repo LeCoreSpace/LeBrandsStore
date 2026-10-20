@@ -1,5 +1,14 @@
 # Complete implementation checkpoint register
 
+### Adaptive Ann layout publication, 20 October 2026
+
+Owner-approved Cloudflare version `0462d949-825d-4e64-b0b6-1c8f32b6eeaa`
+serves 100% of traffic. Focus-adaptive widths, the compact layout lock and
+gesture deferral passed 18 focused checks before publication. Live asset and
+access-control checks passed; bindings and compatibility settings are unchanged.
+No database migration. Workspace changes await an automatic checkpoint;
+no manual Git commit was created.
+
 ### Owner-approved Cloudflare UI release, 20 October 2026
 
 Published main Worker version `655025e5-5a72-4e11-b9a8-52754abc207c`
