@@ -1,5 +1,21 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Approved Help & support styling publication
+
+Working directory: repository root. Target: existing Cloudflare production
+Worker. Prerequisites: explicit owner approval, four passing support-shell
+checks and verified synthetic dashboard screenshot.
+
+```sh
+pnpm exec wrangler deploy --keep-vars
+```
+
+Version `4296fe19-25c4-4e17-91e5-f9b448250416` serves 100% of traffic.
+Read-only API comparisons confirmed 25 unchanged bindings, including 14 secrets,
+and unchanged runtime compatibility. Six live support assets/dependencies
+returned 200; new styling and anonymous access protection verified.
+No SQL or payment operation was executed.
+
 ## 20 October 2026: Approved adaptive Ann publication
 
 Working directory: repository root. Target: existing Cloudflare production

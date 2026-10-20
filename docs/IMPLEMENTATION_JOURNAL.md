@@ -1,5 +1,16 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Support ticket styling published
+
+- Owner-approved version `4296fe19-25c4-4e17-91e5-f9b448250416` serves 100%
+  of Cloudflare production traffic after `wrangler deploy --keep-vars`.
+- All 25 bindings, including 14 encrypted secrets, and runtime compatibility
+  settings match the pre-release snapshot.
+- Six support assets/dependencies returned 200, including the new flat ticket
+  CSS. Dashboard support/list-creation, account support and admin support retain
+  sign-in protection; the API rejects anonymous access, all with no-store.
+- No database migration, test emails or payment changes.
+
 ## 2026-10-20: Support ticket visual alignment, local
 
 - Matched Help & support headers, list/filter/table surface, new-ticket form,
@@ -9,7 +20,7 @@
 - Four support-shell checks passed; browser asset build succeeded and the
   synthetic owner dashboard screenshot confirmed the ticket list appearance.
   The isolated fixture intentionally blocks dashboard store-data requests.
-- Not published; no database migration needed.
+- Subsequently published with approval as recorded above; no migration needed.
 
 ## 2026-10-20: Adaptive Ann layout published
 
