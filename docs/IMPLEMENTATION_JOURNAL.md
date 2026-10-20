@@ -1,5 +1,32 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Section library, phase 1
+
+- Added a presentation-only catalogue of 39 universal section families, eight
+  content categories and a separate Store Layout category. Legacy aliases
+  resolve to the new display names without changing saved section IDs or data.
+- Shared Ann/theme-editor workspace now has a searchable library with category
+  and theme filters, labelled neutral illustrations, source-layout lists and
+  accurate current-page availability. Header/footer and unsupported insertions
+  are view-only. Browsing never changes the store theme.
+- Existing optional additions/removals use the established draft-plan path,
+  require current-page edit access, and restore previously hidden optional
+  sections when adding them. Failed changes do not display success.
+- Dialog portals outside the workspace, preserves keyboard focus and search
+  selection, supports Escape and mobile layout, and locks background scrolling.
+- Added browser modules to the actual Worker asset gate and a development-only,
+  read-only preview before database initialization. No merchant data used.
+- Verification: 31 distinct focused checks pass across catalogue, event/state,
+  section content, all-eight-theme rendering, workspace and Worker browser
+  bundle delivery. Updated rendering-name expectations and a stale workspace
+  assertion to the existing stronger access guard. Desktop 1280x850 and mobile
+  390x844 screenshots passed. No authenticated save/reload browser journey
+  claimed; callback checks use an in-process DOM boundary.
+- Remaining phases: cross-page section instances and content binding, followed
+  by real theme-layout previews and layout reuse. Diagrams are illustrations,
+  not store screenshots or interactive layout selectors.
+- No live database access, migration, publishing or production deployment.
+
 **Created:** 19 October 2026  
 **Date convention:** Africa/Cairo local dates  
 **Historical coverage:** 11 September to 18 October 2026, covering 272 recorded commits  

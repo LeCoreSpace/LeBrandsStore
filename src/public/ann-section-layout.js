@@ -1,6 +1,7 @@
 // Shared draft/live section arrangement. Only trusted renderer output is parsed;
 // merchants send bounded identifiers, never HTML.
 import { ANN_SECTION_LABELS } from "./ann-config.js";
+import { sectionLibraryEntry } from "./section-library.js";
 const SECTION_NAMES = {
   hero:"Hero",top:"Introduction",offers:"Offers and promotions",badges:"Payment, delivery and trust",
   stats:"Store highlights",quote:"Brand statement",band:"Brand statement",statement:"Brand statement",
@@ -24,8 +25,9 @@ function sectionEntry(body,index,page,seen){
   const classes=/class=["']([^"']+)["']/.exec(root)?.[1]?.split(/\s+/)||[];
   const name=String(type||classes.find(c=>!["sc-sec","au-section","rv"].includes(c)&&/^[a-z][a-z0-9_-]+$/.test(c))||"").toLowerCase().replace(/[^a-z0-9-]/g,"-").slice(0,48);
   const semantic=(ANN_SECTION_LABELS[type]?`${ANN_SECTION_LABELS[type]} (optional)`:"")||SECTION_NAMES[name.replace(/^(?:sc|ed|bq|ar|mn|vt|sp|cf|pd)-/,"")];
+  const family=sectionLibraryEntry(type||name)||sectionLibraryEntry(semantic);
   const accessible=/aria-label=["']([^"']+)["']/.exec(root)?.[1];
-  const label=(semantic||accessible||heading?.replace(/<[^>]+>/g,"")||name.replace(/-/g," ")||"Content block")
+  const label=(family?.name||semantic||accessible||heading?.replace(/<[^>]+>/g,"")||name.replace(/-/g," ")||"Content block")
     .replace(/&amp;/g,"&").replace(/&#39;/g,"'").replace(/&quot;/g,'"').slice(0,100);
   const n=seen.get(name)||0;seen.set(name,n+1);
   return {id:required?`slot-core-${page}-0`:name?`slot-${name}-${n}`:`main-${index}`,label,html:body,required,type};

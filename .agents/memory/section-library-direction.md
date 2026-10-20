@@ -12,3 +12,14 @@ by finalising names and categories so any section can be used across pages.
 **How to apply:** Treat current page-bound section availability as an existing
 limitation, not the permanent product direction. Keep section identity and
 library naming consistent across theme presentations.
+
+The user approved phased implementation of the universal names/categories and
+cross-theme browsing proposal. Header and footer remain store-wide elements;
+transactional buying and checkout components are not ordinary content blocks.
+
+**Why:** This separates content design freedom from the controls required for
+correct storefront navigation and transactions.
+
+**How to apply:** Preserve old saved identities when changing display names.
+Browsing a section must not imply that it can already be inserted: insertion
+still needs a supported data model, page context and edit permission.

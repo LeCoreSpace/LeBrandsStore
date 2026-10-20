@@ -7,6 +7,8 @@
 import { designSections } from "./ann-section-layout.js";
 import { ANN_EXTRA_SECTIONS, ANN_SECTION_LABELS, ANN_PALETTES, ANN_FONTS } from "./ann-config.js";
 import { DESIGN_COPY_LIMITS, DESIGN_MEDIA_KEYS } from "./ann-design-model.js";
+import { openSectionLibrary } from "./section-library-ui.js";
+import { sectionDisplayName, selectedLibraryTypes } from "./section-library.js";
 import { MAX_MENU_ITEMS, MAX_MENU_CHILDREN, defaultDesignMenus } from "./ann-menu-model.js";
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -141,7 +143,7 @@ export function attachAnnWorkspace(o) {
     const page = o.getPage(), plan = o.getPlan(), { meta } = o.sectionInfo(), extras = ANN_EXTRA_SECTIONS[page] || [];
     const rows = [...meta].map(([id, x]) => { const lock = readOnly || x.required, n = esc(x.label), k = esc(id);
       return `<div class="aw-sec${x.hidden ? " is-off" : ""}"><button type="button" class="aw-sec-name" data-ws-edit="section" data-key="${k}"${off()}>${n}${x.hidden ? "<small>Removed</small>" : x.required ? "<small>Protected</small>" : ""}</button><span class="aw-acts"><button type="button" data-ws-sec="${k}" data-act="up" title="Move up" aria-label="Move ${n} up"${lock || x.index <= 0 ? " disabled" : ""}>${I_UP}</button><button type="button" data-ws-sec="${k}" data-act="down" title="Move down" aria-label="Move ${n} down"${lock || x.index >= x.count - 1 ? " disabled" : ""}>${I_DOWN}</button><button type="button" data-ws-sec="${k}" data-act="toggle" title="${x.hidden ? "Restore section" : "Remove section"}" aria-label="${x.hidden ? "Restore" : "Remove"} ${n}"${lock ? " disabled" : ""}>${x.hidden ? I_ADD : I_DEL}</button></span></div>`; }).join("");
-    return `<div class="aw-ph"><h3>${esc(PAGE_LABEL(page))} page</h3><span>${meta.size} sections</span></div>${rows ? `<div class="aw-list">${rows}</div>` : '<p class="aw-muted">This page has a fixed shopping layout.</p>'}${extras.length ? `<fieldset class="aw-opt"><legend>Optional sections</legend>${extras.map(t => `<label><input type="checkbox" data-ws-extra="${esc(t)}"${plan.section_options?.[page]?.includes(t) ? " checked" : ""}${off()}> ${esc(ANN_SECTION_LABELS[t] || t)}</label>`).join("")}</fieldset>` : ""}`;
+    return `<div class="aw-ph"><h3>${esc(PAGE_LABEL(page))} page</h3><span>${meta.size} sections</span></div>${rows ? `<div class="aw-list">${rows}</div>` : '<p class="aw-muted">This page has a fixed shopping layout.</p>'}${extras.length ? `<div class="aw-opt"><button type="button" class="aw-add aw-libopen" data-ws-library aria-haspopup="dialog"${off()}>Add section</button>${(plan.section_options?.[page] || []).filter(t => extras.includes(t)).length ? `<p class="aw-muted">Optional on this page: ${(plan.section_options?.[page] || []).filter(t => extras.includes(t)).map(t => esc(sectionDisplayName(t, ANN_SECTION_LABELS[t] || t))).join(", ")}</p>` : ""}</div>` : `<button type="button" class="aw-add aw-libopen" data-ws-library aria-haspopup="dialog">Browse section library</button>`}`;
   }
   const contentPanel = () => `<div class="aw-gh">Text</div><div class="aw-list">${Object.keys(DESIGN_COPY_LIMITS).map(k => `<button type="button" class="aw-row" data-ws-edit="copy" data-key="${k}"${off()}>${esc(FIELD_LABELS[k] || k)}</button>`).join("")}</div><div class="aw-gh">Photos</div><div class="aw-list">${DESIGN_MEDIA_KEYS.map(k => `<button type="button" class="aw-row" data-ws-edit="image" data-key="${k}"${off()}>${esc(FIELD_LABELS[k] || k)}</button>`).join("")}</div>`;
   const stylePanel = () => { const plan = o.getPlan(); return `<div class="aw-ph"><h3>Colours and fonts</h3></div><label class="aw-field">Background<select data-ws-plan="color_preset"${off()}>${ANN_PALETTES.map(v => `<option${plan.color_preset === v ? " selected" : ""}>${esc(v)}</option>`).join("")}</select></label><label class="aw-field">Font style<select data-ws-plan="font_preset"${off()}>${ANN_FONTS.map(v => `<option${plan.font_preset === v ? " selected" : ""}>${esc(v)}</option>`).join("")}</select></label><label class="aw-field">Button and highlight colour<input type="color" data-ws-plan="accent_color" value="${esc(plan.accent_color || "#661329")}"${off()}></label>`; };
@@ -172,7 +174,7 @@ export function attachAnnWorkspace(o) {
     paintChrome();
     const act = document.activeElement, inside = act && panel.contains(act), key = inside ? focusKey(act) : "", sel = inside && "selectionStart" in act ? [act.selectionStart, act.selectionEnd] : null, top = panel.scrollTop;
     let html;
-    if (!ready()) html = `<p class="aw-muted">Adopt your style at the Style step to edit your store here. Showcase styles are never edited.</p>`;
+    if (!ready()) html = `<p class="aw-muted">Adopt your style at the Style step to edit your store here. Showcase styles are never edited.</p><button type="button" class="aw-add aw-libopen" data-ws-library aria-haspopup="dialog">Browse section library</button>`;
     else html = tab === "content" ? contentPanel() : tab === "style" ? stylePanel() : tab === "menus" ? menusPanel() : sectionsPanel();
     panel.innerHTML = html; panel.scrollTop = top;
     if (key) { const el = [...panel.querySelectorAll("button,input,select")].find(e => focusKey(e) === key); if (el) { el.focus({ preventScroll: true }); if (sel) try { el.setSelectionRange(...sel); } catch { /* not text */ } } }
@@ -185,6 +187,23 @@ export function attachAnnWorkspace(o) {
     if (d.wsTab) setTab(d.wsTab);
     else if ("wsClose" in d) api.close();
     else if ("wsOwn" in d) o.onOwn?.();
+    else if ("wsLibrary" in d) {
+      const pg = o.getPage();
+      openSectionLibrary({
+        host: document.body, page: pg, allowedTypes: ANN_EXTRA_SECTIONS[pg] || [],
+        selectedTypes: () => selectedLibraryTypes(o.getPlan().section_options?.[pg],o.sectionInfo()),
+        ready:()=>ready()&&o.getPage()===pg, readOnly, returnFocus: () => q("[data-ws-library]"),
+        onToggle: (t,on) => {
+          if (!ready() || readOnly || o.getPage()!==pg || !ANN_EXTRA_SECTIONS[pg]?.includes(t))return;
+          o.setExtra(t,on);
+          if(on){
+            const {meta,map}=o.sectionInfo();
+            for(const [id,entry] of meta) if(entry.hidden&&map?.get(id)?.type===t)o.onSectionAction?.(id,"toggle");
+          }
+        },
+        onClose: () => paintPanel(),
+      });
+    }
     else if (d.wsEdit) c?.selectContent(d.wsEdit, d.key);
     else if (d.wsSec && !readOnly) o.onSectionAction(d.wsSec, d.act);
     else if (d.mAct && !readOnly && c) { const next = applyMenuAction(currentMenus(), d.m, d.mAct, d.i === "" ? undefined : Number(d.i), d.j); if (next) commitMenus(next); }
@@ -209,7 +228,6 @@ export function attachAnnWorkspace(o) {
     if (n.dataset.wsPage !== undefined) { o.setPage(n.value); return; }
     if (readOnly) return;
     if (n.dataset.wsPlan) o.setPlan(n.dataset.wsPlan, n.value);
-    if (n.dataset.wsExtra) o.setExtra(n.dataset.wsExtra, n.checked);
     if (n.dataset.f === "pick" && o.controller()?.setMenus) {
       const m = n.dataset.m, i = Number(n.dataset.i), j = n.dataset.j;
       const next = n.dataset.f === "pick" ? (n.value === "__custom" ? currentMenus() : setMenuField(currentMenus(), m, i, j, "url", n.value)) : setMenuField(currentMenus(), m, i, j, n.dataset.f, n.value);

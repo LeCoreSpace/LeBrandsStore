@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import { designPreviewData, renderStylePreview } from "../src/public/style-preview.js";
 import { designSections, applyDesignSections } from "../src/public/ann-section-layout.js";
 import { STYLE_IDS, styleSettings } from "../src/public/aura-styles.js";
-import { ANN_EXTRA_SECTIONS, ANN_SECTION_LABELS } from "../src/public/ann-config.js";
+import { ANN_EXTRA_SECTIONS } from "../src/public/ann-config.js";
+import { sectionDisplayName } from "../src/public/section-library.js";
 import { renderAura } from "../src/public/aura.js";
 
 const fixture=()=>({
@@ -28,7 +29,7 @@ test("all styles give every home section a useful name without changing existing
   }
   const html='<main><section class="ar-stats"><p>Highlights</p></section><section class="sc-sec sc-offers"><p>Offers</p></section></main>';
   assert.deepEqual(designSections(html).sections.map(s=>[s.id,s.label]),[
-    ["slot-ar-stats-0","Store highlights"],["slot-sc-offers-0","Offers and promotions"],
+    ["slot-ar-stats-0","Store Highlights"],["slot-sc-offers-0","Offer Cards"],
   ]);
 });
 
@@ -43,7 +44,7 @@ test("every optional section appears from the saved plan, with stable IDs and me
       assert.match(html,new RegExp(`data-section-type="${type}"`),`${style}/${page}/${type} must render`);
       const section=sections.find(s=>s.id===`slot-${type}-0`);
       assert.ok(section,`${style}/${page}/${type} must be listed`);
-      assert.equal(section.label,`${ANN_SECTION_LABELS[type]} (optional)`);
+      assert.equal(section.label,sectionDisplayName(type));
       const alone=renderStylePreview(designPreviewData(source,model(style,{[page]:[type]})),styleSettings(style),{page});
       assert.ok(designSections(alone,page).sections.some(s=>s.id===section.id),"Toggling another option cannot change its ID");
       const hidden=applyDesignSections(html,{[page]:{hidden:[section.id]}},page);

@@ -1,5 +1,16 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Section library phase 1
+
+- `node --test --test-concurrency=1 tests/section-library.test.js tests/section-library-ui.test.js tests/ann-design-workspace.test.js tests/ann-editor-sections.test.js tests/ann-section-content.test.js tests/browser-bundles.test.js`: 29 passed; two existing label assertions then updated for intentional universal names.
+- `node --test --test-concurrency=1 tests/ann-editor-sections.test.js`: all three passed after those expectations were updated. Together the scoped checks cover 31 distinct passing cases.
+- `git diff --check`: passed.
+- Restarted managed API and web previews once after application changes.
+- Captured desktop/mobile `/__ann-builder-preview/section-library`; this local
+  read-only route opens before synthetic database initialization. No data writes.
+- Workflow logs confirm both new raw modules served with HTTP 200; bundle tests
+  exercise the actual Worker asset gate. Production deployment not run.
+
 ## 19 October 2026: Complete public discovery inventory
 
 - `node --test --test-concurrency=1 tests/platform-seo.test.js`: verify all

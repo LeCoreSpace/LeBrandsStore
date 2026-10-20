@@ -189,6 +189,12 @@ export async function annPreviewFixture(req, res, previewOrigin) {
       res.end(req.method === "HEAD" ? undefined : renderStylePreview(sample, settings, { page }));
       return true;
     }
+    if(url.pathname===`${prefix}/section-library`&&["GET","HEAD"].includes(req.method)){
+      res.setHeader("content-type","text/html; charset=utf-8");
+      res.setHeader("cache-control","no-store");
+      res.end(req.method==="HEAD"?undefined:`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Section library preview</title><link rel="stylesheet" href="/assets/ann-workspace.css"></head><body style="margin:0;background:#f5f0f2;font-family:system-ui"><main style="padding:24px"><h1>Section library</h1><p>Read-only local preview. No merchant data or changes.</p><button id="browse">Browse sections</button></main><script type="module">import {openSectionLibrary} from "/assets/section-library-ui.js";import {ANN_EXTRA_SECTIONS} from "/assets/ann-config.js";let current;function open(){if(current?.element.isConnected)return;current=openSectionLibrary({host:document.body,page:"home",allowedTypes:ANN_EXTRA_SECTIONS.home,selectedTypes:()=>[],readOnly:true,ready:()=>false,onToggle:()=>{}})}document.querySelector("#browse").addEventListener("click",open);open();</script></body></html>`);
+      return true;
+    }
     const pg = await getDatabase(), db = annFixtureAdapter(pg);
     const readonly = url.searchParams.get("readonly") === "1" || url.pathname.includes("/read-only-api/");
     const user = { id: readonly ? editorId : ownerId, name: "Example member", email: "member@example.invalid" };

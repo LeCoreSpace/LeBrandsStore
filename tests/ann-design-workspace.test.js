@@ -100,7 +100,7 @@ test("sample adoption shows Your store; showcase is never overlaid or editable",
   assert.match(b, /!ownProductsConfirmed && !designUI\?\.active\(\)/);
   assert.match(b, /d\.previewMode === "store" && !designUI\?\.active\(\) && !requestOwnProducts/);
   assert.match(b, /backToDesign: plan => \{ answers[^]*setPreviewMode\("store"\)/);
-  assert.match(b, /canEdit: \(\) => previewMode === "store"/);
+  assert.match(b, /canEdit: \(\) => editorAccess\.allowed && previewMode === "store" && Boolean\(designUI\?\.previewDesign\(\)\)/);
   assert.match(u, /const editing = \(\) => active\(\) && !readOnly && editMode && mode\(\) === "store" && sameStyle\(\)/);
   assert.doesNotMatch(u, /catalogue_mode==="sample"\) && sameStyle/);
 });
