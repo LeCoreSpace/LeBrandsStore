@@ -7,7 +7,9 @@ separate.
 
 ## Environment configuration
 
-Use the same variable names with different values in each environment:
+Use the same variable names in each environment. Client credentials differ
+between Test and Live; the owner explicitly chose a shared webhook signing
+value while retaining separate endpoints.
 
 | Setting | Replit development | Cloudflare production Worker |
 | --- | --- | --- |
@@ -15,7 +17,7 @@ Use the same variable names with different values in each environment:
 | `RAZORPAY_OAUTH_CLIENT_SECRET` | Development application secret | Production application secret |
 | `RAZORPAY_OAUTH_MODE` | `test` | `live` |
 | `RAZORPAY_OAUTH_REDIRECT_URI` | Exact registered development callback | `https://app.lebrands.store/integrations/razorpay/callback` |
-| `RAZORPAY_OAUTH_WEBHOOK_SECRET` | Separate test webhook signing secret | Separate live webhook signing secret |
+| `RAZORPAY_OAUTH_WEBHOOK_SECRET` | Test webhook signing secret | Live webhook signing secret (shared value by owner choice) |
 
 Store credentials only through Replit Secrets or Cloudflare Worker Secrets.
 They do not synchronise between those services. Never use OAuth credentials in
@@ -29,9 +31,14 @@ a binding-only update that preserves existing resource bindings. Do not add
 same-named plain-text Wrangler variables without an explicit binding conversion.
 Their values cannot be read back through Cloudflare settings metadata.
 
-The production webhook binding remains pending resolution of the Live-only
-signing-secret entry; the Razorpay webhook itself already exists. Do not infer
-webhook readiness from successful OAuth client configuration.
+The production webhook binding is configured using the owner-approved shared
+signing value. The Razorpay webhook already exists. External checks rejected
+missing, incorrect and tampered signatures and acknowledged a signed synthetic
+unknown-account event. These checks do not prove Razorpay-sent delivery,
+matched-account processing, Live merchant consent or financial behaviour.
+Shared signing values are not cryptographic separation between environments;
+retain distinct client pairs/endpoints and verify cross-environment event
+handling before payment activation.
 For a different development host, register its exact HTTPS callback path in the
 Razorpay Development section before setting the override. Redirect and webhook
 URLs are different.

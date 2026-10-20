@@ -1,5 +1,21 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Live partner webhook binding and endpoint checks
+
+- With explicit confirmation of intentional Test/Live secret reuse, used one
+  targeted Secret PUT to bind the saved Live entry on the main Worker.
+  No values were printed or placed in files/arguments.
+- Verified encrypted binding presence, unchanged unrelated bindings, unchanged
+  code-module hashes and retained compatibility date/flags/usage model.
+- External POST probes to the production partner endpoint: no signature 400,
+  incorrect signature 400, signed synthetic unknown account 200/received=true,
+  signed-but-tampered body 400. These were agent-generated probes, not
+  Razorpay-sent events. The valid probe exercised only read-only unknown-account
+  routing and did not verify real merchant processing.
+- Separate Test receiver health remained HTTP 200, configured and in test mode.
+- Did not activate checkout, authorise a merchant, upload source, create an
+  order or process a real payment/refund.
+
 ## 20 October 2026: Production Live client bindings applied without code upload
 
 - Refreshed the managed API after the secure secret confirmation. Boolean-only

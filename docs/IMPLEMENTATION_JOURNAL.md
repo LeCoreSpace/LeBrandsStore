@@ -1,5 +1,23 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Live webhook binding completed with owner-approved shared value
+
+- Owner explicitly confirmed that using the same signing value for Test and
+  Live is intentional. Applied the Live-only secure entry to the main Worker's
+  encrypted partner webhook binding, without changing the Test receiver.
+- Before/after comparisons confirmed unchanged application code-module hashes,
+  all unrelated bindings and runtime compatibility settings. No workspace
+  application source was uploaded.
+- External production checks: missing signature 400, incorrect signature 400,
+  correctly signed synthetic unknown-account event 200/received=true, and
+  tampered signed body 400. The unknown-account resolver path is read-only;
+  no matched merchant or financial event was processed.
+- Separate Test receiver health remained 200/configured/test. No checkout
+  activation, merchant authorisation or customer/order mutation was performed.
+- Configuration is complete; actual Live owner consent and Razorpay-sent,
+  matched-account delivery remain unverified. A shared signing value is not
+  cryptographic Test/Live separation; verify replay isolation before activation.
+
 ## 20 October 2026: Live client configuration applied; webhook remains pending
 
 - After the secure replacement confirmation and runtime refresh, the Live

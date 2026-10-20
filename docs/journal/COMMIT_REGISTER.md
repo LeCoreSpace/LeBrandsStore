@@ -1,5 +1,12 @@
 # Complete implementation checkpoint register
 
+### Live partner webhook binding completed, 20 October 2026
+
+Applied the owner-approved shared signing value through a single encrypted
+production binding update. External signature/resolver checks passed; existing
+code and unrelated bindings were preserved. Real Live consent/provider delivery
+remain unverified. No source upload, manual Git commit or payment activation.
+
 ### Production Live client binding update, 20 October 2026
 
 Applied the approved Live client pair, mode and callback using four encrypted
