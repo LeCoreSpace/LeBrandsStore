@@ -55,6 +55,7 @@
 - [Store offers boundaries](store-offers-boundaries.md) — separate menu, staged offer types and future bundles; preserve historical allocations and best final payable total.
 - [Shopper email verification](shopper-email-verification.md) — verified email is mandatory before new orders; keep shopper checkout identity separate from merchant accounts.
 - [Partner integration direction](partner-integration-direction.md) — Razorpay website approved; partner OAuth and one logistics integration remain upcoming, not generally available.
+- [Marketing integration direction](marketing-integration-direction.md) — brand-provided Meta/Google IDs, optional advanced setup and confirmed-order event boundaries.
 - [Supabase function grants](supabase-function-defaults.md) — PUBLIC revocation does not remove direct API-role defaults; verify effective privileges for internal functions.
 - [Secret runtime refresh](secret-runtime-refresh.md) — restart the relevant managed service before diagnosing a newly saved secret as invalid.
 - [OAuth verification and logs](razorpay-oauth-verification.md) — distinguish consent, synthetic checks and real delivery; partner webhook logs are not in the merchant webhook list.

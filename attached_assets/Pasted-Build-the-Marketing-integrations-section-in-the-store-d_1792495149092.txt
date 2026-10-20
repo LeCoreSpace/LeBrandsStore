@@ -1,0 +1,95 @@
+Build the "Marketing integrations" section in the store dashboard (Settings → Marketing integrations) so each brand can connect Meta and Google to track their store and run ad campaigns. Keep brand setup minimal: one required ID per platform, everything else optional and collapsed under "Advanced".
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+1. USER INPUTS
+━━━━━━━━━━━━━━━━━━━━━━━━
+
+META CARD (with Enable/Disable toggle)
+Required:
+- Meta Pixel ID — digits only, 15–16 chars. Help text: "Find it in Meta Events Manager → Data sources → your pixel."
+
+Optional (under "Advanced"):
+- Conversions API access token — label "Improve tracking accuracy (recommended)". Encrypt at rest, server-side only, never sent to the browser; after saving show masked (••••last4).
+- Test event code (e.g. TEST12345) — used only while testing.
+- Domain verification code — only the content value of the facebook-domain-verification meta tag. Help text: "Only for custom domains you own."
+
+GOOGLE CARD (with Enable/Disable toggle)
+Required:
+- GA4 Measurement ID — format G-XXXXXXX. Help text: "Enough to track sales and run Google Ads." Show a 3-step checklist under it:
+  1) In GA4, mark "purchase" as a key event
+  2) Link GA4 to Google Ads (GA4 Admin → Product links)
+  3) In Google Ads, import the GA4 purchase conversion and use it as the campaign goal
+
+Optional (under "Advanced"):
+- Google Ads Conversion ID — format AW-XXXXXXXXX
+- Purchase conversion label (only valid together with the Conversion ID)
+- Add-to-cart conversion label
+- Begin-checkout conversion label
+- Enhanced conversions toggle (default OFF)
+- Google site verification code — only the content value of the google-site-verification meta tag (for Merchant Center)
+
+Validate formats on save; show inline errors. Add a "Send test event" button on the Meta card (fires a PageView using the test event code).
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+2. DATA
+━━━━━━━━━━━━━━━━━━━━━━━━
+Supabase table store_marketing_integrations (one row per store): store_id, meta_enabled, meta_pixel_id, meta_capi_token_encrypted, meta_test_event_code, meta_domain_verification, google_enabled, ga4_measurement_id, google_ads_id, google_label_purchase, google_label_add_to_cart, google_label_begin_checkout, google_enhanced_conversions, google_site_verification, updated_at. RLS: a brand can access only its own store's row.
+
+Add to orders: tracking_event_id (uuid), fbp, fbc, client_ip, user_agent, browser_purchase_fired_at, meta_capi_sent_at.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+3. WHAT TO INJECT ON EVERY STOREFRONT PAGE
+━━━━━━━━━━━━━━━━━━━━━━━━
+In the theme layout <head>, server-rendered per store, only if the value exists and the integration is enabled:
+- Verification meta tags (Meta and Google)
+- Meta Pixel base code: fbq('init', PIXEL_ID); fbq('track','PageView')
+- One gtag.js loader: gtag('config', GA4_ID); and if set, gtag('config', AW_ID)
+Load scripts async. If nothing is enabled, inject no tracking scripts at all (stores must stay lightweight).
+
+Create ONE helper track(eventName, data) that sends each event to both Meta and Google. Theme components call only this helper, never fbq/gtag directly.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+4. EVENTS — WHICH PAGE / ACTION
+━━━━━━━━━━━━━━━━━━━━━━━━
+| Page / action | Trigger | Meta | Google |
+| All pages | page load | PageView | page_view (automatic) |
+| Product page | page load | ViewContent | view_item |
+| Add to cart button (product page, quick-add on collection/home, upsell sections) | AFTER cart API returns success, not on raw click | AddToCart | add_to_cart (+ Ads conversion if add-to-cart label set) |
+| Checkout page | page load | InitiateCheckout | begin_checkout (+ Ads conversion if label set) |
+| Place order button | on click — DO NOT fire Purchase here | AddPaymentInfo (optional) | add_payment_info (optional) |
+| Order confirmation / thank-you page | page load, only after Razorpay payment verified or COD order created | Purchase | purchase (+ Ads conversion with purchase label if set) |
+| Search results (if search exists) | page load | Search | search |
+
+Parameters:
+- Meta: content_ids (product/variant id), content_type 'product', contents [{id, quantity}], value, currency 'INR', num_items.
+- Google: items [{item_id, item_name, price, quantity, item_category}], value, currency 'INR'.
+- Purchase also includes: transaction_id = order number (Google), eventID = orders.tracking_event_id (Meta).
+- Use the same product ID everywhere (events and any product feed).
+
+Purchase rules:
+- Fire once per order: set browser_purchase_fired_at; skip on refresh or revisit of the thank-you page.
+- Failed or cancelled Razorpay payment = no Purchase event.
+- If enhanced conversions is ON: call gtag('set','user_data',{email, phone_number}) on the thank-you page before the purchase event.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+5. SERVER-SIDE PURCHASE (only if Meta access token is saved)
+━━━━━━━━━━━━━━━━━━━━━━━━
+- At checkout, read the _fbp and _fbc cookies (build fbc from the fbclid URL param if missing); save them with IP and user agent on the order.
+- When the order is confirmed (Razorpay payment.captured webhook, or COD order creation), POST a Purchase event to the Meta Conversions API (Graph API /{pixel_id}/events):
+  - same event_id as the browser event (so Meta deduplicates)
+  - action_source 'website', event_source_url
+  - user_data: SHA-256 hashed lowercase email and phone (with 91 country code, no +), plus fbp, fbc, IP, user agent
+  - same custom_data as the browser event
+  - test_event_code if set
+- Retry on failure; set meta_capi_sent_at on success.
+- If no token is saved, skip this step entirely.
+
+━━━━━━━━━━━━━━━━━━━━━━━━
+6. ACCEPTANCE TESTS
+━━━━━━━━━━━━━━━━━━━━━━━━
+- Meta Pixel Helper shows PageView, ViewContent, AddToCart, InitiateCheckout, Purchase with correct INR values.
+- With a token + test code: Events Manager → Test events shows Purchase from Browser and Server, deduplicated.
+- GA4 DebugView shows the full funnel; Tag Assistant shows the Ads conversion when an AW ID + label are set.
+- Refreshing the thank-you page does not refire Purchase.
+- A cancelled Razorpay payment fires no Purchase.
+- A store with no integrations loads zero tracking scripts.
