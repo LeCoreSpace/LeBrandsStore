@@ -160,13 +160,24 @@ exact registered Development callback. The account owner completes login and
 consent themselves. A public webhook receiver is not evidence of successful
 merchant consent or Razorpay-sent webhook delivery.
 
+The separately deployed Test webhook URL is:
+
+`https://lebrands-razorpay-oauth-test.lebrandsspace.workers.dev/webhooks/razorpay/oauth`
+
+This is an actual deployment URL returned by Cloudflare and externally checked,
+not the Live partner endpoint. Register it only under **Manage Test Webhooks**.
+Development consent starts from the Replit preview dashboard, not an assumed
+production release. The preview must forward `/integrations/razorpay/callback`
+to account routing; an unauthenticated callback should reach the login guard,
+not the public site's 404 page.
+
 Synthetic local PGlite tests exercise real foundational DDL, restricted tenant
 transactions, nonce consumption/replay, cancellation, legacy preservation,
 encrypted persistence, refresh durability, disconnection and signed revocation.
 Client tests and an isolated browser fixture cover the dashboard controls.
-No test contacts Razorpay or reads live merchant data. A real merchant consent
-and signed provider delivery must be checked separately after an approved
-production release.
+These synthetic tests do not contact Razorpay or read live merchant data. Real
+merchant consent and signed provider delivery must be checked separately using
+the approved Test receiver before a separately approved Live release.
 
 Official references:
 

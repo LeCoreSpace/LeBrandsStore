@@ -1,5 +1,14 @@
 # Complete implementation checkpoint register
 
+### Public OAuth Test receiver verification, 20 October 2026
+
+The isolated Test receiver was deployed and passed eight external HTTP checks.
+Fixed Development callback routing and added a preview regression check; seven
+focused checks passed. A real provider credential probe returned HTTP 401, so
+merchant consent remains blocked pending a matching Development client pair.
+No main Worker release or manual Git commit was performed. Deployment evidence
+is recorded separately in the command register.
+
 ### Isolated OAuth Test receiver, 20 October 2026
 
 Added a Test-only webhook entry, a separate Cloudflare configuration, receiver

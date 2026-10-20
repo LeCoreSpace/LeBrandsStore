@@ -1,5 +1,38 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Public Test receiver deployment and network verification
+
+Working directory: workspace root. Scope approved by the user: isolated OAuth
+Test verification, not production store deployment or payment activation.
+
+- Restarted `artifacts/api-server: API Server` after the secret update; runtime
+  minimum-length validation then passed. The previous check had used a stale
+  environment value.
+- A guarded Node wrapper executed `pnpm exec wrangler deploy --config wrangler.oauth-test.jsonc`
+  for the isolated receiver only, with no custom routes or scheduled triggers.
+  Cloudflare returned its public workers.dev URL.
+- The wrapper executed `pnpm exec wrangler secret bulk --config wrangler.oauth-test.jsonc`
+  with required Test credentials/encryption configuration passed through stdin,
+  never command arguments or files. Four secret bindings were created. Output
+  was filtered against sensitive values before display.
+- An external HTTP probe script passed all eight receiver checks. Signed probes
+  used a deliberately synthetic unknown account/payment identifier; they did
+  not read or mutate merchant records. Non-secret result reports are under
+  ignored `generated-artifacts/`.
+- One POST to the real Razorpay token endpoint used Test configuration and a
+  deliberately invalid consent code. HTTP 401 indicated rejected client
+  credentials. Raw provider responses and credential values were not logged.
+- The Development callback initially returned 404. After correcting account
+  routing and restarting the API service, a fresh unauthenticated request
+  returned HTTP 303 to `/login`, the expected sign-in guard.
+- `node --test --test-concurrency=1 tests/live-preview.test.js tests/razorpay-oauth-test-worker.test.js`:
+  seven checks passed.
+- `git diff --check`: clean before documentation additions.
+
+Only the Test receiver was published. Main store hosting/routes, live merchant
+integrations, customer orders and payment settings were unchanged. Real OAuth
+consent and Razorpay-sent delivery remain unverified.
+
 ## 20 October 2026: Isolated Test receiver preflight
 
 Working directory: workspace root. Target: a separate Cloudflare Test receiver,

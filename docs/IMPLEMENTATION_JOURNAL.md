@@ -1,5 +1,29 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Test receiver deployed, provider credentials rejected
+
+- Restarting the managed API service after the user's secret update refreshed
+  the environment; the signing-secret length check then passed. Earlier failed
+  checks had still seen an old runtime value, not necessarily the newly saved
+  value. No secret values were inspected or printed.
+- Deployed only the isolated Test webhook receiver on its Cloudflare workers.dev
+  address and bound its required Test/encryption secrets securely through stdin.
+  The main Worker and its routes were not deployed or changed.
+- Eight external HTTP checks passed: configured Test health, unrelated-route
+  rejection, method restriction, missing/wrong signature rejection, signed
+  synthetic unknown-account acknowledgement, payload-tampering rejection and
+  duplicate synthetic acknowledgement. Signed probes exercised the restricted
+  Hyperdrive resolver without returning any merchant records.
+- One real Razorpay token-endpoint request with a deliberately invalid consent
+  code returned HTTP 401 indicating rejected client credentials. No grant was
+  issued. This is not a completed merchant authorisation.
+- An unauthenticated Development callback probe exposed a preview account-route
+  omission. Fixed the preview classifier, added a regression check and confirmed
+  the callback now redirects to account sign-in rather than returning 404.
+  Seven focused preview/receiver checks passed; the API service restarted cleanly.
+- Awaiting a matching Development client pair, owner consent and a provider-sent
+  Test webhook. No live connection, order, payment or subscription was changed.
+
 ## 20 October 2026: Isolated OAuth Test receiver, external test blocked
 
 - The user asked to proceed with real Test verification. Prepared a separate

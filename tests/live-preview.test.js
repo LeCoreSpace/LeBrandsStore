@@ -1,7 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { livePreviewEnv, previewAccountRequest, livePreviewHeaders } from "../src/preview-live.js";
+import { livePreviewEnv, previewAccountRequest, livePreviewHeaders, isPreviewAccountPath } from "../src/preview-live.js";
+
+test("OAuth callbacks reach account routing rather than public pages without widening other paths",()=>{
+  for(const path of ["/integrations/razorpay/callback","/login","/admin","/admin/reviews","/stores/new","/stores/example/settings","/api/stores/example/razorpay/oauth/start"])
+    assert.equal(isPreviewAccountPath(path),true,path);
+  for(const path of ["/","/pricing","/blog","/integrations/razorpay/callback/other"])
+    assert.equal(isPreviewAccountPath(path),false,path);
+});
 
 // Synthetic credentials only. No sockets or environment variables.
 const env = {

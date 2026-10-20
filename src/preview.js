@@ -24,7 +24,7 @@ import { quoteCart } from "./public/commerce-rules.js";
 import { renderPremiumStore } from "./ui/premium-example.js";
 import { previewShell, renderAppSample } from "./local-app-preview.js";
 import { ACCOUNT_ROBOTS } from "./ui/platform-seo.js";
-import { isLivePreview, livePreviewEnv, previewAccountRequest, livePreviewHeaders, previewDatabaseStatus } from "./preview-live.js";
+import { isLivePreview, livePreviewEnv, previewAccountRequest, livePreviewHeaders, previewDatabaseStatus, isPreviewAccountPath } from "./preview-live.js";
 
 const LOCAL_STORE_ID = "00000000-0000-4000-8000-000000000000";
 function filterDashboardFixture(data, filters) {
@@ -332,8 +332,7 @@ export default {
         "content-security-policy": SECURITY_HEADERS["content-security-policy"].replace("frame-ancestors 'none'", "frame-ancestors *"),
         "content-type": "text/html; charset=utf-8" } });
     }
-    const account = ["/signup", "/login", "/forgot-password", "/verify-email", "/reset-password", "/invite", "/account", "/logout", "/dashboard", "/stores/new", "/api/subdomain-check"]
-      .includes(original.pathname) || original.pathname==="/admin" || original.pathname.startsWith("/admin/") || original.pathname.startsWith("/api/stores/") || /^\/stores\/[^/]+(?:\/|$)/.test(original.pathname);
+    const account = isPreviewAccountPath(original.pathname);
     const target = new URL(original);
     target.protocol = "https:";
     target.hostname = account ? "app.lebrands.store" : "lebrands.store";
