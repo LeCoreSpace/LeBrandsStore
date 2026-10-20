@@ -52,7 +52,7 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
         live("Razorpay integration", `${settings}?connection=payments`),
         live("Shiprocket integration", `${settings}?connection=delivery`),
         live("Email & messaging integrations", `${root}/team`, [], { hint: "Order emails" }),
-        planned("Marketing integrations"),
+        live("Marketing integrations",`${settings}/marketing`,["marketing"]),
         role === "owner" ? live("Checkout settings", `${settings}/checkout`, ["checkout-settings"]) : {label:"Checkout settings",href:null,kind:"owner",views:[]},
         live("People & access", `${root}/team`),
         role==="owner"?live("Plan & billing",`${root}/billing`,["billing"]):{label:"Plan & billing",href:null,kind:"owner",views:[]},

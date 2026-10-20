@@ -47,7 +47,7 @@ export function documentPage(view, data, user, body, extraHead = "") {
     body=`<aside class="lb-card" role="alert"><strong>GSTIN needs attention</strong><p>Check your registration and registered supplier details before publishing or issuing new invoices.</p><a href="/stores/${esc(storeId)}/settings">Open Settings</a></aside>${body}`;
   }
   const title = ({
-    overview: "Home", "checkout-settings": "Checkout settings", orders: "Orders", order: "Order details", products: "Products", inventory: "Stock & SKUs", cogs: "Product costs", offers: "Offers & codes", analytics: "Analytics",
+    overview: "Home", marketing:"Marketing integrations", "checkout-settings": "Checkout settings", orders: "Orders", order: "Order details", products: "Products", inventory: "Stock & SKUs", cogs: "Product costs", offers: "Offers & codes", analytics: "Analytics",
     "product-new": "Add product", product: "Edit product", collections: "Collections", "collection-new": "Add collection", collection: "Edit collection", customers: "Customers",
     customer: "Customer details", invoices: "Invoices", settings: "Settings", "ai-builder":"Legacy build", builder:"Build your store",
   })[view] || "Overview";

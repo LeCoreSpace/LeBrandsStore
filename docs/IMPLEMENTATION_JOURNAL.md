@@ -1856,3 +1856,18 @@ decision:
   of that history.
 - No claim is made about work before the earliest surviving commit, unrecorded
   external changes, deleted history or the current state of production.
+
+## 2026-10-20: Merchant marketing integrations, prepared locally
+
+- Added store-specific Meta/GA4 settings and optional Advanced configuration.
+- Added consent-gated published-storefront events and confirmed-order Meta
+  delivery with durable retry/deduplication, without changing checkout methods.
+- Prepared additive migration `db/staged/0050_marketing_integrations.sql`.
+  No shared/production migration or publication was performed for this feature.
+- Database/security and checkout regression checks pass in disposable PostgreSQL.
+  Browser verification uses isolated fixtures and stubbed SDKs, not live brands.
+- Final verification: 26 automated checks passed; focused browser checks passed
+  consent/refusal/withdrawal, validated cart and checkout events, unpaid receipt
+  rejection, confirmed receipt values/deduplication, read-only roles and mobile.
+  Cloudflare production-build dry run passed without publishing.
+- Setup, privacy boundaries and rollout guidance: `docs/marketing-integrations.md`.

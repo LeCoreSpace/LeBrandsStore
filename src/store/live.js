@@ -28,7 +28,7 @@ export function storefrontPage(path, data) {
   if (policy && POLICY_KINDS.includes(policy[1]) && data.policies?.some((p) => p.kind === policy[1])) return { page: "policy", policyKind: policy[1], status: 200 };
   return { page: "404", status: 404 };
 }
-export async function serveStorefront(request, db, store, env = {}) {
+export async function serveStorefront(request, db, store, env = {},trackingContext={}) {
   const url = new URL(request.url);
   if (url.hostname.endsWith(".lebrands.store") && url.hostname !== `${store.subdomain}.lebrands.store`) {
     url.hostname = `${store.subdomain}.lebrands.store`;
@@ -57,6 +57,8 @@ export async function serveStorefront(request, db, store, env = {}) {
   const options = storefrontPage(url.pathname, data);
   if (options.page === "product") {
     const product = data.products.find(p => p.id === options.productId);
+    if(product)trackingContext.product={item_id:product.id,item_name:product.title,quantity:1,
+      ...(Number.isFinite(Number(product.price_paise))?{price:Number(product.price_paise)/100}:{})};
     const canonical = productHref(product);
     if (url.pathname !== canonical) return new Response(null, {
       status:308,headers:{...SECURITY_HEADERS,location:`${canonical}${url.search}`},

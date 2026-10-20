@@ -1,4 +1,5 @@
 import { renderDashboard } from "../ui/dashboard.js";
+import{isMarketingDashboard,handleMarketingDashboard}from"./marketing-routes.js";
 import {businessEditorAccess,protectedEditorLinks} from "../store/business-access.js";
 import { renderInvoice } from "../ui/invoice.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
@@ -22,6 +23,7 @@ import { dashboardAccess, overview, listOrders, orderDetail, listCustomers, cust
   invoiceDetail, changeOrderStatus, collectPayment, archiveProduct, adjustStock, exportRows, audit } from "./repository.js";
 
 export function isDashboardPath(path,method = "GET") {
+  if(isMarketingDashboard(path))return true;
   if(/^\/stores\/[^/]+\/offers$/.test(path)||/^\/api\/stores\/[^/]+\/offers(?:\/[^/]+\/status)?$/.test(path))return true;
   if (/^\/(?:api\/)?stores\/new(?:\/|$)/.test(path)) return false;
   if (/^\/(?:api\/)?stores\/[^/]+$/.test(path)) return true;
@@ -34,6 +36,7 @@ export function isDashboardPath(path,method = "GET") {
   return /^\/api\/stores\/[^/]+\/(?:products\/[^/]+\/(?:archive|stock)|exports\/(?:customers|orders|products))$/.test(path);
 }
 export async function handleDashboard(request,db,user,tokenHash,env={}) {
+  if(isMarketingDashboard(new URL(request.url).pathname))return handleMarketingDashboard(request,db,user,tokenHash,env);
   const url = new URL(request.url), api = url.pathname.startsWith("/api/");
   const match = url.pathname.match(/^\/(?:api\/)?stores\/([^/]+)(?:\/([^/]+)(?:\/([^/]+)(?:\/([^/]+))?)?)?$/);
   const headers = {...SECURITY_HEADERS,"cache-control":"no-store","referrer-policy":"no-referrer","x-robots-tag":"noindex, nofollow"};

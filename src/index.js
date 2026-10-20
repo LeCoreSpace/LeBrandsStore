@@ -17,6 +17,8 @@ import {processEmailMessage,schedulePendingEmails} from "./email/worker.js";
 import {handleEmailWebhook} from "./email/webhook.js";
 import {handleEmailPreferences} from "./email/preferences.js";
 import { serveStorefront } from "./store/live.js";
+import{withStoreMarketing}from"./marketing/storefront.js";
+import{scheduleMarketing}from"./marketing/worker.js";
 import { CRAWLER_FILES, serveCrawlerFile } from "./crawler-files.js";
 import { processAiMessage } from "./ai/worker.js";
 import { scheduleCommerce } from "./connections/jobs.js";
@@ -91,7 +93,7 @@ export default {
       }catch{message.retry({delaySeconds:Math.min(900,10*2**Math.min(message.attempts||1,6))});}
     }
   },
-  async scheduled(event,env,ctx){ctx.waitUntil(schedulePendingEmails(env));ctx.waitUntil(scheduleCommerce(env));ctx.waitUntil(scheduleOAuthRefresh(env));},
+  async scheduled(event,env,ctx){ctx.waitUntil(schedulePendingEmails(env));ctx.waitUntil(scheduleCommerce(env));ctx.waitUntil(scheduleOAuthRefresh(env));ctx.waitUntil(scheduleMarketing(env));},
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const hostname = url.hostname;
@@ -118,7 +120,7 @@ export default {
       const filename = url.pathname.slice("/assets/".length);
       const reusableSectionAsset=["section-instance-model.js","section-instances.js","section-drag.js","section-insert-rules.js","section-layouts.js","section-layout-css.js","section-layout-preview.js","section-grid-model.js","section-grid-render.js","section-grid-ui.js","section-grid-ui.css"].includes(filename);
       const inventoryAsset=["billing-test.js","plan-billing.js","plan-billing.css","inventory.js","inventory.css","today-stock.js","product-details.js"].includes(filename);
-      const settingsAsset = ["platform-admin.js","platform-admin.css","analytics.js","analytics-charts.js","analytics-chart-model.js","analytics.css","cogs.js","cogs.css","offers.js","business-review.css","settings-connections.js","settings-business-documents.js","store-essentials.js","catalogue-classification-ui.js","catalogue-classification-model.js","catalogue-custom-values.js"].includes(filename);
+      const settingsAsset = ["marketing-integrations.js","marketing-integrations.css","store-tracking.js","store-tracking.css","platform-admin.js","platform-admin.css","analytics.js","analytics-charts.js","analytics-chart-model.js","analytics.css","cogs.js","cogs.css","offers.js","business-review.css","settings-connections.js","settings-business-documents.js","store-essentials.js","catalogue-classification-ui.js","catalogue-classification-model.js","catalogue-custom-values.js"].includes(filename);
       const showcaseAsset = ["section-library.js","section-library-ui.js","ann-rich-text.js","ann-rich-editor.js","ann-plan-ui.js","ann-reply-fields.js","ann-section-layout.js","ann-section-content.js","ann-onboarding-ui.js","ann-theme-editor.js","ann-branding-ui.js","ann-browser-preview.js","aura-showcase-interactions.js","aura-showcase-profiles.js","aura-showcase-sections.js","aura-showcase-rich-css.js","aura-conversion-styles.js","ann-design-model.js","ann-design-ui.js","ann-design-workspace.js","aura-design.js"].includes(filename);
       const starterAsset = isStarterImage(url.pathname) || isShowcaseImage(url.pathname) || showcaseAsset || ["product-media-editor.js","product-media-processing.js","product-media-editor.css","catalogue-confirm.js","catalogue-modal.js","ann-language.js","ann-language-regional.js","ann-language-onboarding.js","ann-preview-navigation.js","ann-menu-model.js","ann-workspace.css","catalogue-reference.js","catalogue-form.js","catalogue-model.js","aura-taxonomy.js","aura-taxonomy-data.js","aura-starters.js","aura-starter-data.js","aura-starter-assets.js"].includes(filename);
       const builderAsset = isBrowserBundle(filename) || ["registration.js","ann-business-gate.js","ann-business-documents-ui.js","ann-business-documents.css","builder-choice.css","aura-styles.js","aura-styles.css","aura-extra-styles.css","aura-motion.js","aura-showcase-assets.js","aura-showcase.js","aura-showcase.css","ann-config.js","ann-builder.js","ann-builder.css","ann-projection.js","ann-category-copy.js","ann-application-ui.js","ann-readiness-ui.js","ann-launch-ui.js","ann-products-ui.js","ann-money.js","style-demo-copy.js","style-preview.js","style-preview-interactions.js","style-studio.js","style-studio.css"].includes(filename);
@@ -219,7 +221,7 @@ export default {
       db = createDb(env);
       const store = await db.resolveStore(hostname);
       if (!store || store.status !== "live") return notFound();
-      const storefront = await serveStorefront(request, db, store, env);
+      const storefront = await withStoreMarketing(request,db,store,env,(scoped,req,context)=>serveStorefront(req||request,scoped,store,env,context));
       if (storefront) {
         if(request.method==="POST"&&storefront.status<400&&env.AI_BUILD_QUEUE)ctx?.waitUntil(schedulePendingEmails(env));
         return storefront;

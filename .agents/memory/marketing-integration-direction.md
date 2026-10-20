@@ -29,3 +29,21 @@ clicks and requires purchase deduplication.
 cash was collected. Use authoritative saved order totals and stable catalogue
 identities. Preserve verified-shopper-email and financial-write boundaries.
 Shopper email verification is not optional marketing/tracking consent.
+
+Never expose private order-confirmation URLs to advertising or analytics SDKs.
+Use clean browser URLs and keep receipt access proof in essential HttpOnly
+cookies, separately for different orders.
+
+**Why:** A receipt URL is a bearer credential. Overriding an event's page URL
+alone is insufficient because vendor SDKs can read the actual URL and referrer.
+
+**How to apply:** Clean the browser URL before starting a vendor SDK. Do not
+break receipt access when tracking is disabled or confuse orders in separate tabs.
+
+Funnel events must describe the actual page/action, not just a populated cart.
+
+**Why:** Accepting consent can initialise tracking again while a shopper is
+still viewing a product; that is not entering checkout.
+
+**How to apply:** Enforce page eligibility centrally and guard concurrent event
+initialisation. Re-consent must not manufacture a new funnel step.

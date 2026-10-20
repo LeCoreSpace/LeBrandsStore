@@ -32,6 +32,18 @@ const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&":"&a
 const money = (value) => `₹${(Math.max(0, Number(value) || 0) / 100).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 let cart = [];
 let validated = null;
+let pendingTrackingAdds=[];
+function marketingEvent(name,data){
+  if(typeof window.lebrandsTrack==="function")return window.lebrandsTrack(name,data);
+  if(document.getElementById("store-marketing-config")){
+    const queue=window.lebrandsTrackingQueue??=[];
+    if(queue.length<20)queue.push([name,data]);
+  }
+}
+function trackingQuote(quote){
+  return{items:(quote.items||[]).map(i=>({item_id:i.product_option_id||i.product_id,item_name:i.title,quantity:Number(i.quantity),price:Number(i.taxable_paise)/Number(i.quantity)/100})),
+    value:Number(quote.total_paise)/100,google_value:(Number(quote.total_paise)-Number(quote.tax_paise)-Number(quote.delivery_paise))/100};
+}
 let emailAuth=null;
 const offerStorageKey=`${storageKey}:offer-code`;
 let activeOfferCode="";
@@ -148,6 +160,17 @@ async function validateCart({ render = true } = {}) {
     const result = await api("/api/cart/validate", { items: cart.map(cleanLine), code:activeOfferCode, ...(currentState() ? { state: currentState() } : {}) });
     if (seq !== validationSequence) return validated;
     validated = result;
+    if(!result.issues?.length){
+      marketingEvent("cart_ready",trackingQuote(result));
+      for(const added of pendingTrackingAdds){
+        const item=result.items?.find(i=>sameLine(i,added.line));
+        if(item&&added.quantity>0)marketingEvent("add_to_cart",{
+          items:[{item_id:item.product_option_id||item.product_id,item_name:item.title,quantity:added.quantity,price:Number(item.taxable_paise)/Number(item.quantity)/100}],
+          value:Number(item.unit_price_paise)*added.quantity/100,
+          google_value:Number(item.taxable_paise)/Number(item.quantity)*added.quantity/100});
+      }
+    }
+    pendingTrackingAdds=[];
     for (const item of result.items || []) {
       const local = cart.find((entry) => cartKey(entry) === cartKey(item));
       if (local) local.quantity = item.quantity;
@@ -157,6 +180,7 @@ async function validateCart({ render = true } = {}) {
     return result;
   } catch (error) {
     if (seq !== validationSequence) return validated;
+    pendingTrackingAdds=[];
     validated = null;
     showValidationError(error.message);
     return null;
@@ -277,8 +301,11 @@ function addProduct(id, quantity, option = "") {
   const qty = Math.max(1, Math.min(99, Number.parseInt(quantity, 10) || 1));
   const line = cleanLine({ product_id: productId, product_option_id: option, quantity: qty });
   const current = cart.find((item) => sameLine(item, line));
+  const previousQuantity=current?.quantity||0;
   if (current) current.quantity = Math.min(99, current.quantity + qty);
   else cart.push(line);
+  const updatedQuantity=cart.find(item=>sameLine(item,line))?.quantity||0;
+  if(updatedQuantity>previousQuantity)pendingTrackingAdds.push({line,quantity:updatedQuantity-previousQuantity});
   validated = null;
   saveCart();
   updatePlaceOrderAvailability();
