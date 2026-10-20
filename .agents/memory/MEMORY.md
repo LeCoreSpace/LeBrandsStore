@@ -5,7 +5,7 @@
 - [GST choices and legacy values](gst-choices.md) — use current slabs for new edits, but never silently replace previously saved 12%/28% product rates.
 - [Catalogue classification](catalogue-classification.md) — five masters; use Variants consistently, separate SKU options from descriptors, and keep custom values store-private.
 - [Catalogue costs](catalogue-costs.md) — Catalogue placement, optional form costs and prospective historical-margin boundaries.
-- [Catalogue form interactions](catalogue-form-interactions.md) — classification controls stay together; Ann closes use in-app prompts and reference rendering is not an edit.
+- [Catalogue form interactions](catalogue-form-interactions.md) — keep classification together; use in-app merchant dialogs; reference rendering is not an edit.
 - [SKU publication boundary](sku-publication-boundary.md) — published SKU prices/options, live SKU stock and copied order selections have separate authority.
 - [Prepared function identity](prepared-function-identity.md) — preserve callable PostgreSQL function identities when adding guards; published Workers retain prepared calls.
 - [GST registration and exempt invoices](gstin-registration-boundary.md) — publication requires valid checksum/state-matched GSTIN; zero-rate lines are Exempt, not a new Bill of Supply flow.

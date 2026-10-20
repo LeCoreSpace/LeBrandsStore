@@ -14,8 +14,19 @@ policy regeneration and readiness reloads.
 the browser's default prompt, including the publication-review policy workflow.
 
 **How to apply:** Reuse the shared accessible dialog; cancellation must preserve
-draft text and reviewed state. Do not remove the browser's genuine navigation-loss
-warning merely to replace an ordinary application confirmation.
+draft text and reviewed state.
+
+All dashboard, Ann, theme-editor and settings confirmations, text-entry prompts
+and unsaved-change warnings must use in-app dialogs, not browser/Windows modals.
+This supersedes the earlier exception for native navigation-loss warnings.
+
+**Why:** The user repeated the instruction for every merchant page and supplied
+the browser's “Leave site?” popup as an example to remove.
+
+**How to apply:** Protect app links/forms with a shared in-app navigation guard.
+Do not add blocking unload hooks. Custom dialogs cannot reliably protect closing
+or refreshing a browser tab; preserve existing save/autosave behavior, explain
+that limit and never silently save credentials or destructive configuration.
 
 **Why:** The user explicitly requested this arrangement and rejected the native
 close prompt. Separating classification controls from variant setup made the

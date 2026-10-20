@@ -1,3 +1,4 @@
+import {registerLeaveGuard} from "./catalogue-confirm.js";
 import { renderAura } from "/assets/aura.js";
 import { attachAuraSearch, attachAuraCatalog } from "/assets/aura-ui.js";
 import { AI_SECTION_SCHEMAS as SECTION_SCHEMAS, defaultPageLayouts, safeLayoutLink } from "/assets/aura-layout.js";
@@ -870,9 +871,7 @@ document.querySelectorAll("[data-view]").forEach(button => button.addEventListen
   view = button.dataset.view; $("#ed-frame").dataset.view = view;
   document.querySelectorAll(".ed-seg [data-view]").forEach(other => other.setAttribute("aria-pressed", String(other === button)));
 }));
-window.addEventListener("beforeunload", event => {
-  if (EDIT_PAGES.some(isDirtyKey) || inflight.size || Object.keys(themeDirty).length) { event.preventDefault(); event.returnValue = ""; }
-});
+registerLeaveGuard(()=>EDIT_PAGES.some(isDirtyKey)||inflight.size||Object.keys(themeDirty).length);
 document.addEventListener("visibilitychange", () => { if (document.hidden) saveAll(); else checkRemote(); });
 window.addEventListener("focus", checkRemote);
 setInterval(checkRemote, 30000);

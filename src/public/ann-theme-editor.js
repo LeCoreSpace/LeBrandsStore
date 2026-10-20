@@ -1,3 +1,4 @@
+import {registerLeaveGuard} from "./catalogue-confirm.js";
 import {attachAnnDesign} from "./ann-design-ui.js";
 import {instanceOnlySections} from "./section-instance-model.js";
 import {designPreviewData,renderStylePreview} from "./style-preview.js";
@@ -89,6 +90,6 @@ frame.addEventListener("load",()=>{
   attachStyleInteractions(doc,s.data,bag,page,productId,p=>go({...s.route,page:p}));
   doc.addEventListener("click",e=>{const a=e.target.closest?.("a[href]");if(!a)return;const route=browserPreviewLocation(a.getAttribute("href"),s.data,location.origin);e.preventDefault();if(route)go(route);});
 });
-window.addEventListener("beforeunload",e=>{if(controller.hasUnsavedChanges()){e.preventDefault();e.returnValue="";}});
+registerLeaveGuard(()=>controller.hasUnsavedChanges());
 new ResizeObserver(fit).observe(frame.parentElement);
 render();

@@ -1,4 +1,4 @@
-import {confirmCatalogueAction} from "./catalogue-confirm.js";
+import {confirmCatalogueAction,registerLeaveGuard} from "./catalogue-confirm.js";
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const kinds=new Set(["collections","products"]);
 
@@ -51,7 +51,7 @@ export function attachAnnCatalogue({root,readOnly=false,getDraft,getProductConte
     dialog=document.createElement("dialog");dialog.className="ann-catalogue-modal";
     const title=`${id==="new"?"Add":"Edit"} ${kind==="products"?"product":"collection"}`;
     dialog.setAttribute("aria-labelledby","ann-catalogue-title");
-    dialog.innerHTML=`<header class="ann-catalogue-modal-head"><div><h2 id="ann-catalogue-title">${title}</h2><p>Saved to your store draft. Nothing is published.</p></div><button type="button" class="ann-btn alt" data-modal-close aria-label="Close ${title.toLowerCase()} form">Close</button></header><p data-modal-status role="status">Loading form...</p><iframe title="${title} form" sandbox="allow-scripts allow-same-origin allow-forms allow-modals" hidden></iframe>`;
+    dialog.innerHTML=`<header class="ann-catalogue-modal-head"><div><h2 id="ann-catalogue-title">${title}</h2><p>Saved to your store draft. Nothing is published.</p></div><button type="button" class="ann-btn alt" data-modal-close aria-label="Close ${title.toLowerCase()} form">Close</button></header><p data-modal-status role="status">Loading form...</p><iframe title="${title} form" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox" hidden></iframe>`;
     frame=dialog.querySelector("iframe");
     frame.src=url.href;
     dialog.querySelector("[data-modal-close]").addEventListener("click",close);
@@ -77,13 +77,13 @@ export function attachAnnCatalogue({root,readOnly=false,getDraft,getProductConte
       try{await onSaved(savedKind);}catch(error){onError(`Your ${savedKind==="products"?"product":"collection"} was saved, but Ann could not refresh. Reload Ann to see it. ${error.message||""}`);}
     }
   });
-  window.addEventListener("beforeunload",event=>{if(dialog&&(dirty||busy)){event.preventDefault();event.returnValue="";}});
+  registerLeaveGuard(()=>dialog&&(dirty||busy));
   function html(nextKind){
     if(!kinds.has(nextKind))return "";
     const records=(getDraft()?.[nextKind]||[]).filter(record=>record.status!=="archived"),single=nextKind==="products"?"product":"collection";
     return `<section class="ann-catalogue-tools" aria-label="Store ${nextKind}"><div class="ann-comp-row"><button type="button" class="ann-btn" data-ann-catalogue-open="${nextKind}"${readOnly?" disabled":""}>Add ${single}</button><span class="ann-note">${records.length} saved</span></div><p class="ann-note">Use the full form without leaving Ann. These are real draft records, separate from planning notes below.</p>${records.slice(0,6).map(record=>`<div class="ann-catalogue-record"><span data-ann-value>${esc(record.title||`Untitled ${single}`)}</span><button type="button" class="ann-link" data-ann-catalogue-open="${nextKind}" data-record-id="${esc(record.id)}" aria-label="Edit ${esc(record.title||single)}"${readOnly?" disabled":""}>Edit</button></div>`).join("")}${records.length>6?`<p class="ann-note">Showing 6 of ${records.length}. All are available in your dashboard.</p>`:""}</section>`;
   }
-  document.addEventListener("click",event=>{
+  document.addEventListener("click",async event=>{
     const button=event.target.closest("[data-ann-catalogue-open]");
     if(!button||button.disabled)return;
     event.preventDefault();
@@ -119,7 +119,7 @@ export function attachCatalogueEmbed({root,storeRoot}){
     state();
   });
   observer.observe(root,{subtree:true,childList:true,attributes:true,attributeFilter:["data-busy","data-upload-state"]});
-  document.addEventListener("click",event=>{
+  document.addEventListener("click",async event=>{
     const link=event.target.closest("a[href]");
     if(!link)return;
     const url=new URL(link.href,location.href);
@@ -127,7 +127,7 @@ export function attachCatalogueEmbed({root,storeRoot}){
       event.preventDefault();send("close");
     }else{
       event.preventDefault();
-      if(window.confirm("Open this page in a new tab? Your form stays open in Ann."))window.open(url.href,"_blank","noopener");
+      if(await confirmCatalogueAction("Your form stays open in Ann.",{title:"Open this page in a new tab?",confirmLabel:"Open new tab"}))window.open(url.href,"_blank","noopener");
     }
   },true);
   send("ready");state();

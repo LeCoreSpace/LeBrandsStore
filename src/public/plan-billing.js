@@ -1,3 +1,4 @@
+import {registerLeaveGuard} from "./catalogue-confirm.js";
 import { attachAnnPlanSelection } from "./ann-plan-ui.js";
 import {attachTestCheckout} from "./billing-test.js";
 
@@ -42,9 +43,7 @@ function boot() {
     onAccepted: () => { say("Your Free plan is active. Reloading."); location.reload(); },
   });
   choose.addEventListener("click", () => ctl.open());
-  window.addEventListener("beforeunload", (e) => {
-    if (ctl.hasUnsavedChanges()) { e.preventDefault(); e.returnValue = ""; }
-  });
+  registerLeaveGuard(()=>ctl.hasUnsavedChanges());
 }
 
 if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });

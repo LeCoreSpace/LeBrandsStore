@@ -59,11 +59,8 @@ export const NAVIGATION_SCRIPT=String.raw`(()=>{
     start();
     queueMicrotask(()=>{if(event.defaultPrevented)finish();});
   });
-  // Covers programmatic location changes too. Never leave a cancelled
-  // unsaved-changes navigation looking as if it is still loading.
-  window.addEventListener("beforeunload",event=>{
-    queueMicrotask(()=>{if(event.defaultPrevented||event.returnValue)finish();else start();});
-  });
+  // Nonblocking lifecycle feedback. Application guards own confirmation UI.
+  window.addEventListener("pagehide",start);
   if(window.navigation){
     window.navigation.addEventListener("navigateerror",finish);
   }

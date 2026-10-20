@@ -1005,3 +1005,15 @@ purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep
 credentials, personal identifiers, full connection URLs and sensitive output out
 of this register.
+
+## 2026-10-20: Merchant in-app dialogs (development only)
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| Native-dialog source audit and `node --check` for changed browser scripts | Read-only development checks. Remaining bare `confirm` identifiers are existing local application helpers, not browser calls. Corrected one async listener found by syntax validation; all changed scripts then parsed. |
+| `node --test --test-concurrency=1 tests/application-dialogs.test.js tests/navigation-loading.test.js tests/catalogue-modal.test.js tests/section-grid.test.js tests/inventory.test.js tests/catalogue-cogs.test.js tests/marketing-integrations.test.js tests/dashboard.test.js` | Offline: 79 passed, one old checkout fixture failed because its customer email was blank under the existing required-email contract. No shared database or provider access. |
+| `node --test --test-concurrency=1 tests/application-dialogs.test.js` | Six passed after final shared-guard changes, including cancellation, native-form submitter preservation, one-time approval and shared state across module copies. |
+| `node --test --test-concurrency=1 --test-name-pattern='real SKU checkout' tests/catalogue-cogs.test.js` | Passed after supplying a synthetic email in that existing test fixture. Production checkout logic unchanged. |
+| `node scripts/build-browser-assets.mjs` | Successful development browser compilation; 29 versioned entries. Public generated assets only, no database writes or publication. |
+| Managed frontend/API workflow restarts and log inspection | Both running. Initial proxy refusal occurred while the API was restarting, followed by successful requests. No environment variables or secrets changed. |
+| Isolated browser navigation/dialog pass and mobile preview capture | Passed: cancel/Escape preserve edits and focus; approved navigation occurs once; pristine navigation has no warning; date/time cancellation, accepted value and inline required validation work. Zero native dialogs/JS exceptions, no horizontal dialog overflow at 390px. Fake memory-only fixture; no provider event, database write or real payment. |

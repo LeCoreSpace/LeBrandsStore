@@ -1,3 +1,4 @@
+import {registerLeaveGuard} from "./catalogue-confirm.js";
 import { MEDIA_LIMITS as L, formatBytes, validateFile, validateDimensions, layoutImage, renderCrop, encodeWebp, webmSupport } from "./product-media-processing.js";
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -395,7 +396,7 @@ export function attachProductMediaEditor({ form, api, request, notify, onPending
   });
   addButton?.addEventListener("click", () => input?.click());
   input?.addEventListener("change", () => { const files = [...(input.files || [])]; input.value = ""; enqueue(files); });
-  window.addEventListener("beforeunload", event => { if (items.length) { event.preventDefault(); event.returnValue = ""; } });
+  registerLeaveGuard(()=>items.length);
   refresh(); reportPending();
   return { refresh, pending: () => items.length };
 }

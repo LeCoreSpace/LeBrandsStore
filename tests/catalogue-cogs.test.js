@@ -44,7 +44,7 @@ test("real SKU checkout still places its order and captures an explicit zero ove
       {product_id:f.product.id,product_option_id:variant.id,cost_price_paise:0,expected_revision:0},
     ]}));
     const input=orderInput({items:[{product_id:f.product.id,product_option_id:variant.id,quantity:1}],
-      contact:{name:"Synthetic cost buyer",phone:"9000000000",email:""},
+      contact:{name:"Synthetic cost buyer",phone:"9000000000",email:"cost-buyer@example.test"},
       address:{line1:"12 Test Street",city:"Chennai",state:"33",pincode:"600001"},
       idempotency_key:crypto.randomUUID(),receipt_token:"e".repeat(64)});
     await f.db.withStore(f.id,tx=>placeCodOrder(tx,f.id,input,"c".repeat(64),"d".repeat(64),"direct"));

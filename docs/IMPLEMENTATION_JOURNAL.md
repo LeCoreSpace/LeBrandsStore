@@ -1886,3 +1886,32 @@ decision:
   plus rejection of unauthenticated marketing-settings access.
 - Release verification included 27 passing automated checks. Prior isolated
   browser results remain valid; no merchant provider event or payment was sent.
+
+## 2026-10-20: Merchant in-app dialogs
+
+- Audited dashboard, Ann, theme editor and settings scripts for native
+  alert/confirm/prompt calls and blocking unload handlers. Replaced application
+  decisions with accessible ticket-style dialogs, including destructive store,
+  catalogue and order actions, stock discard/reload, grid-source replacement,
+  integration replacement and COD collection date/time entry.
+- Added a shared navigation guard for unsaved merchant work. Cancelling keeps
+  edits; accepted navigation is not prompted twice. AJAX saves, new tabs,
+  downloads and same-page navigation remain separate. Navigation API protection
+  is feature-detected; closing/refreshing a browser tab cannot reliably display
+  a custom dialog. Existing explicit saves/autosaves remain, with no credential
+  draft persistence.
+- Replaced the navigation loader's unload listener with nonblocking lifecycle
+  feedback. Catalogue popups retain their form and no longer permit native
+  modal dialogs in the sandbox.
+- Browser assets rebuilt and both managed application services restarted.
+  Offline verification covered 80 targeted tests across the main run and
+  focused reruns. One obsolete cost-checkout fixture needed its now-required
+  synthetic customer email; its focused checkout check then passed.
+- This change is development-only pending publication approval. No database
+  migration, production deployment, live order or provider configuration change
+  was performed.
+- Isolated browser checks passed on desktop and 390px mobile: exactly one
+  custom leave dialog, cancellation/Escape retaining text and restoring focus,
+  confirmed navigation once, clean navigation without warnings, and accessible
+  date/time entry with inline blank-input validation. Zero native dialogs or
+  JavaScript exceptions were observed. No settings save or payment was made.

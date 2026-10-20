@@ -1,3 +1,4 @@
+import {registerLeaveGuard} from "./catalogue-confirm.js";
 const root = document.querySelector("[data-mi-root]");
 if (root) init();
 
@@ -165,6 +166,6 @@ function init() {
 
   root.querySelector("[data-discard]").addEventListener("click", () => { fill(); hide(); });
   form.addEventListener("input", refresh); form.addEventListener("change", refresh);
-  window.addEventListener("beforeunload", (e) => { if (isDirty() && !conflict) { e.preventDefault(); e.returnValue = ""; } });
+  registerLeaveGuard(()=>isDirty()||saving||testing);
   fill();
 }

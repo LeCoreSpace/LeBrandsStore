@@ -1,3 +1,4 @@
+import {registerLeaveGuard} from "./catalogue-confirm.js";
 import { formatPhone } from "/assets/commerce-rules.js";
 import { confirmCatalogueAction } from "/assets/catalogue-confirm.js";
 import { renderAura } from "/assets/aura.js";
@@ -847,7 +848,7 @@ panel?.addEventListener("click",onClick);
 panel?.addEventListener("keydown",onKeydown);
 previewPanel?.addEventListener("click",onClick);
 fullscreen?.addEventListener("click",onClick);
-  window.addEventListener("beforeunload",(event)=>{if(hasPendingWork()){event.preventDefault();event.returnValue=""}});
+registerLeaveGuard(()=>hasPendingWork());
 renderPanel();renderPreview();loadSetup();
 if(!visualOnly) observeGSTINForms(root,storeId,{
  beforeConfirm:async()=>{await saveNow();return revision},

@@ -1,3 +1,4 @@
+import {confirmCatalogueAction as appConfirm} from "./catalogue-confirm.js";
 /**
  * Ann design canvas: "Use this design", direct edit, save draft, review and publish.
  * Parent-side only. The sandboxed preview iframe stays script-free: it only carries
@@ -193,7 +194,7 @@ export function attachAnnDesign(o) {
     location.assign(publishUrl);
   }
   async function reload() {
-    if (dirty() && !confirm("Discard your unsaved design edits and load the latest saved draft?")) return;
+    if (dirty() && !await appConfirm("Your unsaved design edits will be discarded.",{title:"Load the latest saved draft?",confirmLabel:"Discard edits and reload"})) return;
     conflict = false; error = ""; selected = null;
     const had = active();
     try {

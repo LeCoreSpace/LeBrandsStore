@@ -1,3 +1,4 @@
+import {registerLeaveGuard} from "./catalogue-confirm.js";
 import { AURA_STYLES, STYLE_IDS, STYLE_THEME_KEYS, styleSettings, stylePatch } from "./aura-styles.js";
 import { stylePreviewData, renderStylePreview } from "./style-preview.js";
 import { attachStyleInteractions } from "./style-preview-interactions.js";
@@ -167,9 +168,7 @@ $("#as-apply").addEventListener("click", async () => {
   } catch (error) { message(error.message); }
   finally { saving = false; controls(); }
 });
-window.addEventListener("beforeunload", event => {
-  if (!readOnly && (dirty || saving)) { event.preventDefault(); event.returnValue = ""; }
-});
+registerLeaveGuard(()=>!readOnly&&(dirty||saving));
 // Do not automatically change a merchant's saved styling on initial load.
 if ((window.innerWidth || 1280) < 640) {
   canvas.dataset.device = "mobile";

@@ -1,3 +1,4 @@
+import {confirmCatalogueAction as appConfirm} from "./catalogue-confirm.js";
 /** Compact block settings dialog for grid-family sections. All edits go through controller methods. */
 import { attachSectionDrag } from "./section-drag.js";
 
@@ -106,12 +107,12 @@ ${!s.items.length ? `<p class="sg-note">Nothing here yet.</p>` : ""}
       else if (act === "del") { const i = s.items.findIndex(x => x.id === cell), near = s.items[i + 1] || s.items[i - 1]; if (st.open === cell) st.open = null; run(() => c.removeSectionCell(page, id, cell), "Item removed. Use Undo to bring it back.", near ? `[data-sg-open="${CSS.escape(near.id)}"]` : "[data-sg-add]"); }
     }
   });
-  root.addEventListener("change", e => {
+  root.addEventListener("change", async e => {
     const n = e.target, s = st.snap; if (!s) return;
     if (n.dataset.sgSet) {
       const k = n.dataset.sgSet; let v = n.value;
       if (NUM[k]) { v = Math.round(Number(v)); if (!Number.isFinite(v)) v = s.grid[k]; v = Math.max(NUM[k][0], Math.min(NUM[k][1], v)); n.value=String(v); }
-      if (k === "source" && v === "automatic" && s.grid.source === "manual" && !confirm("Switch back to automatic? Manual selections and custom cell text or photos will be reset to the current catalogue records.")) { n.value = s.grid.source; return; }
+      if (k === "source" && v === "automatic" && s.grid.source === "manual" && !await appConfirm("Manual selections and custom cell text or photos will be reset to the current catalogue records.",{title:"Switch back to automatic?",confirmLabel:"Use automatic content"})) { n.value = s.grid.source; return; }
       run(() => c.setSectionGrid(page, id, { [k]: v }), "Settings updated. Save draft to keep it.", `[data-sg-set="${k}"]`, k === "source" || k === "limit");
     } else if (n.dataset.sgCell) {
       const f = n.dataset.sgCell, cell = n.dataset.cell;

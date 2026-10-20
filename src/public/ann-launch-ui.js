@@ -1,3 +1,4 @@
+import {confirmCatalogueAction as appConfirm} from "./catalogue-confirm.js";
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const HOST = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.){2,}[a-z]{2,63}$/;
 const when = v => { if (!v) return ""; const d = new Date(v); return isNaN(d) ? "" : d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }); };
@@ -109,7 +110,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   async function oauth(action){
     if(!canEdit()||busy||!storeId)return;
     const replacing=action==="start"&&state?.providers?.razorpay?.verified;
-    if(replacing&&!window.confirm("Replace the current Razorpay integration? Existing orders keep their payment records. Online checkout will stay off after authorisation until you enable it again."))return;
+    if(replacing&&!await appConfirm("Existing orders keep their payment records. Online checkout will stay off after authorisation until you enable it again.",{title:"Replace the Razorpay integration?",confirmLabel:"Replace integration"}))return;
     busy="oauth";msgs.oauth=null;draw();
     try{
       const response=await fetch(`${api.replace(/\/ann$/,"/integrations/razorpay")}/${action}`,{
@@ -267,9 +268,9 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     if (k) { const el = n.querySelector(`[data-ln="${k}"]`); if (el && !el.disabled) { el.focus({ preventScroll: true }); try { if (sel) el.setSelectionRange(...sel); } catch { /* not text */ } } }
     n.scrollTop = top;
   }
-  function reload() {
+  async function reload() {
     if (busy || loading) return;
-    if (hasCreds() && !window.confirm("Reloading refreshes status and keeps what you typed. Continue?")) return;
+    if (hasCreds() && !await appConfirm("Refreshing status keeps what you typed.",{title:"Refresh integration status?",confirmLabel:"Refresh status"})) return;
     void load();
   }
   const clear = ks => ks.forEach(k => { draftVals[k] = ""; });

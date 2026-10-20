@@ -1,3 +1,4 @@
+import {confirmCatalogueAction as appConfirm,promptCatalogueValue as appPrompt} from "./catalogue-confirm.js";
 import {mountTodayStock} from "./today-stock.js";
 import {mountSettingsBusinessDocuments} from "./settings-business-documents.js";
 mountTodayStock();
@@ -214,7 +215,7 @@ document.querySelectorAll("[data-export]").forEach(button => {
 
 document.querySelectorAll("[data-unpublish]").forEach(button => {
   button.addEventListener("click", async () => {
-    if (!window.confirm("Unpublish this store? The public store will stop accepting orders until it is published again.")) return;
+    if (!await appConfirm("The public store will stop accepting orders until it is published again.",{title:"Unpublish this store?",confirmLabel:"Unpublish store"})) return;
     busy(button, true, "Unpublishing…");
     try { await postJson(`${api}/unpublish`, {}); notify("Store unpublished."); window.location.reload(); }
     catch (error) { handleError(error, button); }
@@ -293,7 +294,7 @@ function contentPayload(form) {
   }
   return { content, errors };
 }
-document.addEventListener("click", event => {
+document.addEventListener("click", async event => {
   const add = event.target.closest("[data-row-add]");
   if (add) {
     const box = add.closest("[data-rows]");
@@ -302,7 +303,7 @@ document.addEventListener("click", event => {
     return;
   }
   const remove = event.target.closest("[data-row-remove]");
-  if (remove && window.confirm("Remove this row? It is deleted when you save.")) remove.closest("[data-row]")?.remove();
+  if (remove && await appConfirm("This row will be deleted when you save.",{title:"Remove this row?",confirmLabel:"Remove row"})) remove.closest("[data-row]")?.remove();
 });
 function updateGSTWarning(form) {
   const warning = form.querySelector("[data-product-gst-warning]");
@@ -367,7 +368,7 @@ document.querySelector("[data-product-form]")?.addEventListener("submit", async 
 document.querySelector("[data-archive]")?.addEventListener("click", async event => {
   const button = event.currentTarget;
   const form = document.querySelector("[data-product-form]");
-  if (!window.confirm("Archive this product? It will be hidden from the active catalogue. Existing order records will remain.")) return;
+  if (!await appConfirm("It will be hidden from the active catalogue. Existing order records will remain.",{title:"Archive this product?",confirmLabel:"Archive product"})) return;
   busy(button, true, "Archiving…");
   try {
     await postJson(`${api}/products/${encodeURIComponent(form.dataset.productId)}/archive`, {});
@@ -397,7 +398,7 @@ document.querySelectorAll("button[data-order-status]").forEach(button => {
     const status = button.dataset.orderStatus;
     const selector=form?.querySelector("[data-next-order-action]");
     if (selector) {selector.value=status;selector.dispatchEvent(new Event("change"));}
-    if (status === "cancelled" && !window.confirm("Cancel this order? Reserved stock will be restored.")) return;
+    if (status === "cancelled" && !await appConfirm("Reserved stock will be restored.",{title:"Cancel this order?",confirmLabel:"Cancel order",cancelLabel:"Keep order"})) return;
     const transitions = allowedTransitions(document.querySelector(".lb-detail-head [data-status]")?.dataset.status || "");
     if (!transitions.includes(status)) { notify("That status change is not available for this order.", true); return; }
     const body = {
@@ -438,7 +439,10 @@ document.querySelector("[data-payment-collected]")?.addEventListener("click", as
   if (!["shipped", "delivered"].includes(currentStatus)) { notify("COD payment can be recorded after shipment.", true); return; }
   const local = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second:"2-digit", hourCycle: "h23" }).formatToParts(new Date());
   const parts = Object.fromEntries(local.map(p => [p.type, p.value]));
-  const entered = window.prompt("When was the COD payment collected? Use India time (YYYY-MM-DDTHH:mm:ss).", `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`);
+  const entered = await appPrompt("Choose when the Cash on Delivery payment was collected. Use India time.",{
+    title:"Record collected payment",label:"Collection date and time (India)",type:"datetime-local",
+    value:`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}`,confirmLabel:"Record payment"
+  });
   if (!entered) return;
   const parsed = new Date(`${entered.length === 16 ? `${entered}:00` : entered}+05:30`);
   if (!Number.isFinite(parsed.getTime()) || parsed > new Date()) { notify("Enter a valid collection date and time that is not in the future.", true); return; }
@@ -541,7 +545,7 @@ if (collectionForm) {
     finally{catalogueEmbed?.saving(false);}
   });
   collectionForm.querySelector("[data-collection-delete]")?.addEventListener("click", async event => {
-    if (!window.confirm("Delete this collection? Products stay in your catalogue. Draft only until you publish.")) return;
+    if (!await appConfirm("Products stay in your catalogue. This changes your draft only until you publish.",{title:"Delete this collection?",confirmLabel:"Delete collection"})) return;
     busy(event.currentTarget, true, "Deleting...");
     try { await request(api + "/collections/" + encodeURIComponent(collectionForm.dataset.collectionId), { method: "DELETE" }); if(catalogueEmbed){catalogueEmbed.saved();return;} window.location.href = storeRoot + "/collections"; }
     catch (error) { busy(event.currentTarget, false); formError(error.message || "Collection could not be deleted."); }

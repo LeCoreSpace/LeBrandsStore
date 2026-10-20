@@ -1,3 +1,4 @@
+import {registerLeaveGuard,confirmCatalogueAction as appConfirm} from "./catalogue-confirm.js";
 import { resolveShowcasePack } from "./aura-showcase-assets.js";
 import { ANN_STEPS, ANN_PALETTES, ANN_FONTS, ANN_EXTRA_SECTIONS, annPreviewConfiguration, annNavigationSteps, annNavigationKey } from "./ann-config.js";
 import { AURA_STYLES, styleSettings } from "./aura-styles.js";
@@ -876,7 +877,7 @@ function reviewStep() {
 
 
 /* ---------- events ---------- */
-document.addEventListener("click", e => {
+document.addEventListener("click", async e => {
   if(e.target.closest?.("[data-ann-plan-continue]")){e.preventDefault();if(!planLocked())advance();return;}
   if(e.target.closest?.("[data-ann-plan-open]")){e.preventDefault();planUI.open();return;}
   const t = e.target.closest("button, a"); if (!t || t.tagName === "A") return;
@@ -951,8 +952,9 @@ document.addEventListener("click", e => {
   if ("addCol" in d) return edit(() => { const cols = answers.collections ||= []; if (cols.length < 10) cols.push({ key: nextKey("collection", cols.map(c => c.key)), name: "", description: "" }); }, true);
   if (d.delCol !== undefined) {
     const c = answers.collections[Number(d.delCol)], n = (answers.product_ideas || []).filter(p => p.collection_key === c.key).length;
-    if (n && !confirm(`Removing this collection also removes its ${n} product idea${n === 1 ? "" : "s"}. Continue?`)) return;
-    return edit(() => { answers.collections.splice(Number(d.delCol), 1); answers.product_ideas = (answers.product_ideas || []).filter(p => p.collection_key !== c.key); if (!answers.collections.length) delete answers.collections; if (!answers.product_ideas.length) delete answers.product_ideas; }, true);
+    if (n && !await appConfirm(`Removing this collection also removes its ${n} product idea${n === 1 ? "" : "s"}.`,{title:"Remove this collection?",confirmLabel:"Remove collection"})) return;
+    const index=answers.collections.findIndex(x=>x.key===c.key);if(index<0)return;
+    return edit(() => { answers.collections.splice(index, 1); answers.product_ideas = (answers.product_ideas || []).filter(p => p.collection_key !== c.key); if (!answers.collections.length) delete answers.collections; if (!answers.product_ideas.length) delete answers.product_ideas; }, true);
   }
   if (d.addIdea) return edit(() => { const ideas = answers.product_ideas ||= []; if (ideas.length < 50) ideas.push({ key: nextKey("idea", ideas.map(p => p.key)), collection_key: d.addIdea, name: "", description: "", attributes: [] }); }, true);
   if (d.delIdea !== undefined) return edit(() => { answers.product_ideas.splice(Number(d.delIdea), 1); if (!answers.product_ideas.length) delete answers.product_ideas; }, true);
@@ -1053,7 +1055,7 @@ async function reloadLatest(keepEdits) {
     draw(); renderPreview(false); say("Saved plan loaded.");
   } catch (e) { say(e.message); }
 }
-window.addEventListener("beforeunload", e => { if (!readOnly && (composerDrafts.size || isDirty() || saving || planUI.hasUnsavedChanges() || businessDocuments.hasUnsavedChanges() || applicationUI.hasUnappliedChanges() || readinessUI.hasUnsavedChanges() || brandingUI.hasUnsavedChanges() || Object.values(obUIs).some(u => u.hasUnsavedChanges()) || designDirty())) { e.preventDefault(); e.returnValue = ""; } });
+registerLeaveGuard(()=>!readOnly&&(composerDrafts.size||isDirty()||saving||planUI.hasUnsavedChanges()||businessDocuments.hasUnsavedChanges()||applicationUI.hasUnappliedChanges()||readinessUI.hasUnsavedChanges()||brandingUI.hasUnsavedChanges()||Object.values(obUIs).some(u=>u.hasUnsavedChanges())||designDirty()));
 
 /* ---------- start ---------- */
 const replyFields=attachAnnReplyFields({onChange:()=>drawComposer(true)});

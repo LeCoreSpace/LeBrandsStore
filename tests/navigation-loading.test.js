@@ -41,9 +41,9 @@ test("navigation feedback starts immediately, respects intercepted/new-tab actio
     const form={getAttribute:()=>null};
     handlers.submit({defaultPrevented:true,target:form});assert.equal(root.dataset.navigationLoading,undefined);
     handlers.submit({defaultPrevented:false,target:form});assert.equal(root.dataset.navigationLoading,"true");
-    handlers.beforeunload({defaultPrevented:true,returnValue:""});await Promise.resolve();
-    assert.equal(root.dataset.navigationLoading,undefined,"cancelled unsaved-changes navigation must not get stuck");
-    handlers.beforeunload({defaultPrevented:false,returnValue:""});await Promise.resolve();
+    handlers.pageshow();assert.equal(root.dataset.navigationLoading,undefined);
+    assert.equal(handlers.beforeunload,undefined,"navigation feedback must not register a native unload prompt");
+    handlers.pagehide();
     assert.equal(root.dataset.navigationLoading,"true");
     handlers.navigateerror();assert.equal(root.dataset.navigationLoading,undefined);
   }finally{

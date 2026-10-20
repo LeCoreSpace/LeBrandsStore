@@ -1,3 +1,4 @@
+import {registerLeaveGuard} from "./catalogue-confirm.js";
 import {attachAnnBusinessDocuments} from "./ann-business-documents-ui.js";
 
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -77,8 +78,6 @@ export function mountSettingsBusinessDocuments({root,role,api,storeRoot}) {
   document.addEventListener("visibilitychange",()=>{
     if(document.visibilityState==="visible"&&Date.now()-lastLoad>5000)void refresh();
   });
-  window.addEventListener("beforeunload",e=>{
-    if(modal.hasUnsavedChanges()){e.preventDefault();e.returnValue="";}
-  });
+  registerLeaveGuard(()=>modal.hasUnsavedChanges());
   void refresh();
 }

@@ -1,3 +1,4 @@
+import {registerLeaveGuard,confirmCatalogueAction as appConfirm} from "./catalogue-confirm.js";
 const app = document.querySelector(".lb-app");
 const box = document.querySelector("[data-inventory]");
 const MAX = 2147483647;
@@ -21,7 +22,7 @@ if (app && box) {
   const editable = (r) => state.data?.can_edit && r.track_inventory && r.stock != null;
   const toast = (m, e) => { const t = document.querySelector("[data-toast]"); if (!t) return; t.textContent = m; t.dataset.kind = e ? "error" : "success"; t.hidden = false; setTimeout(() => { t.hidden = true; }, 5000); };
   const alertBox = (html) => { const a = $("[data-inv-alert]"); a.innerHTML = html || ""; a.hidden = !html; };
-  const confirmDiscard = () => !dirty() || window.confirm("You have unsaved quantity edits. Discard them?");
+  const confirmDiscard = async () => !dirty() || await appConfirm("Your unsaved quantity edits will be discarded.",{title:"Discard stock edits?",confirmLabel:"Discard edits"});
   let loadSequence=0,editSequence=0;
 
   async function load(opts = {}) {
@@ -93,22 +94,22 @@ if (app && box) {
     if (e.target.matches("[data-inv-pick]")) { const k = e.target.closest("tr").dataset.key; e.target.checked ? state.selected.add(k) : state.selected.delete(k); renderBulk(); }
     if (e.target.matches("[data-inv-all]")) { for (const r of state.data.rows) if (editable(r)) e.target.checked ? state.selected.add(r.key) : state.selected.delete(r.key); render(); }
   });
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if(state.busy)return;
-    if (!confirmDiscard()) return;
+    if (!await confirmDiscard()) return;
     state.edits.clear();state.selected.clear();
     state.q = { search: form.elements.search.value.trim(), availability: form.elements.availability.value, status: form.elements.status.value, page: 1 };
     load();
   });
-  box.addEventListener("click", (e) => {
+  box.addEventListener("click", async (e) => {
     const t = e.target;
     if(state.busy)return;
-    if (t.closest("[data-inv-retry]")) {if(confirmDiscard()){state.edits.clear();state.selected.clear();load();}return;}
-    if (t.closest("[data-inv-stale-reload]")) { if (window.confirm("Reload latest stock? Your unsaved edits will be discarded.")){state.edits.clear();state.selected.clear();load();} return; }
+    if (t.closest("[data-inv-retry]")) {if(await confirmDiscard()){state.edits.clear();state.selected.clear();load();}return;}
+    if (t.closest("[data-inv-stale-reload]")) { if (await appConfirm("Your unsaved edits will be discarded.",{title:"Reload latest stock?",confirmLabel:"Discard edits and reload"})){state.edits.clear();state.selected.clear();load();} return; }
     const pg = t.closest("[data-inv-page]");
-    if (pg) { if (!confirmDiscard()) return; state.edits.clear();state.selected.clear();state.q.page = Math.max(1, state.q.page + Number(pg.dataset.invPage)); load(); return; }
-    if (t.closest("[data-inv-clear]")) { if (window.confirm("Discard all quantity edits?")) { state.edits.clear(); render(); } return; }
+    if (pg) { if (!await confirmDiscard()) return; state.edits.clear();state.selected.clear();state.q.page = Math.max(1, state.q.page + Number(pg.dataset.invPage)); load(); return; }
+    if (t.closest("[data-inv-clear]")) { if (await appConfirm("All unsaved quantity edits will be discarded.",{title:"Discard stock edits?",confirmLabel:"Discard edits"})) { state.edits.clear(); render(); } return; }
     if (t.closest("[data-inv-bulk-apply]")) return bulkFill();
     if (t.closest("[data-inv-review-open]")) return openReview();
   });
@@ -176,11 +177,7 @@ if (app && box) {
       if (err.status === 409) { state.stale = true; dlg.close(); alertBox(`<span>Stock changed elsewhere. Nothing was saved. Your edits are still here.</span> <button type="button" class="lb-button lb-button-small" data-inv-stale-reload>Reload latest stock</button>`); }
     } finally { state.busy = false; btn.disabled = false; btn.textContent = "Apply changes"; }
   });
-  window.addEventListener("beforeunload", (e) => { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
-  document.addEventListener("click", (e) => {
-    const a = e.target.closest("a[href]");
-    if (a && dirty() && !a.target && !confirmDiscard()) e.preventDefault();
-  }, true);
+  registerLeaveGuard(()=>dirty());
 
   syncForm();
   box.addEventListener("input",event=>{if(event.target.matches("[data-inv-qty]"))editSequence++;});

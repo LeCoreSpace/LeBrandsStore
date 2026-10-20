@@ -1,3 +1,4 @@
+import {registerLeaveGuard} from "./catalogue-confirm.js";
 import { confirmCatalogueAction } from "/assets/catalogue-confirm.js";
 const app = document.querySelector(".lb-app");
 const box = document.querySelector("[data-cogs-root]");
@@ -154,7 +155,7 @@ if (app && box) {
     const h = t.closest("[data-cogs-history-open]");
     if (h) history(h.dataset.cogsHistoryOpen, h.dataset.title);
   });
-  window.addEventListener("beforeunload", (e) => { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
+  registerLeaveGuard(()=>dirty());
   window.addEventListener("focus", () => { if (!dirty() && !state.busy && !asking && !dlg.open) load(); });
   document.addEventListener("visibilitychange", () => { if (!document.hidden && !dirty() && !state.busy && !asking && !dlg.open) load(); });
   load();
