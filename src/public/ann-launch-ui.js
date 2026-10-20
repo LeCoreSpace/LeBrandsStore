@@ -9,6 +9,15 @@ export function oauthCallbackNotice(result,provider={}){
   if(result==="failed")return "We could not confirm authorisation. Review the integration status below, then reconnect if needed.";
   return "";
 }
+export function paymentDiagnosticNotice(result){
+  if(result.result==="found"){
+    const p=result.payment,amount=new Intl.NumberFormat("en-IN",{style:"currency",currency:p.currency}).format(p.amount_paise/100);
+    return `Razorpay returned ${result.payment_id} (${result.mode} mode) to the connected application: ${amount}, ${p.status}${p.captured?" (captured)":""}. This confirms payment visibility, not webhook delivery. Nothing was changed.`;
+  }
+  return result.result==="not_visible"
+    ?"Razorpay did not return this payment to the connected application (404). Check the receipt ID and account. This alone does not prove an account mismatch or explain missing webhooks. Nothing was changed."
+    :`Razorpay declined the read-only check (HTTP ${result.provider_http_status}). No credentials or payment settings were changed.`;
+}
 export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settingsMode = false }) {
   let state = null, loading = false, loadError = "", busy = "", stale = false;
   const msgs = {}, open = { 1: true, 2: false, 3: false };
@@ -18,6 +27,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   const skipped=new Set();
   // Drafts live only in memory. Values are applied to inputs as DOM properties, never written into HTML.
   const draftVals = { host: "", "rz.key_id": "", "rz.key_secret": "", "rz.webhook_secret": "", "sr.email": "", "sr.password": "", "ship.pickup": "", "ship.weight": "", "ship.length": "", "ship.breadth": "", "ship.height": "", "ship.units": "", "ship.freight": "" };
+  draftVals["rz.payment_id"]="";
   let shipAuto = false, refreshing = false; const absence = {};
   let shipDirty = false, ackPay = false, ackShip = false;
   let ack = false, confirmDisc = "", confirmRemove = false;
@@ -25,7 +35,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   const storeId = (String(api).match(/\/api\/stores\/([^/]+)\/ann/) || [])[1];
   const checkoutHref = storeId ? `/stores/${encodeURIComponent(storeId)}/settings/checkout` : "";
   const canEdit = () => !readOnly && !!state?.can_edit;
-  const hasCreds = () => Object.entries(draftVals).some(([k, x]) => !k.startsWith("ship.") && Boolean(x));
+   const hasCreds = () => Object.entries(draftVals).some(([k, x]) => !k.startsWith("ship.") && k!=="rz.payment_id" && Boolean(x));
   function seedShip() {
     const sh = state?.providers?.shiprocket?.shipping; if (shipDirty || !sh) return;
     shipAuto = !!sh.auto_pickup;
@@ -104,6 +114,20 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       msgs.oauth={ok:!result.revocation_pending,text:result.revocation_pending?
         "Online checkout is off. Razorpay could not confirm revoked access. Retry disconnection or remove LeBrands.Store from your Razorpay authorised apps.":"Razorpay authorisation updated."};
     }catch(e){msgs.oauth={text:e.message||"Razorpay authorisation is temporarily unavailable."};}
+    finally{busy="";draw();}
+  }
+  async function inspectPayment(){
+    if(!canEdit()||busy||loading||!storeId||!v("rz.payment_id"))return;
+    busy="inspect-payment";msgs["inspect-payment"]=null;draw();
+    try{
+      const response=await fetch(`${api.replace(/\/ann$/,"/integrations/razorpay")}/inspect-payment`,{
+        method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},
+        body:JSON.stringify({confirm:true,payment_id:v("rz.payment_id")})
+      });
+      const result=await response.json();
+      if(!response.ok)throw new Error(result.error||"The read-only payment check could not be completed.");
+      msgs["inspect-payment"]={ok:true,text:paymentDiagnosticNotice(result)};
+    }catch(e){msgs["inspect-payment"]={text:e.message};}
     finally{busy="";draw();}
   }
 
@@ -201,7 +225,8 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       ? rzVerified
       : settingsMode?"":`<details><summary>Use API keys instead</summary><p class="ann-note">Enter your merchant Razorpay key ID and key secret. Also create a webhook secret in Razorpay so signed payment events can be checked. We verify the keys before storing them encrypted; they are not displayed again.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify and save Razorpay"}</button></div></details>`);
     const rzPanel=settingsMode||prefs.payments==="razorpay"||prefs.payments==="both"||rzp.verified?providerPanel("razorpay","Razorpay integration",rzBlock,rzOn,rzp.verified):"";
-    const s2 = `${own}${settingsMode?rzPanel:pay+rzPanel}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${!settingsMode&&checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${settingsMode?"":saveRow(3)}`;
+    const diagnostics=settingsMode&&rzp.auth_type==="oauth"&&rzp.verified&&canEdit()?`<details${busy==="inspect-payment"||msgs["inspect-payment"]?" open":""}><summary>Read-only payment diagnostics</summary><p class="ann-note">Check an existing receipt against this store's connected Razorpay application. This does not charge, capture or refund money, refresh authorisation, verify the webhook or activate checkout. Receipt IDs with or without pay_ are accepted.</p>${inp("rz.payment_id","Razorpay payment ID")}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="inspect-payment"${dis(!v("rz.payment_id"))}>${busy==="inspect-payment"?"Checking payment":"Check payment"}</button></div>${msg("inspect-payment")}</details>`:"";
+    const s2 = `${own}${settingsMode?rzPanel:pay+rzPanel}${diagnostics}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${!settingsMode&&checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${settingsMode?"":saveRow(3)}`;
 
     // Step 3: delivery
     const del = `<p class="ann-note">Choose one or both. Add manual tracking from Orders.</p>${opts("delivery", [["manual", "I'll add tracking myself", "Use your courier and add its tracking number in Orders."], ["shiprocket", "Shiprocket", "Connect your account for automatic shipping."]])}`;
@@ -230,6 +255,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     set("dadd", !hostOk());
     set("rz", !v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"]);
     set("sr", !v("sr.email") || !draftVals["sr.password"]);
+    set("inspect-payment",!v("rz.payment_id"));
     set("ship-save", !!shipPayload().error);
   }
   function draw() {
@@ -300,6 +326,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     else if (a === "disc-no") { confirmDisc = ""; draw(); }
     else if (a === "oauth-start") void oauth("start");
     else if (a === "oauth-refresh") void oauth("refresh");
+    else if (a === "inspect-payment") void inspectPayment();
     else if (a === "oauth-disconnect") void oauth("disconnect");
     else if (a === "disc-yes") { const pr = confirmDisc; confirmDisc = ""; if(pr==="razorpay"&&state?.providers?.razorpay?.auth_type==="oauth")void oauth("disconnect");else if (pr) void act("disc-" + pr, { action: "disconnect", provider: pr }); }
     else if (a === "dadd") { if (hostOk()) void act("dom", { action: "domain-add", hostname: v("host").toLowerCase() }, () => clear(["host"])); }

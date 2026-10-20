@@ -1,5 +1,61 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Approved safe Razorpay diagnostics released
+
+- Added owner-only, same-origin payment inspection to the existing Razorpay
+  authorisation route. Receipt IDs are normalized and strictly validated.
+  The handler uses SELECTs and one bounded provider GET only; no token rotation,
+  financial operation, integration update or webhook verification write occurs.
+- Responses explicitly whitelist payment status, amount, currency and time.
+  Provider notes, customer contact details and credentials are omitted.
+  Private responses use no-store caching. Expired or cross-environment grants
+  fail closed without contacting the provider or refreshing authorisation.
+- Added a compact disclosure in the existing ticket-style payment page rather
+  than another boxed panel. Results remain expanded, receipt entry does not
+  create unsaved settings, and the result explicitly distinguishes payment
+  visibility from webhook delivery.
+- Added fixed-stage receiver logging: signature/configuration failures,
+  account routing, store processing and acknowledgement. No raw bodies,
+  headers, signatures, account identifiers, SQL or exception messages are logged.
+- Verification: seven diagnostic/security/privacy tests and fifteen dashboard
+  UI tests pass; existing OAuth regression checks also pass. Wrangler dry-run
+  build passes. Native Preview renders and managed services start cleanly.
+- Deployed with keep-vars to lebrands-store. Final release:
+  a2ebdd2f-ae6d-4bf7-8ab1-a9d949983c01.
+  Production binding metadata and route patterns match the pre-release
+  snapshot. No secret updates, migrations, checkout activation, charges,
+  captures, refunds or synthetic matched-account events were performed.
+- Live homepage/login return 200, unauthenticated inspection returns 401,
+  and the delivered /assets/ann-launch-ui.js and bundled dependencies return
+  200 with the new diagnostics. A deliberately unsigned agent-only probe
+  returns 400 and produces the expected signature_check diagnostic; this
+  does not demonstrate real Razorpay delivery.
+- Current scoped store check still shows Live mode, webhook unverified and
+  checkout off. The owner must run the private payment check in their existing
+  production session before its receipt visibility can be established.
+
+## 20 October 2026: Owner payment completed; partner delivery still unverified
+
+- Owner supplied a receipt showing completion of the approved INR 1.00 Live
+  Payment Link transaction. Did not create, charge, capture or refund anything
+  through agent tools; instructed owner not to pay again.
+- Scoped read-only production inspection found the current Stonescence grant
+  connected/live, checkout disabled, webhook_verified=false and no accepted
+  Razorpay event records. The resolver returns this store for its saved account
+  and Live mode. APP has the needed event SELECT/INSERT, attempt SELECT and
+  integration UPDATE privileges.
+- Receipt business branding was not treated as proof of an account mismatch.
+  Current reviewed partner documentation does not establish that a
+  dashboard-created Payment Link necessarily generates this application's
+  subscribed delivery; earlier instructions overstated that expectation.
+- An exact-receipt GET inspection could not proceed because the local handoff
+  context could not open the production credential envelope. No token or
+  signing/encryption secret was printed, changed or requested. This is not
+  evidence that the production grant is invalid.
+- Historical edge-security lookup returned authz/unavailable. Started another
+  bounded receiver retry watch; no historical request reconstruction claimed.
+  No verified flag, checkout gate, migration or application code was changed.
+
 ## 20 October 2026: Corrected partner webhook log navigation
 
 - Owner confirmed the merchant Developers/Webhooks list does not include the

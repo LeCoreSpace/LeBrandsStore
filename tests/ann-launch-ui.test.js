@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { attachAnnLaunch } from "../src/public/ann-launch-ui.js";
 
 const flush=async()=>{await new Promise(setImmediate);await new Promise(r=>setTimeout(r,2));};
-async function harness(readOnly=false,onStep,settingsMode=false) {
+async function harness(readOnly=false,onStep,settingsMode=false,api="/isolated/api") {
   const previous={document:globalThis.document,fetch:globalThis.fetch};
   const events=new Map(),requests=[];
   const slot={innerHTML:"",scrollTop:0,contains:t=>Boolean(t),querySelector:()=>null,querySelectorAll:()=>[]};
@@ -15,6 +15,12 @@ async function harness(readOnly=false,onStep,settingsMode=false) {
     preferences:{address:"included",payments:"cod",delivery:"manual"},providers:{},platform:{domains_available:false},jobs:[]};
   let fail=false,done=0,saved=0;
   globalThis.fetch=async(url,options={})=>{
+    if(url.endsWith("/inspect-payment")){
+      const body=JSON.parse(options.body);requests.push({url,...body});
+      return fail?Response.json({error:"Please retry the read-only check."},{status:503}):Response.json({
+        result:"found",mode:"live",payment_id:"pay_FakeReceipt123",payment:{amount_paise:100,currency:"INR",status:"captured",captured:true}
+      });
+    }
     if(options.method==="PATCH") {
       const body=JSON.parse(options.body);requests.push(body);
       if(fail) return Response.json({error:"Please retry. Your choices are kept."},{status:503});
@@ -22,16 +28,48 @@ async function harness(readOnly=false,onStep,settingsMode=false) {
     }
     return Response.json(state);
   };
-  const ui=attachAnnLaunch({api:"/isolated/api",readOnly,onStep,settingsMode,onSaved:()=>saved++,onDone:()=>done++});
+  const ui=attachAnnLaunch({api,readOnly,onStep,settingsMode,onSaved:()=>saved++,onDone:()=>done++});
   ui.mount();await flush();
   const click=async dataset=>{
     const target={dataset,disabled:false,closest(){return this;}};
     for(const fn of events.get("click")||[])fn({target,preventDefault(){}});
     await flush();
   };
-  return {ui,slot,requests,click,toggle:(provider,open)=>{for(const fn of events.get("toggle")||[])fn({target:{dataset:{lnProvider:provider},open}});},setFailure:v=>{fail=v;},setState:v=>{state={...state,...v};},get done(){return done;},get saved(){return saved;},
+  return {ui,slot,requests,click,input:(key,value)=>{for(const fn of events.get("input")||[])fn({target:{dataset:{ln:key},value}});},toggle:(provider,open)=>{for(const fn of events.get("toggle")||[])fn({target:{dataset:{lnProvider:provider},open}});},setFailure:v=>{fail=v;},setState:v=>{state={...state,...v};},get done(){return done;},get saved(){return saved;},
     async close(){await flush();globalThis.document=previous.document;globalThis.fetch=previous.fetch;}};
 }
+test("owner payment inspection is wired to the scoped read-only endpoint without saving choices or marking drafts dirty",async()=>{
+  const api="/api/stores/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/ann";
+  const h=await harness(false,undefined,true,api);
+  try{
+    h.setState({providers:{razorpay:{verified:true,auth_type:"oauth",mode:"live",webhook_verified:false}},
+      platform:{razorpay_oauth_available:true}});
+    await h.click({lnA:"reload"});
+    h.ui.mount(2);
+    assert.match(h.slot.innerHTML,/Read-only payment diagnostics/);
+    assert.match(h.slot.innerHTML,/does not charge, capture or refund money/);
+    h.input("rz.payment_id"," FakeReceipt123 ");
+    assert.equal(h.ui.hasUnsavedChanges(),false);
+    await h.click({lnA:"inspect-payment"});
+    assert.deepEqual(h.requests,[{url:api.replace(/\/ann$/,"/integrations/razorpay/inspect-payment"),confirm:true,payment_id:"FakeReceipt123"}]);
+    assert.match(h.slot.innerHTML,/pay_FakeReceipt123.*₹1\.00, captured/);
+    assert.match(h.slot.innerHTML,/<details open><summary>Read-only payment diagnostics/);
+    assert.match(h.slot.innerHTML,/not webhook delivery/);
+    assert.equal(h.saved,0);assert.equal(h.done,0);
+    h.setFailure(true);
+    await h.click({lnA:"inspect-payment"});
+    assert.match(h.slot.innerHTML,/Please retry the read-only check/);
+  }finally{await h.close();}
+});
+test("read-only members are not offered owner payment diagnostics",async()=>{
+  const h=await harness(true,undefined,true);
+  try{
+    h.setState({providers:{razorpay:{verified:true,auth_type:"oauth",mode:"live"}}});
+    await h.click({lnA:"reload"});
+    h.ui.mount(2);
+    assert.doesNotMatch(h.slot.innerHTML,/Read-only payment diagnostics/);
+  }finally{await h.close();}
+});
 test("unavailable domain choices stay readable, explain their prerequisite and cannot be selected",async()=>{
   const h=await harness();
   try {
@@ -239,7 +277,7 @@ test("payment settings retain OAuth and legacy account controls without setup fo
       assert.match(h.slot.innerHTML,/data-ln-a="disc"/);
       assert.doesNotMatch(h.slot.innerHTML,/class="ann-launch-step"|class="ann-provider-setup|<h[23]>Razorpay/);
       assert.match(h.slot.innerHTML,new RegExp(`data-ln-a="${provider.runtime_ready?"pay-off":"pay-on"}"`));
-      assert.doesNotMatch(h.slot.innerHTML,/Use API keys instead|data-ln="rz\.|data-v="cod"|data-pref="payments"|Save choices/);
+      assert.doesNotMatch(h.slot.innerHTML,/Use API keys instead|data-ln="rz\.(?:key_id|key_secret|webhook_secret)"|data-v="cod"|data-pref="payments"|Save choices/);
       if(provider.auth_type==="api_key")assert.match(h.slot.innerHTML,/existing API-key connection is preserved/);
       else assert.match(h.slot.innerHTML,/data-ln-a="oauth-refresh"/);
     }

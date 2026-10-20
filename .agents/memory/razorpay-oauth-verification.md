@@ -49,3 +49,19 @@ Wrangler JSON tail output may omit the normal Connected banner. Verify capture
 using an observed, explicitly labelled unsigned probe rather than relying on
 that banner. A rejected agent probe proves live-capture connectivity, not
 Razorpay delivery or merchant verification.
+
+Do not present a manually created merchant-dashboard Payment Link as a
+guaranteed partner-application webhook test.
+
+**Why:** The owner completed the requested small Live payment, but the target
+store still had no accepted partner events. The reviewed provider documentation
+did not establish that a dashboard-origin payment is necessarily delivered to
+the OAuth application's webhook. This does not establish the cause of missing
+delivery, or prove an account mismatch from a receipt's business name.
+
+**How to apply:** Establish provider event scope and account visibility before
+proposing a real charge. A completed receipt is payment evidence, not webhook
+evidence. Never request another charge merely because diagnostics are missing.
+Use owner-scoped, read-only production diagnostics where necessary. A local
+failure to open production credentials is inconclusive; do not rotate or
+request production encryption keys just to make a local probe work.

@@ -3,11 +3,12 @@ import {sha256,randomToken} from "../auth/passwords.js";
 import {SECURITY_HEADERS,isValidOrigin} from "../auth/security.js";
 import {readJson} from "../store/input.js";
 import {audit} from "../dashboard/repository.js";
+import {inspectRazorpayPayment,diagnosticPaymentId} from "./razorpay-diagnostics.js";
 
 export const OAUTH_CALLBACK="/integrations/razorpay/callback";
 export const OAUTH_WEBHOOK="/webhooks/razorpay/oauth";
 const UUID="[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}";
-const route=new RegExp(`^/api/stores/(${UUID})/integrations/razorpay/(start|disconnect|refresh)$`,"i");
+const route=new RegExp(`^/api/stores/(${UUID})/integrations/razorpay/(start|disconnect|refresh|inspect-payment)$`,"i");
 const fail=(message,status=409)=>{throw Object.assign(new Error(message),{status});};
 const parse=v=>typeof v==="string"?JSON.parse(v):v||{};
 const key=env=>env.INTEGRATION_ENCRYPTION_KEY||env.SESSION_SECRET;
@@ -158,7 +159,7 @@ export function oauthSignatureSecret(credentials,env){
   if(cfg.client_id!==credentials.client_id||cfg.mode!==credentials.mode)fail("Payment authorisation does not match this environment.");
   return cfg.client_secret;
 }
-const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{...SECURITY_HEADERS,"content-type":"application/json"}});
+const json=(body,status=200)=>new Response(JSON.stringify(body),{status,headers:{...SECURITY_HEADERS,"content-type":"application/json","cache-control":"private, no-store"}});
 const back=(id,result)=>new Response(null,{status:303,headers:{...SECURITY_HEADERS,
   "referrer-policy":"no-referrer",location:`/stores/${id}/settings?connection=payments&oauth=${result}`}});
 export async function handleRazorpayOAuth(request,env,db,user,sessionHash,{fetcher=fetch}={}){
@@ -170,6 +171,15 @@ export async function handleRazorpayOAuth(request,env,db,user,sessionHash,{fetch
     const id=m[1];
     try{
       const body=await readJson(request);
+      if(m[2]==="inspect-payment"){
+        if(!body||body.confirm!==true||Object.keys(body).some(k=>!["confirm","payment_id"].includes(k)))
+          return json({error:"Provide a payment ID for the read-only check."},400);
+        const paymentId=diagnosticPaymentId(body.payment_id),cfg=oauthConfig(env);
+        return json(await db.withMemberStore(id,sessionHash,async tx=>{
+          await owner(tx,id,user.id);
+          return inspectRazorpayPayment(tx,id,env,cfg,paymentId,fetcher);
+        }));
+      }
       if(!body||body.confirm!==true||Object.keys(body).some(k=>!["confirm","replace_existing"].includes(k))||
         body.replace_existing!==undefined&&typeof body.replace_existing!=="boolean")return json({error:"Confirm this integration change."},400);
       if(m[2]==="start")return json(await db.withMemberStore(id,sessionHash,tx=>beginOAuth(tx,id,user.id,sessionHash,env,body.replace_existing===true)));
