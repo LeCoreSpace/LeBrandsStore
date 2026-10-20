@@ -1,5 +1,17 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Approved-document re-review activated in production
+
+- With explicit owner approval, published compatible Worker version
+  `96c64df1-6959-4712-af4d-5fdacac62edf`, confirmed 100% traffic and unchanged
+  25 bindings/14 secrets/runtime compatibility, then applied only staged 0053.
+- Migration committed successfully. Read-only verification confirms the recorded
+  checksum matches the release, APP-only execute access, and the existing
+  decision-email trigger and scheduler remain enabled.
+- Live sign-in and review assets return 200; anonymous review requests remain
+  protected/no-store. No real business documents, review decisions or email
+  sends were used as release tests. Existing approval records are unchanged.
+
 ## 2026-10-20: Explicit re-review of approved documents, local
 
 - Prepared staged migration `0053_business_review_reconsider.sql`, selected with

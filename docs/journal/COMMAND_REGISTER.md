@@ -1,5 +1,18 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Approved re-review activation
+
+```sh
+pnpm exec wrangler deploy --keep-vars
+node db/migrate.js --staged-business-review-reconsider
+```
+
+Owner-approved compatible code published first; version
+`96c64df1-6959-4712-af4d-5fdacac62edf` serves all traffic. Binding/compatibility
+fingerprints are unchanged. Staged 0053 committed to existing shared Supabase;
+checksum, effective grants, email trigger/scheduler and live protected-route
+and asset responses verified read-only. No document/decision/email test writes.
+
 ## 20 October 2026: Local approved-document re-review verification
 
 ```sh
