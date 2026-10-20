@@ -274,6 +274,14 @@ Save draft and Publish store once in the existing top header.
 The header navigation should only show Back to dashboard; Theme editor belongs
 in More, and the redundant Business documents/Store connections header links
 should not return. Contextual business-recovery links remain available.
+Do not reserve a separate tools/loading panel above Ann's page tabs while
+asynchronous design data loads; the compact layout must also hold during startup.
+
+**Why:** The user reported that the initial placeholder recreated the empty
+space after the steady-state card had been removed.
+
+**How to apply:** Keep loading feedback in compact existing status areas and
+preserve real errors/retry actions instead of restoring a large skeleton panel.
 
 **Why:** The user said screen real estate is an issue, rejected multiple rows
 of options and approved this consolidated approach.

@@ -1176,6 +1176,20 @@ decision:
 - **Outcome:** Working-tree change, not yet a committed checkpoint. No database
   changes, migration or production deployment.
 
+### 2026-10-20: Remove Ann's startup loading placeholder
+
+- **Cause/change:** The earlier empty-card fix covered the ready state, but
+  the design loader still rendered a large skeleton card before its GET
+  completed. It now returns no inline tools markup while initially loading,
+  so the existing empty-host rule also removes that transient space above
+  the page tabs. The data request, loaded tools, error and retry behavior remain.
+- **Verification:** Seven focused header/loading/toolbar/Worker bundle checks
+  passed, including initial pending, loaded and failed-request branches.
+  `git diff --check` passed and the API preview rebuilt successfully.
+  No timing-sensitive browser verification is claimed for this small fix.
+- **Outcome:** Working-tree change, not yet committed or deployed. No database,
+  migration, publication or draft-save behavior changes.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

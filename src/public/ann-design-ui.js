@@ -338,7 +338,7 @@ export function attachAnnDesign(o) {
 
   /* ---------- toolbar ---------- */
   function body() {
-    if (!loaded && !loadError) return `<div class="ann-design-card" aria-busy="true"><div class="ann-skel" aria-hidden="true"><i></i><i></i></div></div>`;
+    if (!loaded && !loadError) return "";
     if (loadError) return `<div class="ann-design-card"><p class="ann-callout" role="alert">${esc(loadError)}</p><button type="button" class="ann-btn alt sm" data-design-act="retry">Try again</button></div>`;
     const browsing = mode() === "showcase" || !sameStyle();
     const a = o.getAnswers();

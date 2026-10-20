@@ -610,6 +610,16 @@ Workspace root, local code and synthetic preview only:
 | `git diff --check` | Passed. |
 | Managed API/web restarts and synthetic Ann screenshot | Simplified ticket-style header verified. No production publication. |
 
+### 20 October: Ann initial loading placeholder
+
+Workspace root, local source and Worker asset checks only:
+
+| Command / operation | Purpose / observed result |
+| --- | --- |
+| `node --test --test-concurrency=1 tests/ann-design-header-actions.test.js tests/ann-compact-toolbar.test.js tests/browser-bundles.test.js` | Seven passed, including empty initial loading and preserved error/retry path. |
+| `git diff --check` | Passed. |
+| Managed API preview restart | Rebuilt updated assets. No production publication or migration. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

@@ -19,3 +19,11 @@ test("empty design tools leave no card above the page navigation",()=>{
   }
   assert.match(ui,/el\.hidden = !el\.innerHTML\.trim\(\)/);
 });
+test("initial design loading reserves no placeholder space, while failures reach the error UI",()=>{
+  const initialBranch=ui.match(/function body\(\) \{\n([^\n]+)/)[1];
+  const renderInitial=new Function("loaded","loadError",`${initialBranch}\nreturn "continue";`);
+  assert.equal(renderInitial(false,""),"");
+  assert.equal(renderInitial(false,"Request failed"),"continue");
+  assert.equal(renderInitial(true,""),"continue");
+  assert.match(ui,/if \(loadError\) return[^]*?role="alert"[^]*?data-design-act="retry"/);
+});
