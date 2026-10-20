@@ -4,7 +4,6 @@ import {sealCredentials} from "../src/connections/providers.js";
 import {handleRazorpayOAuth,isRazorpayOAuthRoute} from "../src/connections/razorpay-oauth.js";
 import {diagnosticPaymentId} from "../src/connections/razorpay-diagnostics.js";
 import {razorpayOAuthWebhook} from "../src/connections/razorpay-oauth-webhook.js";
-import {paymentDiagnosticNotice} from "../src/public/ann-launch-ui.js";
 
 const id="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",uid="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",hash="a".repeat(64);
 const path=`/api/stores/${id}/integrations/razorpay/inspect-payment`;
@@ -57,8 +56,6 @@ test("owner diagnostics make only a bounded provider GET and return whitelisted 
   assert.equal(body.webhook_verified,false);assert.equal(body.checkout_enabled,false);
   assert.equal(body.last_recorded_event,null);assert.equal(calls,1);
   assert.doesNotMatch(raw,/PRIVATE_|credentials|access_token|email|contact|notes/);
-  assert.match(paymentDiagnosticNotice(body),/₹1\.00, captured/);
-  assert.match(paymentDiagnosticNotice(body),/not webhook delivery/);
 });
 test("owner, origin, session and body boundaries are enforced before any provider call",async()=>{
   let calls=0;const fetcher=async()=>{calls++;throw Error("must not be called");};
@@ -95,7 +92,6 @@ test("provider refusals and bad payloads remain inconclusive, sanitized and non-
     assert.equal(body.result,status===404?"not_visible":"provider_rejected");
     assert.equal(body.webhook_verified,false);assert.equal(body.checkout_enabled,false);
     assert.doesNotMatch(text,/PRIVATE_/);
-    if(status===404)assert.match(paymentDiagnosticNotice(body),/does not prove an account mismatch/);
   }
   for(const body of [{...payment,id:"pay_OtherPayment"},{...payment,currency:"<script>"},
     {...payment,status:"<script>"},{...payment,amount:"100"}]){

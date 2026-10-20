@@ -6,6 +6,16 @@ The brand dashboard should feel like a dense, calm professional commerce admin,
 using LeBrands plum accents and system UI typography rather than editorial headings.
 Its visual identity is separate from the public Aura storefront and checkout.
 
+Merchant-facing success messages should be green and use user-understandable
+words, not technical terms. Pending checks must not be presented as success.
+
+**Why:** The user explicitly requested green, understandable confirmations after
+seeing the technical Razorpay status and receipt-check messages.
+
+**How to apply:** Explain the practical outcome, such as customers being able to
+pay online, rather than exposing protocol details. Preserve separate warning
+and error treatments, ticket styling and the actual server-owned readiness gates.
+
 The dashboard must have its own visual design, navigation structure and naming,
 not reproduce Shopify's sidebar. Do not use “Growth” as a navigation label;
 use “Brand reach” for the proposed marketing group. Products and Collections

@@ -903,7 +903,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 #ann-launch-slot .ann-btn.alt:hover:not(:disabled){background:#f1e5ea}
 #ann-launch-slot .ann-btn:disabled{opacity:.5;cursor:not-allowed}
 #ann-launch-slot .ann-link{border:0;background:none;color:var(--lb-green);text-decoration:underline;cursor:pointer}
-#ann-launch-slot .ann-callout{padding:10px 12px;border-left:3px solid var(--lb-green);background:#faf5f7;font-size:12px;border-radius:0 4px 4px 0}
+#ann-launch-slot .ann-callout{padding:10px 12px;border-left:3px solid #b45309;background:#fff7ed;color:#7c3a06;font-size:12px;border-radius:0 4px 4px 0}
+#ann-launch-slot .ann-callout.ann-success{border-left-color:#15803d;background:#effaf3;color:#166534}
 #ann-launch-slot .ann-error{padding:10px 12px;border-left:3px solid #b42318;background:#fbeae7;color:#7a271a;font-size:12px;border-radius:0 4px 4px 0}
 #ann-launch-slot .ann-conflict{padding:12px;border:1px solid #e3b5ad;background:#fbeae7;border-radius:6px;display:grid;gap:10px;font-size:12px}
 #ann-launch-slot .ann-dns-guide{display:grid;gap:8px}

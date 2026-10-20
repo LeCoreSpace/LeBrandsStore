@@ -4,19 +4,34 @@ const when = v => { if (!v) return ""; const d = new Date(v); return isNaN(d) ? 
 
 export function oauthCallbackNotice(result,provider={}){
   if(result==="connected")return provider.verified&&provider.auth_type==="oauth"?
-    "Razorpay authorised successfully. Review the account and payment activation status below.":"";
+    "Your Razorpay account is connected.":"";
   if(result==="cancelled")return "Authorisation was cancelled. Your existing integration is unchanged.";
-  if(result==="failed")return "We could not confirm authorisation. Review the integration status below, then reconnect if needed.";
+  if(result==="failed")return "We could not connect your Razorpay account. Check the account details below and try again.";
   return "";
 }
-export function paymentDiagnosticNotice(result){
-  if(result.result==="found"){
-    const p=result.payment,amount=new Intl.NumberFormat("en-IN",{style:"currency",currency:p.currency}).format(p.amount_paise/100);
-    return `Razorpay returned ${result.payment_id} (${result.mode} mode) to the connected application: ${amount}, ${p.status}${p.captured?" (captured)":""}. This confirms payment visibility, not webhook delivery. Nothing was changed.`;
+export function razorpayPaymentNotice(provider){
+  if(provider.runtime_ready)return {ok:true,text:"Online payments are on. Customers can now pay through Razorpay."};
+  if(provider.mode==="test")return {ok:false,text:"Your Razorpay account is connected for testing. Connect your live account to accept customer payments."};
+  if(provider.mode!=="live")return {ok:false,text:"Your Razorpay account is connected. Check the account setup before accepting online payments."};
+  if(!provider.webhook_verified)return {ok:false,text:"Your Razorpay account is connected. We’re waiting for Razorpay to confirm payment updates before you can turn on online payments."};
+  return {ok:true,text:"Your Razorpay account is connected and payment updates are working. Online payments are currently off."};
+}
+export function launchSavedMessage(fields,state={}){
+  if(fields.action==="activate"){
+    if(fields.provider==="razorpay")return fields.enabled?
+      (state.providers?.razorpay?.runtime_ready?"Online payments are on. Customers can now pay through Razorpay.":"Your payment settings have been saved. Check the connection status above before taking payments."):
+      "Online payments are off. Customers cannot pay through Razorpay.";
+    return fields.enabled?"Your shipping settings have been saved. Check the shipping status below.":"Automatic shipping is off.";
   }
-  return result.result==="not_visible"
-    ?"Razorpay did not return this payment to the connected application (404). Check the receipt ID and account. This alone does not prove an account mismatch or explain missing webhooks. Nothing was changed."
-    :`Razorpay declined the read-only check (HTTP ${result.provider_http_status}). No credentials or payment settings were changed.`;
+  return ({
+    choose:"Your preferences have been saved.","razorpay-connect":"Your Razorpay account is connected. Turn on online payments when you are ready.",
+    "shiprocket-connect":"Your Shiprocket account is connected.","shipping-settings":"Your shipping preferences have been saved.",
+    "domain-add":"Your domain has been added. Follow the setup instructions below.",
+    "domain-check":"Your domain has been checked. See its latest status below.",
+    "domain-activate":"Your custom domain is now active.","domain-remove":"Your custom domain has been removed from this store.",
+    disconnect:"The integration has been disconnected.","refresh-provider":"Your shipping details have been updated.",
+    "retry-job":"Your request has been submitted. Check its latest status below."
+  })[fields.action]||"Your changes have been saved.";
 }
 export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settingsMode = false }) {
   let state = null, loading = false, loadError = "", busy = "", stale = false;
@@ -27,7 +42,6 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   const skipped=new Set();
   // Drafts live only in memory. Values are applied to inputs as DOM properties, never written into HTML.
   const draftVals = { host: "", "rz.key_id": "", "rz.key_secret": "", "rz.webhook_secret": "", "sr.email": "", "sr.password": "", "ship.pickup": "", "ship.weight": "", "ship.length": "", "ship.breadth": "", "ship.height": "", "ship.units": "", "ship.freight": "" };
-  draftVals["rz.payment_id"]="";
   let shipAuto = false, refreshing = false; const absence = {};
   let shipDirty = false, ackPay = false, ackShip = false;
   let ack = false, confirmDisc = "", confirmRemove = false;
@@ -35,7 +49,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   const storeId = (String(api).match(/\/api\/stores\/([^/]+)\/ann/) || [])[1];
   const checkoutHref = storeId ? `/stores/${encodeURIComponent(storeId)}/settings/checkout` : "";
   const canEdit = () => !readOnly && !!state?.can_edit;
-   const hasCreds = () => Object.entries(draftVals).some(([k, x]) => !k.startsWith("ship.") && k!=="rz.payment_id" && Boolean(x));
+   const hasCreds = () => Object.entries(draftVals).some(([k, x]) => !k.startsWith("ship.") && Boolean(x));
   function seedShip() {
     const sh = state?.providers?.shiprocket?.shipping; if (shipDirty || !sh) return;
     shipAuto = !!sh.auto_pickup;
@@ -87,7 +101,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       if (!res.ok) throw new Error([result.error || "Could not save. Your entries are kept.", ...Object.values(result.errors || {})].join(" "));
       take(result); stale = false;
       onOk?.();
-      msgs[key] = { ok: true, text: "Saved." };
+      msgs[key] = { ok: true, text: launchSavedMessage(fields,result) };
       try { onSaved?.(result); } catch { /* host error */ }
     } catch (e) { msgs[key] = { text: e.message }; }
     finally { busy = ""; draw(); }
@@ -112,28 +126,15 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       if(!updated.res.ok)throw new Error("Your change was saved. Reload this page to refresh its status.");
       take(updated.result);
       msgs.oauth={ok:!result.revocation_pending,text:result.revocation_pending?
-        "Online checkout is off. Razorpay could not confirm revoked access. Retry disconnection or remove LeBrands.Store from your Razorpay authorised apps.":"Razorpay authorisation updated."};
+        "Online payments are off, but Razorpay has not confirmed the disconnection. Try again or remove LeBrands.Store from your connected apps in Razorpay.":
+        action==="disconnect"?"Your Razorpay account has been disconnected.":"Your Razorpay account connection has been refreshed."};
     }catch(e){msgs.oauth={text:e.message||"Razorpay authorisation is temporarily unavailable."};}
-    finally{busy="";draw();}
-  }
-  async function inspectPayment(){
-    if(!canEdit()||busy||loading||!storeId||!v("rz.payment_id"))return;
-    busy="inspect-payment";msgs["inspect-payment"]=null;draw();
-    try{
-      const response=await fetch(`${api.replace(/\/ann$/,"/integrations/razorpay")}/inspect-payment`,{
-        method:"POST",credentials:"same-origin",headers:{"content-type":"application/json"},
-        body:JSON.stringify({confirm:true,payment_id:v("rz.payment_id")})
-      });
-      const result=await response.json();
-      if(!response.ok)throw new Error(result.error||"The read-only payment check could not be completed.");
-      msgs["inspect-payment"]={ok:true,text:paymentDiagnosticNotice(result)};
-    }catch(e){msgs["inspect-payment"]={text:e.message};}
     finally{busy="";draw();}
   }
 
   const off = x => !canEdit() || !!busy || loading || !!x;
   const dis = x => off(x) ? " disabled" : "";
-  const msg = k => msgs[k] ? `<p class="${msgs[k].ok ? "ann-callout" : "ann-error"}" role="${msgs[k].ok ? "status" : "alert"}">${esc(msgs[k].text)}</p>` : "";
+  const msg = k => msgs[k] ? `<p class="${msgs[k].ok ? "ann-callout ann-success" : "ann-error"}" role="${msgs[k].ok ? "status" : "alert"}">${esc(msgs[k].text)}</p>` : "";
   const inp = (k, label, t = "text") => `<label class="ann-field">${esc(label)}<input data-ln="${k}" type="${t}" autocomplete="${t === "password" ? "new-password" : "off"}" autocapitalize="none" spellcheck="false"${dis()}></label>`;
   const num = (k, label) => `<label class="ann-field">${esc(label)}<input data-ln="${k}" type="text" inputmode="decimal" autocomplete="off"${dis()}></label>`;
   function opts(group, items) {
@@ -190,7 +191,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     if (!d) {
       dom = plat.domains_available
         ? `${diag}<p class="ann-note">Enter a subdomain such as www.yourbrand.com. Bare domains like yourbrand.com are not supported.</p>${inp("host", "Domain")}${msg("dom")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="dadd"${dis(!hostOk())}>Add domain</button></div>`
-        : `<p class="ann-callout" role="status">Your included address${s.included_address?` (${esc(s.included_address)})`:""} is ready to use. Custom domains need platform setup first. You can continue to payments now.</p>`;
+        : `<p class="ann-callout ann-success" role="status">Your included address${s.included_address?` (${esc(s.included_address)})`:""} is ready to use. Custom domains need platform setup first. You can continue to payments now.</p>`;
     } else {
       const live = domLive();
       const notes = [];
@@ -198,23 +199,24 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       if (!live && !domVerified()) notes.push(plat.domain_activation_available ? "Activation requires the CNAME, hostname and SSL checks to pass." : "Activation is not available on this platform right now.");
       const dns = (d.dns_records || []).length ? `<div class="ann-dns-guide"><h4>Update DNS at your domain provider</h4><p class="ann-note">Add every record below. DNS changes can take time. Then select Verify DNS and SSL. Do not remove your current records until you know which names they replace.</p><div class="ann-dns-table" role="table" aria-label="Required DNS records"><div class="ann-dns-row ann-dns-head" role="row"><span role="columnheader">Type</span><span role="columnheader">Name</span><span role="columnheader">Value</span></div>${d.dns_records.map(r => `<div class="ann-dns-row" role="row"><b role="cell">${esc(r.type)}</b><span role="cell"><code>${esc(r.name)}</code><button type="button" class="ann-dns-copy" data-ln-copy="${esc(r.name)}" aria-label="Copy DNS name">Copy</button></span><span role="cell"><code>${esc(r.value)}</code><button type="button" class="ann-dns-copy" data-ln-copy="${esc(r.value)}" aria-label="Copy DNS value">Copy</button></span></div>`).join("")}</div></div>` : "";
       const dnsStatus=`<p class="ann-note" role="status">CNAME: <strong>${d.cname_verified ? "verified" : "waiting"}</strong> · Hostname: <strong>${esc(d.hostname_status)}</strong> · SSL: <strong>${esc(d.ssl_status)}</strong>.</p>`;
-      dom = `<p><strong>${esc(d.hostname)}</strong> <span class="ann-launch-st">${esc(d.status)}${d.primary ? ", primary" : ""}</span></p>${dnsStatus}${dns}${notes.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${diag}${live ? `<p class="ann-callout">This domain is active.</p>` : `<label class="ann-check"><input type="checkbox" data-ln-ack="dom"${ack ? " checked" : ""}${dis()}><span>If I use an online payment provider, I have approved this domain there.</span></label>`}${msg("dom")}${confirmRemove ? `<div class="ann-conflict" role="alertdialog"><p>Remove ${esc(d.hostname)}? This turns off the route for your store only. Nothing is deleted at your domain host or payment provider.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="drem-yes"${dis()}>Yes, remove</button><button type="button" class="ann-btn alt sm" data-ln-a="drem-no">Keep domain</button></div></div>` : ""}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="dchk"${dis()}>${plat.domain_activation_available?"Verify DNS and SSL":"Verify DNS CNAME"}</button>${live ? "" : `<button type="button" class="ann-btn sm" data-ln-a="dact"${dis(!domVerified() || !ack)}>Activate domain</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="drem"${dis(confirmRemove)}>Remove</button></div>`;
+      dom = `<p><strong>${esc(d.hostname)}</strong> <span class="ann-launch-st">${esc(d.status)}${d.primary ? ", primary" : ""}</span></p>${dnsStatus}${dns}${notes.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${diag}${live ? `<p class="ann-callout ann-success" role="status">Your custom domain is active.</p>` : `<label class="ann-check"><input type="checkbox" data-ln-ack="dom"${ack ? " checked" : ""}${dis()}><span>If I use an online payment provider, I have approved this domain there.</span></label>`}${msg("dom")}${confirmRemove ? `<div class="ann-conflict" role="alertdialog"><p>Remove ${esc(d.hostname)}? This turns off the route for your store only. Nothing is deleted at your domain host or payment provider.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="drem-yes"${dis()}>Yes, remove</button><button type="button" class="ann-btn alt sm" data-ln-a="drem-no">Keep domain</button></div></div>` : ""}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="dchk"${dis()}>${plat.domain_activation_available?"Verify DNS and SSL":"Verify DNS CNAME"}</button>${live ? "" : `<button type="button" class="ann-btn sm" data-ln-a="dact"${dis(!domVerified() || !ack)}>Activate domain</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="drem"${dis(confirmRemove)}>Remove</button></div>`;
     }
     const s1 = `${own}${customOnly ? `<p class="ann-note">Your included store address keeps working. Connecting your own domain is optional.</p>` : addr}${dom}${saveRow(2)}`;
 
     // Step 2: payments
     const pay = `<p class="ann-note">Choose one or both.</p>${opts("payments", [["cod", "Cash on Delivery", "Customers pay when their order arrives."], ["razorpay", "Razorpay", "Customers pay online. Connect below or finish later."]])}`;
-    const rzTime = when(rzp.checked_at);
     const execOff = s.execution_available === false;
-    const execNote = execOff ? `<p class="ann-note">Activation is unavailable until the platform database migration is applied. Ask the platform team. Nothing here has been turned on.</p>` : "";
+    const execNote = execOff ? `<p class="ann-note">This service cannot be turned on yet. Please contact the platform team for help. Your current settings are unchanged.</p>` : "";
     const rzOn = !!rzp.runtime_ready, rzLive = rzp.mode === "live";
-    const rzNeeds = [!rzLive && "Live-mode authorisation is required to take online payments.", !rzp.webhook_verified && "A signed webhook has not been verified yet."].filter(Boolean);
-    const rzVerified = `<p class="ann-callout">Account verified${rzp.mode ? ` (${esc(rzp.mode)} mode)` : ""}${rzTime ? `, checked ${esc(rzTime)}` : ""}. Webhook: ${rzp.webhook_verified ? "verified" : "not verified yet"}. Online checkout: <strong>${rzOn ? "active" : "off"}</strong>.</p>`
-      + (rzOn ? "" : `<p class="ann-note">${rzp.auth_type==="oauth"?"Payment events are managed by LeBrands.Store. Reload status after Razorpay delivers a signed event for this account.":`To finish: in your Razorpay dashboard add this webhook URL${rzp.webhook_url ? ` <code>${esc(rzp.webhook_url)}</code>` : " (not provided yet)"} with the events payment.captured, order.paid, payment.failed and refund.processed, using the webhook secret you saved here. Then send a signed test webhook from Razorpay and reload status. Your stored secrets are never shown again.`}</p>${rzNeeds.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${execNote}<label class="ann-check"><input type="checkbox" data-ln-ack="pay"${ackPay ? " checked" : ""}${dis()}><span>Razorpay has approved my KYC and this domain for live payments.</span></label>`)
-      + `${msg("act-rz")}<div class="ann-actions">${rzOn ? `<button type="button" class="ann-btn sm" data-ln-a="pay-off"${dis(execOff)}>${busy === "act-rz" ? "Saving" : "Turn off online checkout"}</button>` : `<button type="button" class="ann-btn sm" data-ln-a="pay-on"${dis(execOff || !!rzNeeds.length || !ackPay)}>${busy === "act-rz" ? "Saving" : "Turn on online checkout"}</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="disc" data-p="razorpay"${dis(!!confirmDisc)}>Disconnect</button></div>`;
+    const rzNeeds = [!rzLive && "Connect your live Razorpay account to accept payments from customers.", !rzp.webhook_verified && "We’re waiting for Razorpay to confirm payment updates for your store."].filter(Boolean);
+    const paymentNotice=razorpayPaymentNotice(rzp);
+    const rzVerified = `<p class="ann-callout${paymentNotice.ok?" ann-success":""}" role="status">${esc(paymentNotice.text)}</p>`
+      + (rzOn ? "" : `<p class="ann-note">${rzp.auth_type==="oauth"?"LeBrands.Store receives payment updates automatically. Use Reload status to check for updates.":`To finish: in your Razorpay dashboard add this webhook URL${rzp.webhook_url ? ` <code>${esc(rzp.webhook_url)}</code>` : " (not provided yet)"} with the events payment.captured, order.paid, payment.failed and refund.processed, using the webhook secret you saved here. Then send a signed test webhook from Razorpay and reload status. Your stored secrets are never shown again.`}</p>${rzNeeds.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${execNote}<label class="ann-check"><input type="checkbox" data-ln-ack="pay"${ackPay ? " checked" : ""}${dis()}><span>Razorpay has approved my KYC and this domain for live payments.</span></label>`)
+      + `${msgs["act-rz"]?.ok?"":msg("act-rz")}<div class="ann-actions">${rzOn ? `<button type="button" class="ann-btn sm" data-ln-a="pay-off"${dis(execOff)}>${busy === "act-rz" ? "Saving" : "Turn off online payments"}</button>` : `<button type="button" class="ann-btn sm" data-ln-a="pay-on"${dis(execOff || !!rzNeeds.length || !ackPay)}>${busy === "act-rz" ? "Saving" : "Turn on online payments"}</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="disc" data-p="razorpay"${dis(!!confirmDisc)}>Disconnect</button></div>`;
     const oauthReady=!!plat.razorpay_oauth_available;
-    const oauthNotice=oauthCallbackNotice(new URLSearchParams(globalThis.location?.search||"").get("oauth"),rzp);
-    const oauthBlock=`${oauthNotice?`<p class="ann-callout" role="status">${esc(oauthNotice)}</p>`:""}<p class="ann-note">Securely authorise your own Razorpay account without sharing API keys with LeBrands.Store.</p>
+    const oauthResult=new URLSearchParams(globalThis.location?.search||"").get("oauth");
+    const oauthNotice=oauthCallbackNotice(oauthResult,rzp);
+    const oauthBlock=`${oauthNotice?`<p class="${oauthResult==="failed"?"ann-error":oauthResult==="connected"?"ann-callout ann-success":"ann-callout"}" role="${oauthResult==="failed"?"alert":"status"}">${esc(oauthNotice)}</p>`:""}<p class="ann-note">Connect your Razorpay account securely without sharing your password with LeBrands.Store.</p>
       ${rzp.auth_type==="oauth"&&rzp.account_id?`<p class="ann-note">Account <strong>${esc(rzp.account_id)}</strong>${rzp.mode?` · ${esc(rzp.mode)} mode`:""}${rzp.token_expires_at?` · Authorisation expires ${esc(when(rzp.token_expires_at))}`:""}</p>`:""}
       ${rzp.refresh_attention?'<p class="ann-error" role="alert">Razorpay needs a fresh authorisation. Reconnect your account.</p>':""}
       <div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="oauth-start"${dis(!oauthReady)}>${busy==="oauth"?"Please wait":rzp.auth_type==="oauth"?"Reconnect to Razorpay":"Connect to Razorpay"}</button>
@@ -225,12 +227,10 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       ? rzVerified
       : settingsMode?"":`<details><summary>Use API keys instead</summary><p class="ann-note">Enter your merchant Razorpay key ID and key secret. Also create a webhook secret in Razorpay so signed payment events can be checked. We verify the keys before storing them encrypted; they are not displayed again.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify and save Razorpay"}</button></div></details>`);
     const rzPanel=settingsMode||prefs.payments==="razorpay"||prefs.payments==="both"||rzp.verified?providerPanel("razorpay","Razorpay integration",rzBlock,rzOn,rzp.verified):"";
-    const diagnostics=settingsMode&&rzp.auth_type==="oauth"&&rzp.verified&&canEdit()?`<details${busy==="inspect-payment"||msgs["inspect-payment"]?" open":""}><summary>Read-only payment diagnostics</summary><p class="ann-note">Check an existing receipt against this store's connected Razorpay application. This does not charge, capture or refund money, refresh authorisation, verify the webhook or activate checkout. Receipt IDs with or without pay_ are accepted.</p>${inp("rz.payment_id","Razorpay payment ID")}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="inspect-payment"${dis(!v("rz.payment_id"))}>${busy==="inspect-payment"?"Checking payment":"Check payment"}</button></div>${msg("inspect-payment")}</details>`:"";
-    const s2 = `${own}${settingsMode?rzPanel:pay+rzPanel}${diagnostics}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${!settingsMode&&checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${settingsMode?"":saveRow(3)}`;
+    const s2 = `${own}${settingsMode?rzPanel:pay+rzPanel}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${!settingsMode&&checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${settingsMode?"":saveRow(3)}`;
 
     // Step 3: delivery
     const del = `<p class="ann-note">Choose one or both. Add manual tracking from Orders.</p>${opts("delivery", [["manual", "I'll add tracking myself", "Use your courier and add its tracking number in Orders."], ["shiprocket", "Shiprocket", "Connect your account for automatic shipping."]])}`;
-    const srTime = when(shp.checked_at);
     const srOn = !!shp.runtime_ready, locs = shp.pickup_locations || [], cfg = shp.shipping;
     const picked = locs.some(l => l.name === draftVals["ship.pickup"]);
     const srForm = `<h3>Package and limits</h3><p class="ann-note">Weight and size describe one parcel that must hold up to the max units. They are not worked out per product. Make sure your package fits that many items. The provider can adjust final charges.${cfg ? "" : " Nothing is saved yet."}${cfg && !picked ? " The saved pickup location is not in your account list. Choose one again." : ""}</p>${locs.length ? `<label class="ann-field">Pickup location<select data-ln="ship.pickup"${dis()}><option value="">Choose a pickup location</option>${locs.map(l => `<option value="${esc(l.name)}">${esc(l.name)} (${esc(l.pincode)})</option>`).join("")}</select></label>` : `<p class="ann-note">No pickup locations were found in your Shiprocket account. Add one there, then reload status.</p>`}<div class="ann-launch-grid">${num("ship.weight", "Weight (kg)")}${num("ship.length", "Length (cm)")}${num("ship.breadth", "Breadth (cm)")}${num("ship.height", "Height (cm)")}${num("ship.units", "Max units per shipment")}${num("ship.freight", "Max freight (INR)")}</div><label class="ann-check"><input type="checkbox" data-ln-ack="auto"${shipAuto ? " checked" : ""}${dis()}><span>Ask the courier to schedule pickup automatically when a shipment is booked.</span></label>${msg("ship-save")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="ship-save"${dis(!locs.length || !!shipPayload().error)}>${busy === "ship-save" ? "Saving" : "Save shipping settings"}</button></div><p class="ann-note">Saving these settings does not turn on automatic shipping.</p>`;
@@ -238,7 +238,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     const jobs = Array.isArray(s.jobs) ? s.jobs : [];
     const jobsHtml = jobs.length ? `<h3>Shipping jobs</h3><ul class="ann-launch-jobs">${jobs.map(j => `<li><div><b>${esc(j.order_number)}</b> ${esc(j.kind)} <span class="ann-launch-st">${j.status === "attention" ? "needs attention" : j.status === "done" ? "done" : esc(j.status)}</span>${when(j.updated_at) ? ` <small>${esc(when(j.updated_at))}</small>` : ""}${j.last_error ? `<p class="ann-note">${esc(j.last_error)}</p>` : ""}${msg("job-" + j.id)}</div>${j.status === "attention" ? `<label class="ann-check"><input type="checkbox" data-ln-ack="abs" data-id="${esc(j.id)}"${absence[j.id] ? " checked" : ""}${dis()}><span>Only if unsure: I checked the provider and no booking, AWB, pickup or refund exists, so another attempt is allowed. This may incur charges.</span></label><button type="button" class="ann-btn alt sm" data-ln-a="job" data-id="${esc(j.id)}"${dis()}>${busy === "job-" + j.id ? "Retrying" : "Retry"}</button>` : ""}</li>`).join("")}</ul>` : "";
     const srBlock = `<h3>Shiprocket</h3>` + (shp.verified
-      ? `<p class="ann-callout">Account verified${shp.pickup_count != null ? `, ${esc(shp.pickup_count)} pickup location(s)` : ""}${srTime ? `, checked ${esc(srTime)}` : ""}.</p>${srForm}${srAuto}${jobsHtml}`
+      ? `<p class="ann-callout ann-success" role="status">Your Shiprocket account is connected.${shp.pickup_count != null ? ` ${esc(shp.pickup_count)} pickup location${shp.pickup_count===1?" is":"s are"} available.` : ""}</p>${srForm}${srAuto}${jobsHtml}`
       : `<p class="ann-note">Create a separate API user in Shiprocket Settings → API. Enter its email and password, not your main account login. We verify the account and pickup locations before storing the credentials encrypted.</p>${inp("sr.email", "API user email", "email")}${inp("sr.password", "API user password", "password")}${msg("sr")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="sr"${dis(!v("sr.email") || !draftVals["sr.password"])}>${busy === "sr" ? "Checking" : "Verify and save Shiprocket"}</button></div>`);
     const srPanel=settingsMode||prefs.delivery==="shiprocket"||prefs.delivery==="both"||shp.verified?providerPanel("shiprocket","Shiprocket integration",srBlock,srOn,shp.verified):"";
     const s3 = `${own}${settingsMode?srPanel+del:del+srPanel}${msg("disc-shiprocket")}${confirmDisc === "shiprocket" ? discBox() : ""}${saveRow(4)}`;
@@ -255,7 +255,6 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     set("dadd", !hostOk());
     set("rz", !v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"]);
     set("sr", !v("sr.email") || !draftVals["sr.password"]);
-    set("inspect-payment",!v("rz.payment_id"));
     set("ship-save", !!shipPayload().error);
   }
   function draw() {
@@ -326,7 +325,6 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     else if (a === "disc-no") { confirmDisc = ""; draw(); }
     else if (a === "oauth-start") void oauth("start");
     else if (a === "oauth-refresh") void oauth("refresh");
-    else if (a === "inspect-payment") void inspectPayment();
     else if (a === "oauth-disconnect") void oauth("disconnect");
     else if (a === "disc-yes") { const pr = confirmDisc; confirmDisc = ""; if(pr==="razorpay"&&state?.providers?.razorpay?.auth_type==="oauth")void oauth("disconnect");else if (pr) void act("disc-" + pr, { action: "disconnect", provider: pr }); }
     else if (a === "dadd") { if (hostOk()) void act("dom", { action: "domain-add", hostname: v("host").toLowerCase() }, () => clear(["host"])); }

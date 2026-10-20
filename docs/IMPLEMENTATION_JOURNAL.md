@@ -1,5 +1,26 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Merchant integration cleanup prepared
+
+- Removed the receipt-inspection form, client request handler and technical
+  result formatter from merchant settings. The protected read-only server
+  endpoint and receiver logging remain available for assisted troubleshooting;
+  their authentication, owner, origin, tenant and environment guards are unchanged.
+- Added green success treatments shared by Ann and dashboard integrations.
+  Pending checks retain amber styling and errors retain their error treatment.
+  Replaced technical payment-state summaries with practical explanations,
+  including whether customers can pay online. Successful activation no longer
+  adds a redundant second Saved message.
+- Updated connection, shipping, domain and save confirmations to explain the
+  completed action in ordinary language. Payment controls now say online
+  payments rather than online checkout; action IDs and server gates are unchanged.
+- Twenty-five focused backend/privacy and merchant UI tests pass. Wrangler
+  dry-run build passes. The managed API workflow restarted successfully and
+  the native sign-in preview renders; proxy refusals in the drained frontend
+  logs occurred during service restart before the successful requests.
+- Prepared locally, not published to Cloudflare. No credentials, database
+  schema, account connections or actual payment settings were changed.
+
 ## 20 October 2026: Approved safe Razorpay diagnostics released
 
 - Added owner-only, same-origin payment inspection to the existing Razorpay

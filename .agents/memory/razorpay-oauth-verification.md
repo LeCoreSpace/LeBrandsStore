@@ -3,6 +3,17 @@ name: Razorpay OAuth verification limits
 description: Distinguish negative-code probes, synthetic webhook checks and actual owner consent.
 ---
 
+Keep payment receipt diagnostics out of the normal merchant integration page.
+Retain the protected, read-only server capability for assisted troubleshooting.
+
+**Why:** After connection and payment updates were working, the user questioned
+the need for developer-facing diagnostics on the merchant page. They need
+clear connection/payment status, not routine provider receipt inspection.
+
+**How to apply:** Do not reintroduce the technical receipt form to ordinary
+merchant settings when solving a future delivery issue. Preserve its owner,
+origin, tenant and environment restrictions for any support use.
+
 Do not conclude that an OAuth client pair is wrong solely because a deliberately
 invalid authorisation-code probe returns HTTP 401.
 
