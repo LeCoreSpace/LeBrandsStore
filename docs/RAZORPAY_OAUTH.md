@@ -171,6 +171,15 @@ production release. The preview must forward `/integrations/razorpay/callback`
 to account routing; an unauthenticated callback should reach the login guard,
 not the public site's 404 page.
 
+Open the preview dashboard in a new top-level browser tab before signing in and
+starting consent. Its development cookies are partitioned for iframe safety;
+an iframe login must not be assumed to carry into a top-level OAuth callback.
+
+A deliberately invalid-code token probe is not definitive validation of the
+client credentials. Record its HTTP result without declaring the pair wrong
+or requesting repeated replacements from that result alone. Complete a real
+owner-consented flow with the exact registered callback to diagnose it.
+
 Synthetic local PGlite tests exercise real foundational DDL, restricted tenant
 transactions, nonce consumption/replay, cancellation, legacy preservation,
 encrypted persistence, refresh durability, disconnection and signed revocation.

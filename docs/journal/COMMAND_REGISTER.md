@@ -1,5 +1,28 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Refreshed Development credentials
+
+Working directory: workspace root. User supplied the OAuth Development client
+pair again through the secure form.
+
+- Restarted `artifacts/api-server: API Server` to load the updated environment;
+  logs confirmed the service was serving requests again.
+- One additional deliberately invalid-code token probe returned HTTP 401.
+  Treat this as inconclusive credential validation, not proof of a bad pair.
+- Boolean-only copy-format checks found no outer whitespace, wrapping quotes or
+  merchant API-key prefix. No values were displayed.
+- A GET to the actual authorisation endpoint with application configuration but
+  no merchant session returned HTTP 200. This does not prove completed consent.
+- Consulted the official Razorpay integration example to verify the JSON token
+  request shape.
+- A guarded `pnpm exec wrangler secret bulk --config wrangler.oauth-test.jsonc`
+  updated only the isolated receiver's client ID and client secret through
+  stdin. Both bindings were created successfully. Output was redacted; no
+  production Worker configuration or stored merchant credentials were changed.
+
+Stop negative-code probes here. Continue with a valid owner-consented code,
+the registered Development callback and Razorpay-sent Test delivery.
+
 ## 20 October 2026: Public Test receiver deployment and network verification
 
 Working directory: workspace root. Scope approved by the user: isolated OAuth

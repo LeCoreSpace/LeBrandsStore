@@ -1,5 +1,11 @@
 # Complete implementation checkpoint register
 
+### Development OAuth configuration refresh, 20 October 2026
+
+Updated the isolated Test receiver's client-pair bindings after user confirmation
+and recorded the limits of invalid-code diagnostics. No application source
+change, main Worker release or manual Git commit was performed in this step.
+
 ### Public OAuth Test receiver verification, 20 October 2026
 
 The isolated Test receiver was deployed and passed eight external HTTP checks.

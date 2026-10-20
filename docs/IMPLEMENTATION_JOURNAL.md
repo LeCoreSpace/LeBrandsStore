@@ -1,5 +1,24 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Development pair refreshed, consent still required
+
+- The user supplied the Development client pair again. Restarted the API
+  service to refresh its environment and securely updated only the two OAuth
+  credential bindings on the isolated Test receiver. Its Test signing secret,
+  the main Worker, live routes and payment settings were unchanged.
+- Copy-format checks found no outer whitespace, wrapping quotes or merchant-key
+  prefix in place of an application ID. A sessionless authorisation-page
+  request returned HTTP 200.
+- The deliberately invalid-code token probe still returned HTTP 401. Correction
+  to the earlier interpretation: this diagnostic is not conclusive evidence of
+  an incorrect credential pair. Do not repeatedly request replacements based
+  only on that probe; a real owner-consented code and exact registered callback
+  are needed to finish verification.
+- Verified the request format against Razorpay's published integration example.
+  No real authorisation grant, token refresh, owner disconnect or provider-sent
+  Test webhook has been verified yet. The next step is owner consent through
+  a top-level preview tab and registration of the Test receiver.
+
 ## 20 October 2026: Test receiver deployed, provider credentials rejected
 
 - Restarting the managed API service after the user's secret update refreshed
