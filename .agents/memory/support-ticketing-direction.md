@@ -1,0 +1,16 @@
+---
+name: Support ticketing direction
+description: User-requested support coverage, statuses, admin visibility and email notifications.
+---
+
+Brands should be able to raise support tickets during store creation and for
+themes, sections, Meta, domains, delivery integrations, subscriptions and all
+other platform features. The platform admin dashboard must show tickets.
+Ticket statuses must be Created, Pending and Closed. Both admin and brand
+must receive emails when a ticket is created and closed.
+
+**Why:** The user requested these capabilities and exact statuses.
+
+**How to apply:** Support cannot depend on a store already existing. Preserve
+these requirements when designing the schema and implementing brand/admin
+workflows; a design request is not approval to migrate or publish.

@@ -1932,3 +1932,16 @@ decision:
 - No migration, production database write, provider event or checkout
   activation change was performed. Existing tabs require a refresh after
   saving any open work.
+
+## 2026-10-20: Support ticket schema proposal
+
+- Documented the proposed support system in
+  `docs/support-ticketing-schema.md`: eight support-specific tables, existing
+  merchant/store/admin identities, exact Created/Pending/Closed ticket statuses,
+  account-scoped tickets before store creation, private conversation/context
+  controls and durable creation/closure emails to brand and admin.
+- Reuses the existing platform email jobs rather than a second delivery
+  service. Defines atomic notification intents, retries, recipient deduplication
+  and truthful delivery state, plus an optional private attachment stage.
+- Design/documentation only. No application behavior, database schema, provider
+  settings or production deployment was changed; no emails were sent.

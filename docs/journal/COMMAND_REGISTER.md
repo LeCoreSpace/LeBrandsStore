@@ -1025,3 +1025,10 @@ of this register.
 | Read-only Cloudflare Worker settings snapshot | Saved only non-secret metadata/hashes under `/tmp` for pre/post comparison. Did not reveal secret values or modify configuration. |
 | `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` | User-approved production publication succeeded. Worker version `8dbe9afe-691e-4329-9581-e65d846773f5`; existing regular routes, queues and schedule retained. No migration executed. |
 | Read-only Cloudflare metadata and production HTTP/module checks | Passed: 24 non-asset bindings, 14 encrypted secrets and runtime settings unchanged. Account page HTTP 200; current live scripts/module graph byte-match the approved local build, without native dialog calls/unload hooks. Updated ticket dialog, leave guard and date/time prompt present. |
+
+## 2026-10-20: Support ticket schema design
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| Read-only source/DDL inspection of Help & support, user/store membership, platform administrators and transactional email infrastructure | Confirmed existing support popover, identity references and durable platform email jobs. No database connection or mutation. |
+| Schema documentation and requirements memory | Wrote the proposed eight-table design, privacy/workflow constraints and delivery sequence. Design only; no executable migration, deployment, email send or app behavior change. |
