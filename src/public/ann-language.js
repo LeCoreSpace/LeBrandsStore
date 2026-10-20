@@ -90,6 +90,7 @@ export function attachAnnLanguage({root,select,storageKey,requested}){
   let language=readAnnLanguage(storage,storageKey,requested),queued=false;
   const conversation=root.querySelector?.(".ann-chat")||root;
   const planHeader=root.querySelector?.("#ann-store-plan");
+  const toolbar=root.querySelector?.("#ann-toolbar");
   const businessNotice=root.querySelector?.("#ann-business-access");
   const originals=new WeakMap();
   const attributes=new WeakMap();
@@ -97,7 +98,7 @@ export function attachAnnLanguage({root,select,storageKey,requested}){
     queued=false;select.value=language;root.dataset.annConversationLanguage=language;
     // Only authored copy and explicitly marked system replies. Never merchant
     // answers, catalogue choices, inputs, previews or registered identity fields.
-    for(const paragraph of [...conversation.querySelectorAll(".ann-msg:not(.me) .ann-bubble p,.ann-note,.ann-error,.ann-callout,.ann-rail button,.ann-mark,.ann-mark span,.ann-meter-t,.ann-btn,.ann-link,summary,label.ann-field,[data-ann-copy],#ann-status"),...(planHeader?.querySelectorAll("button,span")||[]),...(businessNotice?[businessNotice,...businessNotice.querySelectorAll("button")]:[])]){
+    for(const paragraph of [...conversation.querySelectorAll(".ann-msg:not(.me) .ann-bubble p,.ann-note,.ann-error,.ann-callout,.ann-rail button,.ann-mark,.ann-mark span,.ann-meter-t,.ann-btn,.ann-link,summary,label.ann-field,[data-ann-copy],#ann-status"),...(planHeader?.querySelectorAll("button,span")||[]),...(toolbar?.querySelectorAll("#ann-steps .ann-rail button,#ann-steps .ann-meter-t")||[]),...(businessNotice?[businessNotice,...businessNotice.querySelectorAll("button")]:[])]){
       if((paragraph.closest(".ann-msg")?.classList.contains("me")&&!paragraph.hasAttribute?.("data-ann-copy"))||paragraph.closest("[data-ann-value],.ann-store-address"))continue;
       let hasTranslation=false;
       for(const node of paragraph.childNodes){
@@ -129,6 +130,7 @@ export function attachAnnLanguage({root,select,storageKey,requested}){
   const schedule=()=>{if(!queued){queued=true;queueMicrotask(refresh);}};
   const observer=new view.MutationObserver(schedule);
   observer.observe(conversation,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["placeholder"]});
+  if(toolbar)observer.observe(toolbar.querySelector("#ann-steps")||toolbar,{subtree:true,childList:true,characterData:true});
   if(planHeader)observer.observe(planHeader,{subtree:true,childList:true,characterData:true});
   if(businessNotice)observer.observe(businessNotice,{subtree:true,childList:true,characterData:true});
   const change=()=>{

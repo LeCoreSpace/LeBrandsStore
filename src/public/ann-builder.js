@@ -50,12 +50,17 @@ const planUI=attachAnnPlanSelection({
   onStateChange:()=>queueMicrotask(()=>{
     if(!planUiReady)return;
     if(planUI.getState().response?.subscription)acknowledgePlan();
-    $("#ann-app .ann-stage")?.toggleAttribute("inert",planLocked());
-    $("#ann-steps")?.removeAttribute("inert");
+    lockStage();
     drawSteps();
   }),
   onAccepted:()=>acknowledgePlan(),
 });
+function lockStage(){
+  const on=planLocked();
+  $("#ann-app .ann-stage")?.toggleAttribute("inert",on);
+  document.querySelectorAll(".ann-tb-lockable").forEach(n=>n.toggleAttribute("inert",on));
+  $("#ann-steps")?.removeAttribute("inert");
+}
 function acknowledgePlan(){
     if(!planLocked())return;
     planAccess={...planAccess,allowed:true};
@@ -174,6 +179,16 @@ $("#ann-open-browser")?.addEventListener("click",()=>{
     say("Please allow pop-ups for this site, then choose Open browser preview again.");
 });
 const app = $("#ann-app");
+{
+  const tb = $("#ann-toolbar"), menus = () => [...document.querySelectorAll("#ann-toolbar details.ann-tb-d[open]")];
+  tb?.addEventListener("click", e => { const b = e.target.closest?.("button"); const d = b?.closest("details.ann-tb-d"); if (b && d && !b.disabled) d.open = false; });
+  document.addEventListener("click", e => { for (const d of menus()) if (!d.contains(e.target)) d.open = false; });
+  tb?.addEventListener("keydown", e => { if (e.key !== "Escape") return; const open = menus(); if (!open.length) return; e.preventDefault(); const inner = open.find(d => d.contains(document.activeElement) && !open.some(o => o !== d && d.contains(o))) || open[open.length - 1]; inner.open = false; inner.querySelector(":scope>summary")?.focus(); });
+  // Responsive: secondary controls move (not clone) into the More menu on narrow screens.
+  const flex = $("#ann-tb-flex"), slot = $("#ann-tb-slot"), mq = window.matchMedia?.("(max-width:900px)");
+  const place = () => { if (!flex || !slot) return; if (mq?.matches) slot.appendChild(flex); else tb.insertBefore(flex, $(".ann-tb-sp")); };
+  mq?.addEventListener?.("change", place); place();
+}
 const say = t => { statusEl.textContent = t; };
 function updateBusinessAccess(access){
   if(access?.plan_access)planAccess=access.plan_access;
@@ -198,7 +213,7 @@ function updateBusinessAccess(access){
 }
 const config = () => annPreviewConfiguration(answers, { ...boot.settings, ...(boot.sessionResponse?.preview?.theme || {}) });
 let designUI = null, workspaceUI = null;
-designUI = attachAnnDesign({ api, root, readOnly, businessAllowed:editorAccess.allowed, mount: $("#ann-pagebar") || canvas, say, contextual: true, getPreview: () => frame,
+designUI = attachAnnDesign({ api, root, readOnly, businessAllowed:editorAccess.allowed, mount: $("#ann-pagebar") || canvas, toggleMount: $("#ann-edit-toggle"), say, contextual: true, getPreview: () => frame,
   sectionState: id => sectionInfo().meta.get(id) || null, onSectionAction: (id, act) => sectionAction(id, act),
   getAnswers: () => answers, getPreviewMode: () => previewMode, getBrand: () => boot.settings?.brand_name || boot.store?.name,
   getStyle: () => config().theme.style_preset,
@@ -327,6 +342,8 @@ function paintStage() {
   $("#ann-style-tabs").innerHTML = AURA_STYLES.map(s => `<button type="button" class="ann-tab" data-pick-style="${s.id}" aria-pressed="${cfg.theme.style_preset === s.id}">${esc(s.name)}</button>`).join("");
   $("#ann-pages").innerHTML = PAGES.map(p => `<button type="button" class="ann-tab" data-page="${p}" aria-pressed="${p === page}">${p}</button>`).join("");
   document.querySelectorAll("[data-preview-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.previewMode === previewMode)));
+  const sc = $("#ann-style-current"); if (sc) sc.textContent = styleName(cfg.theme.style_preset);
+  const mc = $("#ann-mode-current"); if (mc) mc.textContent = previewMode === "showcase" ? "Style showcase" : "Your store";
 }
 function fit() {
   const width = canvas.dataset.device === "mobile" ? 390 : 1280;
@@ -642,6 +659,9 @@ function drawSteps() {
     return `<button type="button" data-go="${k}" data-state="${st}" aria-current="${k === current ? "step" : "false"}"${(isSetupStepLocked(k)||k==="store_name"&&setupStepsLocked)&&!(k==="business"&&requiredBusinessPrompt()) ? ' disabled aria-disabled="true" title="Completed. Setup is locked after reaching Style."' : ""}><i>${st === "done" ? CHECK : i + 1}</i>${esc(n)}${st === "done" ? `<span class="ann-sr"> answered</span>` : ""}</button>`; }).join("")}</div>
     <div class="ann-meter" role="progressbar" aria-label="Planning progress" aria-valuemin="0" aria-valuemax="${total}" aria-valuenow="${doneN}"><i style="transform:scaleX(${doneN / total})"></i></div>
     <p class="ann-meter-t">${doneN} of ${total} design areas filled. ${esc(state)}. Publishing checks are separate.</p>`;
+  const si = stages.findIndex(([k]) => k === current), sn = $("#ann-step-current"), sk = $("#ann-step-count");
+  if (sn) sn.textContent = stages[si]?.[1] || "Steps";
+  if (sk) sk.textContent = `${si + 1}/${stages.length}`;
   const logoButton = document.querySelector('[data-edit-prompt="logo"]');
   if (logoButton) logoButton.disabled = isSetupStepLocked("business") || readOnly;
 }
@@ -676,8 +696,7 @@ function draw(mode = "keep") {
   if(planUiReady){
     const planButton=$("#ann-store-plan [data-ann-plan-open]");
     if(planButton)planButton.disabled=planLocked()&&!planAccess.name_confirmed;
-    $("#ann-app .ann-stage")?.toggleAttribute("inert",planLocked());
-    $("#ann-steps")?.removeAttribute("inert");
+    lockStage();
     if(planLocked()&&planAccess.name_confirmed&&promptId==="plan"&&!planAutoOpened){
       planAutoOpened=true;queueMicrotask(()=>{if(!planUI.getState().opened)planUI.open();});
     }

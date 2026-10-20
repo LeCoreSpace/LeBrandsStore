@@ -262,7 +262,22 @@ the shared showcase.
 were missing in Ann.
 
 **How to apply:** Preserve close/reopen controls, the shared theme-editor draft
-and read-only restrictions. Do not hide the entry point under More.
+and read-only restrictions. The user subsequently approved moving Ann's
+workspace entry into More as part of a compact toolbar on 20 October 2026;
+the earlier prohibition on that placement is superseded.
+
+Ann's step navigation, language, style and preview controls should share one
+compact desktop toolbar with the existing ticket style. Use dropdowns instead
+of persistent step/style rows. Keep required business/plan notices visible, but
+put ordinary plan information and secondary tools in menus. Keep save status,
+Save draft and Publish store once in the existing top header.
+
+**Why:** The user said screen real estate is an issue, rejected multiple rows
+of options and approved this consolidated approach.
+
+**How to apply:** Preserve every existing control's behavior and permissions.
+On mobile prioritize the current step, preview and More, with secondary choices
+still accessible. Do not restyle the merchant's preview or bypass publication.
 
 Ann and the standalone theme editor must use the same Design workspace UI.
 Menus belongs beside Sections, Content and Style, covering header and footer

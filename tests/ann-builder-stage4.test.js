@@ -11,12 +11,11 @@ const data = { store: { store_id: id, name: "Example" }, role: "owner",
 test("Ann separates style choices and places page navigation immediately above the preview",async()=>{
   const html=renderAnnBuilder(data);
   const styles=html.indexOf('id="ann-style-tabs"');
-  const tools=html.indexOf('class="ann-bar"');
+  const tools=html.indexOf('id="ann-toolbar"');
   const pages=html.indexOf('id="ann-pagebar"');
   const canvas=html.indexOf('id="ann-canvas"');
-  assert.ok(styles>=0&&styles<tools&&tools<pages&&pages<canvas);
+  assert.ok(tools>=0&&tools<styles&&styles<pages&&pages<canvas);
   assert.match(html,/<\/nav>\s*<div class="ann-canvas"/);
-  assert.match(html,/aria-labelledby="ann-style-label"/);
   for(const selector of ['id="ann-open-browser"','data-ws-toggle','data-preview-mode="showcase"','data-preview-mode="store"','id="ann-pages"']){
     assert.equal(html.split(selector).length-1,1,selector);
   }

@@ -578,6 +578,18 @@ Commands ran from the workspace root against local code and synthetic fixtures.
 | Managed API/web preview restart, screenshot and focused browser pass | Local checkout layout verified. Ann interactive save/review check blocked by synthetic business-document gate; no live data or publication attempted. |
 | `pnpm run deploy` | Not run. Production publication remains manual. |
 
+### 20 October: Ann single-line ticket toolbar
+
+Working directory: workspace root. Targets: local source, isolated fixtures and
+managed development preview only. Production publication remains manual.
+
+| Command / operation | Purpose / observed result |
+| --- | --- |
+| `node --experimental-test-module-mocks --test --test-concurrency=1 tests/ann-compact-toolbar.test.js tests/ann-builder-stage4.test.js tests/ann-design-workspace.test.js tests/ann-language.test.js tests/ann-plan-selection.test.js tests/ann-visible-subscription.test.js tests/ann-chat-layout.test.js tests/ann-design.test.js tests/ann-design-header-actions.test.js tests/ann-business-gate.test.js tests/browser-bundles.test.js` | 47 passed, six existing harness/source-assertion failures. Actual draft isolation/save and subscription safeguards passed. |
+| `git diff --check` | Passed. |
+| Managed API/web workflow restarts and app-preview screenshots | Rebuilt assets; desktop and mobile synthetic Ann toolbar layouts verified. Required business notice remains visible. |
+| `pnpm run deploy` | Not run. No production publication or migration. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

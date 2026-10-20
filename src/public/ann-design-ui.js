@@ -360,7 +360,7 @@ export function attachAnnDesign(o) {
     const err = error ? `<div class="ann-callout" role="alert"><p>${esc(error)}</p>${conflict ? `<button type="button" class="ann-btn alt sm" data-design-act="reload">Reload the latest draft</button>` : ""}</div>` : "";
     if (cataloguePrompt) return catalogueChoice + err;
     if (browsing || !active()) return catalogueChoice + use + err;
-    const toggle = `<div class="ann-actions ann-design-bar"><button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>${editMode?"Editing on":"Editing off"}</button></div>`;
+    const toggle = o.toggleMount ? "" : `<div class="ann-actions ann-design-bar"><button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>${editMode?"Editing on":"Editing off"}</button></div>`;
     return catalogueChoice + `<div class="ann-design-card ann-design-compact">
       ${o.themeEditor ? `<p class="ann-note" data-design-state></p>` : ""}${toggle}
       ${readOnly ? `<p class="ann-note">${memberReadOnly?"You can look around. Only an owner or admin can edit this design.":"Your saved design is unchanged. Complete business verification in Ann to resume editing."}</p>` : editMode && selected ? (o.contextual ? ctxPanel() : panel()) : ""}
@@ -430,7 +430,16 @@ export function attachAnnDesign(o) {
     try { doc = host.dataset.richDoc ? JSON.parse(host.dataset.richDoc) : null; } catch { doc = null; }
     richEditor = mountRichEditor(host, { text: host.dataset.richText || "", document: doc, limit: Number(host.dataset.richLimit) || 2000, label: host.dataset.richLabel || "Text", allowBlocks: Boolean(host.dataset.richBlocks), baseFlags, onChange: out => setRich(key, out) });
   }
+  let toggleMarkup = null;
+  function paintToggle() {
+    const tm = o.toggleMount; if (!tm) return;
+    const show = loaded && active() && sameStyle() && mode() === "store" && !cataloguePrompt;
+    const html = show ? `<button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>${editMode ? "Editing on" : "Editing off"}</button>` : "";
+    if (html !== toggleMarkup) { toggleMarkup = html; tm.innerHTML = html; }
+    tm.hidden = !show;
+  }
   function paintTop() {
+    paintToggle();
     if (!top) return;
     const show = loaded && active() && sameStyle() && mode() === "store" && !cataloguePrompt;
     if (!top.firstChild) top.innerHTML = `<span class="ann-save-state" data-design-state role="status"></span><button type="button" class="ann-btn alt sm" data-design-act="save" data-design-save>Save draft</button><button type="button" class="ann-btn sm" data-design-act="publish" data-design-publish>Publish store</button>`;
@@ -479,6 +488,7 @@ export function attachAnnDesign(o) {
   };
   el.addEventListener("click", onClick);
   top?.addEventListener("click", onClick);
+  o.toggleMount?.addEventListener("click", onClick);
   el.addEventListener("keydown",e=>{
     if(o.contextual&&selected&&e.key==="Escape"){e.preventDefault();e.stopPropagation();closeCtx();}
   });

@@ -54,7 +54,7 @@ test("reselecting or keeping the adopted style resumes editing, and browser prev
   assert.match(source,/chooseStyle\(d\.pickStyle\)/);
   assert.match(source,/if \("wsToggle" in d\)[^]*?active\(\)[^]*?resumeEditing\(\)/);
   const html=readFileSync("src/ui/ann-builder.js","utf8");
-  assert.ok(html.indexOf('id="ann-open-browser"')<html.indexOf('<details class="ann-more"'));
+  assert.ok(html.indexOf('id="ann-open-browser"')<html.indexOf('<details class="ann-tb-d ann-more"'));
 });
 
 test("section metadata is computed per page and orders sections", () => {

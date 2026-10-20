@@ -1114,6 +1114,40 @@ decision:
 - **Outcome:** Working-tree implementation, not yet a committed checkpoint.
   No production database, migration, credentials or publication was changed.
 
+### 2026-10-20: Single compact ticket toolbar for Ann
+
+- **What:** Consolidated the persistent step list, language row, style choices
+  and preview controls into one compact ticket-style desktop toolbar spanning
+  the conversation and preview panels. Step and style lists open on demand;
+  current step/count, language, selected style/content, device icons, browser
+  preview and More remain accessible. Removed the ordinary Store plan banner.
+  More contains workspace, editing, logo and plan actions. Mobile keeps step,
+  browser preview and More visible and moves the same secondary controls into
+  More rather than duplicating them.
+- **How:** Reused the existing DOM controls and action attributes, preserving
+  step/style/device/preview handlers. Added outside-click and Escape dismissal
+  with focus return. Kept plan-action name-confirmation updates and moved
+  preview-specific inert boundaries with the toolbar; step navigation and
+  language remain usable during plan gating. Updated conversation-language
+  observation for the relocated step list. Saved/Save draft/Publish store
+  remain single top-header actions; merchant theme contents are untouched.
+  Required business and subscription notices remain visible when applicable.
+- **Verification:** The focused run completed 53 checks: 47 passed, including
+  compact-toolbar structure, subscription ordering and locks, five-language
+  conversation coverage, real restricted-role draft persistence/isolation and
+  raw/versioned Worker asset delivery. Six pre-existing test issues remain:
+  five conversation VM checks omit existing navigation/plan helper dependencies,
+  and one workspace source assertion expects an obsolete less-restrictive
+  canEdit expression. The design helper also observed these failures against
+  unchanged source. Follow-up suggestions cover repairing that harness and
+  the isolated business-document-gated browser fixture, not relaxing guards.
+  Desktop (1440px) and mobile (390px) screenshots confirmed the one-row ticket
+  toolbar and mobile condensation using synthetic data. No interactive
+  persistence browser pass was attempted for this layout-only request.
+  Both managed preview services restarted; `git diff --check` passed.
+- **Outcome:** Working-tree implementation, not a committed checkpoint.
+  No production records, migrations, credentials or publication were changed.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

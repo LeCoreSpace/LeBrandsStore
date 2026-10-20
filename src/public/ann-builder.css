@@ -521,3 +521,51 @@ body.ann-browser-shell{margin:0;height:100dvh;display:flex;flex-direction:column
 .re-host[data-rich-host]{border-left:4px solid #6b1735;border-radius:6px}
 .ann-top-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.ann-top-actions[hidden]{display:none}.ann-save-state{font:700 12px var(--sans);color:#5c4a50;padding-right:4px}.ann-save-state[data-state=unsaved]{color:#8a4b00}.ann-save-state[data-state=saved]::before,.ann-save-state[data-state=unsaved]::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;background:#2f7a4d}.ann-save-state[data-state=unsaved]::before{background:#c27a00}
 .ann-design-compact .ann-design-bar{margin:0}
+
+/* One compact control rail spanning both panels (ticket surface) */
+.ann-toolbar{position:relative;z-index:8;display:flex;align-items:center;gap:8px;min-height:48px;margin:0 0 12px;padding:6px 10px;background:var(--tk,#f7f1f3);border:1px solid var(--line);border-left:4px solid var(--a);border-radius:6px;box-shadow:var(--shadow,none)}
+.ann-toolbar *{box-sizing:border-box}
+.ann-tb-flex{display:flex;align-items:center;gap:8px;min-width:0}
+.ann-tb-view{display:flex;align-items:center;gap:8px}
+.ann-tb-sp{flex:1}
+.ann-tb-d{position:relative}
+.ann-tb-d>summary{list-style:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;min-height:36px;max-width:240px;padding:0 10px;border:1px solid #d7cbd0;border-radius:4px;background:#fff;color:var(--ink);font:600 12px var(--sans);white-space:nowrap}
+.ann-tb-d>summary::-webkit-details-marker{display:none}
+.ann-tb-d>summary::after{content:"";flex:none;width:6px;height:6px;margin:-3px 0 0 4px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:rotate(45deg)}
+.ann-tb-d[open]>summary::after{transform:rotate(-135deg);margin-top:3px}
+.ann-tb-d>summary:hover,.ann-tb-d[open]>summary{border-color:var(--a);background:#f7f1f3}
+.ann-tb-k{font:700 10px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ann-tb-v{overflow:hidden;text-overflow:ellipsis}
+.ann-tb-n{color:var(--a);font-weight:700}
+.ann-tb-pop{position:absolute;left:0;top:calc(100% + 6px);z-index:20;min-width:200px;padding:8px;background:#fff;border:1px solid var(--line);border-left:4px solid var(--a);border-radius:6px;box-shadow:0 12px 28px rgba(56,40,43,.16)}
+.ann-tb-steps{width:min(460px,calc(100vw - 24px));padding:0}
+.ann-tb-steps .ann-steps{border:0;background:#fff;padding:8px}
+.ann-tb-styles{width:min(360px,calc(100vw - 24px))}
+.ann-tb-styles .ann-styles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;max-height:60dvh;overflow:auto}
+.ann-tb-styles .ann-tab{min-height:34px;text-align:left}
+.ann-tb-modes .ann-pages{display:grid;gap:4px;padding:0;border:0}
+.ann-tb-modes .ann-tab{text-align:left;white-space:nowrap}
+.ann-toolbar .ann-language{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;color:var(--muted)}
+.ann-toolbar .ann-language select{min-height:36px;max-width:120px;padding:4px 24px 4px 8px;font:600 12px system-ui,sans-serif}
+.ann-toolbar .ann-device{padding:2px;gap:2px}
+.ann-toolbar .ann-device button{display:grid;place-items:center;width:34px;min-height:32px;padding:0}
+.ann-tb-preview{gap:6px}
+.ann-toolbar .ann-more>summary{color:var(--ink)}
+.ann-toolbar .ann-more-menu{left:auto;right:0;display:grid;gap:6px;min-width:230px;max-width:calc(100vw - 24px);animation:none}
+.ann-tb-item[hidden]{display:none}
+.ann-tb-item .ann-btn,.ann-more-menu>.ann-btn,.ann-tb-item button{width:100%;justify-content:center}
+.ann-tb-slot:empty{display:none}
+.ann-tb-slot .ann-tb-flex,.ann-tb-slot .ann-tb-view{display:grid;gap:6px;align-items:stretch}
+.ann-tb-slot .ann-tb-d>summary{max-width:none;width:100%;justify-content:space-between}
+.ann-tb-slot .ann-tb-pop{position:static;margin-top:6px;box-shadow:none;min-width:0;width:auto}
+.ann-tb-slot .ann-language{justify-content:space-between}.ann-tb-slot .ann-language select{max-width:none;flex:1}
+.ann-tb-slot .ann-device{justify-self:start}
+.ann-toolbar button:focus-visible,.ann-toolbar summary:focus-visible,.ann-toolbar select:focus-visible{outline:3px solid var(--a);outline-offset:2px}
+.ann-chat,.ann-stage{height:calc(100dvh - 250px)}
+.ann-stage>.ann-pagebar{border-top:0}
+@media(max-width:900px){
+  .ann-chat,.ann-stage{height:calc(100dvh - 260px)}
+  .ann-stage{height:auto}
+  .ann-tb-preview span{display:none}
+  .ann-tb-step>summary{max-width:46vw}
+}
