@@ -27,9 +27,9 @@ Razorpay Development section before setting the override. Redirect and webhook
 URLs are different.
 
 The local Worker uses an explicit process-environment allowlist in
-`wrangler.preview.jsonc`. The client pair and mode are included; add the webhook
-secret binding after the requested signing value exists, then restart the
-managed API workflow. Mode is a non-secret Replit environment variable even
+`wrangler.preview.jsonc`. The client pair, mode, callback and test webhook
+signing secret are included. Restart the managed API workflow after changing
+their values. Mode is a non-secret Replit environment variable even
 though this allowlist passes it to Wrangler alongside credentials. This does not
 alter the production Worker. A browser-accessible development preview is not
 proof that Razorpay can reach a private webhook endpoint.

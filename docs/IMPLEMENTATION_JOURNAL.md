@@ -2,6 +2,10 @@
 
 ## 20 October 2026: Razorpay merchant OAuth implementation
 
+- After the user confirmed correcting the test signing secret, included its
+  name in the development Worker allowlist. No secret value was inspected and
+  no external webhook, production configuration or migration was changed.
+
 - Added owner-only authorisation, session/store-bound one-use state, encrypted
   tokens, explicit replacement confirmation, cancellation/replay protection and
   the existing separate Razorpay integration menu's Connect control.

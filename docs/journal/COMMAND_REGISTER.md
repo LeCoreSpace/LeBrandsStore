@@ -21,8 +21,9 @@
   visually checked.
 - Set only development non-secret mode/callback variables through the environment
   tooling. The client secrets were supplied by the user through the secure form;
-  their values were never inspected. Webhook signing still needs a separately
-  supplied secret and binding.
+  their values were never inspected. After the user confirmed correcting the
+  test webhook signing secret, added its development Worker binding and
+  restarted the managed API workflow. No Razorpay webhook was created.
 - No live database read/migration, real merchant/provider operation, production
   secret update, package installation or deployment command was performed.
 
