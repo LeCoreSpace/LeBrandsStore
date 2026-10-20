@@ -34,6 +34,7 @@
 - [AI store builder limits](ai-store-builder-limits.md) — one completed draft build per store, bounded approval-stage image regeneration and recorded costs.
 - [Aura starter content](aura-starter-content.md) — prefilled library, Ann design adoption and editing; preserve demo/real catalogue and publication boundaries.
 - [Ann-only onboarding](ann-onboarding-direction.md) — replace the builder chooser; verify business first, guide catalogue setup and preserve the exact saved design in the editor.
+- [Shared section library](section-library-direction.md) — consistent user-agreed names/categories and cross-theme, cross-page reuse are the intended direction.
 - [AI copy boundary](ai-copy-boundary.md) — constrain model output to copy fields; never relax server-owned controls to fix repeated generation failures.
 - [Email queue recovery](email-queue-recovery.md) — private jobs must be recoverable after queue failure without exposing links or recipients.
 - [Utility email boundary](utility-email-boundary.md) — shared professional email design with real preferences; optional updates can stop, critical messages remain enabled.
