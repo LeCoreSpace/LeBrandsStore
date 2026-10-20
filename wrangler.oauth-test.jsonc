@@ -1,0 +1,17 @@
+{
+  "name": "lebrands-razorpay-oauth-test",
+  "main": "src/razorpay-oauth-test-worker.js",
+  "compatibility_date": "2025-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": false,
+  "vars": {
+    "RAZORPAY_OAUTH_MODE": "test"
+  },
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "cffdd9035815454cb35aa46def7b52a4"
+    }
+  ]
+}

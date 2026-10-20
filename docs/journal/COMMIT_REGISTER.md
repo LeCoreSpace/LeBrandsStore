@@ -1,5 +1,13 @@
 # Complete implementation checkpoint register
 
+### Isolated OAuth Test receiver, 20 October 2026
+
+Added a Test-only webhook entry, a separate Cloudflare configuration, receiver
+checks and Test setup guidance. Tests and a dry-run build passed, but a secret
+preflight blocked the real deployment before any upload. No manual Git commit
+was created. Do not interpret the source changes as deployed or externally
+verified.
+
 ### Shared Supabase OAuth migration, 20 October 2026
 
 The user approved applying the OAuth database migration. Added a separate,

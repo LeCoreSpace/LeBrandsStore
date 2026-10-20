@@ -1,5 +1,25 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Isolated Test receiver preflight
+
+Working directory: workspace root. Target: a separate Cloudflare Test receiver,
+not the main production Worker. User requested proceeding with Test verification.
+
+- `node --test --test-concurrency=1 tests/razorpay-oauth-test-worker.test.js`:
+  both checks passed, covering strict Test mode, route isolation, signature
+  rejection before database access and unchanged raw-body forwarding.
+- `pnpm exec wrangler deploy --config wrangler.oauth-test.jsonc --dry-run --outdir generated-artifacts/razorpay-oauth-test-build`:
+  bundled successfully without uploading.
+- A guarded deployment wrapper checked the isolated configuration and secret
+  presence/minimum-length booleans. The Test signing-secret check failed before
+  any real deploy or secret-bulk command was invoked. No secret values were
+  printed or written to files.
+- Replit deployment metadata confirmed there is no Replit-hosted deployment;
+  it was not used to infer the separate Cloudflare production state.
+
+External provider verification is blocked; no Cloudflare release or real
+Razorpay consent/webhook delivery occurred in this attempt.
+
 ## 20 October 2026: Approved shared Supabase OAuth migration
 
 Working directory: workspace root. The user explicitly approved the OAuth

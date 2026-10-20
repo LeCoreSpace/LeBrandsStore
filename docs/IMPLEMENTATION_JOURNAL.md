@@ -1,5 +1,19 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Isolated OAuth Test receiver, external test blocked
+
+- The user asked to proceed with real Test verification. Prepared a separate
+  Cloudflare Test-only webhook entry and configuration, without storefront
+  routes, assets, queues or scheduled jobs. It rejects Live mode, unrelated
+  paths and invalid signatures before database client construction.
+- Both receiver checks passed and Wrangler dry-run bundled successfully.
+- A deployment preflight checked only credential presence and minimum-length
+  booleans. The saved Test signing secret did not meet the receiver's minimum.
+  The guard stopped before any Cloudflare deployment or secret upload.
+- No live store connection, merchant data, production route or payment setting
+  was changed. Actual provider consent and provider-sent webhook delivery remain
+  unverified pending a valid Test signing secret and the owner's consent.
+
 ## 20 October 2026: Approved OAuth database migration
 
 - With the user's explicit approval, applied the OAuth routing/refresh migration

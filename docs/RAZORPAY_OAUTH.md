@@ -137,6 +137,29 @@ payments still depend on it without an explicit credential-rotation plan.
 
 ## Verification scope
 
+### Isolated Test webhook receiver
+
+`wrangler.oauth-test.jsonc` targets only `lebrands-razorpay-oauth-test`, using
+`src/razorpay-oauth-test-worker.js`. It has no storefront routes, assets, queues
+or scheduled jobs. Do not deploy it as the main store Worker.
+
+It exposes only `/health` and `/webhooks/razorpay/oauth`, fails closed outside
+Test mode, and verifies signatures before constructing a database client. The
+shared handler also verifies signatures and isolates authorisations by account
+and mode. Bind only Development OAuth credentials, the Test signing secret and
+the encryption secret needed for the existing shared application database.
+Never attach Live credentials or Live routes to this receiver.
+
+The signing secret must have at least 16 characters; use a random string of
+32 or more characters, not an account password. The same value must be saved
+in the Test webhook configuration and the receiver's Worker Secrets. Keep secret
+values out of commands, logs, generated reports and source files.
+
+Real merchant consent still starts in the existing dashboard and returns to the
+exact registered Development callback. The account owner completes login and
+consent themselves. A public webhook receiver is not evidence of successful
+merchant consent or Razorpay-sent webhook delivery.
+
 Synthetic local PGlite tests exercise real foundational DDL, restricted tenant
 transactions, nonce consumption/replay, cancellation, legacy preservation,
 encrypted persistence, refresh durability, disconnection and signed revocation.
