@@ -1017,3 +1017,11 @@ of this register.
 | `node scripts/build-browser-assets.mjs` | Successful development browser compilation; 29 versioned entries. Public generated assets only, no database writes or publication. |
 | Managed frontend/API workflow restarts and log inspection | Both running. Initial proxy refusal occurred while the API was restarting, followed by successful requests. No environment variables or secrets changed. |
 | Isolated browser navigation/dialog pass and mobile preview capture | Passed: cancel/Escape preserve edits and focus; approved navigation occurs once; pristine navigation has no warning; date/time cancellation, accepted value and inline required validation work. Zero native dialogs/JS exceptions, no horizontal dialog overflow at 390px. Fake memory-only fixture; no provider event, database write or real payment. |
+
+## 2026-10-20: Approved dialog-fix Cloudflare publication
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| Read-only Cloudflare Worker settings snapshot | Saved only non-secret metadata/hashes under `/tmp` for pre/post comparison. Did not reveal secret values or modify configuration. |
+| `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` | User-approved production publication succeeded. Worker version `8dbe9afe-691e-4329-9581-e65d846773f5`; existing regular routes, queues and schedule retained. No migration executed. |
+| Read-only Cloudflare metadata and production HTTP/module checks | Passed: 24 non-asset bindings, 14 encrypted secrets and runtime settings unchanged. Account page HTTP 200; current live scripts/module graph byte-match the approved local build, without native dialog calls/unload hooks. Updated ticket dialog, leave guard and date/time prompt present. |

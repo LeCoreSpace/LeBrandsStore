@@ -1915,3 +1915,20 @@ decision:
   confirmed navigation once, clean navigation without warnings, and accessible
   date/time entry with inline blank-input validation. Zero native dialogs or
   JavaScript exceptions were observed. No settings save or payment was made.
+
+## 2026-10-20: Approved in-app dialog production release
+
+- Published the approved UI changes to Cloudflare with the production config
+  and `--keep-vars`. Worker version:
+  `8dbe9afe-691e-4329-9581-e65d846773f5`.
+- Compared production metadata before/after publication: all 24 non-asset
+  bindings, including 14 encrypted secrets, and runtime settings were preserved.
+  Existing domain routes, queue producer/consumer and five-minute schedule
+  remain configured.
+- The public account page returned HTTP 200. Live entry scripts and their
+  imported modules matched the approved local assets; the current graph has
+  no native dialog calls or unload hooks. Verified the shared ticket dialog,
+  navigation guard and date/time prompt are served in production.
+- No migration, production database write, provider event or checkout
+  activation change was performed. Existing tabs require a refresh after
+  saving any open work.
