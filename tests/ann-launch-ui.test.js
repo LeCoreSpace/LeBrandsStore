@@ -190,35 +190,59 @@ test("integration setup is available in Settings before changing COD or manual d
     h.ui.mount(2);await flush();
     assert.match(h.slot.innerHTML,/Razorpay integration/);
     assert.match(h.slot.innerHTML,/<section[^>]*data-ln-provider="razorpay"/);
+    assert.doesNotMatch(h.slot.innerHTML,/class="ann-launch-step"|class="ann-provider-setup|<h[23]>Razorpay/);
+    assert.match(h.slot.innerHTML,/Connection status/);
     assert.doesNotMatch(h.slot.innerHTML,/<details[^>]*data-ln-provider=/);
     assert.doesNotMatch(h.slot.innerHTML,/data-ln="sr\.email"|data-step="[13]"/);
-    assert.match(h.slot.innerHTML,/data-ln="rz\.key_id"/);
-    assert.match(h.slot.innerHTML,/data-ln="rz\.webhook_secret"/);
+    assert.match(h.slot.innerHTML,/data-ln-a="oauth-start"/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln="rz\.key_id"|data-ln="rz\.webhook_secret"/);
     h.ui.mount(3);await flush();
     assert.match(h.slot.innerHTML,/Shiprocket integration/);
     assert.match(h.slot.innerHTML,/<section[^>]*data-ln-provider="shiprocket"/);
+    assert.doesNotMatch(h.slot.innerHTML,/class="ann-launch-step"|class="ann-provider-setup/);
     assert.doesNotMatch(h.slot.innerHTML,/<details[^>]*data-ln-provider=/);
     assert.doesNotMatch(h.slot.innerHTML,/data-ln="rz\.key_id"|data-step="[12]"/);
     assert.match(h.slot.innerHTML,/data-ln="sr\.email"/);
     assert.match(h.slot.innerHTML,/data-ln="sr\.password"/);
   }finally{await h.close();}
 });
-test("dedicated Settings preserves provider forms and combined choices without wizard navigation",async()=>{
+test("dedicated payment Settings is OAuth-only while delivery choices remain unchanged",async()=>{
   const h=await harness(false,undefined,true);
   try {
     h.ui.mount(2);
     assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="skip"|data-ln-a="next"|data-step="[13]"/);
-    await h.click({pref:"payments",v:"razorpay"});
-    assert.match(h.slot.innerHTML,/data-ln="rz.key_id"/);
-    assert.match(h.slot.innerHTML,/data-v="cod" aria-pressed="true"/);
-    await h.click({lnA:"choose"});
-    assert.equal(h.requests[0].preferences.payments,"both");
-    assert.equal(h.requests[0].action,"choose");
+    assert.match(h.slot.innerHTML,/data-ln-a="oauth-start"/);
+    assert.doesNotMatch(h.slot.innerHTML,/Use API keys instead|data-ln="rz\.|data-pref="payments"|data-v="cod"|Save choices|data-ln-a="choose"/);
+    assert.equal(h.requests.length,0,"opening payment settings must not change COD or preferences");
+    assert.equal(h.ui.hasUnsavedChanges(),false);
     h.ui.mount(3);
     await h.click({pref:"delivery",v:"shiprocket"});
     assert.match(h.slot.innerHTML,/data-ln="sr.email"/);
     assert.match(h.slot.innerHTML,/data-v="manual" aria-pressed="true"/);
+    await h.click({lnA:"choose"});
+    assert.equal(h.requests[0].preferences.payments,"cod");
+    assert.equal(h.requests[0].preferences.delivery,"both");
     assert.doesNotMatch(h.slot.innerHTML,/data-step="[12]"/);
     assert.ok(h.requests.every(r=>r.action==="choose"),"saving preferences must not activate providers");
+  }finally{await h.close();}
+});
+test("payment settings retain OAuth and legacy account controls without setup forms or duplicate choices",async()=>{
+  const h=await harness(false,undefined,true);
+  try{
+    for(const provider of [
+      {verified:true,auth_type:"oauth",mode:"test",account_id:"acc_SyntheticOnly",webhook_verified:false,runtime_ready:false},
+      {verified:true,auth_type:"api_key",mode:"live",webhook_verified:true,runtime_ready:true}
+    ]){
+      h.setState({providers:{razorpay:provider},platform:{razorpay_oauth_available:true}});
+      await h.click({lnA:"reload"});h.ui.mount(2);
+      assert.match(h.slot.innerHTML,/data-ln-a="oauth-start"|data-ln-a="oauth-refresh"/);
+      assert.match(h.slot.innerHTML,/data-ln-a="disc"/);
+      assert.doesNotMatch(h.slot.innerHTML,/class="ann-launch-step"|class="ann-provider-setup|<h[23]>Razorpay/);
+      assert.match(h.slot.innerHTML,new RegExp(`data-ln-a="${provider.runtime_ready?"pay-off":"pay-on"}"`));
+      assert.doesNotMatch(h.slot.innerHTML,/Use API keys instead|data-ln="rz\.|data-v="cod"|data-pref="payments"|Save choices/);
+      if(provider.auth_type==="api_key")assert.match(h.slot.innerHTML,/existing API-key connection is preserved/);
+      else assert.match(h.slot.innerHTML,/data-ln-a="oauth-refresh"/);
+    }
+    assert.equal(h.requests.length,0);
   }finally{await h.close();}
 });

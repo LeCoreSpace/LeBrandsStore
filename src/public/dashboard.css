@@ -930,6 +930,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .lbc-links a:hover{background:#f1e5ea}
 .lbc-page .ann-integration-provider-heading{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
 .lbc-page .ann-integration-provider-heading h2{font-size:15px;line-height:1.4;margin:0}
+.lbc-page #ann-launch-slot .ann-integration-provider{display:grid;gap:14px;min-width:0;margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+.lbc-page .ann-integration-provider-heading{padding-bottom:12px;border-bottom:1px solid var(--lb-line)}
 .lbc-page .ann-integration-status{display:inline-flex;padding:4px 9px;border:1px solid #d7cbd0;border-radius:4px;background:#f6f0f3;color:var(--lb-green-deep);font-size:11px;font-weight:700}
 .lbc-page .ann-integration-status[data-status="active"]{background:#e7f4eb;color:#205b36;border-color:#c0ddc9}
 .lbc-page .ann-integration-status[data-status="verified"]{background:#fff5de;color:#73531c;border-color:#e6d5a9}

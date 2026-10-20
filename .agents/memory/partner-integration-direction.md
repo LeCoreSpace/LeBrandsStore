@@ -41,3 +41,16 @@ connections.”
 **How to apply:** Keep existing merchant key connections usable and separate
 from platform subscription billing credentials. Adding OAuth must not silently
 replace or reactivate an existing connection.
+
+The dedicated Razorpay integration Settings page should focus on OAuth account
+access, readiness and activation. Do not restore manual API-key setup,
+COD/Razorpay preference tiles or Save choices on that page. Manage COD in
+Checkout settings and preserve existing legacy connections and financial
+history. Ann's onboarding payment choices remain separate.
+
+**Why:** The user approved this specific UI cleanup after reconnecting the
+intended Test account; it was not permission to disable COD or delete keys.
+
+**How to apply:** Keep the page's account controls and activation gates, with a
+link to Checkout settings. Treat retirement of backend legacy support or
+changes to Ann onboarding as separate work requiring explicit instruction.

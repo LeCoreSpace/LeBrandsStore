@@ -114,6 +114,11 @@ test("integrations render separate ticket pages without a cross-provider tab bar
     assert.match(html,/class="lbc-stub"/);
     assert.match(html,/class="lbc-steps"/);
     assert.match(html,/Integration setup/);
+    if(kind==="payments"){
+      assert.doesNotMatch(html,/Choose payment methods|Pick Cash on Delivery|use your existing API-key integration/);
+      assert.match(html,/Check payment readiness/);
+      assert.match(html,/settings\/checkout/);
+    }
     assert.doesNotMatch(html,/aria-label="Store connection settings"|role="tablist"|Integration [123] of 3/);
   }
 });

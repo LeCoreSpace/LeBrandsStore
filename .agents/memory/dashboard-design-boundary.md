@@ -111,10 +111,14 @@ containers. Analytics must offer appropriate chart views alongside tabular data,
 not replace the tables.
 
 **Why:** The user explicitly rejected container-inside-container styling in
-Daily sales and requested chart views along with tabular analytics.
+Daily sales and repeated the same correction for Razorpay integration
+Settings. They also requested chart views along with tabular analytics.
 
 **How to apply:** Inner table scroll areas and pagers should share their parent
-surface without a second rail. Preserve accessible exact values and report
+surface without a second rail. Shared onboarding or editor content embedded
+in a dashboard ticket must not bring its own card frames or repeated section
+headings; use spacing and simple dividers inside the single outer surface.
+Preserve accessible exact values and report
 exports. Label charts based on a paginated page as page-scoped, not whole-store
 breakdowns; do not invent unavailable metrics.
 

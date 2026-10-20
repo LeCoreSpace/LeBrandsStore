@@ -1,5 +1,36 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Single-surface integration Settings verification
+
+- `node --test --test-concurrency=1 tests/ann-launch-ui.test.js tests/razorpay-oauth-ui.test.js tests/dashboard-navigation.test.js`:
+  23 checks passed; Settings assertions reject the nested onboarding/provider
+  card wrappers while preserving provider actions.
+- `git diff --check`: clean.
+- Restarted `artifacts/api-server: API Server` once to rebuild browser assets.
+  Current page/module requests succeeded after startup.
+- Screenshot of `/__step4-preview?view=settings&connection=payments` confirmed
+  one outer ticket with a flat status/content area, no nested card borders and
+  no duplicate Razorpay headings. The capture uses read-only synthetic data.
+
+No provider operation, secret change, database write or production deployment.
+
+## 20 October 2026: Razorpay Settings UI cleanup verification
+
+Working directory: workspace root. User approved UI cleanup only.
+
+- `node --test --test-concurrency=1 tests/ann-launch-ui.test.js tests/razorpay-oauth-ui.test.js tests/dashboard-navigation.test.js`:
+  23 checks passed after updating obsolete manual-form expectations.
+- `git diff --check`: clean.
+- Restarted `artifacts/api-server: API Server` once to rebuild browser assets.
+  Logs confirmed startup and successful versioned-module delivery.
+- Screenshot of `/__step4-preview?view=settings&connection=payments` confirmed
+  the ticket-style page without manual key inputs, payment-choice tiles or
+  Save choices. This route uses read-only synthetic data, not a signed-in real
+  merchant account.
+
+No database migration/write, provider operation, secret update, COD setting
+change or Cloudflare production deployment was performed.
+
 ## 20 October 2026: Native Preview and OAuth configuration repair
 
 Working directory: workspace root. User reported an unavailable Connect button

@@ -1,5 +1,39 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Removed nested integration Settings card frames
+
+- Corrected the layered boxes highlighted by the user: shared Settings
+  rendering now omits the onboarding step frame and provider card frame.
+  Each integration uses its existing single outer ticket surface, with a
+  simple status row, spacing and divider inside.
+- Removed repeated Razorpay headings from the account controls. Preserved
+  provider data attributes, accessible group labels and all action handlers.
+  Ann onboarding keeps its existing step presentation.
+- All 23 focused launch/OAuth/navigation checks passed, including flat
+  Settings rendering in disconnected, OAuth and legacy account states.
+- Rebuilt assets through one managed API restart and visually confirmed the
+  flattened Razorpay page using read-only synthetic data. No merchant data,
+  authentication, payment state or production deployment changed.
+
+## 20 October 2026: Razorpay integration Settings cleanup
+
+- Applied the user-approved UI-only cleanup to the dedicated Razorpay Settings
+  page: removed manual API-key setup, COD/Razorpay choice cards, Save choices
+  and the repeated COD instruction. Checkout settings remains linked.
+- Kept Connect/Reconnect, Refresh, Disconnect, account/readiness information and
+  guarded online-payment activation. Existing verified legacy connections keep
+  their controls and a preservation notice. No credentials or historical
+  payment/refund handling were removed.
+- Updated the ticket summary and sidebar instructions to match the focused
+  account/readiness/activation workflow. Ann onboarding payment choices and
+  other integration menus were left unchanged.
+- All 23 focused client/navigation checks passed, covering disconnected,
+  OAuth-connected and legacy-connected states. Rebuilt browser assets through
+  the managed API restart and visually checked the read-only synthetic page.
+- No merchant records, COD settings, real account authorisation, webhook state
+  or production deployment were changed. Provider-sent Test delivery and Live
+  readiness remain separate verification work.
+
 ## 20 October 2026: Native Preview routing and OAuth availability fixed
 
 - The user's screenshots showed the Test redirect/webhook URLs configured,

@@ -1,5 +1,19 @@
 # Complete implementation checkpoint register
 
+### Flat integration Settings presentation, 20 October 2026
+
+Removed nested onboarding/provider frames in dedicated Settings and repeated
+Razorpay headings. Preserved functional handlers and Ann presentation.
+Verified 23 focused checks and the read-only visual capture.
+No manual Git commit or production deployment was performed.
+
+### Focused Razorpay Settings UI, 20 October 2026
+
+Updated the shared client with Settings-only rendering conditions, ticket-page
+copy and regression checks. All 23 focused checks and the read-only visual
+capture passed. Ann onboarding and legacy financial handling were preserved.
+No manual Git commit or production deployment was performed.
+
 ### Native Preview OAuth availability repair, 20 October 2026
 
 Fixed the native account adapter's missing OAuth bindings and callback routing,

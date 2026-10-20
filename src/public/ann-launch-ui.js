@@ -120,12 +120,13 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     }).join("")}</div>`;
   }
   function step(n, title, status, body) {
+    if(settingsMode) return focusedStep===n?body:"";
     if(focusedStep) return focusedStep===n?`<section class="ann-launch-step" data-step="${n}">${body}</section>`:"";
     if(n===1 && !state?.domain) status="Included address ready";
     return `<details class="ann-review-step ann-launch-step" data-step="${n}"${open[n] ? " open" : ""}><summary>${n}. ${esc(title)} <span class="ann-launch-st">${esc(status)}</span></summary>${body}</details>`;
   }
   function providerPanel(provider,title,body,active,verified){
-    if(settingsMode)return `<section class="ann-provider-setup ann-integration-provider" data-ln-provider="${provider}"><div class="ann-integration-provider-heading"><h2>${esc(title)}</h2><span class="ann-integration-status" role="status" data-status="${active?"active":verified?"verified":"unverified"}">${active?"Active":verified?"Verified, not active":"Not connected"}</span></div>${body}</section>`;
+    if(settingsMode)return `<section class="ann-integration-provider" data-ln-provider="${provider}" aria-label="${esc(title)}"><div class="ann-integration-provider-heading"><span class="ann-note">Connection status</span><span class="ann-integration-status" role="status" data-status="${active?"active":verified?"verified":"unverified"}">${active?"Active":verified?"Verified, not active":"Not connected"}</span></div>${body}</section>`;
     return `<details class="ann-provider-setup" data-ln-provider="${provider}"${providerOpen[provider]?" open":""}><summary>${esc(title)}${active?" · active":""}</summary>${body}</details>`;
   }
   const saveRow = next => `${msg("choose")}<div class="ann-actions ann-launch-actions"><button type="button" class="ann-btn alt sm" data-ln-a="choose"${dis(!prefsDirty)}>${busy === "choose" ? "Saving" : "Save choices"}</button>${settingsMode ? "" : `<button type="button" class="ann-btn sm" data-ln-a="next" data-next="${next}"${dis()}>${prefsDirty?"Save and continue":next===2?(customOnly?"Continue to review":"Continue to payments"):next===3?"Continue to delivery":"Review my store"}</button>`}</div><p class="ann-note">Choices saved here do not activate services.</p>`;
@@ -196,11 +197,11 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       ${rzp.auth_type==="oauth"&&rzp.verified?`<button type="button" class="ann-btn alt sm" data-ln-a="oauth-refresh"${dis(!oauthReady)}>Refresh authorisation</button>`:""}
       ${rzp.revocation_pending?`<button type="button" class="ann-btn alt sm" data-ln-a="oauth-disconnect"${dis(!oauthReady)}>Retry disconnection</button>`:""}</div>
       ${oauthReady?"":'<p class="ann-note">Secure authorisation is unavailable in this environment. Existing API-key integrations continue to work.</p>'}${msg("oauth")}`;
-    const rzBlock = `<h3>Razorpay</h3>${oauthBlock}` + (rzp.verified
+    const rzBlock = `${settingsMode?"":"<h3>Razorpay</h3>"}${oauthBlock}${settingsMode&&rzp.verified&&rzp.auth_type==="api_key"?'<p class="ann-note">Your existing API-key connection is preserved. Authorising through Razorpay will ask before replacing it.</p>':""}` + (rzp.verified
       ? rzVerified
-      : `<details><summary>Use API keys instead</summary><p class="ann-note">Enter your merchant Razorpay key ID and key secret. Also create a webhook secret in Razorpay so signed payment events can be checked. We verify the keys before storing them encrypted; they are not displayed again.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify and save Razorpay"}</button></div></details>`);
+      : settingsMode?"":`<details><summary>Use API keys instead</summary><p class="ann-note">Enter your merchant Razorpay key ID and key secret. Also create a webhook secret in Razorpay so signed payment events can be checked. We verify the keys before storing them encrypted; they are not displayed again.</p>${inp("rz.key_id", "Key ID")}${inp("rz.key_secret", "Key secret", "password")}${inp("rz.webhook_secret", "Webhook secret", "password")}${msg("rz")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="rz"${dis(!v("rz.key_id") || !draftVals["rz.key_secret"] || !draftVals["rz.webhook_secret"])}>${busy === "rz" ? "Checking" : "Verify and save Razorpay"}</button></div></details>`);
     const rzPanel=settingsMode||prefs.payments==="razorpay"||prefs.payments==="both"||rzp.verified?providerPanel("razorpay","Razorpay integration",rzBlock,rzOn,rzp.verified):"";
-    const s2 = `${own}${settingsMode?rzPanel+pay:pay+rzPanel}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${saveRow(3)}`;
+    const s2 = `${own}${settingsMode?rzPanel:pay+rzPanel}${msg("disc-razorpay")}${confirmDisc === "razorpay" ? discBox() : ""}${!settingsMode&&checkoutHref ? `<p class="ann-note">Enable COD in <a href="${esc(checkoutHref)}">checkout settings</a> before opening.</p>` : ""}${settingsMode?"":saveRow(3)}`;
 
     // Step 3: delivery
     const del = `<p class="ann-note">Choose one or both. Add manual tracking from Orders.</p>${opts("delivery", [["manual", "I'll add tracking myself", "Use your courier and add its tracking number in Orders."], ["shiprocket", "Shiprocket", "Connect your account for automatic shipping."]])}`;
