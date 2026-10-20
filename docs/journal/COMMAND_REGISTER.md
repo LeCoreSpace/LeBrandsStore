@@ -600,6 +600,16 @@ Workspace root, local source/Worker bundle checks only:
 | `git diff --check` | Passed. |
 | Managed API preview restart | Rebuilt updated client assets successfully. No production publication. |
 
+### 20 October: Ann header navigation cleanup
+
+Workspace root, local code and synthetic preview only:
+
+| Command / operation | Purpose / observed result |
+| --- | --- |
+| `node --test --test-concurrency=1 tests/ann-compact-toolbar.test.js tests/ann-design-header-actions.test.js tests/browser-bundles.test.js` | Six passed; header, contextual recovery, relocated editor link and browser delivery preserved. |
+| `git diff --check` | Passed. |
+| Managed API/web restarts and synthetic Ann screenshot | Simplified ticket-style header verified. No production publication. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

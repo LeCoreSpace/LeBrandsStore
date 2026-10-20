@@ -30,7 +30,7 @@ ${accountHeader(user)}
 <main class="ann" id="ann-app" data-view="chat">
   <header class="ann-top">
     <div><p class="ann-eyebrow">Your store, built with Ann</p><h1>Build ${esc(store.name || "your store")} with Ann</h1></div>
-    <nav class="ann-links" aria-label="Store builder"><button type="button" id="ann-business-documents">Business documents</button><a href="${root}">Dashboard</a><a href="${root}/editor">Theme editor</a><a href="${root}/build/ann?launch=1">Store connections</a></nav>
+    <nav class="ann-links" aria-label="Store builder"><a href="${root}">Back to dashboard</a></nav>
     <div class="ann-top-actions" id="ann-top-actions" aria-label="Design actions" hidden></div>
   </header>
   <aside id="ann-business-access" class="ann-note" role="status"${data.business_access?.allowed===false?"":" hidden"}>${esc(data.business_access?.message||"")} ${data.business_access?.reason==="plan_required"?`<button type="button" class="ann-link" data-ann-plan-open${data.business_access?.plan_access?.name_confirmed?"":" disabled"}>Choose your Free plan</button>`:'<button type="button" class="ann-link" data-business-open>Open business documents</button>'}</aside>
@@ -55,6 +55,7 @@ ${accountHeader(user)}
     <details class="ann-tb-d ann-more" id="ann-more"><summary aria-label="More">More</summary><div class="ann-tb-pop ann-more-menu">
       <div id="ann-tb-slot" class="ann-tb-slot"></div>
       <button type="button" class="ann-btn alt sm ann-tb-lockable" data-ws-toggle aria-pressed="false" aria-controls="ann-tools">Design workspace</button>
+      <a class="ann-btn alt sm ann-tb-lockable" href="${root}/editor">Theme editor</a>
       <div class="ann-tb-item ann-tb-lockable" id="ann-edit-toggle" hidden></div>
       <button type="button" class="ann-btn alt sm ann-tb-lockable" data-edit-prompt="logo">Brand logo</button>
       ${data.business_access?.plan_access?.available?`<div class="ann-tb-item" id="ann-store-plan"><button type="button" class="ann-btn alt sm" data-ann-plan-open${data.business_access.plan_access.enforced&&!data.business_access.plan_access.name_confirmed?" disabled":""}>Store plan</button></div>`:""}

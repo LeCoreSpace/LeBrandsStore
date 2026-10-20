@@ -25,3 +25,13 @@ test("plan action hidden when unavailable; client keeps wiring", async () => {
   assert.match(c, /toggleMount: \$\("#ann-edit-toggle"\)/);
   assert.match(c, /e\.key !== "Escape"/);
 });
+test("header keeps only dashboard navigation; editor moves to More and document recovery stays",()=>{
+  const html=renderAnnBuilder(data);
+  const header=html.match(/<header class="ann-top">[^]*?<\/header>/)[0];
+  assert.match(header,/Back to dashboard/);
+  assert.doesNotMatch(header,/Business documents|Store connections|Theme editor/);
+  const more=html.slice(html.indexOf('class="ann-tb-d ann-more"'));
+  assert.match(more,/href="\/stores\/11111111-1111-4111-8111-111111111111\/editor">Theme editor/);
+  assert.match(html,/data-business-open>Open business documents/);
+  assert.match(header,/id="ann-top-actions"/);
+});

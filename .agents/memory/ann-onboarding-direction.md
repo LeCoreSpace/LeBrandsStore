@@ -271,6 +271,9 @@ compact desktop toolbar with the existing ticket style. Use dropdowns instead
 of persistent step/style rows. Keep required business/plan notices visible, but
 put ordinary plan information and secondary tools in menus. Keep save status,
 Save draft and Publish store once in the existing top header.
+The header navigation should only show Back to dashboard; Theme editor belongs
+in More, and the redundant Business documents/Store connections header links
+should not return. Contextual business-recovery links remain available.
 
 **Why:** The user said screen real estate is an issue, rejected multiple rows
 of options and approved this consolidated approach.

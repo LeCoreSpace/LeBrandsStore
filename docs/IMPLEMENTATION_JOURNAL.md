@@ -1162,6 +1162,20 @@ decision:
 - **Outcome:** Working-tree fix, not yet a committed checkpoint. No database,
   publication or save behavior changed; no production deployment was run.
 
+### 2026-10-20: Remove redundant Ann header links
+
+- **What:** Removed Business documents and Store connections from Ann's header.
+  Back to dashboard is the sole header navigation link; Theme editor now lives
+  in More. Existing editor-access guards still apply to the relocated link.
+  Contextual document recovery, onboarding, dashboard management and top-header
+  save/publication actions are unchanged. Ticket styling is preserved.
+- **Verification:** Six focused toolbar/header/Worker bundle checks passed,
+  `git diff --check` passed, and a synthetic preview screenshot confirmed the
+  simplified header with contextual business recovery still visible.
+  Both managed preview services restarted successfully.
+- **Outcome:** Working-tree change, not yet a committed checkpoint. No database
+  changes, migration or production deployment.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

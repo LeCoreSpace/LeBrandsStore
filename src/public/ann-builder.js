@@ -37,7 +37,6 @@ const businessDocuments = attachAnnBusinessDocuments({
   readOnly, onError: message => say(message),
   onSubmitted:body=>{if(body.business_access)updateBusinessAccess(body.business_access);void gstUI.refresh();},
 });
-$("#ann-business-documents")?.addEventListener("click", () => businessDocuments.open());
 const api = boot.apiRoot || `/api/stores/${storeId}/ann`;
 const root = `/stores/${storeId}`;
 let planAccess=boot.planAccess||{available:false,enforced:false,allowed:true,name_confirmed:false};
