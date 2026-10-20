@@ -1,5 +1,16 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Transient partner receiver diagnostics
+
+- Read-only Worker settings query: persistent Observability/Logpush not enabled.
+- Started a five-minute `wrangler tail` session in JSON mode for POST requests,
+  with a local strict partner-path filter and safe field-only output. Raw
+  headers, signatures and payloads were not printed or written to output files.
+- Sent a deliberate unsigned agent connectivity probe to the partner path:
+  HTTP 400, subsequently observed in the live stream. Not a provider delivery.
+- No stored-history claim, application/configuration release, database write,
+  checkout activation or real financial operation.
+
 ## 20 October 2026: Approved UI release and read-only production audit
 
 - Names-only Cloudflare settings audit plus read-only external Supabase

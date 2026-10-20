@@ -1,5 +1,20 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Corrected partner webhook log navigation
+
+- Owner confirmed the merchant Developers/Webhooks list does not include the
+  partner application webhook. Do not modify unrelated existing merchant hooks
+  or create another webhook as a workaround.
+- Read-only production Worker metadata showed no persistent Observability or
+  Logpush configuration, so no historical collection was established.
+- Started a bounded, transient Worker tail, emitting only time/method/status/
+  outcome for the partner webhook path. A deliberate unsigned agent probe was
+  rejected with HTTP 400 and observed by the live tail. This is not a
+  Razorpay-sent event or a matched-account verification.
+- JSON tail output omitted its normal connection banner, but the observed
+  probe established capture. No application deployment, persistent logging
+  configuration, migration, payment or checkout activation was performed.
+
 ## 20 October 2026: Approved Cloudflare UI release published
 
 - Owner explicitly approved publishing the latest application code. Ran 42

@@ -28,3 +28,24 @@ environment. Verify cross-mode/account/application handling before activation,
 especially revocation, and never replay a real Test merchant event into Live
 as a harmless probe. Use synthetic unknown-account checks for non-mutating
 connectivity verification and label their limits explicitly.
+
+## Partner webhook delivery diagnostics
+
+Do not direct owners to the ordinary merchant Developers > Webhooks list as
+though it contains partner-application webhook history.
+
+**Why:** The owner checked that page and confirmed the partner webhook is absent.
+The Partner application's Manage Webhook popup edits configuration; the reviewed
+partner documentation did not establish a separate delivery-history viewer.
+
+**How to apply:** Leave unrelated merchant webhooks untouched. Use receiver-side
+diagnostics instead of inventing a provider menu or creating a duplicate hook.
+Check whether historical collection was enabled before promising past logs.
+Transient Worker tailing can still work when persistent Observability is off.
+Keep output to time, method, response status and outcome for the partner path;
+never print headers, signatures or customer payloads.
+
+Wrangler JSON tail output may omit the normal Connected banner. Verify capture
+using an observed, explicitly labelled unsigned probe rather than relying on
+that banner. A rejected agent probe proves live-capture connectivity, not
+Razorpay delivery or merchant verification.
