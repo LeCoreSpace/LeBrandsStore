@@ -6,6 +6,28 @@ import { attachAnnDesign } from "../src/public/ann-design-ui.js";
 
 const source = await readFile(new URL("../src/public/ann-builder.js", import.meta.url), "utf8");
 const tick = () => new Promise(resolve => setImmediate(resolve));
+test("both editor controllers keep grid cell identity, blank text and Undo in the draft lifecycle",async()=>{
+  for(const themeEditor of [false,true]){
+    const h=harness({themeEditor});
+    try{
+      await tick();h.ui.resumeEditing();
+      const id=h.ui.addSection("home","image-gallery",{kind:"none"},null,["slot-ed-hero-0"]);
+      const first=h.ui.getSectionGrid("home",id).items[0];
+      h.ui.updateSectionCell("home",id,first.id,{title:"Independent cell",body:""});
+      h.ui.moveSectionCell("home",id,first.id,1);
+      assert.equal(h.ui.getSectionGrid("home",id).items[1].id,first.id);
+      assert.equal(h.ui.getSectionGrid("home",id).items[1].title,"Independent cell");
+      assert.equal(h.ui.getSectionGrid("home",id).items[1].body,"");
+      h.ui.undo();
+      assert.equal(h.ui.getSectionGrid("home",id).items[0].id,first.id);
+      h.ui.setSectionGrid("home",id,{desktop:4,mobile:1});
+      const duplicated=h.ui.duplicateSection("home",id,[id,"slot-ed-hero-0"]);
+      assert.equal(h.ui.getSectionGrid("home",duplicated).grid.desktop,4);
+      assert.equal(h.ui.getSectionGrid("home",duplicated).items[0].title,"Independent cell");
+      assert.equal(h.requests.length,1,"Grid changes stay local until Save draft.");
+    }finally{h.close();}
+  }
+});
 test("Ann and standalone editors keep insertion, duplication, deletion and Undo in one draft model",async()=>{
   for(const themeEditor of [false,true]){
     const h=harness({themeEditor});

@@ -1,5 +1,6 @@
 import { sectionLibraryEntry } from "./section-library.js";
 import {validSectionLayout} from "./section-layouts.js";
+import {validGridData,defaultGrid,newCell,GRID_KINDS,gridBindingError} from "./section-grid-model.js";
 
 export const INSTANCE_PAGES=Object.freeze(["home","collection","product","about","contact"]);
 export const SECTION_INSTANCE_LIMIT=12;
@@ -20,9 +21,10 @@ export function sectionBindingKinds(family,page){
   return ["none"];
 }
 export function validSectionInstance(instance,page){
-  if(!keys(instance,["id","version","family","binding","layout"])||instance.version!==1||
+  if(!keys(instance,["id","version","family","binding","layout","grid","items"])||instance.version!==1||
     !INSTANCE_ID.test(instance.id)||sectionLibraryEntry(instance.family)?.id!==instance.family)return false;
   if(Object.hasOwn(instance,"layout")&&!validSectionLayout(instance.family,instance.layout))return false;
+  if(!validGridData(instance))return false;
   const binding=instance.binding;
   if(!keys(binding,["kind","id"])||!sectionBindingKinds(instance.family,page).includes(binding.kind))return false;
   return ["product","collection"].includes(binding.kind)?UUID.test(binding.id||""):
@@ -47,6 +49,10 @@ export function createSectionInstance(family,binding={kind:"none"},layout="origi
   if(!validSectionLayout(family,layout))throw new Error("Choose an available section layout.");
   const instance={version:1,id:`slot-library-${crypto.randomUUID().replace(/-/g,"")}-0`,family,binding:structuredClone(binding)};
   if(layout!=="original")instance.layout=layout;
+  if(GRID_KINDS[family]){
+    instance.grid=defaultGrid(family);
+    if(GRID_KINDS[family]==="images")instance.items=Array.from({length:instance.grid.limit},(_,slot)=>newCell(slot));
+  }
   return instance;
 }
 export function setInstanceLayout(sections,page,id,layout){
@@ -87,6 +93,8 @@ export function instanceOnlySections(sections){
     .map(([page,v])=>[page,{instances:structuredClone(v.instances)}]));
 }
 export function sectionBindingError(sections,data){
+  const gridError=gridBindingError(sections,data);
+  if(gridError)return gridError;
   const products=new Set((data.products||[]).map(p=>String(p.id)));
   const collections=new Set((data.collections||[]).map(c=>String(c.id)));
   for(const entry of Object.values(sections||{}))for(const instance of entry.instances||[]){

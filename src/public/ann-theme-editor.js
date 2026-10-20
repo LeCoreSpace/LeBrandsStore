@@ -47,6 +47,7 @@ workspace=attachAnnWorkspace({mount:$("#ae-tools"),variant:"sidebar",readOnly,co
   getPlan:()=>({color_preset:plan.color_preset||source.settings.color_preset||"white",font_preset:plan.font_preset||source.settings.font_preset||"modern",accent_color:plan.accent_color||source.settings.accent_color||"#661329",section_options:plan.section_options||{}}),
   setPlan:(k,v)=>{plan[k]=v;controller.planChanged();render();},setExtra,sectionInfo,onSectionAction:sectionAction,onOwn:()=>{if(!readOnly)controller.requestCatalogue();}});
 controller=attachAnnDesign({api,root,readOnly,themeEditor:true,mount:workspace.slot(),say,
+  getSectionContext:()=>({productId,collectionId}),
   getPreviewMode:()=>"store",contextual:true,sectionState:id=>sectionInfo().meta.get(id)||null,onSectionAction:(id,act)=>sectionAction(id,act),getStyle:()=>plan.style_preset||initialDesign.style,getAnswers:()=>plan,getBrand:()=>source.settings.brand_name||source.store.name,
   applyPlan:p=>{plan=structuredClone(p);},onDraft:d=>{source=d.settings?.ann_design?d:{...d,settings:{...d.settings,...initialVisualSettings}};},onChange:schedule,onActivated:schedule,onCatalogueConfirmed:()=>{say("Your own products are selected. Save draft to keep this choice.");render();},
   getPreview:()=>frame,});

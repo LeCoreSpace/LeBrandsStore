@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {setupAnnFixtureDatabase,annFixtureAdapter} from "../src/ann-preview-fixture.js";
 import {handleAnnRoutes} from "../src/store/ann-routes.js";
 import {createSectionInstance,setInstanceLayout} from "../src/public/section-instance-model.js";
+import {changeGrid,cellKeys} from "../src/public/section-grid-model.js";
 import {renderSavedDesign} from "../src/public/aura-design.js";
 
 test("restricted-role section save/reload keeps drafts isolated, checks ownership and rejects stale ordering writes",async()=>{
@@ -54,5 +55,23 @@ test("restricted-role section save/reload keeps drafts isolated, checks ownershi
     assert.ok(renderSavedDesign(reloaded.draft,{page:"about"}).body.includes('data-section-layout="vintage"'));
     const invalid=structuredClone(changed);invalid.about.instances[1].layout="arbitrary-css";
     assert.equal((await call("PATCH",{confirm:true,expected_draft:reloaded.expected_draft,sections:invalid})).status,400);
+    const gallery=createSectionInstance("image-gallery");
+    let gridModel={...reloaded.design,sections:structuredClone(reloaded.design.sections)};
+    gridModel.sections.about.instances.push(gallery);gridModel.sections.about.order.push(gallery.id);
+    gridModel=changeGrid(gridModel,"about",gallery.id,"settings",{desktop:4,mobile:1,limit:4,arrangement:"masonry"},reloaded.draft);
+    const first=gridModel.sections.about.instances.at(-1).items[0],titleKey=cellKeys("about",gallery.id,first.slot).title;
+    gridModel=changeGrid(gridModel,"about",gallery.id,"update",{id:first.id,patch:{title:"Saved cell caption",link:"/pages/about"}},reloaded.draft);
+    gridModel=changeGrid(gridModel,"about",gallery.id,"move",{id:first.id,delta:1},reloaded.draft);
+    const savedGrid=await call("PATCH",{confirm:true,expected_draft:reloaded.expected_draft,sections:gridModel.sections,copy:gridModel.copy});
+    assert.equal(savedGrid.status,200);
+    const persisted=(await call("GET")).body;
+    assert.equal(persisted.design.copy[titleKey],"Saved cell caption");
+    const stored=persisted.design.sections.about.instances.at(-1);
+    assert.equal(stored.grid.desktop,4);assert.equal(stored.grid.mobile,1);assert.equal(stored.grid.arrangement,"masonry");
+    assert.equal(stored.items[1].id,first.id);assert.equal(stored.items.length,4);
+    assert.ok(renderSavedDesign(persisted.draft,{page:"about"}).body.includes("Saved cell caption"));
+    const badGrid=structuredClone(persisted.design.sections);badGrid.about.instances.at(-1).grid.mobile=6;
+    assert.equal((await call("PATCH",{confirm:true,expected_draft:persisted.expected_draft,sections:badGrid})).status,400);
+    assert.equal((await call("PATCH",{confirm:true,expected_draft:reloaded.expected_draft,sections:gridModel.sections})).status,409);
   }finally{await pg.close();}
 });

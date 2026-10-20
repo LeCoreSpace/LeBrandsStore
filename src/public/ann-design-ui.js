@@ -11,6 +11,7 @@ import { AURA_STYLES } from "./aura-styles.js";
 import { mountRichEditor, richEditorMarkup } from "./ann-rich-editor.js";
 import {createSectionInstance,insertSectionInstance,removeSectionInstance,copyInstanceFields,clearInstanceFields,setInstanceLayout} from "./section-instance-model.js";
 import {validDesignSections} from "./ann-section-layout.js";
+import {gridSnapshot,prepareGrid,changeGrid} from "./section-grid-model.js";
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 export function designToolsMarkup(content) {
@@ -157,7 +158,6 @@ export function attachAnnDesign(o) {
     if (readOnly || !active()) return true;
     if (busy) return false;
     if (!dirty() && !error) return true;
-    for (const k of Object.keys(model.copy)) if (!String(model.copy[k] ?? "").trim()) { model.copy[k] = designNeutralCopy(model.style, o.getBrand?.() || "Your brand")?.[k] ?? model.copy[k]; delete model.formatting[k]; }
     busy = "save"; error = ""; paint(); say("Saving your draft design");
     const sent = snapshot(), sentPlan = planPayload(), live = { copy: { ...model.copy }, formatting: { ...model.formatting }, media: structuredClone(model.media) };
     // Null resets an individual section field to its base content. This also
@@ -572,7 +572,8 @@ export function attachAnnDesign(o) {
       requireSectionEdit();
       const instance=createSectionInstance(family,binding,layout);
       const next=insertSectionInstance(model.sections,page,instance,order,afterId);
-      commitSectionModel({...model,sections:next});
+      const added={...model,sections:next};
+      commitSectionModel(instance.grid?prepareGrid(added,page,instance.id,menuSource,o.getSectionContext?.()||{}):added);
       return instance.id;
     },
     duplicateSection(page,id,order){
@@ -580,6 +581,8 @@ export function attachAnnDesign(o) {
       const source=model.sections?.[page]?.instances?.find(i=>i.id===id);
       if(!source)throw new Error("Choose an added section to duplicate.");
       const instance=createSectionInstance(source.family,source.binding,source.layout||"original");
+      if(source.grid){instance.grid=structuredClone(source.grid);if(source.items)instance.items=structuredClone(source.items);}
+      else {delete instance.grid;delete instance.items;}
       const next=copyInstanceFields(model,page,id,instance.id);
       next.sections=insertSectionInstance(model.sections,page,instance,order,id);
       commitSectionModel(next);
@@ -600,6 +603,14 @@ export function attachAnnDesign(o) {
       commitSectionModel({...model,sections});
       return true;
     },
+    getSectionGrid(page,id){return model?gridSnapshot(model,page,id,menuSource,o.getSectionContext?.()||{}):null;},
+    setSectionGrid(page,id,patch){requireSectionEdit();commitSectionModel(changeGrid(model,page,id,"settings",patch,menuSource,o.getSectionContext?.()||{}));return true;},
+    addSectionCell(page,id,options={}){requireSectionEdit();commitSectionModel(changeGrid(model,page,id,"add",options,menuSource,o.getSectionContext?.()||{}));return true;},
+    updateSectionCell(page,id,cellId,patch){requireSectionEdit();commitSectionModel(changeGrid(model,page,id,"update",{id:cellId,patch},menuSource,o.getSectionContext?.()||{}));return true;},
+    removeSectionCell(page,id,cellId){requireSectionEdit();commitSectionModel(changeGrid(model,page,id,"remove",{id:cellId},menuSource,o.getSectionContext?.()||{}));return true;},
+    duplicateSectionCell(page,id,cellId){requireSectionEdit();commitSectionModel(changeGrid(model,page,id,"duplicate",{id:cellId},menuSource,o.getSectionContext?.()||{}));return true;},
+    moveSectionCell(page,id,cellId,delta){requireSectionEdit();commitSectionModel(changeGrid(model,page,id,"move",{id:cellId,delta},menuSource,o.getSectionContext?.()||{}));return true;},
+    reorderSectionCells(page,id,ids){requireSectionEdit();commitSectionModel(changeGrid(model,page,id,"reorder",{ids},menuSource,o.getSectionContext?.()||{}));return true;},
     getMenus(){return structuredClone(model?.menus??defaultDesignMenus(menuSource));},
     getMenuRevision:()=>menuRevision,
     setMenus(value,{typing=false}={}){if(readOnly||!model||conflict)return;const next=value===null?null:validateDesignMenus(value);menuDraftError="";if(JSON.stringify(next)===JSON.stringify(model.menus)){o.onChange?.();return;}model.menus=next;remember(typing?"copy:menus":"menus");paintDynamic();o.onChange?.();},

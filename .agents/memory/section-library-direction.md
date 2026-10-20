@@ -55,3 +55,13 @@ layout-selection phase; visual layout choices alone are not sufficient.
 
 **How to apply:** Treat grid and repeated-item editing, and initial text
 defaults, as section-library requirements rather than theme-specific extras.
+
+Defaults are starting content, not a reason to refill text the merchant has
+deliberately cleared. Reducing the number shown should hide retained cells;
+deleting a cell is a separate, explicit action.
+
+**Why:** Grid controls must preserve merchant content rather than silently
+replace it when the layout, order or displayed count changes.
+
+**How to apply:** Preserve stable item identity through those operations and
+distinguish an absent text value from an intentionally empty one.

@@ -29,20 +29,22 @@ function sectionContent(section,design,page,edit) {
       }
       continue;
     }
-    const blocked=(design.catalogue_mode==="own"&&page==="product"&&section.required)||
+    const blocked=(design.catalogue_mode==="own"&&page==="product"&&section.required)||/\bdata-section-item-fresh=["']true["']/.test(m[0])||
       stack.some(n=>n.blocked)||tag==="form"||tag==="fieldset"||PROTECTED.test(m[0]);
     const inheritedCopy=stack.some(n=>n.copy);
     const copy=/\bdata-(?:design-copy|ann-copy-field)=/.test(m[0]);
     if(tag==="img"&&!blocked&&imageIndex<10){
-      const index=imageIndex++,key=prefix+`image${index}`,videoKey=prefix+`video${index}`;
+      const slot=/\bdata-section-item-slot=["']([0-9])["']/.exec(m[0]);
+      const index=slot?Number(slot[1]):imageIndex++,key=prefix+`image${index}`,videoKey=prefix+`video${index}`;
       const image=design.media?.[key],video=design.media?.[videoKey];
+      const cell=slot?design.sections?.[page]?.instances?.find(i=>i.id===section.id)?.items?.find(i=>i.slot===index):null;
       let open=m[0];
       if(video?.media_id&&VIDEO.test(video.url)){
         open=`<video src="${esc(video.url)}" controls playsinline preload="metadata" aria-label="${esc(video.alt||"Section video")}" style="display:block;width:100%;height:100%;object-fit:cover"${edit?` data-design-video="${videoKey}" data-design-image-slot="${key}"`:""}></video>`;
       }else{
         if(image?.media_id&&safeImage(image.url)){
           open=open.replace(/\s(?:src|srcset|sizes|alt)=["'][^"']*["']/g,"");
-          open=open.replace(/\/?>$/,` src="${esc(safeImage(image.url))}" alt="${esc(image.alt||"")}">`);
+          open=open.replace(/\/?>$/,` src="${esc(safeImage(image.url))}" alt="${esc(cell?.alt??image.alt??"")}">`);
         }
         if(edit){
           // A field is individual to this section, not a shared global image.

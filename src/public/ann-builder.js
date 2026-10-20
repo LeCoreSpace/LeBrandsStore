@@ -214,6 +214,7 @@ function updateBusinessAccess(access){
 const config = () => annPreviewConfiguration(answers, { ...boot.settings, ...(boot.sessionResponse?.preview?.theme || {}) });
 let designUI = null, workspaceUI = null;
 designUI = attachAnnDesign({ api, root, readOnly, businessAllowed:editorAccess.allowed, mount: $("#ann-pagebar") || canvas, toggleMount: $("#ann-edit-toggle"), say, contextual: true, getPreview: () => frame,
+  getSectionContext:()=>({productId,collectionId}),
   sectionState: id => sectionInfo().meta.get(id) || null, onSectionAction: (id, act) => sectionAction(id, act),
   getAnswers: () => answers, getPreviewMode: () => previewMode, getBrand: () => boot.settings?.brand_name || boot.store?.name,
   getStyle: () => config().theme.style_preset,

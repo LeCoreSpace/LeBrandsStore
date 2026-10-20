@@ -2,14 +2,15 @@ import {renderSectionInstance,SECTION_INSTANCE_CSS} from "./section-instances.js
 import {applyDesignContent} from "./ann-section-content.js";
 import {applyRichDesignText} from "./ann-rich-text.js";
 import {validSectionLayout} from "./section-layouts.js";
-import {INSTANCE_ID} from "./section-instance-model.js";
+import {INSTANCE_ID,createSectionInstance} from "./section-instance-model.js";
 
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const previewId="slot-library-00000000000000000000000000000000-0";
 const color=v=>/^#[a-f0-9]{3}(?:[a-f0-9]{3})?$/i.test(v||"")?v:null;
 export function renderSectionLayoutPreview({data={},design={},page="home",instance,layout="original",productId,collectionId}={}){
   if(!instance||!validSectionLayout(instance.family,layout))return "";
-  const item={version:1,...structuredClone(instance),id:INSTANCE_ID.test(instance.id||"")?instance.id:previewId};
+  const existing=INSTANCE_ID.test(instance.id||"");
+  const item={...(existing?{}:createSectionInstance(instance.family,instance.binding,layout)),version:1,...structuredClone(instance),id:existing?instance.id:previewId};
   if(layout==="original")delete item.layout;else item.layout=layout;
   const source={...data,settings:{...data.settings,ann_design:design}};
   let body=renderSectionInstance(item,source,{page,productId,collectionId,designEdit:true});

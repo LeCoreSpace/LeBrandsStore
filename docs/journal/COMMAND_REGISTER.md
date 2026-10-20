@@ -1,5 +1,23 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Grid cells and defaults, phase 4
+
+- Ran `node --test --test-concurrency=1` over 17 section/grid/layout/controller/
+  persistence/asset regression files. All 91 checks passed. The real PGlite
+  fixture verified persisted responsive settings, cell text/link/order, invalid
+  grid rejection and stale revision rejection.
+- Restarted existing managed web/API workflows after the coherent source batch.
+  Synthetic `/__ann-builder-preview/sections-editor` returned 200; the new
+  allowlisted grid UI JavaScript asset also returned 200.
+- Used fictional local fixtures only. No real database queries or migrations,
+  package installs, provider operations, publication or deployment commands.
+- One bounded isolated browser journey passed: four-cell gallery configuration,
+  caption and intentional empty body, move/Undo/move, PATCH 200 and reload,
+  shared Ann visibility, duplicate/delete/Undo and 390px mobile usability.
+- After final default/hidden-cell edge fixes, reran the 33 affected checks; all
+  passed. Restarted the API after that coherent follow-up batch, inspected logs
+  and confirmed the synthetic editor renders with a final screenshot.
+
 ## 20 October 2026: Section layout previews, phase 3
 
 - Working directory: repository root. Target: local development and fictional

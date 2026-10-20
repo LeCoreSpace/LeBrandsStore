@@ -1,3 +1,4 @@
+@import "./section-grid-ui.css";
 /* Shared design workspace: one visual style for the Ann drawer and the theme editor sidebar. */
 .aw{--wine:#6b1735;--wine-d:#4d1026;--tint:#f3e8ec;--sand:#faf6f3;--rule:#e6dcd8;--ink:#38282b;--soft:#7a6a6c;background:var(--sand);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;overflow:auto;scrollbar-width:thin;box-sizing:border-box}
 .aw *{box-sizing:border-box}.aw[hidden]{display:none}

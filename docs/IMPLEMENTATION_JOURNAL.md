@@ -1,5 +1,45 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Section library, phase 4
+
+- Implemented typed grid settings for ten reusable grid families: product and
+  collection grids, related items, galleries, customer photos, logos, product
+  sets, genuine reviews and fixed two-image comparisons.
+- Added selected-block settings in the shared compact ticket-style Ann/theme
+  workspace: four arrangements, responsive column counts, spacing, ratio,
+  fit/focus, alignment, card treatment and displayed item count.
+- Image cells support caption/body/link/alt editing, existing owned-media picker,
+  add/duplicate/delete, direct pointer/touch/keyboard ordering and Undo. Catalogue
+  and review cells select real store records; their prices, stock and review
+  text are not freeform content. Product sets remain individually purchased,
+  not a new bundle discount authority.
+- Separated stable cell slots from array order, retaining the existing validated
+  copy/media namespaces. Legacy grid overrides are mapped on first mutation;
+  opening settings alone does not update a saved draft. Hidden image cells are
+  retained when reducing the number shown.
+- Added meaningful defaults for new grid text and formerly empty description/
+  policy fields. Reserved fallback keys avoid shifting later legacy text edits.
+  Explicit empty text overrides remain empty; save no longer refills cleared
+  copy with neutral defaults.
+- Added tenant checks for cell record references, bounded settings/items,
+  validated links and fixed comparison count. No database migration required.
+- Scope: controls apply to independently added reusable sections. Native theme
+  fragments retain their existing structures; native-block adapters and other
+  repeatable editors remain separate work, not claimed as complete here.
+- Verification so far: 91 scoped checks passed, including actual Worker assets,
+  both editor controllers, cell identity/media/formatting preservation, legacy
+  mapping, malformed/cross-store references, real PGlite save/reload and stale
+  revision rejection. After the final default/hidden-cell edge fixes, 33 affected
+  checks were rerun and passed.
+- One isolated browser journey passed: create gallery, configure four cells,
+  edit caption, clear body intentionally, move/Undo/move, PATCH 200, reload and
+  verify the same cell identity/text/image key/settings. The saved design was
+  also checked in Ann. At 390px the dialog/controls were usable with no
+  horizontal document overflow. Optional duplicate/delete/Undo was checked
+  without publishing or saving that optional extra cell.
+- Final screenshot confirmed the synthetic editor still renders after restart.
+- No live merchant data access, external-service mutation or deployment.
+
 ## 20 October 2026: Section library, phase 3
 
 - Added eight theme-inspired section arrangements plus Original, available for

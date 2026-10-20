@@ -3,6 +3,7 @@ import { validSectionInstances } from "./section-instance-model.js";
 import { productHref } from "./commerce-options.js";
 import { safeImage } from "./aura-sections.js";
 import {SECTION_LAYOUT_CSS} from "./section-layout-css.js";
+import {SECTION_GRID_CSS,gridAttributes,renderSectionGrid} from "./section-grid-render.js";
 
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=v=>`₹${(Math.max(0,Number(v)||0)/100).toLocaleString("en-IN",{maximumFractionDigits:2})}`;
@@ -19,6 +20,7 @@ export const SECTION_INSTANCE_CSS=`
 .lb-message{text-align:center}.lb-message p{margin-inline:auto}.lb-empty{font-size:13px!important;opacity:.7}.lb-section blockquote{margin:0;padding:16px;border-left:2px solid currentColor}.lb-section blockquote footer{font-size:12px}
 @media(max-width:640px){.lb-split{grid-template-columns:1fr}.lb-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.lb-grid img{height:190px}.lb-section dl>div{grid-template-columns:1fr;gap:4px}}
 ${SECTION_LAYOUT_CSS}
+${SECTION_GRID_CSS}
 `;
 function collectionUrl(c){return `/collections/${encodeURIComponent(c.slug||c.id)}`;}
 function selection(instance,data,options){
@@ -48,6 +50,8 @@ function details(product){
   return rows.length?`<dl>${rows.slice(0,16).map(([k,v])=>`<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join("")}</dl>`:"";
 }
 function contents(instance,data,options){
+  const grid=renderSectionGrid(instance,data,options);
+  if(grid!==null)return grid;
   const {family}=instance,editing=Boolean(options.designEdit),sel=selection(instance,data,options);
   const {product,collection,selected,collections}=sel;
   const brand=data.settings?.brand_name||data.store?.name||"Our brand";
@@ -56,6 +60,12 @@ function contents(instance,data,options){
   const guide=text=>paragraph(text);
   const title=sectionLibraryEntry(family).name;
   const textSection=text=>heading(title)+paragraph(text);
+  // Reserved keys let formerly empty fields gain defaults without moving the
+  // saved ordinal keys of later text in legacy sections.
+  const fallback=(text,index=50)=>{
+    const key=`section.${options.page||"home"}.${instance.id}.text${index}`,copy=data.settings?.ann_design?.copy||{};
+    return `<p data-ann-copy-field="${key}"${editing?` data-design-copy="${key}"`:""}>${esc(Object.hasOwn(copy,key)?copy[key]:text)}</p>`;
+  };
   const needsProduct=["featured-product","product-description","product-specifications","materials-care","size-guide","how-to-use","product-guide","routine-guide","related-products"].includes(family);
   if(needsProduct&&!product)return editing?heading(title)+empty("Select an available product for this section."):"";
   if(["collection-header","collection-description","related-collections"].includes(family)&&!collection)
@@ -67,28 +77,28 @@ function contents(instance,data,options){
     case "brand-statement":return textSection(`Discover the details that make ${brand} our own.`);
     case "closing-message":return textSection("Find your next favourite in our collection.");
     case "product-grid":return heading(collection?.title||collection?.name||"Explore our products")+(selected.length?productCards(selected):empty("No products in this selection."));
-    case "featured-product":return `<div class="lb-split sc-card">${photo(product.images?.[0]?.url,product.title,editing)}<div>${heading(product.title||product.name)}${paragraph(product.description||"")}${paragraph(money(product.price_paise))}<a class="lb-link" href="${esc(productHref(product))}">View product</a></div></div>`;
+    case "featured-product":return `<div class="lb-split sc-card">${photo(product.images?.[0]?.url,product.title,editing)}<div>${heading(product.title||product.name)}${paragraph(product.description||"Explore the product details.")}${paragraph(money(product.price_paise))}<a class="lb-link" href="${esc(productHref(product))}">View product</a></div></div>`;
     case "collection-cards":{
       const list=collection?[collection]:collections;
       return heading("Explore our collections")+`<div class="lb-grid">${list.slice(0,8).map(c=>`<a href="${esc(collectionUrl(c))}">${photo(c.image?.url,c.title||c.name)}<h3>${esc(c.title||c.name)}</h3></a>`).join("")}</div>`+(list.length?"":empty("Create a collection to display it here."));
     }
-    case "collection-header":return heading(collection.title||collection.name)+paragraph(collection.description||"");
-    case "collection-description":return heading("About this collection")+paragraph(collection.description||"");
-    case "related-collections":return heading("More collections")+`<div class="lb-grid">${collections.filter(c=>c.id!==collection.id).slice(0,4).map(c=>`<a href="${esc(collectionUrl(c))}"><h3>${esc(c.title||c.name)}</h3>${paragraph(c.description||"")}</a>`).join("")}</div>`;
+    case "collection-header":return heading(collection.title||collection.name)+(collection.description?paragraph(collection.description):fallback("Explore this collection."));
+    case "collection-description":return heading("About this collection")+(collection.description?paragraph(collection.description):fallback("Explore this collection."));
+    case "related-collections":return heading("More collections")+`<div class="lb-grid">${collections.filter(c=>c.id!==collection.id).slice(0,4).map((c,i)=>`<a href="${esc(collectionUrl(c))}"><h3>${esc(c.title||c.name)}</h3>${c.description?paragraph(c.description):fallback("Explore this collection.",50+i)}</a>`).join("")}</div>`;
     case "image-banner":return photo("","Brand image",editing);
     case "image-gallery":return heading("Gallery")+`<div class="lb-grid">${[0,1,2].map(()=>photo("","Gallery image",editing)).join("")}</div>`;
     case "before-after":return heading("Before & After")+`<div class="lb-grid">${photo("","Before image",editing)}${photo("","After image",editing)}</div>`;
     case "brand-story":return textSection(`The story behind ${brand}.`);
     case "about-brand":return heading(`About ${brand}`)+paragraph("Discover our brand and explore our collection.");
-    case "craft-materials":return textSection("Share your materials and making process.");
+    case "craft-materials":return textSection("Explore the materials and details behind our collection.");
     case "store-highlights":return textSection(`Explore ${brand} and its collections.`);
-    case "product-description":return heading(product.title||product.name)+paragraph(product.description||"");
+    case "product-description":return heading(product.title||product.name)+(product.description?paragraph(product.description):fallback("Explore the product details."));
     case "product-specifications":return heading("Product specifications")+(details(product)||empty("Add product specifications in your catalogue."));
     case "materials-care":return heading("Materials & Care")+guide("Follow the product label for materials and care information.");
-    case "size-guide":return heading("Size Guide")+guide("Add the sizing information for this product.");
+    case "size-guide":return heading("Size Guide")+guide("Check the product measurements to find your fit.");
     case "how-to-use":return heading("How to Use")+guide("Follow the instructions supplied with the product.");
     case "product-guide":return heading("Product Guide")+paragraph(product.description||"Product information and guidance.")+details(product);
-    case "routine-guide":return heading("Routine Guide")+guide("Add your product routine and instructions.");
+    case "routine-guide":return heading("Routine Guide")+guide("Explore the steps and follow the instructions supplied with each product.");
     case "related-products":return heading("Explore more products")+productCards(sel.products.filter(p=>p.id!==product.id));
     case "customer-reviews":{
       const reviews=arr(data.reviews).filter(r=>typeof(r.body||r.text)==="string");
@@ -100,17 +110,17 @@ function contents(instance,data,options){
     case "shopping-information":return textSection("See our delivery, payment and returns information before ordering.");
     case "offer-cards":return textSection("Explore our store offers. Discount rules are managed in Offers & codes.");
     case "product-set":return heading("Explore the set")+(selected.length?productCards(selected.slice(0,3))+paragraph(`Product total: ${money(selected.slice(0,3).reduce((sum,p)=>sum+Number(p.price_paise||0),0))}. Products are purchased individually.`):empty("Choose products to display together. No bundle discount is configured here."));
-    case "faq":return heading("Frequently Asked Questions")+`<details><summary>What would you like customers to know?</summary>${paragraph("Add a helpful answer here.")}</details><details><summary>Where can customers find more information?</summary>${paragraph("Visit our contact page for help.")}</details>`;
+    case "faq":return heading("Frequently Asked Questions")+`<details><summary>Where can I learn more about a product?</summary>${paragraph("Read the product description and contact us if you need more information.")}</details><details><summary>How can I contact the store?</summary>${paragraph("Visit our contact page for available contact details.")}</details>`;
     case "delivery-information":return heading("Delivery Information")+paragraph(arr(data.policies).find(p=>p.kind==="shipping")?.body||"See our shipping policy for delivery information.");
     case "contact-information":return heading("Contact Information")+paragraph(data.settings?.contact_email||data.settings?.support_email||brand)+`<a class="lb-link" href="/pages/contact">Contact us</a>`;
-    case "policy-text":return heading("Store Policies")+arr(data.policies).map(p=>`<h3>${esc(p.title||p.kind)}</h3>${paragraph(p.body||p.content||"")}`).join("");
+    case "policy-text":return heading("Store Policies")+(arr(data.policies).length?arr(data.policies).map((p,i)=>`<h3>${esc(p.title||p.kind)}</h3>${p.body||p.content?paragraph(p.body||p.content):fallback("See this store's policy for details.",50+i)}`).join(""):fallback("Read our store policies before placing an order."));
     default:return "";
   }
 }
 export function renderSectionInstance(instance,data={},options={}){
   if(!validSectionInstances([instance],options.page||"home"))return "";
   const content=contents(instance,data,options);
-  return content?`<section class="lb-section" data-section-instance="${esc(instance.id)}" data-section-type="${esc(instance.family)}" data-section-family="${esc(instance.family)}" data-section-layout="${esc(instance.layout||"original")}" data-library-instances="true">${content}</section>`:"";
+  return content?`<section class="lb-section" data-section-instance="${esc(instance.id)}" data-section-type="${esc(instance.family)}" data-section-family="${esc(instance.family)}" data-section-layout="${esc(instance.layout||"original")}" data-library-instances="true"${gridAttributes(instance)}>${content}</section>`:"";
 }
 export function injectSectionInstances(html,sections,data={},options={}){
   const page=options.page||"home",instances=sections?.[page]?.instances;

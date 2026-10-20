@@ -1,0 +1,28 @@
+/* Block settings dialog: ticket language, flat content. */
+.sg{width:min(640px,100%)}
+.sg-tools{display:flex;gap:6px}
+.sg-btn,.sg-add{border:1px solid #cbb9c1;border-radius:4px;background:#fff;color:#6b1735;font:600 12.5px system-ui;padding:6px 12px;min-height:34px;cursor:pointer}
+.sg-add{width:100%;margin-top:10px;border-style:dashed;min-height:40px}
+.sg-btn:hover:not(:disabled),.sg-add:hover:not(:disabled){background:#f3e8ec;border-color:#6b1735}
+.sg-btn:disabled,.sg-add:disabled{opacity:.45;cursor:not-allowed}
+.sg-msg{font-size:12.5px;color:#17543a}.sg-msg:not(:empty){margin:6px 0;padding:6px 8px;border-left:4px solid #1f7a4d;background:#eef6f0}.sg-msg.is-err{color:#7a1818;border-color:#a02020;background:#fdf1f1}
+.sg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px 10px;margin-top:8px}
+.sg-f{display:grid;gap:3px;font:700 11px system-ui;letter-spacing:.06em;text-transform:uppercase;color:#7a6a6c;min-width:0}
+.sg-f input,.sg-f select,.sg-f textarea{width:100%;min-width:0;border:1px solid #cbb9c1;border-radius:4px;background:#fff;color:#38282b;padding:7px 8px;min-height:36px;font:400 13px system-ui;letter-spacing:0;text-transform:none;resize:vertical}
+.sg h4{display:flex;justify-content:space-between;align-items:baseline}.sg-count{font:400 12px system-ui;letter-spacing:0;text-transform:none;color:#7a6a6c}
+.sg-note{margin:6px 0;font-size:12.5px;color:#7a6a6c}
+.sg-cells{list-style:none;margin:0;padding:0;position:relative;border-top:1px dashed #cbb9c1}
+.sg-cell{display:flex;flex-wrap:wrap;align-items:stretch;border-bottom:1px dashed #cbb9c1;background:#fff;position:relative}
+.sg-cell.is-open{border-left:4px solid #6b1735}
+.sg-cell.is-dragging{opacity:.35}.sg-cell.is-grabbed{background:#f3e8ec;outline:2px solid #6b1735;outline-offset:-2px}
+.sg-name{flex:1;min-width:0;display:grid;gap:1px;text-align:left;border:0;background:none;padding:9px 8px;font:600 13.5px system-ui;color:#38282b;cursor:pointer}
+.sg-name span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sg-name small{font:400 11.5px system-ui;color:#7a6a6c}
+.sg-name:hover{color:#6b1735}
+.sg-body{flex:0 0 100%;display:grid;gap:8px;padding:4px 10px 12px 34px}
+.sg-img{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px}
+.sg .aw-acts button{display:grid;place-items:center;width:32px;height:36px;border:0;background:none;color:#7a6a6c;cursor:pointer;border-radius:4px}
+.sg .aw-acts button:hover:not(:disabled){background:#f3e8ec;color:#6b1735}.sg .aw-acts button:disabled{opacity:.35;cursor:not-allowed}
+.sg .aw-grip{width:30px;min-height:40px}
+.sg textarea:focus-visible,.sg input:focus-visible,.sg select:focus-visible,.sg button:focus-visible{outline:2px solid #6b1735;outline-offset:2px}
+.aw-grid-btn svg{width:16px;height:16px}
+@media(max-width:700px){.sg-grid{grid-template-columns:1fr 1fr}.sg-f input,.sg-f select,.sg-f textarea{font-size:16px}.sg-body{padding-left:10px}}
