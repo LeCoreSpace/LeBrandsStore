@@ -1,5 +1,26 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Support ticketing production release
+
+- User approved applying the support migration and publishing to Cloudflare,
+  confirming `support@lebrands.store` as the admin support inbox.
+- Applied only staged migration `0051_support_tickets.sql` through the existing
+  manual Supabase runner. It committed successfully; the recorded checksum
+  matches the source, all eight tables have forced RLS, 29 topics are seeded,
+  effective API-role function access is denied and required APP execution grants
+  are present. No tickets or notification intents existed at verification.
+- Published with `pnpm exec wrangler deploy --keep-vars`. Production version:
+  `c9f56bbc-161f-4b8a-ba49-f98e8058941c`, serving 100% of traffic.
+- Compared production binding fingerprints before/after: all 25 unchanged,
+  including 14 encrypted-secret bindings. Runtime compatibility, routes,
+  scheduled recovery and queue configuration were retained.
+- Live brand/admin support pages require their respective sign-in; unauthenticated
+  APIs return 401 with no-store. Both support entry assets and all four current
+  bundle dependencies return HTTP 200.
+- No test ticket, real email, provider payment or merchant setting mutation was
+  performed. Email recipient configuration and durable delivery are enabled;
+  real provider delivery is not claimed without a live ticket.
+
 ## 2026-10-20: Support ticketing implementation
 
 - Implemented account/pre-store and store-scoped support, with Created, Pending

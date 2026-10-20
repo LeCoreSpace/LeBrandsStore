@@ -2,9 +2,10 @@
 
 ## Implementation status
 
-The initial implementation is complete locally. The operator-applied migration
-is `db/staged/0051_support_tickets.sql`; it has not been applied to the shared
-database or published to Cloudflare.
+Released on 20 October 2026 following explicit approval. The operator-applied
+migration `db/staged/0051_support_tickets.sql` committed to the shared Supabase
+database and the update was published to the production Cloudflare Worker.
+Admin notification delivery uses the approved `support@lebrands.store` inbox.
 
 Implemented: pre-store/account and store tickets, the three requested statuses,
 brand conversations, platform-admin inbox, assignment, priority, internal notes,
@@ -21,7 +22,12 @@ its callable identity and existing verification/reset guards. The migration
 fails closed if that existing function body differs from the reviewed baseline.
 
 Verified with 58 scoped checks and an isolated synthetic browser lifecycle.
-No shared data, real email delivery or production configuration was changed.
+Production checks confirmed the recorded migration checksum, eight forced-RLS
+tables, restricted function grants, protected support routes and all six
+published support assets/dependencies. All 25 existing non-asset bindings,
+including 14 encrypted secrets, and runtime compatibility were preserved.
+No real ticket or test email was created; provider delivery has not been tested
+with a live ticket.
 
 ---
 

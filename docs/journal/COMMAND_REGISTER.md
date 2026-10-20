@@ -1,5 +1,25 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Approved support production release
+
+Working directory: repository root. Target: existing shared Supabase database
+and Cloudflare `lebrands-store`. Explicit user migration/publication approval;
+existing administrative database and Cloudflare secrets were used without
+printing their values.
+
+```sh
+node db/migrate.js --staged-support-tickets
+pnpm exec wrangler deploy --keep-vars
+```
+
+Observed: migration committed and its checksum matched; eight tables have
+forced RLS, no effective anon/authenticated execution grants on support helpers,
+and no required APP function grant was missing. Published Worker version
+`c9f56bbc-161f-4b8a-ba49-f98e8058941c` is at 100%. Production binding
+fingerprints and compatibility were unchanged. Read-only HTTPS checks verified
+sign-in redirects, API 401 responses and six support asset/dependency HTTP 200s.
+No test ticket or real test email was sent.
+
 ## 20 October 2026: Local support ticket implementation
 
 Executed against local/synthetic fixtures only:
