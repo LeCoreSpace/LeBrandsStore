@@ -1,6 +1,6 @@
 # LeBrands.Store implementation journal
 
-## 20 October 2026: Merchant integration cleanup prepared
+## 20 October 2026: Merchant integration cleanup published
 
 - Removed the receipt-inspection form, client request handler and technical
   result formatter from merchant settings. The protected read-only server
@@ -18,8 +18,14 @@
   dry-run build passes. The managed API workflow restarted successfully and
   the native sign-in preview renders; proxy refusals in the drained frontend
   logs occurred during service restart before the successful requests.
-- Prepared locally, not published to Cloudflare. No credentials, database
-  schema, account connections or actual payment settings were changed.
+- Published to Cloudflare after owner approval using keep-vars.
+  Release: af00793f-444c-4bb9-b532-4af6106fd881.
+  Live sign-in and merchant JavaScript return 200; the delivered JavaScript
+  contains plain-language status messages and no receipt-inspection controls.
+  Both CSS entry points import their current versioned bundles, which return
+  200 and contain the green success styles.
+- No credentials, database schema, account connections or actual payment
+  settings were changed.
 
 ## 20 October 2026: Approved safe Razorpay diagnostics released
 
