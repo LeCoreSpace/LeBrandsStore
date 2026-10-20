@@ -1,4 +1,7 @@
 export function migrationSelection(args) {
+  if(args.length===1&&args[0]==="--staged-business-review-reconsider"){
+    return{staged:true,filename:"0053_business_review_reconsider.sql",requires:"0052_business_review_after_publication.sql"};
+  }
   if(args.length===1&&args[0]==="--staged-business-review-after-publication"){
     return{staged:true,filename:"0052_business_review_after_publication.sql",requires:"0051_support_tickets.sql"};
   }

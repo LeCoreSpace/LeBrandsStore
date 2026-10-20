@@ -20,8 +20,10 @@ async function ready(tx,token) {
 async function detail(tx,token,id) {
   const [row]=await tx`SELECT public.business_review_detail(${token},${id}) AS data`;
   const data=decode(row.data);
-  const [features]=await tx`SELECT to_regprocedure('public.business_publication_ready(uuid)') IS NOT NULL AS after_publication`;
+  const [features]=await tx`SELECT to_regprocedure('public.business_publication_ready(uuid)') IS NOT NULL AS after_publication,
+    to_regprocedure('public.business_review_reconsider(text,uuid,integer,text,text,boolean)') IS NOT NULL AS reconsider_available`;
   data.after_publication=features?.after_publication===true;
+  data.reconsider_available=features?.reconsider_available===true;
   for(const doc of data.documents||[])doc.download_url=`${ROOT}/${id}/documents/${doc.id}`;
   return data;
 }
@@ -70,20 +72,28 @@ async function reviewRequest(request,env,db,user,token) {
       });
     } else if(read) {
       data=await db.account(tx=>detail(tx,token,id));
+      data.review_again=data.reconsider_available&&url.searchParams.get("review_again")==="1";
       if(url.searchParams.get("reviewed")==="1")data.notice=data.after_publication
         ?"Decision saved. An email has been queued for the brand."
         :"Decision saved.";
     }
     else {
       const fields=await readForm(request);
-      if([...fields.keys()].some(k=>!["expected_revision","decision","note","manual_review"].includes(k))||
+       if([...fields.keys()].some(k=>!["expected_revision","decision","note","manual_review","review_again"].includes(k))||
         [...fields.keys()].some(k=>fields.getAll(k).length!==1))throw fail("Invalid review form.",400);
-      form={decision:fields.get("decision"),note:fields.get("note")};
+       form={decision:fields.get("decision"),note:fields.get("note"),review_again:fields.get("review_again")==="1"};
+       if(fields.has("review_again")&&!form.review_again)throw fail("Invalid review action.",400);
       const revision=fields.get("expected_revision");
       if(!/^[1-9]\d{0,8}$/.test(revision||"")||!["approved","changes_requested"].includes(form.decision)||
         typeof form.note!=="string"||form.note.trim().length<10||form.note.trim().length>1000||fields.get("manual_review")!=="1")
         throw fail("Confirm manual review and enter a decision note of 10 to 1000 characters.",400);
-      await db.account(tx=>tx`SELECT public.business_review_decide(${token},${id},${Number(revision)},${form.decision},${form.note.trim()},${true})`);
+       await db.account(async tx=>{
+        if(form.review_again){
+         const [feature]=await tx`SELECT to_regprocedure('public.business_review_reconsider(text,uuid,integer,text,text,boolean)') IS NOT NULL AS enabled`;
+         if(!feature?.enabled)throw fail("Review again is not enabled yet. Your decision has not been saved.",503);
+         await tx`SELECT public.business_review_reconsider(${token},${id},${Number(revision)},${form.decision},${form.note.trim()},${true})`;
+        }else await tx`SELECT public.business_review_decide(${token},${id},${Number(revision)},${form.decision},${form.note.trim()},${true})`;
+       });
       return new Response(null,{status:303,headers:{...headers,location:`${ROOT}/${id}?reviewed=1`}});
     }
     const response=page(view,data,user);
@@ -95,7 +105,7 @@ async function reviewRequest(request,env,db,user,token) {
     if(form&&[400,409].includes(status)&&match?.[1]){
       try{data=await db.account(tx=>detail(tx,token,match[1]));}catch{data={};}
     }
-    return page(view,{...data,error,form},user,status);
+     return page(view,{...data,error,form,review_again:!!(data.reconsider_available&&form?.review_again)},user,status);
   }
 }
 

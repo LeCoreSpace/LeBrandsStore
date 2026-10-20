@@ -1,5 +1,27 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Explicit re-review of approved documents, local
+
+- Prepared staged migration `0053_business_review_reconsider.sql`, selected with
+  `--staged-business-review-reconsider` and requiring recorded 0052. It adds an
+  explicit approved-only, revision-checked reviewer function; the original
+  decision function and prepared identity are unchanged.
+- Admin approved-submission pages expose Review again only when the capability
+  exists. Opening/cancelling performs no write. Recording requires a fresh
+  decision, 10-1000-character note and manual examination confirmation.
+- New decisions update reviewer/time, append immutable history marked as a
+  re-review and reuse 0052's atomic email intent and existing delivery retries.
+  Legacy approvals with absent reviewer metadata are supported without bulk
+  resetting records. History now displays the saved decision notes.
+- Seven focused checks passed, covering unchanged original guards, approved
+  re-review, validation/origin restrictions, affiliated/non-reviewer denial,
+  stale retries without duplicate mail, history, recipient intent and API-role
+  grants. Actual private-review, publication and platform-login regression tests
+  passed in isolated PGlite. Full-page synthetic re-review screenshot and managed
+  Worker browser build succeeded.
+- No shared migration, real document review, email delivery or publication.
+  Awaiting explicit approval to publish compatible code then apply only 0053.
+
 ## 2026-10-20: Admin session recovery published
 
 - With explicit owner approval, published version

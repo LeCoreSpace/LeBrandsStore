@@ -54,13 +54,29 @@ export async function setupBusinessReviewFixture() {
   } catch(e){await pg.close();throw e;}
 }
 
-let fixture;
+export async function setupBusinessReconsiderFixture(){
+  const f=await setupBusinessReviewFixture();
+  try{
+    await f.pg.query("INSERT INTO public.schema_migrations(filename,checksum) VALUES('0035_business_document_review.sql','fixture')");
+    await f.pg.exec(await readFile(new URL("../db/staged/0037_platform_billing.sql",import.meta.url),"utf8"));
+    await f.pg.query("INSERT INTO public.schema_migrations(filename,checksum) VALUES('0037_platform_billing.sql','fixture')");
+    for(const file of ["0038_free_subscriptions.sql","0014_transactional_email.sql","0052_business_review_after_publication.sql","0053_business_review_reconsider.sql"])
+      await f.pg.exec(await readFile(new URL(`../db/staged/${file}`,import.meta.url),"utf8"));
+    await f.db.account(tx=>tx`SELECT public.business_review_decide(${f.token},${f.store},1,'approved','Synthetic initial document approval.',true)`);
+    return f;
+  }catch(error){await f.pg.close();throw error;}
+}
+
+let fixture,reconsiderFixture;
 export async function businessReviewPreview(req,res) {
   const url=new URL(req.url,"http://localhost");
-  if(url.pathname!==prefix&&!url.pathname.startsWith(`${prefix}/`))return false;
+  const activePrefix=url.pathname.startsWith("/__business-reconsider-preview")?"/__business-reconsider-preview":prefix;
+  if(url.pathname!==activePrefix&&!url.pathname.startsWith(`${activePrefix}/`))return false;
   try {
-    const f=await (fixture||=setupBusinessReviewFixture().catch(e=>{fixture=null;throw e;}));
-    const suffix=url.pathname.slice(prefix.length);
+    const f=await (activePrefix===prefix
+      ?(fixture||=setupBusinessReviewFixture().catch(e=>{fixture=null;throw e;}))
+      :(reconsiderFixture||=setupBusinessReconsiderFixture().catch(e=>{reconsiderFixture=null;throw e;})));
+    const suffix=url.pathname.slice(activePrefix.length);
     const target=new URL(`/admin/business-reviews${suffix}${url.search}`,origin);
     const headers=new Headers(req.headers);
     // Synthetic fixture only; no live cookies, DB, R2 or scanner is consulted.
@@ -69,12 +85,12 @@ export async function businessReviewPreview(req,res) {
     if(!["GET","HEAD"].includes(req.method))Object.assign(options,{body:Readable.toWeb(req),duplex:"half"});
     let response=await handleBusinessReview(new Request(target,options),f.env,f.db,f.user,f.token);
     if(response.headers.get("content-type")?.includes("text/html")){
-      const html=(await response.text()).replaceAll("/admin/business-reviews",prefix)
+      const html=(await response.text()).replaceAll("/admin/business-reviews",activePrefix)
         .replace("<body>",'<body><p style="padding:8px;text-align:center;background:#fff4ce" role="status">Isolated synthetic review preview. No real business evidence or account access.</p>');
       response=new Response(html,{status:response.status,headers:response.headers});
     }
     res.statusCode=response.status;
-    for(const[k,v]of response.headers)res.setHeader(k,k==="location"?v.replace("/admin/business-reviews",prefix):v);
+    for(const[k,v]of response.headers)res.setHeader(k,k==="location"?v.replace("/admin/business-reviews",activePrefix):v);
     res.end(req.method==="HEAD"?undefined:Buffer.from(await response.arrayBuffer()));
   }catch{res.statusCode=503;res.end("Synthetic business review preview unavailable.");}
   return true;

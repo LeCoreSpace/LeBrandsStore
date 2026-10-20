@@ -41,3 +41,16 @@ requests corrections without automatically suspending a live store; platform
 suspension and restoration remain explicit. Keep reviewers separate from brand
 roles and prohibit affiliated-store review. Production migrations/publication
 still need separate approval.
+
+Approved submissions must support an explicit "Review again" action, including
+older approvals with no recorded reviewer. Opening or cancelling it leaves the
+current approval unchanged; only recording a new manual decision updates review
+metadata, appends history and queues the corresponding brand email.
+
+**Why:** The user confirmed this approach after an already-approved GST document
+was read-only and its earlier reviewer details were missing.
+
+**How to apply:** Keep original reviews immutable, require feedback and manual
+confirmation for either outcome, and reject stale decisions without duplicate
+emails. Re-review is not a store-suspension, GST-verification or publication
+action. Do not bulk-reset historical approvals to make them reviewable.

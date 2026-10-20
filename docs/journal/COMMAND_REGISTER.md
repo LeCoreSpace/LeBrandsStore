@@ -1,5 +1,17 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Local approved-document re-review verification
+
+```sh
+node --test --test-concurrency=1 tests/business-review-reconsider.test.js tests/business-review-after-publication.test.js tests/business-review.test.js tests/platform-admin.test.js
+git diff --check
+```
+
+Seven focused checks passed. Managed Worker restarted once and built cleanly;
+isolated approved-document re-review screenshot verified the new form and
+retained Approved state. Flag `--staged-business-review-reconsider` is registered
+but has not been run against the shared database. No production changes.
+
 ## 20 October 2026: Approved admin session recovery publication
 
 ```sh
