@@ -1,5 +1,12 @@
 # Complete implementation checkpoint register
 
+### Admin session recovery, local
+
+Added correct admin sign-in recovery for brand/expired sessions and
+privilege-independent sign-out with consistent review-page navigation.
+Seventeen focused checks and the isolated browser login/logout journey passed.
+No production changes or manual commit; publication awaits owner approval.
+
 ### Review-after-publication activated in production
 
 Owner-approved release `8b8f3200-f4e2-4c78-845d-2e1d5f7c83b0` serves all

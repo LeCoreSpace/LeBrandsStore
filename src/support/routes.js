@@ -66,8 +66,8 @@ export async function handleSupport(request,env,ctx,dependencies={}){
   const token=await sha256(raw);
   db=(dependencies.createDb||createDb)(env);
   user=await accountRepository(db).session(token);
-  if(!user)throw fail("Your session has ended. Please sign in again.",401);
-  if(user.must_change_password)throw fail("Update your password in your account before continuing.",403);
+  if(!user)throw Object.assign(fail("Your session has ended. Please sign in again.",401),{adminSignIn:admin});
+  if(user.must_change_password)throw Object.assign(fail("Update your password in your account before continuing.",403),{adminSignIn:admin});
   sessionStores=Array.isArray(user.stores)?user.stores:[];
   if(storePath){
    const store=sessionStores.find(item=>item.store_id===storePath[1].toLowerCase());
@@ -77,7 +77,15 @@ export async function handleSupport(request,env,ctx,dependencies={}){
   const [ready]=await db.account(tx=>tx`SELECT to_regprocedure('public.support_list(text,boolean,text,text,text,integer)') IS NOT NULL AS ready`);
   if(!ready?.ready)throw fail("Support tickets are not available yet. Please contact support@lebrands.store while setup is completed.",503);
   // Every admin request uses the existing independent platform-admin authority.
-  if(admin)await db.account(tx=>tx`SELECT public.platform_admin_access(${token})`);
+  if(admin){
+   try{
+    const [access]=await db.account(tx=>tx`SELECT public.platform_admin_access(${token}) AS data`);
+    user={...user,...decode(access.data)};
+   }catch(error){
+    if(error.code==="42501")error.adminSignIn=true;
+    throw error;
+   }
+  }
   if(["GET","HEAD"].includes(request.method)){
    const id=suffix.startsWith("/")?suffix.slice(1):"";
    let data,view;
@@ -142,6 +150,10 @@ export async function handleSupport(request,env,ctx,dependencies={}){
   schedule(env,ctx,dependencies);return json({data:decode(row.data)});
  }catch(error){
   const status=error.status||(error.code==="42501"?403:error.code==="40001"?409:["22023","22P02","23514","23502"].includes(error.code)?400:error.code==="P0001"?429:503);
+  if(error.adminSignIn){
+   if(api)return json({error:"Sign in with your platform administrator account."},status);
+   return new Response(null,{status:303,headers:{...HEADERS,location:`/admin/login?reason=${status===401?"expired":"access"}`}});
+  }
   const message=error.status?error.message:status===403?"You do not have access to this ticket.":status===409?"This ticket has changed. Load the latest version, then try again.":status===429?"You have sent several requests. Please wait before trying again.":status===400?"Check your ticket details and try again.":"Support is temporarily unavailable. Your existing tickets are safe. Contact support@lebrands.store if you need help now.";
   return api?json({error:message},status):page("error",{error:message},status);
  }finally{if(db)await db.close();}

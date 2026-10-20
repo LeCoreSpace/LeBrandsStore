@@ -85,6 +85,13 @@ test("real support DDL, permissions, account/store workflows and durable notific
  await t.test("other brands and forged admin access are denied, with CSRF and input guards",async()=>{
   assert.equal((await call(request(`/api/support/${id}`,"other"))).status,403);
   assert.equal((await call(request("/api/admin/support","brand"))).status,403);
+  const brandAdminPage=await call(request("/admin/support","brand"));
+  assert.equal(brandAdminPage.status,303);
+  assert.equal(brandAdminPage.headers.get("location"),"/admin/login?reason=access");
+  assert.equal(brandAdminPage.headers.get("cache-control"),"no-store");
+  const expiredAdminPage=await call(new Request("https://app.lebrands.store/admin/support",{headers:{cookie:`__Host-lbs_session=${"0".repeat(64)}`}}));
+  assert.equal(expiredAdminPage.status,303);
+  assert.equal(expiredAdminPage.headers.get("location"),"/admin/login?reason=expired");
   assert.equal((await call(request("/api/support","brand",{...base,idempotency_key:crypto.randomUUID()},"https://evil.invalid"))).status,403);
   assert.equal((await call(request("/api/support","brand",{...base,idempotency_key:crypto.randomUUID(),priority:"urgent"}))).status,400);
   assert.equal((await call(request("/api/support","brand",{...base,idempotency_key:crypto.randomUUID(),context:{api_secret:"private"}}))).status,400);

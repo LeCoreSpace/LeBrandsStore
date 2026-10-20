@@ -1,5 +1,19 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Local admin session recovery verification
+
+```sh
+node --test --test-concurrency=1 tests/platform-admin.test.js tests/support-tickets.test.js tests/business-review.test.js
+git diff --check
+```
+
+Seventeen checks passed, followed by one successful browser journey using only
+the isolated platform-admin PGlite preview. A read-only production metadata
+audit confirmed the configured administrator is present/active and APP grants
+exist. No production sessions created or credentials changed. Managed Worker
+restarted once and built cleanly. Code-only release awaits approval; no
+migration is required.
+
 ## 20 October 2026: Approved review-after-publication activation
 
 Working directory: repository root. Targets: existing Cloudflare Worker and

@@ -26,6 +26,23 @@ test("real admin schema enforces staff access, login, sanitized data and reversi
   const cookie=accepted.headers.get("set-cookie").split(";")[0],raw=cookie.split("=")[1],token=await sha256(raw);
   assert.match(accepted.headers.get("set-cookie"),/Secure; HttpOnly; SameSite=Lax/);
   assert.equal((await call(new Request(root,{headers:{cookie}}))).status,200);
+  const brandRaw="5".repeat(64),brandHash=await sha256(brandRaw),brandCookie=`__Host-lbs_session=${brandRaw}`;
+  await f.pg.query("INSERT INTO public.sessions(user_id,token_hash) SELECT user_id,$1 FROM public.sessions WHERE token_hash=$2 LIMIT 1",[brandHash,f.ownerToken]);
+  const brandPage=await call(new Request(root,{headers:{cookie:brandCookie}}));
+  assert.equal(brandPage.status,303);
+  assert.equal(brandPage.headers.get("location"),"/admin/login?reason=access");
+  const accessLogin=await call(new Request(root+"/login?reason=access"));
+  assert.match(await accessLogin.text(),/A brand account cannot open the admin dashboard/);
+  assert.equal((await call(post("/logout",{},brandCookie,"https://evil.test"))).status,403);
+  assert.equal((await call(new Request(root+"/logout",{headers:{cookie:brandCookie}}))).status,303);
+  assert.equal((await f.pg.query("SELECT revoked_at IS NULL AS active FROM sessions WHERE token_hash=$1",[brandHash])).rows[0].active,true);
+  const brandLogout=await call(post("/logout",{},brandCookie));
+  assert.equal(brandLogout.headers.get("location"),"/admin/login");
+  assert.match(brandLogout.headers.get("set-cookie"),/Max-Age=0/);
+  assert.equal((await f.pg.query("SELECT revoked_at IS NOT NULL AS revoked FROM sessions WHERE token_hash=$1",[brandHash])).rows[0].revoked,true);
+  const noSessionLogout=await call(post("/logout",{}));
+  assert.equal(noSessionLogout.headers.get("location"),"/admin/login");
+  assert.match(noSessionLogout.headers.get("set-cookie"),/Max-Age=0/);
   for(const section of ["integrations","domains","gst","subscriptions","payments","suspensions"]){
    assert.equal(isPlatformAdminRoute(`/admin/${section}`),true);
    assert.equal((await call(new Request(`${root}/${section}`))).headers.get("location"),"/admin/login");
@@ -47,6 +64,7 @@ test("real admin schema enforces staff access, login, sanitized data and reversi
    assert.match(html,/href="\/admin\/business-reviews" aria-current="page"/);
    assert.match(html,/class="pa-side"/);
    assert.match(html,/business-review\.css/);
+   assert.match(html,/action="\/admin\/logout"/);
    assert.doesNotMatch(html,/<footer/);
   }
   const overview=await f.db.account(async tx=>(await tx`SELECT public.platform_admin_overview(${token},${""},${"all"},${0}) AS data`)[0].data);
@@ -69,7 +87,13 @@ test("real admin schema enforces staff access, login, sanitized data and reversi
   assert.equal((await f.pg.query("SELECT status FROM stores WHERE store_id=$1",[f.store])).rows[0].status,"draft");
   assert.equal((await f.pg.query("SELECT count(*)::int AS n FROM platform_admin_events WHERE store_id=$1",[f.store])).rows[0].n,2);
   await f.pg.query("UPDATE platform_administrators SET active=false WHERE user_id=$1",[f.user.id]);
-  assert.equal((await call(new Request(root,{headers:{cookie}}))).status,403);
+  const revokedPage=await call(new Request(root,{headers:{cookie}}));
+  assert.equal(revokedPage.status,303);
+  assert.equal(revokedPage.headers.get("location"),"/admin/login?reason=access");
+  const revokedLogout=await call(post("/logout",{},cookie));
+  assert.equal(revokedLogout.status,303);
+  assert.match(revokedLogout.headers.get("set-cookie"),/Max-Age=0/);
+  assert.equal((await f.pg.query("SELECT revoked_at IS NOT NULL AS revoked FROM sessions WHERE token_hash=$1",[token])).rows[0].revoked,true);
  }finally{await f.pg.close();}
 });
 

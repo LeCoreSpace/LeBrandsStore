@@ -75,7 +75,7 @@ export function renderPlatformAdminFrame(title, inner, admin, active = "stores",
 <div class="pa-shell"><aside class="pa-side"><a class="pa-brand" href="${ROOT}" aria-label="LeBrands.Store Operations home">${logo}<span>Operations</span></a>
 <nav aria-label="Operations">${nav}</nav>
 <div class="pa-who"><p class="pa-sub-d">Signed in as</p><strong>${esc(who)}</strong><span>${esc(sub && sub !== who ? sub : "")}</span>
-<form method="post" action="${active === "business-reviews" ? "/logout" : `${ROOT}/logout`}"><button class="pa-btn pa-btn-ghost" type="submit">Sign out</button></form></div></aside>
+<form method="post" action="${ROOT}/logout"><button class="pa-btn pa-btn-ghost" type="submit">Sign out</button></form></div></aside>
 <main id="pa-main" class="pa-main" tabindex="-1">${inner}</main></div></body></html>`;
 }
 const frame = renderPlatformAdminFrame;
@@ -83,6 +83,7 @@ const alertBox = (msg, href) => `<div class="pa-alert" role="alert"><strong>${es
 
 function login(d) {
   return `${head("Sign in")}<body class="pa-app pa-login"><main class="pa-login-card" id="pa-main"><div class="pa-login-brand">${logo}<p>Operations</p></div>
+${d.notice ? `<p class="pa-alert" role="status">${esc(d.notice)}</p>` : ""}
 <h1>Platform administration</h1><p class="pa-lede">Restricted to the platform owner. Every action is recorded against your name.</p>
 ${d.error ? alertBox(String(d.error)) : ""}
 <form method="post" action="${ROOT}/login" autocomplete="on"><label class="pa-field" for="pa-user"><span>Username</span><input id="pa-user" name="username" required autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="120" value="${esc(d.username || "")}" ${d.username ? "" : "autofocus"}></label>

@@ -1,5 +1,25 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Admin session recovery, local verification
+
+- Diagnosed a brand session being rendered inside the admin support error frame.
+  Read-only production checks confirmed the configured administrator is active
+  and the relevant APP function grants exist; no credentials or grants changed.
+- Unauthorized/expired admin requests now direct HTML visitors to explicit
+  platform sign-in instead of showing a misleading signed-in admin shell.
+  Support API requests retain authorization errors and tenant protection.
+- Admin sign-out revokes the presented session before any admin-role check,
+  allowing brand and revoked-admin sessions to leave the admin area. Missing
+  sessions clear the cookie idempotently; CSRF and strict form checks remain.
+  Business reviews now uses the same admin sign-out destination.
+- Seventeen focused checks passed. A synthetic browser journey verified admin
+  sign-in, populated overview and review queue, sign-out from both screens,
+  cookie removal, protected-page return and the brand/admin explanation.
+  Local Worker build and screenshot passed. Existing inline-style CSP warnings
+  did not affect the journey; no policy was weakened.
+- No production publication, schema/data writes, credential reset or permission
+  elevation performed. This code-only fix awaits publication approval.
+
 ## 2026-10-20: Review-after-publication activated in production
 
 - With explicit owner approval, published the compatible Cloudflare code before

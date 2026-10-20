@@ -26,14 +26,22 @@ async function dispatch(request,env,ctx,dependencies){
  const url=new URL(request.url),path=url.pathname,read=["GET","HEAD"].includes(request.method);
  if(!read&&request.method!=="POST")return page("error",{error:"Method not allowed.",status:405},405);
  if(!read&&!isValidOrigin(request))return page("error",{error:"Invalid request origin.",status:403},403);
- if(path==="/admin/login"&&read)return page("login");
+ if(path==="/admin/login"&&read)return page("login",{notice:url.searchParams.get("reason")==="access"?"Sign in with your platform administrator username and password. A brand account cannot open the admin dashboard.":url.searchParams.get("reason")==="expired"?"Your admin session has ended. Please sign in again.":null});
  if(read&&path.endsWith("/suspension"))return page("error",{error:"Use the store controls to record a decision.",status:405},405);
  const raw=readSessionToken(request);
- if(!raw&&path!=="/admin/login")return redirect("/admin/login");
+ if(path==="/admin/logout"&&read)return redirect(raw?"/admin":"/admin/login");
+ if(!raw&&path!=="/admin/login")return redirect("/admin/login",path==="/admin/logout"?sessionCookie("",true):undefined);
  let db,admin,detailId;
  try{
   db=(dependencies.createDb||createDb)(env);
   const repo=dependencies.repository||accountRepository(db);
+  // Ending the presented session must not require a current admin grant.
+  // Otherwise brand, expired and revoked-admin sessions become stuck here.
+  if(path==="/admin/logout"){
+   const form=await readForm(request);exactForm(form,[]);
+   await repo.revoke(await sha256(raw));
+   return redirect("/admin/login",sessionCookie("",true));
+  }
   const [schema]=await db.account(tx=>tx`SELECT to_regprocedure('public.platform_admin_access(text)') AS definition`);
   if(!schema?.definition)throw fail("The platform admin migration has not been applied. No store data has been changed.",503);
   if(path==="/admin/login"){
@@ -62,11 +70,6 @@ async function dispatch(request,env,ctx,dependencies){
   const token=await sha256(raw);
   const [access]=await db.account(tx=>tx`SELECT public.platform_admin_access(${token}) AS data`);
   admin=decode(access.data);
-  if(path==="/admin/logout"){
-   if(read)return redirect("/admin");
-   const form=await readForm(request);exactForm(form,[]);
-   await repo.revoke(token);return redirect("/admin/login",sessionCookie("",true));
-  }
   const match=path.match(DETAIL);
   const section=sectionFor(path);
   if(path==="/admin"||section){
@@ -93,6 +96,8 @@ async function dispatch(request,env,ctx,dependencies){
   const [row]=await db.account(tx=>tx`SELECT public.platform_admin_detail(${token},${id}) AS data`);
   return page("store",{...decode(row.data),admin});
  }catch(error){
+  if(error.code==="42501"&&!admin&&path!=="/admin/login"&&path!=="/admin/logout")
+   return redirect("/admin/login?reason=access");
   const status=error.status||(error.code==="42501"?403:error.code==="P0002"?404:error.code==="40001"?409:["22023","22P02","INVALID_FORM"].includes(error.code)?400:503);
   const message=status>=500?"Platform administration is unavailable. Check the admin migration and database configuration. No action was recorded.":status===403?"Platform administrator access is required. Sign in with an authorised platform account.":error.message;
   // A rejected request never causes a privileged re-read on a permission error.
