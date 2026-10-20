@@ -45,3 +45,13 @@ saved heading, caption or image to a different field.
 same order. A future structurally different renderer needs an explicit field
 mapping or migration before it can replace an already edited section. Never
 change the whole store theme as a side effect of choosing one section layout.
+
+Grid-based sections should offer controls for how the grid looks, the number
+of cells and the contents of each cell. Every text subsection should start
+with default editable text.
+
+**Why:** The user explicitly requested these capabilities after reviewing the
+layout-selection phase; visual layout choices alone are not sufficient.
+
+**How to apply:** Treat grid and repeated-item editing, and initial text
+defaults, as section-library requirements rather than theme-specific extras.
