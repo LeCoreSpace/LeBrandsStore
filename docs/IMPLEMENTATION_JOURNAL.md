@@ -1,5 +1,21 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Approved Live OAuth configuration blocked at preflight
+
+- User approved configuration-only production changes with checkout kept off
+  and confirmed the production webhook already exists with six selected events.
+- Read-only Cloudflare inspection found the three OAuth credentials and mode
+  absent on the main production Worker; its existing encryption binding was
+  present. The deployment had one active version receiving all traffic.
+- Separate Live entries were saved in the secure workspace secret flow.
+  Boolean-only preflight confirmed the client pair differs from Test, but the
+  Live webhook signing secret equals Test. A managed runtime refresh confirmed
+  the finding.
+- The operation stopped before any Cloudflare write, source upload, database
+  change or payment activation. Request only a distinct Live webhook signing
+  secret and update the existing Razorpay Live webhook, not the Test setup.
+  Production configuration remains pending.
+
 ## 20 October 2026: Removed nested integration Settings card frames
 
 - Corrected the layered boxes highlighted by the user: shared Settings

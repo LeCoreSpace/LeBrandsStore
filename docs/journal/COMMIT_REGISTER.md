@@ -1,5 +1,11 @@
 # Complete implementation checkpoint register
 
+### Live OAuth configuration preflight, 20 October 2026
+
+Recorded explicit production configuration approval and a preflight block:
+Live/Test webhook signing secrets match. No production writes, code upload,
+payment activation or manual Git commit occurred.
+
 ### Flat integration Settings presentation, 20 October 2026
 
 Removed nested onboarding/provider frames in dedicated Settings and repeated

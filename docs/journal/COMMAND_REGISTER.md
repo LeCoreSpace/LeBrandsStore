@@ -1,5 +1,23 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Live OAuth production preflight, no changes applied
+
+- User explicitly approved production configuration only, with checkout off.
+- Read Cloudflare main Worker settings and deployment metadata using runtime
+  credentials without printing values. OAuth bindings/mode were absent and a
+  single active version had 100% traffic.
+- Consulted Cloudflare's published SDK for settings-only multipart PATCH and
+  inherited bindings. A read-only `/content` probe returned 405; the SDK
+  documents the Worker root GET for a code baseline. No source was uploaded.
+- The guarded configuration command stopped during local secret validation,
+  before its PATCH: Live client pair differs from Test, but webhook secrets
+  match. Restarted the managed API once and confirmed the same boolean result.
+- No production binding was written, no provider event was sent, and no
+  checkout, merchant record or deployment code was changed.
+
+Pending: update only the existing Live webhook's signing secret and the
+Live-only secure entry, then resume the approved guarded configuration.
+
 ## 20 October 2026: Single-surface integration Settings verification
 
 - `node --test --test-concurrency=1 tests/ann-launch-ui.test.js tests/razorpay-oauth-ui.test.js tests/dashboard-navigation.test.js`:
