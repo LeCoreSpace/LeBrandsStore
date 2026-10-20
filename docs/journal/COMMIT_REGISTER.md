@@ -1,5 +1,14 @@
 # Complete implementation checkpoint register
 
+### Shared Supabase OAuth migration, 20 October 2026
+
+The user approved applying the OAuth database migration. Added a separate,
+targeted permissions migration after effective-role checks exposed Supabase
+default grants; both migration records and the resulting restricted privileges
+were verified. Source tests and release guidance were updated. No manual Git
+commit or Worker deployment was performed; migration execution is recorded in
+the command register, not inferred from a source checkpoint.
+
 ### OAuth source work, 20 October 2026
 
 Razorpay OAuth code, tests, integration controls and manual release guidance were

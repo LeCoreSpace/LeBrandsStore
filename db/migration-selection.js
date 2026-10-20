@@ -1,4 +1,7 @@
 export function migrationSelection(args) {
+  if(args.length===1&&args[0]==="--staged-razorpay-oauth-permissions"){
+    return{staged:true,filename:"0049_razorpay_oauth_permissions.sql",requires:"0048_razorpay_oauth.sql"};
+  }
   if(args.length===1&&args[0]==="--staged-razorpay-oauth"){
     return{staged:true,filename:"0048_razorpay_oauth.sql",requires:"0018_commerce_runtime.sql"};
   }

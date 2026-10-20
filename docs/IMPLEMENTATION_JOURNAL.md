@@ -1,5 +1,23 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Approved OAuth database migration
+
+- With the user's explicit approval, applied the OAuth routing/refresh migration
+  to the project's shared Supabase database using the existing administrative
+  migration runner.
+- Effective-permission verification exposed Supabase's direct default grants
+  to API roles despite PUBLIC access being revoked. Kept the applied migration
+  immutable and applied a targeted follow-on permissions migration for the same
+  two internal functions. No global default privileges were changed.
+- Verified both recorded migration checksums, fixed function search paths,
+  SECURITY DEFINER status, application-role execution and denied execution for
+  PUBLIC, anon, authenticated and service_role.
+- Added a synthetic fixture reproducing Supabase's default function grants;
+  the OAuth and migration-selection check run passed all 11 checks.
+- Queried only migration/system metadata for verification. No merchant records
+  were read or changed. No Worker deployment, Razorpay webhook creation,
+  provider authorisation or payment activation was performed.
+
 ## 20 October 2026: Razorpay merchant OAuth implementation
 
 - After the user confirmed correcting the test signing secret, included its

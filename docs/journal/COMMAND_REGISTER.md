@@ -1,5 +1,32 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Approved shared Supabase OAuth migration
+
+Working directory: workspace root. The user explicitly approved the OAuth
+migration to the existing shared Supabase database. The existing runner used
+only the administrative secret, validated its Supabase target, cleared PG
+environment fallbacks and used one SSL client per command.
+
+- `node db/migrate.js --staged-razorpay-oauth`: committed the routing/refresh
+  functions and its migration record. Existing commerce-runtime prerequisites
+  were checked by the runner.
+- A read-only metadata check verified its checksum and function search paths,
+  but failed the intended permissions check because Supabase had granted
+  execution directly to its API roles through default privileges.
+- `node db/migrate.js --staged-razorpay-oauth-permissions`: committed targeted
+  revocations for those same two functions, retaining application-role
+  execution. The first migration/checksum was not rewritten.
+- A second read-only metadata check verified both checksums and effective
+  permissions: application execution allowed; PUBLIC, anon, authenticated and
+  service_role execution denied for both functions.
+- `node --test --test-concurrency=1 tests/razorpay-oauth.test.js tests/migration-selection.test.js`:
+  11 checks passed, including a fixture reproducing Supabase's direct defaults.
+- `git diff --check`: clean.
+
+Only schema/migration metadata was queried, not merchant data. No business
+records, global default privileges, production secrets, deployed Worker,
+provider configuration or payment activation were changed.
+
 ## 20 October 2026: Razorpay OAuth verification
 
 - Ran seven focused Node test files serially: OAuth backend/UI, Ann launch

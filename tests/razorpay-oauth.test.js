@@ -66,7 +66,26 @@ test("tenant-isolated OAuth lifecycle, legacy preservation, replay rejection, re
     return Response.json(String(url).endsWith("/revoke")?{message:"Token Revoked"}:token(body.grant_type==="refresh_token"?"Rotated":"One"));
   };
   try{
+    await pg.exec(`DO $$ DECLARE r text; BEGIN
+      FOREACH r IN ARRAY ARRAY['anon','authenticated','service_role'] LOOP
+        IF to_regrole(r) IS NULL THEN EXECUTE format('CREATE ROLE %I',r); END IF;
+      END LOOP; END; $$;
+      ALTER DEFAULT PRIVILEGES GRANT EXECUTE ON FUNCTIONS TO anon,authenticated,service_role;`);
     await pg.exec(await readFile("db/staged/0048_razorpay_oauth.sql","utf8"));
+    await t.test("Supabase direct default grants are explicitly removed, not just PUBLIC access",async()=>{
+      const permissions=()=>pg.query(`SELECT p.proname,
+        has_function_privilege('lebrands_app',p.oid,'EXECUTE') app,
+        has_function_privilege('anon',p.oid,'EXECUTE') anon,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') authenticated,
+        has_function_privilege('service_role',p.oid,'EXECUTE') service
+        FROM pg_proc p WHERE p.oid IN(to_regprocedure('public.resolve_razorpay_oauth_webhook(text,text,text,text)'),
+          to_regprocedure('public.list_razorpay_oauth_refresh(text)'))`);
+      const initial=(await permissions()).rows;
+      assert.equal(initial.length,2);
+      assert.ok(initial.every(r=>r.anon&&r.authenticated&&r.service),"Reproduce Supabase defaults instead of assuming a clean database");
+      await pg.exec(await readFile("db/staged/0049_razorpay_oauth_permissions.sql","utf8"));
+      assert.ok((await permissions()).rows.every(r=>r.app&&!r.anon&&!r.authenticated&&!r.service));
+    });
     await t.test("owner and Origin gates block writes without calling Razorpay",async()=>{
       assert.equal((await handleRazorpayOAuth(req(`/api/stores/${id}/integrations/razorpay/start`,{confirm:true},"https://evil.invalid"),env,db,{id:owner},hash,{fetcher})).status,403);
       assert.equal((await handleRazorpayOAuth(req(`/api/stores/${id}/integrations/razorpay/start`,{confirm:true}),env,db,{id:editor},hash,{fetcher})).status,403);

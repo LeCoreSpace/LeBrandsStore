@@ -40,6 +40,7 @@ Manual, separately approved release step:
 
 ```
 node db/migrate.js --staged-razorpay-oauth
+node db/migrate.js --staged-razorpay-oauth-permissions
 ```
 
 `db/staged/0048_razorpay_oauth.sql` requires the existing commerce runtime
@@ -47,6 +48,12 @@ migration. It adds two restricted, read-only SECURITY DEFINER functions for
 partner webhook routing and scheduled refresh candidates. It does not change
 existing financial functions, table ownership or stored orders. Execute is
 revoked from PUBLIC and granted only to `lebrands_app`.
+
+Apply both migrations: Supabase can also grant new functions directly to
+`anon`, `authenticated` and `service_role` through its default privileges.
+The targeted permissions migration removes those grants from these two
+internal functions without changing global defaults or existing financial
+functions. Verify effective privileges, not just the absence of PUBLIC grants.
 
 The resolver returns only store IDs. A valid partner HMAC is required before
 calling it. A historical order ID is only a routing hint: the tenant handler

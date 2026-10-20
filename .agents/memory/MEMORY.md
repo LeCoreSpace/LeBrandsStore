@@ -55,3 +55,4 @@
 - [Store offers boundaries](store-offers-boundaries.md) — separate menu, staged offer types and future bundles; preserve historical allocations and best final payable total.
 - [Shopper email verification](shopper-email-verification.md) — verified email is mandatory before new orders; keep shopper checkout identity separate from merchant accounts.
 - [Partner integration direction](partner-integration-direction.md) — Razorpay website approved; partner OAuth and one logistics integration remain upcoming, not generally available.
+- [Supabase function grants](supabase-function-defaults.md) — PUBLIC revocation does not remove direct API-role defaults; verify effective privileges for internal functions.
