@@ -1,5 +1,12 @@
 # Complete implementation checkpoint register
 
+### Production Live client binding update, 20 October 2026
+
+Applied the approved Live client pair, mode and callback using four encrypted
+Worker binding updates. Existing code and unrelated bindings were preserved;
+no workspace source was published. The signing-secret binding remains pending.
+Documentation updated; no manual Git commit or payment activation occurred.
+
 ### Live OAuth configuration preflight, 20 October 2026
 
 Recorded explicit production configuration approval and a preflight block:

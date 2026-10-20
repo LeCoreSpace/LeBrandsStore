@@ -1,5 +1,29 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Live client configuration applied; webhook remains pending
+
+- After the secure replacement confirmation and runtime refresh, the Live
+  webhook entry still compared equal to Test. Left that binding unwritten;
+  the user's existing Razorpay webhook does not need recreation.
+- Independently completed the approved client configuration: bound the Live
+  client pair, live mode and production callback on the main Worker through
+  individual Secret PUT operations. All four bindings are encrypted. Test
+  values and the separate Test receiver were not changed.
+- An earlier settings-only multipart PATCH using inherited bindings was
+  rejected by Cloudflare with code 10057. No settings from that request were
+  applied. Switched to the supported per-binding Secret API, without uploading
+  workspace application code.
+- Verified production code-module hashes and every unrelated binding remained
+  unchanged. Full metadata equality differed because version annotations
+  changed; compatibility date, flags and usage model were checked against the
+  deployment before the four Secret updates and remained unchanged.
+- Production login returned 200 and callback redirected to sign-in. The
+  webhook receiver returns 503 while its signing secret is absent. The separate
+  Test receiver remains configured in test mode and returns 200.
+- No merchant data write, real OAuth consent, provider-sent event or checkout
+  activation was performed. Live account consent and signing-secret resolution
+  are still required; this is not end-to-end Live payment verification.
+
 ## 20 October 2026: Approved Live OAuth configuration blocked at preflight
 
 - User approved configuration-only production changes with checkout kept off

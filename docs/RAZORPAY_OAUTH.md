@@ -22,6 +22,16 @@ They do not synchronise between those services. Never use OAuth credentials in
 `RAZORPAY_KEY_ID` / `RAZORPAY_KEY_SECRET`, expose them to client JavaScript or put
 them in a committed configuration file. Missing or invalid mode fails closed.
 The callback defaults to the production URL above if its override is absent.
+The production client pair, mode and callback were configured through individual
+Worker Secret updates, without publishing application code. Mode and callback
+are non-sensitive values but intentionally use encrypted bindings too, allowing
+a binding-only update that preserves existing resource bindings. Do not add
+same-named plain-text Wrangler variables without an explicit binding conversion.
+Their values cannot be read back through Cloudflare settings metadata.
+
+The production webhook binding remains pending resolution of the Live-only
+signing-secret entry; the Razorpay webhook itself already exists. Do not infer
+webhook readiness from successful OAuth client configuration.
 For a different development host, register its exact HTTPS callback path in the
 Razorpay Development section before setting the override. Redirect and webhook
 URLs are different.

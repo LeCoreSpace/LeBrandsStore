@@ -58,3 +58,4 @@
 - [Supabase function grants](supabase-function-defaults.md) — PUBLIC revocation does not remove direct API-role defaults; verify effective privileges for internal functions.
 - [Secret runtime refresh](secret-runtime-refresh.md) — restart the relevant managed service before diagnosing a newly saved secret as invalid.
 - [OAuth verification limits](razorpay-oauth-verification.md) — invalid-code probes do not prove bad credentials; synthetic delivery is not real provider consent or matched-account processing.
+- [Cloudflare binding updates](cloudflare-binding-updates.md) — targeted Secret updates preserve code; inherited settings PATCH failed, and version annotations change independently of runtime settings.

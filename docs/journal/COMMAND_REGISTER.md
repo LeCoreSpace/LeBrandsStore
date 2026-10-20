@@ -1,5 +1,28 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Production Live client bindings applied without code upload
+
+- Refreshed the managed API after the secure secret confirmation. Boolean-only
+  preflight still found matching Live/Test signing secrets; did not write a
+  production webhook secret.
+- Settings-only multipart PATCH with inherited bindings returned HTTP 400,
+  code 10057. Existing settings remained unchanged.
+- Used four targeted Cloudflare Worker Secret PUT requests for the Live client
+  pair, `RAZORPAY_OAUTH_MODE=live` and the registered production callback.
+  Credentials came directly from runtime Live-only secret entries, never files,
+  arguments or printed values. Non-sensitive mode/callback are encrypted too.
+- Before/after comparisons confirmed unchanged production code module hashes
+  and unchanged unrelated bindings. Cloudflare version annotations changed;
+  read-only deployment-history comparison confirmed the previous compatibility
+  date, flags and usage model were retained.
+- External checks: production login 200, callback 303, unsigned partner webhook
+  503 because its secret remains absent; isolated Test receiver health 200,
+  configured=true and mode=test.
+
+No application source upload, customer/store mutation or payment activation.
+The Razorpay Live webhook already exists. Resolve the matching-signing-secret
+question before writing its Worker binding or claiming webhook verification.
+
 ## 20 October 2026: Live OAuth production preflight, no changes applied
 
 - User explicitly approved production configuration only, with checkout off.
