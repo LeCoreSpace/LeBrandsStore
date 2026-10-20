@@ -37,7 +37,7 @@ export function orderActionForm(storeId,orderId,transitions) {
     <p data-shipping-error hidden role="alert"><span></span> <a href="/stores/${storeId}/settings">Open Settings</a></p></div>`;
 }
 
-export function documentPage(view, data, user, body, extraHead = "") {
+export function documentPage(view, data, user, body, extraHead = "", shell = {}) {
   const store = obj(data.store);
   const storeId = String(store.store_id || "");
   if(data.business_access?.allowed===false)
@@ -49,7 +49,7 @@ export function documentPage(view, data, user, body, extraHead = "") {
   const title = ({
     overview: "Home", marketing:"Marketing integrations", "checkout-settings": "Checkout settings", orders: "Orders", order: "Order details", products: "Products", inventory: "Stock & SKUs", cogs: "Product costs", offers: "Offers & codes", analytics: "Analytics",
     "product-new": "Add product", product: "Edit product", collections: "Collections", "collection-new": "Add collection", collection: "Edit collection", customers: "Customers",
-    customer: "Customer details", invoices: "Invoices", settings: "Settings", "ai-builder":"Legacy build", builder:"Build your store",
+    customer: "Customer details", invoices: "Invoices", settings: "Settings", "ai-builder":"Legacy build", builder:"Build your store", support:"Help & support",
   })[view] || "Overview";
   const connectionKind = data.connectionKind;
   return layout({
@@ -57,6 +57,8 @@ export function documentPage(view, data, user, body, extraHead = "") {
     description: `${title} workspace for ${store.name || "your store"}.`,
     canonical: `https://app.lebrands.store/stores/${encodeURIComponent(storeId)}/${view === "overview" ? "" : view === "builder" ? "build" : view === "checkout-settings" ? "settings/checkout" : view}`,
     noindex: true,
+    ...(shell.nonce ? { nonce: shell.nonce } : {}),
+    ...(shell.navigationFeedback === false ? { navigationFeedback: false } : {}),
     extraHead: '<link rel="stylesheet" href="/assets/dashboard.css"><script type="module" src="/assets/dashboard.js"></script>' + (["product","product-new"].includes(view) ? '<link rel="stylesheet" href="/assets/product-media-editor.css">' : "") + (view === "settings" && !connectionKind ? '<link rel="stylesheet" href="/assets/ann-business-documents.css">' : "") + (view === "analytics" ? '<link rel="stylesheet" href="/assets/analytics.css"><script type="module" src="/assets/analytics.js"></script>' : "") + (view === "offers" ? '<script type="module" src="/assets/offers.js"></script>' : "") + (view === "cogs" ? '<link rel="stylesheet" href="/assets/cogs.css"><script type="module" src="/assets/cogs.js"></script>' : "") + (view === "inventory" ? '<link rel="stylesheet" href="/assets/inventory.css"><script type="module" src="/assets/inventory.js"></script>' : "") + (connectionKind ? '<link rel="stylesheet" href="/assets/ann-builder.css"><script type="module" src="/assets/settings-connections.js"></script>' : "") + extraHead,
     body: `<div class="lb-app" data-store-id="${esc(storeId)}" data-role="${esc(data.role || "editor")}">
       ${header(data, user, view)}
@@ -81,7 +83,7 @@ function header(data, user, view) {
       <div class="lb-sidebar-top"><a class="lb-wordmark" href="${root}" aria-label="LeBrands home"><span class="lb-mark">${LE_BRANDS_MARK}</span><span class="lb-logo">${LE_BRANDS_LOGO}</span></a><button type="button" class="lb-icon-button lb-sidebar-collapse" data-sidebar-collapse aria-label="Collapse sidebar" title="Collapse sidebar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button></div>
       <div class="lb-store-switch"><span class="lb-store-avatar">${esc(String(store.name || "S").trim().slice(0,1).toUpperCase())}</span><span class="lb-store-switch-copy"><strong>${esc(store.name || "Your store")}</strong><small class="lbn-status" data-tone="${status.tone}">${esc(status.label)}</small></span><a href="${esc(storeUrl)}" class="lb-view-store" ${store.subdomain ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'} aria-label="View store" title="View store"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M7 7h10v10"/></svg></a></div>
       ${renderSidebarNav({ storeId: store.store_id || "", view, role: data.role, subdomain: store.subdomain })}
-      <div class="lb-sidebar-bottom"><a class="lbn-help" href="/support?store_id=${esc(store.store_id||"")}" title="Help & support">${dashboardIcon("help")}<span class="lbn-label">Help &amp; support</span></a></div>
+      <div class="lb-sidebar-bottom"><a class="lbn-help" href="${root}/support"${view === "support" ? ' aria-current="page"' : ""} title="Help & support">${dashboardIcon("help")}<span class="lbn-label">Help &amp; support</span></a></div>
     </aside>
     <div class="lb-workspace">
       <header class="lb-header">
@@ -89,7 +91,7 @@ function header(data, user, view) {
         <form class="lb-global-search" role="search" data-global-search><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" role="combobox" aria-label="Search orders, products and customers" aria-controls="global-search-results" aria-expanded="false" aria-autocomplete="list" placeholder="Search orders, products, customers…" autocomplete="off" data-search-input><kbd>⌘ K</kbd><div id="global-search-results" class="lb-search-results" data-search-results role="region" aria-label="Search results" hidden></div></form>
         <div class="lb-header-right"><button type="button" class="lb-icon-button" data-help-button aria-label="Help" title="Help"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3m.1 4h.01"/></svg></button><details class="lb-account-menu" data-account-menu><summary class="lb-account"><span class="lb-account-avatar" aria-hidden="true">${esc(identity.initial)}</span><span class="lb-user">${esc(identity.name)}</span></summary><div class="lb-account-panel"><strong>${esc(identity.name)}</strong><form method="post" action="/logout"><button type="submit" class="lb-logout">Log out</button></form></div></details></div>
       </header>
-      <div class="lb-help-popover" data-help-popover hidden><strong>LeBrands support</strong><span>Ask a question or follow up on an open ticket.</span><a href="/support/new?source=dashboard&amp;store_id=${esc(id)}">New ticket</a> <a href="/support">My tickets</a></div>`;
+      <div class="lb-help-popover" data-help-popover hidden><strong>LeBrands support</strong><span>Ask a question or follow up on an open ticket.</span><a href="${root}/support/new?source=dashboard">New ticket</a> <a href="${root}/support">My tickets</a></div>`;
 }
 
 function pageHeading(kicker, title, intro, actions = "") {

@@ -1,5 +1,38 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Approved dashboard support publication
+
+Working directory: repository root. Target: existing Cloudflare production
+Worker, with explicit user approval.
+
+```sh
+pnpm exec wrangler deploy --keep-vars
+```
+
+Observed production version: `1eacae8a-116b-4045-a81f-18a1a7dd08ab`, 100%
+traffic. Snapshot comparison showed all 25 bindings unchanged, including 14
+encrypted secrets, with unchanged compatibility settings. Read-only HTTPS checks
+confirmed protected dashboard support routes and 14 successful dashboard/support
+asset-dependency responses. No SQL migration or test email was executed.
+
+## 20 October 2026: Dashboard support placement, local verification
+
+Repository root, isolated fixtures:
+
+```sh
+node --test --test-concurrency=1 tests/support-shell.test.js tests/support-tickets.test.js tests/dashboard-navigation.test.js tests/dashboard.test.js
+node --test --test-concurrency=1 tests/support-tickets.test.js
+git diff --check
+```
+
+The mixed run completed dashboard/navigation and shell checks, then was
+interrupted by a tool disconnect while starting the SQL fixture. The separate
+support run passed all 14 checks. Whitespace validation passed. Restarted the
+existing managed API/web workflows; the normal browser-assets build succeeded.
+An isolated owner preview verified dashboard chrome and support content together.
+No shared migration, production deployment or real emails performed for this
+placement change.
+
 ## 20 October 2026: Approved support production release
 
 Working directory: repository root. Target: existing shared Supabase database

@@ -7,6 +7,12 @@ migration `db/staged/0051_support_tickets.sql` committed to the shared Supabase
 database and the update was published to the production Cloudflare Worker.
 Admin notification delivery uses the approved `support@lebrands.store` inbox.
 
+The dashboard placement update was also published on 20 October 2026. Brand
+ticket lists, creation and conversations retain the dashboard shell at
+`/stores/:storeId/support`. Existing account/email links redirect after access
+checks; support before store creation remains available in the account context.
+This placement release required no database migration.
+
 Implemented: pre-store/account and store tickets, the three requested statuses,
 brand conversations, platform-admin inbox, assignment, priority, internal notes,
 public closing resolutions, reopening, and durable created/closed email intents

@@ -15,6 +15,17 @@ must receive emails when a ticket is created and closed.
 these requirements when designing the schema and implementing brand/admin
 workflows; a design request is not approval to migrate or publish.
 
+For brands with a store, Help & support belongs inside the existing brand
+dashboard, retaining its sidebar and header across ticket lists, creation and
+conversations. It must not become a separate account-style page.
+
+**Why:** The user explicitly corrected the initial standalone placement.
+
+**How to apply:** Use dashboard-context support routes and preserve old
+ticket/email links through authorized redirects. Keep account-level support
+available before the brand has its first store; the admin inbox stays in the
+admin dashboard.
+
 Creation and closure notices are essential support-service messages, not
 optional marketing updates. Keep private note content and sensitive context out
 of email; direct recipients to the authenticated ticket.

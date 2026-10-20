@@ -1,5 +1,6 @@
 import { escapeHtml as esc, layout, accountHeader, footer } from "./layout.js";
 import { renderPlatformAdminFrame } from "./platform-admin.js";
+import { documentPage } from "./dashboard.js";
 
 const PAGE_SIZE = 25;
 const STATUS = { created: "Created", pending: "Pending", closed: "Closed" };
@@ -125,15 +126,17 @@ function errorView(data, base) {
 
 export function renderSupport(view, data = {}, user = null, nonce = "") {
   const d = obj(data), admin = d.admin === true;
-  const base = admin ? "/admin/support" : "/support";
+  const dash = !admin && d.dashboard && obj(d.dashboard.store).store_id ? d.dashboard : null;
+  const base = admin ? "/admin/support" : dash && /^\/stores\/[^/?#]+\/support$/.test(String(d.base || "")) ? d.base : "/support";
   const v = ["list", "new", "detail", "error"].includes(view) ? view : "error";
   const inner = v === "list" ? listView(d, base) : v === "new" ? newView(d, base) : v === "detail" ? detailView(d, base) : errorView(d, base);
   const t = obj(d.ticket);
   const boot = { view: v, admin, apiRoot: admin ? "/api/admin/support" : "/api/support", base, source: SOURCES[d.source] ? d.source : "account", context: obj(d.context), storeId: d.store_id || null, filters: d.filters, page: d.page, ticket: v === "detail" ? t : undefined, admins: admin ? list(d.admins) : undefined };
   const title = v === "list" ? (admin ? "Support inbox" : "My tickets") : v === "new" ? "New ticket" : v === "detail" ? ticketNo(t.ticket_number) : "Support";
   const head = '<link rel="stylesheet" href="/assets/support.css" data-catalogue-confirm-style><script type="module" src="/assets/support.js"></script>';
-  const bodyInner = `<div class="sp-root" data-support-root>${inner}<div class="sp-toast" role="status" aria-live="polite" data-toast hidden></div><script type="application/json" id="support-data">${safeJson(boot)}</script></div>`;
+  const bodyInner = `<div class="sp-root" data-support-root>${inner}<div class="sp-toast" role="status" aria-live="polite" data-sp-toast hidden></div><script type="application/json" id="support-data">${safeJson(boot)}</script></div>`;
   if (admin) return renderPlatformAdminFrame(title, bodyInner, d.adminUser || user, "support", head);
+  if (dash) return documentPage("support", { store: obj(dash.store), role: dash.role || obj(dash.store).role }, user, bodyInner, head, { nonce, navigationFeedback: false });
   return layout({
     nonce,
     // Async replies and the leave guard own their feedback; a full-page

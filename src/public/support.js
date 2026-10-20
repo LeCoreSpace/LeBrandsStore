@@ -15,7 +15,7 @@ function h(tag,attrs={},...kids){const e=document.createElement(tag);for(const[k
 const timeEl=v=>h("time",{datetime:v||"",text:when(v)});
 const chip=s=>h("span",{class:"sp-status","data-status":STATUS[s]?s:"unknown",text:STATUS[s]||"Unknown status"});
 let busy=0,lastInput=Date.now(),toastTimer;
-function toast(msg){const t=root?.querySelector("[data-toast]");if(!t)return;t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.hidden=true;},4500);}
+function toast(msg){const t=root?.querySelector("[data-sp-toast]");if(!t)return;t.textContent=msg;t.hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.hidden=true;},4500);}
 const dirtyForms=new Set();
 registerLeaveGuard(()=>busy>0||dirtyForms.size>0);
 document.addEventListener("input",e=>{lastInput=Date.now();const f=e.target.closest?.("form[data-new-form],form[data-reply-form],form[data-workflow-form]");if(f)dirtyForms.add(f);});

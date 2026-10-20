@@ -37,7 +37,8 @@ export async function supportPreview(req,res){
  const url=new URL(req.url,"http://localhost");
  const cookie=(req.headers.cookie||"").split(";").map(v=>v.trim()).find(v=>v.startsWith("__Host-lbs_support_fixture="));
  const entry=url.pathname.startsWith(SUPPORT_PREVIEW_PREFIX+"/");
- if(!entry&&(!cookie||!isSupportRoute(url.pathname)))return false;
+ const storeApi=/^\/api\/stores\//.test(url.pathname);
+ if(!entry&&(!cookie||(!isSupportRoute(url.pathname)&&!storeApi)))return false;
  const f=await(fixture||=setupSupportFixture().catch(e=>{fixture=null;throw e;}));
  if(entry){
   const kind=url.pathname.slice(SUPPORT_PREVIEW_PREFIX.length+1);
@@ -49,6 +50,12 @@ export async function supportPreview(req,res){
  }
  const raw=cookie.slice(cookie.indexOf("=")+1);
  if(!Object.values(f.tokens).includes(raw)){res.writeHead(403);res.end("Invalid synthetic session");return true;}
+ if(storeApi){
+  // Dashboard chrome may request counts/search. This ticket-only fixture must
+  // never fall through to a shared database, even if a real cookie also exists.
+  res.writeHead(403,{"content-type":"application/json","cache-control":"no-store","x-lebrands-preview-data":"synthetic-support-fixture"});
+  res.end(JSON.stringify({error:"Store data is not available in this isolated support preview."}));return true;
+ }
  const headers=new Headers(req.headers);headers.set("cookie",`__Host-lbs_session=${raw}`);
  const origin=headers.get("origin");
  if(origin&&new URL(origin).host===req.headers.host)headers.set("origin","https://app.lebrands.store");

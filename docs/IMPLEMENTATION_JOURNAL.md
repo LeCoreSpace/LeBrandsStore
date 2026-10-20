@@ -1,5 +1,41 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Dashboard support placement published
+
+- User explicitly approved publishing the dashboard integration.
+- Published `lebrands-store` with `wrangler deploy --keep-vars`; version
+  `1eacae8a-116b-4045-a81f-18a1a7dd08ab` is serving 100% of production traffic.
+- Confirmed all 25 existing binding fingerprints, including 14 encrypted-secret
+  bindings, and runtime compatibility are unchanged.
+- Read-only live checks verified the new dashboard support/list-creation paths
+  require sign-in, brand/admin legacy support routes retain sign-in protection,
+  and the support API rejects anonymous access with 401 and no-store.
+- All 14 dashboard/support entry assets and transitive bundle dependencies
+  returned HTTP 200. Existing wildcard routes, queue and scheduled recovery
+  remained configured.
+- No database migration, real ticket creation, test email or merchant-setting
+  change was performed for this publication.
+
+## 2026-10-20: Help and support inside the brand dashboard
+
+- Reused the existing dashboard shell for brand ticket lists, new tickets and
+  conversations at `/stores/:storeId/support`. Sidebar and header remain visible,
+  with Help & support selected and contextual list/new-ticket links.
+- Existing `/support` links redirect to an authorized store dashboard after
+  ticket-access checks. Brands without a store keep account-level support;
+  platform-admin support remains in its existing admin frame.
+- Store context comes from current session memberships. The support API,
+  database functions, ticket permissions, notifications and schema are unchanged.
+- Passed 14 isolated support checks, including dashboard rendering, legacy
+  redirects, default store selection, anonymous access and membership denial.
+  Dashboard/navigation and shell checks also passed; the mixed test command was
+  interrupted by a tooling disconnect, so the support suite was rerun separately.
+  Build and desktop synthetic screenshot verified. No real tickets/emails used.
+- Preview-only dashboard store-API requests are explicitly blocked so synthetic
+  support checks never fall through to shared merchant data.
+- Local implementation complete. Cloudflare publication awaits approval; no
+  database migration is required.
+
 ## 2026-10-20: Support ticketing production release
 
 - User approved applying the support migration and publishing to Cloudflare,

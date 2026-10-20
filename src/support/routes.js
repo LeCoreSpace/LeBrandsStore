@@ -8,6 +8,7 @@ import {schedulePendingEmails} from "../email/worker.js";
 
 const UUID=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i;
 const BASE=/^\/(?:api\/)?(?:admin\/)?support(?:\/|$)/;
+const STORE_SUPPORT=/^\/stores\/([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})\/support(?=\/|$)/i;
 const HEADERS={...SECURITY_HEADERS,"cache-control":"no-store","x-robots-tag":"noindex, nofollow",
  "referrer-policy":"no-referrer","content-security-policy":"default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; script-src 'self'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'self'"};
 const decode=value=>typeof value==="string"?JSON.parse(value):value;
@@ -15,7 +16,7 @@ const fail=(message,status=400)=>Object.assign(new Error(message),{status});
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{...HEADERS,"content-type":"application/json; charset=utf-8"}});
 const sources=new Set(["account","onboarding","dashboard","ann","theme_editor"]);
 const contextKeys=new Set(["pathname","theme_key","page_slug","section_id","provider"]);
-export const isSupportRoute=path=>BASE.test(path);
+export const isSupportRoute=path=>BASE.test(path)||STORE_SUPPORT.test(path);
 function exact(value,allowed){
  if(!value||typeof value!=="object"||Array.isArray(value)||Object.keys(value).some(key=>!allowed.includes(key)))
  throw fail("Use the provided support form.");
@@ -45,15 +46,16 @@ export async function readSupportBody(request){
 }
 export async function handleSupport(request,env,ctx,dependencies={}){
  const url=new URL(request.url),api=url.pathname.startsWith("/api/"),admin=/^\/(?:api\/)?admin\//.test(url.pathname);
- const base=`${api?"/api":""}${admin?"/admin":""}/support`;
+ const storePath=url.pathname.match(STORE_SUPPORT);
+ const base=storePath?storePath[0]:`${api?"/api":""}${admin?"/admin":""}/support`;
  const suffix=url.pathname.slice(base.length);
- let db,user;
+ let db,user,dashboard=null,sessionStores=[];
  const page=(view,data={},status=200)=>{
   const nonce=crypto.randomUUID().replaceAll("-","");
   // Shared account CSS and navigation are trusted template blocks. Nonces keep
   // them working without permitting arbitrary inline script/style execution.
   const policy=`default-src 'none'; style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'; font-src 'self' https://fonts.gstatic.com; img-src 'self'; script-src 'self' 'nonce-${nonce}'; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'self'`;
-  return new Response(request.method==="HEAD"?null:renderSupport(view,{admin,...data},user,nonce),
+  return new Response(request.method==="HEAD"?null:renderSupport(view,{admin,...data,...(dashboard?{dashboard,base}: {})},user,nonce),
    {status,headers:{...HEADERS,"content-security-policy":policy,"content-type":"text/html; charset=utf-8"}});
  };
  try{
@@ -66,6 +68,12 @@ export async function handleSupport(request,env,ctx,dependencies={}){
   user=await accountRepository(db).session(token);
   if(!user)throw fail("Your session has ended. Please sign in again.",401);
   if(user.must_change_password)throw fail("Update your password in your account before continuing.",403);
+  sessionStores=Array.isArray(user.stores)?user.stores:[];
+  if(storePath){
+   const store=sessionStores.find(item=>item.store_id===storePath[1].toLowerCase());
+   if(!store)throw fail("You do not have access to this store.",403);
+   dashboard={store,role:store.role};
+  }
   const [ready]=await db.account(tx=>tx`SELECT to_regprocedure('public.support_list(text,boolean,text,text,text,integer)') IS NOT NULL AS ready`);
   if(!ready?.ready)throw fail("Support tickets are not available yet. Please contact support@lebrands.store while setup is completed.",503);
   // Every admin request uses the existing independent platform-admin authority.
@@ -82,6 +90,7 @@ export async function handleSupport(request,env,ctx,dependencies={}){
     data=decode(row.data);view=id==="new"?"new":"list";
     const store=url.searchParams.get("store_id");
     if(store&&UUID.test(store)&&data.stores.some(item=>item.store_id===store))data.store_id=store;
+    if(!data.store_id&&dashboard&&data.stores.some(item=>item.store_id===dashboard.store.store_id))data.store_id=dashboard.store.store_id;
     data.source=sources.has(url.searchParams.get("source"))?url.searchParams.get("source"):data.store_id?"dashboard":"account";
     const context={};for(const key of contextKeys)if(url.searchParams.has(key))context[key]=url.searchParams.get(key);
     data.context=safeSupportContext(context);
@@ -91,6 +100,14 @@ export async function handleSupport(request,env,ctx,dependencies={}){
     data={ticket:decode(row.data),admin};
     if(admin){const [list]=await db.account(tx=>tx`SELECT public.support_list(${token},true,'all','','all',0) AS data`);data.admins=decode(list.data).admins;}
     view="detail";
+   }
+   // Old account/email links remain valid. Existing brands use their real
+   // dashboard; support before the first store keeps its account-level view.
+   if(!api&&!admin&&!storePath&&sessionStores.length){
+    const preferred=url.searchParams.get("store_id")||data.ticket?.store_id;
+    const store=sessionStores.find(item=>item.store_id===preferred)||sessionStores.find(item=>item.status==="live")||sessionStores[0];
+    const target=new URL(url);target.pathname=`/stores/${encodeURIComponent(store.store_id)}/support${suffix}`;
+    return new Response(null,{status:303,headers:{...HEADERS,location:target.pathname+target.search}});
    }
    return api?json({data:view==="detail"?data.ticket:data}):page(view,data);
   }

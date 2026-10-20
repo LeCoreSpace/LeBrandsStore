@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {setupSupportFixture} from "../src/support-preview-fixture.js";
-import {handleSupport,safeSupportContext,readSupportBody} from "../src/support/routes.js";
+import {handleSupport,isSupportRoute,safeSupportContext,readSupportBody} from "../src/support/routes.js";
 import {prepareSupportEmails} from "../src/support/email.js";
 import {sha256} from "../src/auth/passwords.js";
 import {platformDeliveryKey} from "../src/email/tokens.js";
@@ -30,6 +30,32 @@ test("real support DDL, permissions, account/store workflows and durable notific
   store_id:null,source:"onboarding",context:{},idempotency_key:crypto.randomUUID()};
  let id,revision;
  try{
+  await t.test("store support is inside the dashboard and legacy links retain context",async()=>{
+   const path=`/stores/${f.storeId}/support`;
+   assert.equal(isSupportRoute(path),true);
+   assert.equal(isSupportRoute(`${path}/new`),true);
+   assert.equal(isSupportRoute(`/stores/${f.storeId}/supporting`),false);
+   const legacy=await call(request(`/support?store_id=${f.storeId}`,"owner"));
+   assert.equal(legacy.status,303);
+   assert.equal(legacy.headers.get("location"),`${path}?store_id=${f.storeId}`);
+   const page=await call(request(path,"owner"));
+   assert.equal(page.status,200,await page.clone().text());
+   const html=await page.text();
+   assert.match(html,/class="lb-app"/);
+   assert.match(html,/data-sidebar/);
+   assert.match(html,/data-support-root/);
+   assert.match(html,new RegExp(`"base":"${path}"`));
+   assert.match(html,/Help &amp; support|Help & support/);
+   const newTicket=await call(request(`${path}/new`,"owner"));
+   assert.equal(newTicket.status,200);
+   assert.match(await newTicket.text(),new RegExp(`"storeId":"${f.storeId}"`));
+   assert.equal((await call(request(path,"brand"))).status,403);
+   const anonymous=await call(new Request(`https://app.lebrands.store${path}`));
+   assert.equal(anonymous.status,303);assert.equal(anonymous.headers.get("location"),"/login");
+   // A brand without a store can still obtain support.
+   const preStore=await call(request("/support"));
+   assert.equal(preStore.status,200);assert.doesNotMatch(await preStore.text(),/class="lb-app"/);
+  });
  await t.test("real schema preserves email function identity and denies direct/API-role access",async()=>{
   const oid=await f.pg.query("SELECT 'public.email_claim_platform(uuid,text)'::regprocedure::oid AS oid");
   assert.equal(oid.rows[0].oid,f.oldClaimOid);

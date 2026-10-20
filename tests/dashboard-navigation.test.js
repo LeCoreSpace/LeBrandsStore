@@ -125,8 +125,8 @@ test("integrations render separate ticket pages without a cross-provider tab bar
 test("shell keeps desktop collapse, mobile drawer, help and logo; module is served and safe", async () => {
   const html = renderDashboard("orders", localDashboardFixture(), { name: "Owner" });
   for (const a of ["data-sidebar-collapse", "data-menu-toggle", "data-drawer-close", "data-open-order-count", "data-global-search", "lb-logo", "lb-mark"]) assert.ok(html.includes(a), a);
-  assert.match(html, /href="\/support\?store_id=[^"]+"/);
-  assert.match(html, /href="\/support\/new\?source=dashboard&amp;store_id=[^"]+"/);
+  assert.match(html, /href="\/stores\/[^/"]+\/support"/);
+  assert.match(html, /href="\/stores\/[^/"]+\/support\/new\?source=dashboard"/);
   assert.match(html, /lbn-status/);
   const dash = await readFile("src/public/dashboard.js", "utf8");
   assert.match(dash, /dashboard-navigation\.js/);

@@ -88,3 +88,10 @@
 /* Shared confirmation dialog rules (copied for strict style-src) */
 .lb-catalogue-confirm{box-sizing:border-box;width:min(460px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:26px;border:1px solid #ded7da;border-radius:16px;background:#fff;color:#30242b;box-shadow:0 24px 80px #20161e40;font:14px/1.6 system-ui,sans-serif}.lb-catalogue-confirm::backdrop{background:#20161e80;backdrop-filter:blur(2px)}.lb-catalogue-confirm h2{margin:0 0 10px;font:600 21px/1.3 system-ui,sans-serif}.lb-catalogue-confirm p{margin:0;color:#6e6268;white-space:pre-line}.lb-catalogue-confirm-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:24px}.lb-catalogue-confirm button{padding:10px 16px;border:1px solid #d8cbd1;border-radius:8px;background:#fff;color:#4c2636;font:600 14px system-ui,sans-serif;cursor:pointer}.lb-catalogue-confirm button[data-confirm-accept]{background:#711b3b;border-color:#711b3b;color:#fff}.lb-catalogue-confirm button:focus-visible{outline:3px solid #c99cac;outline-offset:3px}
 .lb-catalogue-confirm{border-top:3px solid #711b3b;border-radius:8px}.lb-catalogue-confirm h2{padding-bottom:14px;border-bottom:1px dashed #d8cbd1}.lb-catalogue-confirm label{display:block;margin-top:18px;font-weight:600}.lb-catalogue-confirm input{box-sizing:border-box;display:block;width:100%;min-width:0;margin-top:7px;padding:11px;border:1px solid #d8cbd1;border-radius:5px;font:inherit}.lb-catalogue-confirm [role=alert]{display:block;margin-top:7px;color:#9c2538}
+
+/* Dashboard shell: support sits inside .lb-content, so it inherits the workspace width and rhythm. */
+.lb-content .sp-root{max-width:none;padding:0 0 24px}
+.lb-app .sp-root small.sp-err{color:#a3232f}
+.lb-app .sp-root .sp-sub,.lb-app .sp-root .sp-field small{color:var(--sp-mut)}
+.lb-app .sp-root :is(a.sp-btn,a.sp-btn:hover){text-decoration:none}
+.lb-app .sp-root a.sp-primary{color:#fff}
