@@ -1148,6 +1148,20 @@ decision:
 - **Outcome:** Working-tree implementation, not a committed checkpoint.
   No production records, migrations, credentials or publication were changed.
 
+### 2026-10-20: Remove the empty Ann design-tools gap
+
+- **What/why:** Moving design actions into the compact toolbar left an empty
+  padded design card above the page tabs for an active own-catalogue design.
+  The renderer now omits whitespace-only tool cards and hides an entirely empty
+  design host, removing its spacing as well. Required notices, errors, sample
+  warnings, selected-content editors and theme-editor status remain visible.
+- **Verification:** Five focused header/tool-card, toolbar and Worker bundle
+  checks passed; `git diff --check` passed. The API preview rebuilt successfully.
+  The empty-state regression exercises the actual markup function, including
+  whitespace-only content and preservation of real notices/controls.
+- **Outcome:** Working-tree fix, not yet a committed checkpoint. No database,
+  publication or save behavior changed; no production deployment was run.
+
 ## Evidence and limitations
 ### 19 October 2026: Order receipts, shared utility emails and unsubscribe
 

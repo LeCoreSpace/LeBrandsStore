@@ -590,6 +590,16 @@ managed development preview only. Production publication remains manual.
 | Managed API/web workflow restarts and app-preview screenshots | Rebuilt assets; desktop and mobile synthetic Ann toolbar layouts verified. Required business notice remains visible. |
 | `pnpm run deploy` | Not run. No production publication or migration. |
 
+### 20 October: Empty Ann design-tools card
+
+Workspace root, local source/Worker bundle checks only:
+
+| Command / operation | Purpose / observed result |
+| --- | --- |
+| `node --test --test-concurrency=1 tests/ann-design-header-actions.test.js tests/ann-compact-toolbar.test.js tests/browser-bundles.test.js` | Five passed, including empty/whitespace cards and retained active controls. |
+| `git diff --check` | Passed. |
+| Managed API preview restart | Rebuilt updated client assets successfully. No production publication. |
+
 For future work, add the relevant command, working directory, target environment,
 purpose/effect, prerequisite and **actual execution status/result**. Distinguish
 commands suggested to the operator from commands actually executed. Keep

@@ -11,6 +11,9 @@ import { AURA_STYLES } from "./aura-styles.js";
 import { mountRichEditor, richEditorMarkup } from "./ann-rich-editor.js";
 
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+export function designToolsMarkup(content) {
+  return content.trim() ? `<div class="ann-design-card ann-design-compact">${content}</div>` : "";
+}
 const COPY_LABEL = {
   kicker: "Small line above the headline", title: "Headline", description: "Introduction", button: "Button label", statement: "Statement",
   products: "Products heading", collections: "Collections heading", about: "About heading",
@@ -361,10 +364,11 @@ export function attachAnnDesign(o) {
     if (cataloguePrompt) return catalogueChoice + err;
     if (browsing || !active()) return catalogueChoice + use + err;
     const toggle = o.toggleMount ? "" : `<div class="ann-actions ann-design-bar"><button type="button" class="ann-btn alt sm" data-design-act="toggle" aria-pressed="${editMode}" ${readOnly ? "disabled" : ""}>${editMode?"Editing on":"Editing off"}</button></div>`;
-    return catalogueChoice + `<div class="ann-design-card ann-design-compact">
+    const tools = `
       ${o.themeEditor ? `<p class="ann-note" data-design-state></p>` : ""}${toggle}
       ${readOnly ? `<p class="ann-note">${memberReadOnly?"You can look around. Only an owner or admin can edit this design.":"Your saved design is unchanged. Complete business verification in Ann to resume editing."}</p>` : editMode && selected ? (o.contextual ? ctxPanel() : panel()) : ""}
-      ${model.catalogue_mode==="sample"?`<p class="ann-note">${o.themeEditor?"Sample products shown. Choose your own before publishing.":"Sample products and illustrative prices. Choose your own products before publishing."} <a href="${root}/products">Edit products</a></p>`:""}</div>${err}`;
+      ${model.catalogue_mode==="sample"?`<p class="ann-note">${o.themeEditor?"Sample products shown. Choose your own before publishing.":"Sample products and illustrative prices. Choose your own products before publishing."} <a href="${root}/products">Edit products</a></p>`:""}`;
+    return catalogueChoice + designToolsMarkup(tools) + err;
   }
   function ctxPanel() {
     const s = selected, sid = sectionOfSelected(), st = sid ? o.sectionState?.(sid) : null;
@@ -419,6 +423,7 @@ export function attachAnnDesign(o) {
     const fa = !focus && document.activeElement?.closest?.("#ann-design") ? document.activeElement.getAttribute("data-design-act") : null;
     richEditor?.destroy(); richEditor = null;
     el.innerHTML = body();
+    el.hidden = !el.innerHTML.trim();
     mountRich();
     if (fa) el.querySelector(`[data-design-act="${fa}"]`)?.focus({ preventScroll: true });
     if (focus) { const f = el.querySelector(`[data-design-input="${focus}"]`); if (f) { f.focus(); try { f.setSelectionRange(pos, pos); } catch {} } }
