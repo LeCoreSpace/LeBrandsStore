@@ -1,5 +1,14 @@
 # Complete implementation checkpoint register
 
+### Review-after-publication activated in production
+
+Owner-approved release `8b8f3200-f4e2-4c78-845d-2e1d5f7c83b0` serves all
+Cloudflare traffic. Staged migration `0052_business_review_after_publication.sql`
+committed to shared Supabase with a matching source checksum. Unchanged resource
+bindings/secrets, effective schema privileges, email scheduling, live assets
+and anonymous access protections verified without real store/document data.
+No manual commit created.
+
 ### Review-after-publication and private review viewer, local
 
 Staged policy migration, separate financial/publication authority, private

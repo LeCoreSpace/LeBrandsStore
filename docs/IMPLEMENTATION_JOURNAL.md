@@ -1,5 +1,23 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Review-after-publication activated in production
+
+- With explicit owner approval, published the compatible Cloudflare code before
+  applying `0052_business_review_after_publication.sql` through its staged-only
+  migration selection. The migration committed successfully to the existing
+  shared Supabase database; its recorded SHA-256 matches the released source.
+- Worker version `8b8f3200-f4e2-4c78-845d-2e1d5f7c83b0` serves 100% of traffic.
+  Pre/post-release fingerprints confirm all 25 bindings, including 14 encrypted
+  secrets, and runtime compatibility remain unchanged.
+- Read-only schema checks confirm separate publication-readiness and approved
+  authority functions, the active decision-email trigger, scheduler discovery
+  and restrictive effective grants for public API roles.
+- Thirty-two live admin/review/Ann/editor/dashboard assets and dependencies
+  returned HTTP 200. Anonymous admin review and inline document requests redirect
+  to login with `no-store`. No real business documents, store records, reviewer
+  decisions, emails, orders or payment operations were used as release tests.
+- Existing stores were not automatically published, resumed or approved.
+
 ## 2026-10-20: Staged review after publication and private admin viewer, local
 
 - Prepared explicit staged migration `0052_business_review_after_publication.sql`

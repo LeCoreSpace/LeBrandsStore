@@ -1,5 +1,24 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Approved review-after-publication activation
+
+Working directory: repository root. Targets: existing Cloudflare Worker and
+shared external Supabase database. Explicit owner approval covered both.
+
+```sh
+pnpm exec wrangler deploy --keep-vars
+node db/migrate.js --staged-business-review-after-publication
+```
+
+Published compatible code first; verified unchanged binding/compatibility
+fingerprints and 100% traffic before applying the staged migration.
+Version `8b8f3200-f4e2-4c78-845d-2e1d5f7c83b0` is active. Migration committed;
+read-only verification confirms matching checksum, readiness/approval
+separation, decision-email trigger, scheduler and restricted role grants.
+Thirty-two live assets/dependencies returned 200 and anonymous review/document
+requests redirect to login with no-store. No production business data or
+documents were read and no real review/email/payment was initiated for testing.
+
 ## 20 October 2026: Review-after-publication local verification
 
 Working directory: repository root. Target: isolated PGlite fixtures and local
