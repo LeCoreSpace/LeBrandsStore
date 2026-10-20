@@ -59,7 +59,8 @@ export async function prepareAnnReadiness(tx,id,userId) {
       ]:[])],
     store:{status:data.store.status,subdomain:data.store.subdomain,requested_subdomain:data.settings.subdomain,
       approval_enabled:data.store.approval_enabled===true,approval_status:data.business_review?.enforced
-        ? data.business_review.approved?"Business documents approved":"Business documents awaiting approval"
+        ? data.business_review.approved?"Business documents approved":data.business_review.pending_allowed&&data.business_review.publication_ready
+          ?"Documents under review. You can publish.":"Business documents need attention"
         : data.store.approved_at&&!data.store.approval_revoked_at ? "Approved" : "Not approved"},
     supplier_locked:data.gstinVerification?.confirmed===true || data.gstinVerification?.state==="confirmed",
     draft:{...data,checkout_settings:s.checkout},

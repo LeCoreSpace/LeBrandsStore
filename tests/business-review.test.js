@@ -32,7 +32,9 @@ test("restricted manual review, private history and DB publication guards use re
     assert.equal(detail.status,200);
     const html=await detail.text();
     assert.match(html,/synthetic-registration\.pdf/);assert.match(html,/name="expected_revision" value="1"/);
-    assert.doesNotMatch(html,/business-verifications\/|object_key|sha256|<iframe|<embed/);
+    assert.doesNotMatch(html,/business-verifications\/|object_key|sha256|<embed/);
+    assert.match(html,/<iframe[^>]+title="Preview of synthetic-registration\.pdf"/);
+    assert.match(html,/\?view=inline/);
     assert.equal((await call(decide(1,"approved",{manual_review:""}))).status,400);
     assert.equal((await call(decide(1,"approved",{note:"tiny"}))).status,400);
 
@@ -60,6 +62,12 @@ test("restricted manual review, private history and DB publication guards use re
     assert.equal(download.headers.get("cache-control"),"no-store");
     assert.match(download.headers.get("content-disposition"),/^attachment/);
     assert.match(await download.text(),/Synthetic registration test/);
+    const inline=await call(new Request(`${url}/documents/${original.id}?view=inline`));
+    assert.equal(inline.status,200);
+    assert.equal(inline.headers.get("content-type"),"application/pdf");
+    assert.equal(inline.headers.get("x-frame-options"),"SAMEORIGIN");
+    assert.match(inline.headers.get("content-disposition"),/^inline/);
+    assert.match(inline.headers.get("content-security-policy"),/frame-ancestors 'self'/);
     assert.equal((await call(new Request(`${url}/documents/ffffffff-ffff-4fff-8fff-ffffffffffff`))).status,404);
 
     assert.equal((await call(decide(1,"changes_requested",{note:"Please provide a more legible certificate."}))).status,303);

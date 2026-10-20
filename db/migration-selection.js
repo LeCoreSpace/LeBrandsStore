@@ -1,4 +1,7 @@
 export function migrationSelection(args) {
+  if(args.length===1&&args[0]==="--staged-business-review-after-publication"){
+    return{staged:true,filename:"0052_business_review_after_publication.sql",requires:"0051_support_tickets.sql"};
+  }
   if(args.length===1&&args[0]==="--staged-support-tickets"){
     return{staged:true,filename:"0051_support_tickets.sql",requires:"0046_platform_admin.sql"};
   }

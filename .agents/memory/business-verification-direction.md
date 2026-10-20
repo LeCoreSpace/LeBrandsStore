@@ -76,29 +76,29 @@ compliance; this is a product policy, not a verified statement of statutory law.
 Do not invent a post-cancellation deletion deadline or claim retention alone
 satisfies all jurisdiction-specific compliance obligations.
 
-Approval is manual through the restricted admin dashboard. After document
-submission, the merchant should be able to continue store creation. If manual
-verification fails, suspend the store and notify the merchant to upload
-replacement evidence through dashboard Settings for verification again.
+Review is manual through the restricted admin dashboard. After document
+submission, the merchant should be able to continue store creation. If review
+finds a discrepancy, notify the merchant to upload replacement evidence through
+dashboard Settings. Suspension is a separate explicit platform decision.
 
-**Why:** The user explicitly confirmed this review and recovery workflow.
+**Why:** The user confirmed review and recovery, then replaced automatic blocking
+with review after publication and separate discrepancy handling.
 
 **How to apply:** Separate pending review from rejection; do not require manual
 approval merely to continue store creation. Keep the authenticated document
 replacement route available to a suspended merchant.
 
-The user explicitly chose: "Allow building only; require approval before going
-live". Pending-review merchants may build and save drafts, but manual business
-approval is required before publication.
+The user superseded the earlier "Allow building only; require approval before
+going live" policy. Implement review after publication in stages: pending
+manual review permits publishing after the required submission and security
+checks; admins need private PDF viewing and approve/reject emails.
 
-**Why:** The user confirmed the distinction between store creation and accepting
-live orders while documents await review.
+**Why:** The user wants brands to publish without waiting for manual tax-document
+approval, with corrections or explicit suspension used for discrepancies.
 
-**How to apply:** Enforce approval at the server-side publication boundary, not
-just through a disabled button. Approval must not bypass GST, checkout or other
-publication safeguards. Provide a working restricted staff approval path before
-activating a gate that otherwise nobody can clear. Subscription billing remains
-a separate implementation concern.
+**How to apply:** Do not treat pending review as financial/tax approval.
+Retain GST, checkout and suspension safeguards. Rejection should request
+corrections, not automatically take an otherwise live store offline.
 
 Private business evidence forms must own their native text inputs rather than
 moving the entered details into Ann's shared chat composer.

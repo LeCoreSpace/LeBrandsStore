@@ -1,5 +1,33 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-20: Staged review after publication and private admin viewer, local
+
+- Prepared explicit staged migration `0052_business_review_after_publication.sql`
+  and runner selection `--staged-business-review-after-publication`. It separates
+  publication readiness from the existing approved-business financial authority.
+  Pending, current security-screened submissions can publish; country, GST,
+  correction, suspension and revocation controls remain independent.
+- Preserved function identities and the first-publication Free clock; no legacy
+  publication dates, subscriptions or store statuses are rewritten by migration.
+- Added reviewer-only inline PDF/image responses with no-store, nosniff,
+  same-origin framing and restrictive CSP, retaining attachment downloads.
+  Admin UI offers collapsed document previews, approve/reject-and-correct
+  decisions, required shared feedback and green confirmations.
+- Approval/rejection now generates durable owner-email intents atomically with
+  the decision. Existing queue retries/idempotency deliver professional escaped
+  HTML/text messages. Recipient ownership/address are rechecked before sending.
+  No real email, document or connected-account data was used in verification.
+- Thirty focused checks passed across review, publication, Free subscriptions,
+  onboarding recovery, Settings and transactional email. New SQL checks exercise
+  pending publication, separate financial approval, correction without
+  suspension, stale decisions without duplicate mail, tenant/API-role denial,
+  recipient change and the unchanged 30-day clock. Browser builds and synthetic
+  admin screenshots succeeded; no browser runtime errors.
+- No shared database migration or publication performed. Existing production
+  policy remains unchanged until separately approved activation. Suggested
+  activation: publish compatible code first, then apply only this staged
+  migration with the established runner, followed by read-only checks.
+
 ## 2026-10-20: Support ticket styling published
 
 - Owner-approved version `4296fe19-25c4-4e17-91e5-f9b448250416` serves 100%

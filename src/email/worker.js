@@ -71,6 +71,13 @@ export async function processEmailMessage(body,env){
     let providerId=null;
     try{
       let message=job.payload;
+      if(job.template==="business_review"){
+        const [recipient]=await db.withStore(id,tx=>tx`SELECT public.business_review_email_allowed(${id},${job.id}) AS allowed`);
+        if(recipient?.allowed!==true)throw new Error("Business review recipient no longer owns this store.");
+        const content=renderEmail("business_review",{...job.payload,
+          action_url:`https://app.lebrands.store/stores/${id}/settings#business-documents`});
+        message={from:"LeBrands.Store <hello@notify.lebrands.store>",to:[job.recipient],...content};
+      }
       if(!message.html){
         const details=await db.withStore(id,async tx=>{
           const draft=await loadDraft(tx,id),order=await orderDetail(tx,id,job.order_id);

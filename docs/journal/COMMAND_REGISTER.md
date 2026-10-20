@@ -1,5 +1,23 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Review-after-publication local verification
+
+Working directory: repository root. Target: isolated PGlite fixtures and local
+managed preview, not the shared database.
+
+```sh
+node --test --test-concurrency=1 tests/business-review-after-publication.test.js tests/business-review.test.js tests/free-subscriptions.test.js tests/ann-business-gate.test.js tests/settings-business-documents.test.js
+node --test --test-concurrency=1 tests/email.test.js tests/email-preferences.test.js
+node --test --test-concurrency=1 tests/business-review-after-publication.test.js
+git diff --check
+```
+
+Thirty focused checks passed; the new staged-policy checks passed again after
+the final editor/recipient refinements. Synthetic admin review screenshots and
+the managed Worker browser build succeeded. Migration switch
+`--staged-business-review-after-publication` is registered but not executed
+against the shared database. No deployment or real emails.
+
 ## 20 October 2026: Approved Help & support styling publication
 
 Working directory: repository root. Target: existing Cloudflare production

@@ -36,6 +36,7 @@ async function loadStoreHeader(tx,storeId){
   const [store] = await tx`SELECT store_id, name, subdomain, status, subdomain_changed_at,
     to_jsonb(s) ? 'approved_at' AS approval_enabled,
     to_regprocedure('public.business_publication_access(uuid)') IS NOT NULL AS business_review_enabled,
+    to_regprocedure('public.business_publication_ready(uuid)') IS NOT NULL AS pending_review_enabled,
     to_jsonb(s)->>'approved_at' AS approved_at,
     to_jsonb(s)->>'approved_by' AS approved_by,
     to_jsonb(s)->>'approval_revoked_at' AS approval_revoked_at,
@@ -105,6 +106,10 @@ export async function loadDraft(tx, storeId, { includeArchived = false, includeD
   if(store.business_review_enabled){
     const [review]=await tx`SELECT public.business_publication_access(${storeId}) AS approved`;
     data.business_review={enforced:true,approved:review?.approved===true};
+    if(store.pending_review_enabled){
+      const [ready]=await tx`SELECT public.business_publication_ready(${storeId}) AS ready`;
+      data.business_review={...data.business_review,pending_allowed:true,publication_ready:ready?.ready===true};
+    }
   }
   data.progress.completed = completion(data, data.progress);
   if (await pagesEnabled(tx)) {

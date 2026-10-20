@@ -1,5 +1,13 @@
 # Complete implementation checkpoint register
 
+### Review-after-publication and private review viewer, local
+
+Staged policy migration, separate financial/publication authority, private
+PDF/image viewing and durable approval/rejection brand emails are implemented
+locally. Thirty focused checks and synthetic admin screenshots passed.
+Shared migration and production publication await approval. Workspace changes
+await an automatic checkpoint; no manual commit created.
+
 ### Help & support ticket styling publication, 20 October 2026
 
 Owner-approved Cloudflare version `4296fe19-25c4-4e17-91e5-f9b448250416`

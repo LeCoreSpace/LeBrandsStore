@@ -12,7 +12,7 @@
 - [Invoice permission boundary](invoice-privilege-boundary.md) — APP financial writes must use tenant-checked functions; preserve strict 42501 isolation denials.
 - [GSTIN transaction boundary](gstin-transaction-boundary.md) — approve/invoice published suppliers; commit paid lookup evidence before a financial transaction can fail.
 - [Document numbering boundary](document-numbering-boundary.md) — short new-document serials, DB prefix locks and overflow rejection; never renumber historical documents.
-- [Platform approval boundary](platform-approval-boundary.md) — business-document approval now gates go-live; preserve independent GST authority and revocation controls.
+- [Platform approval boundary](platform-approval-boundary.md) — staged review after publication; pending documents must not grant financial approval or clear suspension.
 - [Platform billing test mode](billing-test-mode.md) — captured sandbox payments are evidence only, never authority for a live paid plan or tax invoice.
 - [Account store policy](account-store-policy.md) — two owned stores, one live; retain paid plans and historical Free clocks, with explicit legacy owner selection.
 - [Billing onboarding placement](billing-onboarding-placement.md) — plan selection must be in Ann after store naming; dashboard billing is an additional entry point.

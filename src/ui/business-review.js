@@ -29,6 +29,16 @@ function docHref(storeId, url) {
   return u.startsWith(prefix) && /^[A-Za-z0-9._~-]+$/.test(u.slice(prefix.length)) ? u : "";
 }
 
+function preview(d, href) {
+  if (!href || d.scan_status !== "clean") return "";
+  const mime = String(d.mime || "").toLowerCase().trim();
+  const src = esc(href + "?view=inline");
+  const name = esc(d.filename || "Document");
+  if (mime === "application/pdf") return `<details class="br-preview"><summary>Preview PDF in page</summary><iframe class="br-frame" title="Preview of ${name}" loading="lazy" src="${src}"></iframe><p class="br-muted">If the viewer stays blank, <a class="br-link" href="${src}" target="_blank" rel="noopener">open the secured preview in a new tab</a>.</p></details>`;
+  if (["image/png", "image/jpeg", "image/webp"].includes(mime)) return `<details class="br-preview"><summary>Preview image in page</summary><img class="br-img" loading="lazy" alt="Preview of ${name}" src="${src}"></details>`;
+  return "";
+}
+
 function notice(msg, retryHref) {
   const stale = /stale|changed|revision|latest|reload/i.test(msg);
   return `<div class="br-alert" role="alert"><strong>${esc(msg)}</strong>${stale ? `<p>This submission changed after you opened it. Reload the page and examine the latest version before deciding.</p>` : ""}${retryHref ? `<a class="br-link" href="${esc(retryHref)}">Reload</a>` : ""}</div>`;
@@ -73,14 +83,14 @@ function detail(data, user) {
   const docRows = docs.length ? `<ul class="br-docs">${docs.map((d) => {
     const href = docHref(sid, d.download_url);
     const old = Number(d.submission_version) !== cur;
-    return `<li><div><strong>${esc(d.filename || "Unnamed file")}</strong><small>${esc(d.document_type || "Document")} / ${esc(d.mime || "unknown type")} / ${esc(size(d.size_bytes))}</small><small>Submission v${esc(d.submission_version ?? "0")}${old ? " (earlier version)" : ""} / uploaded ${esc(when(d.uploaded_at))}</small></div><span class="br-scan" data-scan="${esc(d.scan_status || "unknown")}">Malware screening: ${esc(scanLabel(d.scan_status))}</span>${href ? `<a class="br-btn br-btn-outline" href="${esc(href)}" download>Download attachment<span class="br-sr"> ${esc(d.filename || "")}</span></a>` : `<span class="br-muted">Download unavailable</span>`}</li>`;
-  }).join("")}</ul><p class="br-muted">Files download as attachments. They are never previewed in this page.</p>` : `<p class="br-muted">No documents were uploaded with this registration.</p>`;
+    return `<li><div><strong>${esc(d.filename || "Unnamed file")}</strong><small>${esc(d.document_type || "Document")} / ${esc(d.mime || "unknown type")} / ${esc(size(d.size_bytes))}</small><small>Submission v${esc(d.submission_version ?? "0")}${old ? " (earlier version)" : ""} / uploaded ${esc(when(d.uploaded_at))}</small></div><span class="br-scan" data-scan="${esc(d.scan_status || "unknown")}">Malware screening: ${esc(scanLabel(d.scan_status))}</span>${href ? `<a class="br-btn br-btn-outline" href="${esc(href)}" download>Download attachment<span class="br-sr"> ${esc(d.filename || "")}</span></a>` : `<span class="br-muted">Download unavailable</span>`}${preview(d, href)}</li>`;
+  }).join("")}</ul><p class="br-muted">Only files that passed malware screening and are PDF, PNG, JPEG or WebP can be previewed here. All other files are download only.</p>` : `<p class="br-muted">No documents were uploaded with this registration.</p>`;
   const hist = events.length ? `<ol class="br-history">${events.map((e) => `<li><div class="br-ev-head"><strong>${esc(String(e.event_type || "event").replace(/_/g, " "))}</strong><span>v${esc(e.submission_version ?? "0")} / ${esc(e.actor_name || "System")} / ${esc(when(e.created_at))}</span></div>${e.submission ? `<details><summary>Submission as recorded</summary>${snapshot(e.submission)}</details>` : ""}</li>`).join("")}</ol><p class="br-muted">History is immutable. Entries cannot be edited or removed.</p>` : `<p class="br-muted">No history has been recorded yet.</p>`;
   const act = actionable ? `<form class="br-form" method="post" action="${BASE}/${encodeURIComponent(sid)}">
     <input type="hidden" name="expected_revision" value="${esc(parseInt(v.revision, 10) || 0)}">
     <fieldset><legend>Decision</legend>
-      <label class="br-radio"><input type="radio" name="decision" value="approved" required ${decision === "approved" ? "checked" : ""}><span><strong>Approve business details</strong><small>Records manual approval only. The store is not published.</small></span></label>
-      <label class="br-radio"><input type="radio" name="decision" value="changes_requested" ${decision === "changes_requested" ? "checked" : ""}><span><strong>Request changes</strong><small>The owner sees your note and can resubmit.</small></span></label>
+      <label class="br-radio"><input type="radio" name="decision" value="approved" required ${decision === "approved" ? "checked" : ""}><span><strong>Approve business details</strong><small>Records manual approval only. It does not publish or resume the store.</small></span></label>
+      <label class="br-radio"><input type="radio" name="decision" value="changes_requested" ${decision === "changes_requested" ? "checked" : ""}><span><strong>Reject and request corrections</strong><small>The owner sees your note and can resubmit. Rejection does not automatically suspend the store.</small></span></label>
     </fieldset>
     <label class="br-field" for="br-note"><span>Reviewer note</span><textarea id="br-note" name="note" rows="5" minlength="10" maxlength="1000" required aria-describedby="br-note-help">${esc(form.note || "")}</textarea><small id="br-note-help">10 to 1000 characters. Required for either outcome and shared with the brand.</small></label>
     <label class="br-check"><input type="checkbox" name="manual_review" value="1" required><span>I examined the current submission and its supporting documents myself.</span></label>
@@ -88,7 +98,8 @@ function detail(data, user) {
   const err = data.error ? notice(String(data.error), `${BASE}/${encodeURIComponent(sid)}`) +
     (!actionable&&form.note?`<div class="br-alert"><strong>Your unsaved note</strong><p class="br-prose">${esc(form.note)}</p></div>`:"") : "";
   return shell(`${store.name || "Submission"} review`, `<nav class="br-crumbs" aria-label="Breadcrumb"><a href="/admin">Stores</a><span aria-hidden="true">/</span><a href="${BASE}">Business reviews</a><span aria-hidden="true">/</span><span>${esc(store.name || "Store")}</span></nav>
-    <header class="br-head"><p class="br-eyebrow">Submission v${esc(v.submission_version ?? "0")} / revision ${esc(v.revision ?? "0")}</p><h1>${esc(store.name || "Unnamed store")}</h1><p>${pill(v.status)} Store status: ${esc(label(store.status))}</p></header>${err}
+    <header class="br-head"><p class="br-eyebrow">Submission v${esc(v.submission_version ?? "0")} / revision ${esc(v.revision ?? "0")}</p><h1>${esc(store.name || "Unnamed store")}</h1><p>${pill(v.status)} Store status: ${esc(label(store.status))}</p></header>${err}${data.notice?`<p class="br-success" role="status">${esc(data.notice)}</p>`:""}
+    ${data.after_publication?'<p class="br-muted">Pending document review does not block publication. Rejection asks the brand for corrections; suspend a store separately from its admin store page when necessary.</p>':""}
     <section class="br-scope" aria-label="What this review covers"><h2>What this decision covers</h2><dl>${kv("Malware screening", "Automated per file. Shown beside each document.")}${kv("Manual business approval", "Your decision below.")}${kv("GST verification", "A separate check. Not changed here.")}${kv("Publication", "Separate. Approval does not publish, reactivate a store or change invoice status.")}</dl></section>
     <div class="br-grid"><div>
       <section class="br-card"><h2>Registration details</h2><dl class="br-facts">${kv("Legal name", esc(v.legal_name || "Not provided"))}${kv("Country", esc(v.country_code || "n/a"))}${kv("Registration type", esc(v.registration_type || "Not provided"))}${kv("Registration number", `<code>${esc(v.registration_number || "Not provided")}</code>`)}${kv("Submitted", esc(when(v.submitted_at)))}${kv("Reviewed", esc(when(v.reviewed_at)))}${kv("Reviewed by", esc(v.reviewed_by || "Not reviewed"))}</dl>

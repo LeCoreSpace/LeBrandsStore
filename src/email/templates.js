@@ -34,6 +34,16 @@ function itemMeta(i){
   return p;
 }
 export function renderEmail(type,data={}){
+  if(type==="business_review"){
+    const approved=data.decision==="approved";
+    return renderEmail("verification",{...data,support:true,support_button:"Open business documents",
+      support_title:approved?"Business documents approved":"Business documents need corrections",
+      support_number:data.store_name||"Your store",
+      support_description:(approved
+        ?"We have approved your business documents. This does not publish or reactivate your store."
+        :"We could not approve your business documents. Please correct the details below and upload replacement documents in Settings. This decision does not automatically suspend your store.")
+        +` Reviewer note: ${String(data.note||"")}`});
+  }
   if(type==="ticket_created"||type==="ticket_closed"){
     const closed=type==="ticket_closed",admin=data.audience==="admin";
     const description=closed
@@ -95,7 +105,7 @@ export function renderEmail(type,data={}){
     if(data.credit_amount_paise!=null)para(`Credit note amount: ${money(data.credit_amount_paise)}`);
     if(data.refund_paise==null)para("Any refund due is handled separately. This email does not confirm a payment refund.");
   }
-   const link=https(data.action_url),label=data.support?"Open support ticket":labels[type]||"Track your order";
+   const link=https(data.action_url),label=data.support?(data.support_button||"Open support ticket"):labels[type]||"Track your order";
   const contact=data.contact_email||(platform?"https://lebrands.store/support":""),policy=https(data.policy_url||(platform?"https://lebrands.store/terms":"")),logo=https(data.logo_url);
   const prefs=https(data.preferences_url);
   const prefNote="Essential order, payment and security messages cannot be disabled. Optional delivery updates can be turned off.";

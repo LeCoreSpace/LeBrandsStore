@@ -20,6 +20,8 @@ async function ready(tx,token) {
 async function detail(tx,token,id) {
   const [row]=await tx`SELECT public.business_review_detail(${token},${id}) AS data`;
   const data=decode(row.data);
+  const [features]=await tx`SELECT to_regprocedure('public.business_publication_ready(uuid)') IS NOT NULL AS after_publication`;
+  data.after_publication=features?.after_publication===true;
   for(const doc of data.documents||[])doc.download_url=`${ROOT}/${id}/documents/${doc.id}`;
   return data;
 }
@@ -46,10 +48,15 @@ async function reviewRequest(request,env,db,user,token) {
       if(!row)throw fail("Document not found.",404);
       const object=request.method==="HEAD"?await env.BUSINESS_DOCUMENTS.head(row.object_key):await env.BUSINESS_DOCUMENTS.get(row.object_key);
       if(!object)throw fail("Document is unavailable.",503);
+      const inline=url.searchParams.get("view")==="inline";
+      const viewable=["application/pdf","image/png","image/jpeg","image/webp"].includes(row.mime);
+      if(inline&&!viewable)throw fail("This file type is available as a download only.",400);
       return new Response(request.method==="HEAD"?null:object.body,{headers:{...headers,
-        "content-type":"application/octet-stream","content-disposition":'attachment; filename="business-document"',
+        "content-type":inline?row.mime:"application/octet-stream",
+        "content-disposition":inline?'inline; filename="business-document"':'attachment; filename="business-document"',
         "content-length":String(Number(row.size_bytes)),"x-content-type-options":"nosniff",
-        "content-security-policy":"default-src 'none'; sandbox"}});
+        "x-frame-options":inline?"SAMEORIGIN":"DENY",
+        "content-security-policy":inline?"default-src 'none'; frame-ancestors 'self'; sandbox":"default-src 'none'; sandbox"}});
     }
     if(!id) {
       const status=url.searchParams.get("status")||"pending_review";
@@ -61,7 +68,12 @@ async function reviewRequest(request,env,db,user,token) {
         const [row]=await tx`SELECT public.business_review_queue(${token},${status},${index*30}) AS data`;
         return {...decode(row.data),status,page:index};
       });
-    } else if(read) data=await db.account(tx=>detail(tx,token,id));
+    } else if(read) {
+      data=await db.account(tx=>detail(tx,token,id));
+      if(url.searchParams.get("reviewed")==="1")data.notice=data.after_publication
+        ?"Decision saved. An email has been queued for the brand."
+        :"Decision saved.";
+    }
     else {
       const fields=await readForm(request);
       if([...fields.keys()].some(k=>!["expected_revision","decision","note","manual_review"].includes(k))||
@@ -72,7 +84,7 @@ async function reviewRequest(request,env,db,user,token) {
         typeof form.note!=="string"||form.note.trim().length<10||form.note.trim().length>1000||fields.get("manual_review")!=="1")
         throw fail("Confirm manual review and enter a decision note of 10 to 1000 characters.",400);
       await db.account(tx=>tx`SELECT public.business_review_decide(${token},${id},${Number(revision)},${form.decision},${form.note.trim()},${true})`);
-      return new Response(null,{status:303,headers:{...headers,location:`${ROOT}/${id}`}});
+      return new Response(null,{status:303,headers:{...headers,location:`${ROOT}/${id}?reviewed=1`}});
     }
     const response=page(view,data,user);
     return request.method==="HEAD"?new Response(null,{status:response.status,headers:response.headers}):response;
