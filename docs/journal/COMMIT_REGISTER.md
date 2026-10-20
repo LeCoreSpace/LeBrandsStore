@@ -1,5 +1,13 @@
 # Complete implementation checkpoint register
 
+### Owner-approved Cloudflare UI release, 20 October 2026
+
+Published main Worker version `655025e5-5a72-4e11-b9a8-52754abc207c`
+after 42 focused tests and a successful build. Binding/route preservation and
+public page/browser module/webhook connectivity checks passed. No migrations
+or checkout activation. Read-only audit flagged eight older SQL checksum
+discrepancies without altering the migration ledger. No manual Git commit.
+
 ### Live partner webhook binding completed, 20 October 2026
 
 Applied the owner-approved shared signing value through a single encrypted

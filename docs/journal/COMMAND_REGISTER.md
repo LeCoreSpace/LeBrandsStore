@@ -1,5 +1,28 @@
 # Integration, migration and deployment command register
 
+## 20 October 2026: Approved UI release and read-only production audit
+
+- Names-only Cloudflare settings audit plus read-only external Supabase
+  `schema_migrations`/function ACL inspection: 49 migration records, no pending
+  local filenames, matching OAuth checksums and correct restricted helper
+  grants. Eight historical source/checksum mismatches were reported, not
+  repaired. No financial or merchant records queried.
+- Ran the eight release-focused Node test files serially: 42 tests passed.
+  Wrangler dry-run compiled browser assets successfully. Before publication,
+  compared source-module sections of deployed and release Worker bundles:
+  only dashboard server UI changed.
+- Executed owner-approved
+  `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars`.
+  Main Worker version: `655025e5-5a72-4e11-b9a8-52754abc207c`.
+  No migration command or independent Test/other-product deploy was run.
+- Post-release metadata verified all previous binding fingerprints and route
+  patterns unchanged. Homepage/login 200; callback 303; Settings entry and four
+  transitive JS modules 200; invalid webhook signature 400; signed synthetic
+  unknown-account event 200; separate Test health configured/test/200.
+
+No checkout activation, real payment/refund, matched merchant webhook mutation,
+source-secret exposure or administrative credential copy.
+
 ## 20 October 2026: Live partner webhook binding and endpoint checks
 
 - With explicit confirmation of intentional Test/Live secret reuse, used one

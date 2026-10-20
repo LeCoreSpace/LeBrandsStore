@@ -1,5 +1,48 @@
 # LeBrands.Store implementation journal
 
+## 20 October 2026: Approved Cloudflare UI release published
+
+- Owner explicitly approved publishing the latest application code. Ran 42
+  release-focused OAuth, Ann, navigation and browser delivery tests: all passed.
+  Wrangler dry-run build passed. Comparing deployed/release server bundle
+  sections found only `src/ui/dashboard.js` changed; database runtime modules
+  were unchanged.
+- Ran `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars`.
+  Published main Worker version `655025e5-5a72-4e11-b9a8-52754abc207c`,
+  with 14 new/modified static assets. Existing platform routes, queue and
+  scheduled triggers were retained. No other product Worker was deployed.
+- Post-release settings comparison found every existing binding unchanged,
+  including all encrypted secrets and the five Live OAuth settings. Existing
+  AI credential uses `OPENAI_API_KEY`, not the workspace handoff name.
+  Production core auth, Turnstile, email, GST, scanner, billing and OAuth
+  binding names were checked without exposing values.
+- Homepage/login returned 200, empty callback 303, and five production Settings
+  JavaScript dependencies loaded successfully with the flattened integration
+  UI present. Invalid webhook signature returned 400; a signed synthetic
+  unknown-account event returned 200. Separate Test receiver stayed healthy.
+  Real merchant consent, matched Razorpay delivery and payments remain
+  unverified. No checkout activation or merchant/order mutation.
+- Read-only external Supabase metadata inspection found all 49 local migration
+  filenames recorded, none pending, and both OAuth migration checksums correct.
+  OAuth helper execution is granted to APP and denied to PUBLIC, anon,
+  authenticated and service_role.
+- Eight older local SQL files differ from their recorded checksums:
+  `0012_aura_skeleton_sections.sql`, `0016_ann_foundation.sql`,
+  `0020_catalogue_masters.sql`, `0022_catalogue_reviewed_references.sql`,
+  `0023_d2c_variant_profiles.sql`, `0026_d2c_type_memberships.sql`,
+  `0027_d2c_food_profile_corrections.sql`, `0028_d2c_descriptor_coverage.sql`.
+  This is a history/source discrepancy, not evidence of pending migrations.
+  Did not rerun migrations, rewrite checksums or claim complete SQL alignment.
+  UI publication did not require a database runtime change.
+- Cloudflare management token/zone provisioning settings are not configured
+  in the Worker; custom-domain provisioning remains separately gated. Did not
+  copy administrative database URLs, operator passwords or broad deployment
+  credentials into runtime.
+- Preview login screenshot showed the ticket layout. It reported a generic
+  socket resource error; independent production page/module checks above
+  passed. No authenticated browser journey was run for this code-only UI
+  release.
+
 ## 20 October 2026: Live webhook binding completed with owner-approved shared value
 
 - Owner explicitly confirmed that using the same signing value for Test and
