@@ -22,3 +22,9 @@ ai credits later” and “aigeneration by you, not openai as it was causing iss
 **How to apply:** Preserve existing media and private business-document storage.
 Distinguish agent-generated assets delivered through chat from any future in-app
 generation service; agree on a runtime provider before implementing the latter.
+
+The proposed Media Library AI Image Generation tab must let the merchant attach an existing library creative as a product reference while describing the desired image.
+
+**Why:** The user explicitly requested reference attachments from the media library, not a text-only generation form.
+
+**How to apply:** Carry this requirement into the generation UI and provider selection; the eventual runtime must support reference-image input. This does not select a provider or change the deferred credits decision.
