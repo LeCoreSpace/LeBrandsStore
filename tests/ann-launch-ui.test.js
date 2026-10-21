@@ -254,7 +254,7 @@ test("SSL indicator distinguishes ongoing, ready, failed and unknown evidence wi
 test("Open store uses the exact active HTTPS hostname, never an inactive domain or unsafe URL",async()=>{
   const h=await harness(false,undefined,true);
   try{
-    const domain={hostname:"www.brand.com",status:"active",ssl_status:"active",hostname_status:"active",cname_verified:true,checked_at:"2026-10-21T04:00:00Z"};
+    const domain={hostname:"www.brand.com",status:"active",ssl_status:"active",hostname_status:"active",cname_verified:true,checkout_security:{status:"ready"},checked_at:"2026-10-21T04:00:00Z"};
     h.setState({domain,platform:{domains_available:true,domain_activation_available:true}});
     await h.click({lnA:"reload"});h.ui.mount(1,{customDomainOnly:true});
     assert.match(h.slot.innerHTML,/href="https:\/\/www\.brand\.com\/" target="_blank" rel="noopener noreferrer">Open store/);
@@ -287,7 +287,7 @@ test("domain activation only asks connected-payment stores for website approval 
   try{
     h.setState({payment_domain_confirmation_required:true,platform:{domains_available:true,domain_activation_available:true},
       domain:{id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",hostname:"www.brand.com",status:"pending",
-        hostname_status:"active",ssl_status:"active",cname_verified:true}});
+        hostname_status:"active",ssl_status:"active",cname_verified:true,checkout_security:{status:"ready"}}});
     await h.click({lnA:"reload"});h.ui.mount(1,{customDomainOnly:true});
     assert.match(h.slot.innerHTML,/data-ln-ack="dom"/);
     assert.match(h.slot.innerHTML,/This does not turn payments on or reconnect your account/);
@@ -307,6 +307,21 @@ test("domain activation only asks connected-payment stores for website approval 
     assert.equal(h.requests.length,2);
     assert.equal(h.requests[1].action,"domain-activate");
     assert.equal(h.requests[1].provider_domain_confirmed,false);
+  }finally{await h.close();}
+});
+
+test("checkout security failure is grouped with domain progress and cannot be activated",async()=>{
+  const h=await harness(false,undefined,true);
+  try{
+    h.setState({platform:{domains_available:true,domain_activation_available:true},
+      domain:{id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",hostname:"www.brand.com",status:"pending",
+        hostname_status:"active",ssl_status:"active",cname_verified:true,checkout_security:{status:"attention"}}});
+    await h.click({lnA:"reload"});h.ui.mount(1,{customDomainOnly:true});
+    assert.match(h.slot.innerHTML,/Checkout security:.*Needs attention/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="dact"/);
+    await h.click({lnA:"dchk"});
+    assert.match(h.slot.innerHTML,/ann-error[^>]*>Your address was checked, but checkout security setup needs our attention/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="dact"|Cloudflare|Turnstile/);
   }finally{await h.close();}
 });
 test("domain setup groups progress and next action, revealing payment approval only when ready",async()=>{
@@ -338,14 +353,14 @@ test("domain setup groups progress and next action, revealing payment approval o
     assert.match(h.slot.innerHTML.split("data-ln-domain-result")[1],/Please retry\. Your choices are kept/);
     assert.equal(h.resultViews.length,4,"failed checks also bring their result into view");
     h.setFailure(false);
-    h.setState({domain:{...domain,ssl_status:"active"}});
+    h.setState({domain:{...domain,ssl_status:"active",checkout_security:{status:"ready"}}});
     await h.click({lnA:"reload"});
     assert.match(h.slot.innerHTML,/Next: confirm that Razorpay/);
     assert.match(h.slot.innerHTML,/data-ln-ack="dom"/);
     h.ack("dom",true);
     assert.match(h.slot.innerHTML,/Everything is ready/);
     assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="dact" disabled/);
-    h.setState({domain:{...domain,status:"active",ssl_status:"active"}});
+    h.setState({domain:{...domain,status:"active",ssl_status:"active",checkout_security:{status:"ready"}}});
     await h.click({lnA:"reload"});
     assert.match(h.slot.innerHTML,/ann-callout ann-success[^>]*>Customers can now use this address/);
     assert.doesNotMatch(h.slot.innerHTML,/data-ln-ack="dom"|data-ln-a="dact"/);

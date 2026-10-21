@@ -578,7 +578,7 @@ function initTurnstile() {
     const slot = document.querySelector("[data-turnstile]");
     if (!slot || !window.turnstile) { showCheckoutError("Security verification could not load. Check your connection and retry."); return; }
     try {
-      turnstileWidget = window.turnstile.render(slot, { sitekey: siteKey, action: "checkout", theme: "auto", callback: (token) => { turnstileToken = token; clearCheckoutError();updatePlaceOrderAvailability(); }, "expired-callback": () => { turnstileToken = "";updatePlaceOrderAvailability(); }, "error-callback": () => { turnstileToken = ""; showCheckoutError("Security verification is temporarily unavailable. Please retry.");updatePlaceOrderAvailability(); } });
+      turnstileWidget = window.turnstile.render(slot, { sitekey: siteKey, action: "checkout", theme: "auto", appearance:"interaction-only", "before-interactive-callback":()=>slot.scrollIntoView({block:"center",behavior:"smooth"}), callback: (token) => { turnstileToken = token; clearCheckoutError();updatePlaceOrderAvailability(); }, "expired-callback": () => { turnstileToken = "";updatePlaceOrderAvailability(); }, "error-callback": () => { turnstileToken = ""; showCheckoutError("We could not verify this connection. Your bag is kept. Please try again shortly.");updatePlaceOrderAvailability(); } });
     } catch { showCheckoutError("Security verification could not start. Please reload and try again."); }
   };
   script.onerror = () => showCheckoutError("Security verification could not load. Check your connection and retry.");
@@ -724,6 +724,7 @@ if (readOnly) {
   emailAuth=initializeCheckoutContact({api,apiRoot:configNode?.dataset.apiRoot||"",storageKey,
     onUpdate:updatePlaceOrderAvailability,onStateChange:()=>validateCart(),
     security:{token:()=>turnstileToken,
+      ready:async()=>{for(let n=0;n<80;n++){if(turnstileToken)return turnstileToken;await new Promise(resolve=>setTimeout(resolve,250));}return "";},
       focus:()=>document.querySelector("[data-turnstile]")?.scrollIntoView({block:"center",behavior:"smooth"}),
       reset:()=>{turnstileToken="";try{if(turnstileWidget!=null)window.turnstile?.reset(turnstileWidget);}catch{}updatePlaceOrderAvailability();}}});
   document.querySelectorAll("[data-product-options]").forEach(initOptions);

@@ -1,5 +1,12 @@
 # Complete implementation checkpoint register
 
+### Automatic checkout security setup, staged release
+
+Store-owned widget provisioning, encrypted tenant isolation, activation
+readiness gating and background email-send waiting. Recovery and failure
+boundaries are covered by isolated tests. Migration and live publish are not
+applied; platform Turnstile write permission remains a deployment prerequisite.
+
 ### Checkout security hostname configuration blocked
 
 Diagnosed separate widget hostname authorization after successful merchant SSL

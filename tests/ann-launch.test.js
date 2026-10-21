@@ -5,6 +5,7 @@ import { prepareAnnLaunch, saveAnnLaunch } from "../src/store/ann-launch.js";
 import { handleAnnRoutes } from "../src/store/ann-routes.js";
 import { sealCredentials, openCredentials, verifyRazorpay, verifyShiprocket, domainHostname, checkDomain } from "../src/connections/providers.js";
 import { migrationSelection } from "../db/migration-selection.js";
+import {securityProvider} from "./helpers/checkout-security-provider.js";
 
 const id = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", owner = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const editor = "cccccccc-cccc-4ccc-8ccc-cccccccccccc", other = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
@@ -119,7 +120,10 @@ test("launch setup persists independently, keeps tenant/owner isolation and neve
 test("custom domains require real DNS and SSL evidence, explicit activation and cannot escape their tenant", async () => {
   const pg = await setupAnnFixtureDatabase(), db = annFixtureAdapter(pg);
   let hostStatus = "pending", ssl = "pending", cname = false, creates = 0,platformReady=true;
+  const security=securityProvider();
   const remote = async (url, options) => {
+    const securityResult=await security.fetcher(url,options);
+    if(securityResult)return securityResult;
     if (url.startsWith("https://api.razorpay.com/")) return json({ entity: "collection", items: [] });
     if (url.startsWith("https://cloudflare-dns.com/")) return json({ Answer: cname ? [{ name: "www.brand.com", type: 5, data: "brands.lebrands.store." }] : [] });
     if (url.endsWith("/custom_hostnames/fallback_origin")) return json({success:true,result:{origin:"store-origin.lebrands.store",status:platformReady?"active":"pending"}});

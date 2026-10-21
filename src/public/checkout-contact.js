@@ -36,10 +36,12 @@ export function initializeCheckoutContact({api,apiRoot="",storageKey,security,on
   send.addEventListener("click",async()=>{
     if(pending)return;
     if(!email.checkValidity()||!address()){email.reportValidity();return;}
-    const token=security.token();
-    if(!token){sync("Complete the security check below, then send the code.");security.focus();return;}
-    const requestedEmail=address();pending=true;sync("Sending your code…");
+    const requestedEmail=address();pending=true;sync("Verifying your connection…");
     try{
+      const token=security.token()||await security.ready?.();
+      if(!token){sync("We could not verify this connection. Please try again shortly.");security.focus();return;}
+      if(address()!==requestedEmail){sync("Email changed. Send a code to the new address.");return;}
+      sync("Sending your code…");
       const result=await api("/api/checkout/email/start",{email:requestedEmail,turnstile_token:token});
       // Do not attach a response to an email edited during the request.
       if(address()!==requestedEmail){sync("Email changed. Send a code to the new address.");return;}

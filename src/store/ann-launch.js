@@ -6,6 +6,7 @@ import { connection, shiprocketClient } from "../connections/runtime-client.js";
 import { shippingSettings, pickupLocations } from "../connections/shipping.js";
 import { domainPlatform } from "../connections/domain-platform.js";
 import {oauthAvailable,OAUTH_WEBHOOK} from "../connections/razorpay-oauth.js";
+import {ensureCheckoutSecurity} from "../connections/checkout-security.js";
 
 const fail = (message, status = 400) => { throw Object.assign(new Error(message), { status }); };
 const plain = v => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -67,6 +68,7 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
       !Number.isSafeInteger(body.expected_revision) || body.expected_revision < 0 ||
       Object.keys(body).some(k => !["action", "confirm", "expected_revision", ...fields[body.action]].includes(k)))
     fail("Use the connection form and confirm this change.");
+  await tx`SELECT store_id FROM public.stores WHERE store_id=${id} FOR UPDATE`;
   const current = await rows(tx, id);
   if (current.revision !== body.expected_revision) fail("Connections changed in another window. Reload their status, review your choice and try again.", 409);
   if (current.revision >= 2147483646) fail("Connection history needs platform assistance.", 409);
@@ -193,6 +195,14 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
       evidence = domainEvidence(result, env);
       const platform=await domainPlatform(env,fetcher);
       evidence.platform_diagnostics=platform.diagnostics;
+      if(platform.ready && evidence.hostname_status==="active" && evidence.ssl_status==="active" && evidence.cname_verified){
+        try{evidence.checkout_security=await ensureCheckoutSecurity(tx,id,domain.hostname,env,fetcher);}
+        catch(error){
+          if(!error.checkoutSecurity)throw error;
+          evidence.checkout_security={status:"attention",checked_at:new Date().toISOString()};
+          if(body.action==="domain-activate")throw error;
+        }
+      }else evidence.checkout_security={status:"waiting"};
       if (body.action === "domain-check" && domain.status === "active" &&
           (evidence.hostname_status !== "active" || evidence.ssl_status !== "active" || !evidence.cname_verified)) {
         await tx`UPDATE public.domains SET status='failed',is_primary=false WHERE store_id=${id} AND id=${domain.id}`;
@@ -202,6 +212,8 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
         if (!platform.ready) fail("Your store connection needs our attention. Your included address still works. Please contact support.", 503);
         if (evidence.hostname_status !== "active" || evidence.ssl_status !== "active" || !evidence.cname_verified)
           fail("We need to confirm your website address, ownership and secure connection before you can activate it.");
+        if(evidence.checkout_security?.status!=="ready")
+          fail("Your checkout security setup is not ready yet. Your included address keeps working. Please contact support.",503);
         if (current.providers.some(p => p.provider === "razorpay" && p.status === "connected") && body.provider_domain_confirmed !== true)
           fail("Confirm that this domain is approved in your Razorpay account before activating it.");
         await tx`UPDATE public.domains SET status='active',is_primary=true WHERE store_id=${id} AND id=${domain.id}`;

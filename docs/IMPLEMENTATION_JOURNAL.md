@@ -1,5 +1,25 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Automatic custom-domain checkout security, staged
+
+- Added store-scoped managed-widget provisioning after real DNS, ownership,
+  SSL and platform checks, with mandatory read-back before activation.
+- Dedicated widgets, encrypted tenant-bound keys, forced-RLS storage and stable
+  provider identities cover retries without modifying the shared platform
+  widget. Capacity/permission failures block activation without bypasses.
+- Checkout uses the matching server secret and public site key. Included
+  platform addresses retain the current configuration.
+- Domain progress now includes checkout security. Email-code sending waits
+  for background verification and prevents duplicate or changed-email sends.
+- Staged migration and production release are not applied. Live provisioning
+  still requires the one-time Turnstile write permission.
+- Verification: 32 backend and 25 UI checks passed; versioned browser assets
+  built. One isolated browser pass confirmed background waiting and automatic
+  single email-start submission using a real public test widget and synthetic
+  email-response interception. No real email, payment or order was created.
+  The attention state was observed in a read-only fixture; the ready-state
+  owner/payment gate is unit-tested, not fully browser-verified.
+
 ## 2026-10-21: Custom-domain checkout security diagnosis, blocked on permission
 
 - Confirmed the live checkout widget authorizes only the platform domain, not

@@ -30,6 +30,8 @@ export function razorpayPaymentNotice(provider){
   return {ok:true,text:"Your Razorpay account is connected and payment updates are working. Online payments are currently off."};
 }
 export function launchSavedMessage(fields,state={}){
+  if(fields.action==="domain-check"&&state?.domain?.checkout_security?.status==="attention")
+    return "Your address was checked, but checkout security setup needs our attention. Please contact support.";
   if(fields.action==="activate"){
     if(fields.provider==="razorpay")return fields.enabled?
       (state.providers?.razorpay?.runtime_ready?"Online payments are on. Customers can now pay through Razorpay.":"Your payment settings have been saved. Check the connection status above before taking payments."):
@@ -82,7 +84,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   }
   const v = k => draftVals[k].trim();
   const hostOk = () => HOST.test(v("host").toLowerCase());
-  const domVerified = () => { const d = state?.domain, p = state?.platform; return !!d && d.hostname_status === "active" && d.ssl_status === "active" && d.cname_verified === true && !!p?.domain_activation_available; };
+  const domVerified = () => { const d = state?.domain, p = state?.platform; return !!d && d.hostname_status === "active" && d.ssl_status === "active" && d.cname_verified === true && !!p?.domain_activation_available && d.checkout_security?.status==="ready"; };
   const domLive = () => state?.domain?.status === "active";
   const domainPaymentRequired = () => state?.payment_domain_confirmation_required ??
     Boolean(state?.providers?.razorpay?.verified || state?.providers?.razorpay?.runtime_ready);
@@ -116,7 +118,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       if (!res.ok) throw new Error([result.error || "Could not save. Your entries are kept.", ...Object.values(result.errors || {})].join(" "));
       take(result); stale = false;
       onOk?.();
-      msgs[key] = { ok: true, text: launchSavedMessage(fields,result) };
+      msgs[key] = { ok: !(fields.action==="domain-check"&&result.domain?.checkout_security?.status==="attention"), text: launchSavedMessage(fields,result) };
       try { onSaved?.(result); } catch { /* host error */ }
     } catch (e) { msgs[key] = { text: e.message }; }
     finally {
@@ -215,7 +217,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
         ? `${diag}<p class="ann-note">Enter a website address such as www.yourbrand.com or shop.yourbrand.com. Addresses without www or another name at the start are not supported yet.</p>${inp("host", "Website address")}${msg("dom")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="dadd"${dis(!hostOk())}>Add domain</button></div>`
         : `<p class="ann-callout ann-success" role="status">Your included address${s.included_address?` (${esc(s.included_address)})`:""} is ready to use. Connecting your own website address is not available yet. Your store can keep using its included address.</p>`;
     } else {
-      const live = domLive();
+      const live = domLive() && d.checkout_security?.status==="ready";
       const ready = domVerified();
       const ssl = sslCertificateStatus(d.ssl_status);
       const openStore = live && HOST.test(d.hostname) ? `<a class="ann-btn sm" href="https://${esc(d.hostname)}/" target="_blank" rel="noopener noreferrer">Open store<span class="ann-sr-only"> at ${esc(d.hostname)} (opens in a new tab)</span></a>` : "";
@@ -224,16 +226,19 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
       const records = d.dns_records || [];
       const neededRecords = live || ready ? [] : records.filter(r => r.type === "CNAME" ? !d.cname_verified : d.hostname_status !== "active" || d.ssl_status !== "active");
       const recordTable = rows => `<div class="ann-dns-table" role="table" aria-label="Required domain records"><div class="ann-dns-row ann-dns-head" role="row"><span role="columnheader">Type</span><span role="columnheader">Name</span><span role="columnheader">Value</span></div>${rows.map(r => `<div class="ann-dns-row" role="row"><b role="cell">${esc(r.type)}</b><span role="cell"><code>${esc(r.name)}</code><button type="button" class="ann-dns-copy" data-ln-copy="${esc(r.name)}" aria-label="Copy record name">Copy</button></span><span role="cell"><code>${esc(r.value)}</code><button type="button" class="ann-dns-copy" data-ln-copy="${esc(r.value)}" aria-label="Copy record value">Copy</button></span></div>`).join("")}</div>`;
-      const nextStep = live ? "Customers can now use this address to visit your store."
+      const checkoutStatus=d.checkout_security?.status;
+      const nextStep = checkoutStatus==="attention" ? "Your checkout security setup needs our attention. Your included address keeps working. Please contact support."
+        : live && checkoutStatus==="ready" ? "Customers can now use this address to visit your store."
         : !plat.domain_activation_available ? "We are preparing your store connection. Your included address keeps working. Check again later or contact support if this continues."
         : ssl.state === "attention" ? "Next: check the verification records above or contact support for help with your SSL certificate."
         : !d.cname_verified ? "Next: update the website record shown above, then check the connection."
         : d.hostname_status !== "active" || d.ssl_status !== "active" ? neededRecords.length ? "Next: add the verification record above if you have not already. If it is saved, wait for the secure connection to finish, then check again." : "Your website address is connected. We are preparing the secure connection. Wait a little, then check again."
+        : checkoutStatus!=="ready" ? "Next: select Check connection. We will finish checkout security setup automatically. You do not need to configure a security service yourself."
         : domainPaymentRequired() && !ack ? "Next: confirm that Razorpay has approved this website address, then activate it."
         : "Everything is ready. Activate this address to start using it for your store.";
       const dns = neededRecords.length ? `<h4>${d.cname_verified ? "Add your verification record" : "Update your domain records"}</h4><p class="ann-note">Open DNS or Manage records where you bought your domain. Add the records below, then select Check connection.</p>${recordTable(neededRecords)}` : "";
       const help = records.length ? `<details class="ann-domain-record-help"><summary>Need help with domain records?</summary><p class="ann-note"><strong>Already have a record with the same name, such as www?</strong> Edit that existing record instead of adding a second one. For a CNAME, replace its Value or Points to with the value below. This changes where that website address opens. If the existing record has a different type, check with your domain provider before replacing it.</p><p class="ann-note">Leave email records and records for other names unchanged. Add any missing TXT records shown below. Some providers ask for only the name before your domain, such as www or _acme-challenge.www; others accept the full name. Check that your domain is not added twice.</p><h4>All saved records</h4>${recordTable(records)}</details>` : "";
-      const dnsStatus=`<ul class="ann-note" aria-label="Connection progress"><li>Website address: <strong>${d.cname_verified ? "Connected" : "Waiting for your record"}</strong></li><li>Ownership: <strong>${d.hostname_status === "active" ? "Confirmed" : "Waiting for verification"}</strong></li><li>SSL certificate: <strong class="ann-ssl-indicator" data-state="${ssl.state}"><i aria-hidden="true"></i>${ssl.label}</strong></li></ul><p class="ann-note">${esc(ssl.detail)}${d.checked_at ? ` Last checked: ${esc(when(d.checked_at))}.` : ""} Select Check connection to refresh this status.</p>`;
+      const dnsStatus=`<ul class="ann-note" aria-label="Connection progress"><li>Website address: <strong>${d.cname_verified ? "Connected" : "Waiting for your record"}</strong></li><li>Ownership: <strong>${d.hostname_status === "active" ? "Confirmed" : "Waiting for verification"}</strong></li><li>SSL certificate: <strong class="ann-ssl-indicator" data-state="${ssl.state}"><i aria-hidden="true"></i>${ssl.label}</strong></li><li>Checkout security: <strong class="ann-ssl-indicator" data-state="${checkoutStatus==="ready"?"ready":checkoutStatus==="attention"?"attention":"unknown"}"><i aria-hidden="true"></i>${checkoutStatus==="ready"?"Ready":checkoutStatus==="attention"?"Needs attention":"Waiting for setup"}</strong></li></ul><p class="ann-note">${esc(ssl.detail)}${d.checked_at ? ` Last checked: ${esc(when(d.checked_at))}.` : ""} Select Check connection to refresh this status.</p>`;
       const paymentAck = !live && ready && domainPaymentRequired() ? `<p class="ann-note" id="ann-domain-payment-help">Before using ${esc(d.hostname)} for online payments, add this address to the approved websites in your Razorpay account and complete any approval Razorpay requests. This does not turn payments on or reconnect your account.</p><label class="ann-check"><input type="checkbox" data-ln-ack="dom" aria-describedby="ann-domain-payment-help"${ack ? " checked" : ""}${dis()}><span>Razorpay has approved this website address for online payments.</span></label>` : "";
       dom = `<section aria-label="Domain connection"><p><strong>${esc(d.hostname)}</strong> <span class="ann-launch-st">${esc(domainStatusLabel(d.status))}${d.primary ? ", main address" : ""}</span></p>${dns}${paymentAck}<div class="ann-actions">${openStore}<button type="button" class="ann-btn alt sm" data-ln-a="dchk"${dis()}>${busy === "dom" ? "Checking" : "Check connection"}</button>${live || !ready ? "" : `<button type="button" class="ann-btn sm" data-ln-a="dact"${dis(domainPaymentRequired() && !ack)}>Activate domain</button>`}</div><div data-ln-domain-result tabindex="-1" aria-label="Current connection status"><h4>Current status</h4>${msg("dom")}${dnsStatus}<p class="${live ? "ann-callout ann-success" : "ann-note"}" role="status">${esc(nextStep)}</p></div></section>${forwarding}${help}<details><summary>Remove this address</summary><p class="ann-note">Your included store address will keep working. Nothing is deleted at your domain provider.</p><button type="button" class="ann-btn alt sm" data-ln-a="drem"${dis(confirmRemove)}>Remove</button></details>${confirmRemove ? `<div class="ann-conflict" role="alertdialog"><p>Remove ${esc(d.hostname)}? Your store will stop using this address. Nothing is deleted at your domain or payment provider.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="drem-yes"${dis()}>Yes, remove</button><button type="button" class="ann-btn alt sm" data-ln-a="drem-no">Keep domain</button></div></div>` : ""}`;
     }

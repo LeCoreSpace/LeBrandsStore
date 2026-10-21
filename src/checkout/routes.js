@@ -12,6 +12,7 @@ import { checkoutPayment, verifyCheckout } from "../connections/payments.js";
 import {offerCode} from "../offers/rules.js";
 import {startCheckoutEmail,completeCheckoutEmail,requireCheckoutEmail} from "./email-auth.js";
 import {pincodeLocation} from "./pincode.js";
+import {checkoutSecurityEnvironment} from "../connections/checkout-security.js";
 
 export const CHECKOUT_HEADERS = {...SECURITY_HEADERS,"cache-control":"no-store","referrer-policy":"no-referrer","x-robots-tag":"noindex, nofollow"};
 const json = (data,status = 200) => new Response(JSON.stringify(data),{
@@ -23,7 +24,8 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
   try {
     if (!api) {
       if (!["GET","HEAD"].includes(request.method)) return json({error:"Method not allowed."},405);
-      const options = {commerce:true,siteKey:env.TURNSTILE_SITE_KEY ?? "",page:url.pathname.slice(1)};
+      const securityEnv=url.pathname==="/checkout"?await checkoutSecurityEnvironment(db,store,request,env):env;
+      const options = {commerce:true,siteKey:securityEnv.TURNSTILE_SITE_KEY ?? "",page:url.pathname.slice(1)};
       if (url.pathname.startsWith("/orders/")) {
         options.page = "confirmation";
         const token = url.pathname.split("/")[2];
@@ -57,7 +59,7 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
       if(!await db.withStore(store.store_id,tx=>consumeIpLimit(tx,store.store_id,hash,"checkout")))
         throw commerceError("Too many verification attempts. Please wait a minute.",undefined,429);
       if(url.pathname.endsWith("/start")){
-        await (dependencies.verifyTurnstile??verifyTurnstile)(request,env,body);
+      await (dependencies.verifyTurnstile??verifyTurnstile)(request,dependencies.verifyTurnstile?env:await checkoutSecurityEnvironment(db,store,request,env),body);
         return json(await startCheckoutEmail(db,store,env,body.email,{sendEmail:dependencies.sendCheckoutEmail}));
       }
       return json(await completeCheckoutEmail(db,store.store_id,env,body));
@@ -101,7 +103,7 @@ export async function handleCheckout(request,env,db,store,data,dependencies = {}
       await db.withStore(store.store_id,tx=>checkoutPayment(tx,store.store_id,input,env,dependencies.fetcher)):replay);
     await requireCheckoutEmail(env,store.store_id,input.contact.email,body.email_verification);
     // Tests inject a verification dependency; there is no URL/env production bypass.
-    await (dependencies.verifyTurnstile ?? verifyTurnstile)(request,env,body);
+    await (dependencies.verifyTurnstile ?? verifyTurnstile)(request,dependencies.verifyTurnstile?env:await checkoutSecurityEnvironment(db,store,request,env),body);
     const receiptHash = await sha256(`${store.store_id}:${input.receipt_token}`);
     const placed=await db.withStore(store.store_id,(tx) =>
       placeCodOrder(tx,store.store_id,input,requestHash,receiptHash,orderSource(body,request),env,dependencies.fetcher));

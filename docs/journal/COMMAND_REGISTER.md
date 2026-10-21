@@ -1,5 +1,16 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Automatic checkout security, local verification
+
+- Executed focused backend, migration, isolation, provider-failure and UI
+  tests, browser asset build and syntax/diff checks.
+- Restarted the existing API and web workflows as a batch; both are serving.
+- Production commands are staged, NOT RUN:
+  `node db/migrate.js --staged-checkout-security`, then the established
+  Cloudflare publish procedure with binding and route preservation.
+- Existing token needs account-level Turnstile Edit before live provisioning.
+  No credentials are requested in chat or logged.
+
 ## 21 October 2026: Checkout security hostname diagnosis
 
 Read-only public checkout/CSP and Turnstile widget inspection identified missing
