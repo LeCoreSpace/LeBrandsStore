@@ -1,3 +1,10 @@
+## 2026-10-21: Approved Phase 1 production publication
+
+- Captured fresh Cloudflare settings fingerprints and confirmed configured Hyperdrive/R2 resources matched production.
+- Ran `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` successfully; version `4b1a2e35-cda4-4c99-8f99-4862c182ac58` serves 100% traffic.
+- Compared all binding fingerprints and runtime settings after release; unchanged.
+- Read-only HTTPS checks passed for the live custom-store discovery files, singular redirect, sitemap HEAD and collection canonical/Open Graph metadata, plus platform homepage and database-backed login. No migrations or merchant writes.
+
 # Integration, migration and deployment command register
 
 ## 21 October 2026: Store discovery foundations

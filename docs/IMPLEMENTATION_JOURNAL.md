@@ -1,5 +1,12 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Approved Phase 1 store-discovery production release
+
+- Published Worker `4b1a2e35-cda4-4c99-8f99-4862c182ac58` at 100% traffic after user approval.
+- Live checks on `www.lebrands.shop` passed for sitemap XML, robots, llms, the singular llm redirect, empty HEAD responses and matching collection canonical/Open Graph URLs. Sitemap excludes private commerce routes.
+- Platform homepage and database-backed invalid-session login checks passed. All 28 bindings, 17 encrypted secrets and runtime settings matched the fresh pre-release baseline.
+- No migration, merchant data write or catalogue republish. Existing-store support is automatic; four distinct legacy fixtures were covered locally, not four separate live-store checks. Blog editing and public article publishing remain later phases.
+
 ## 2026-10-21: Store discovery foundations, phase one, local only
 
 - Added tenant-specific `sitemap.xml`, `robots.txt` and `llms.txt`, plus a canonical redirect for the singular `llm.txt` spelling. Files derive from published snapshots and published page layouts without backfills or catalogue republishing, covering existing and future live stores.

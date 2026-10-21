@@ -1,3 +1,7 @@
+### Phase 1 store discovery: approved production release
+
+Worker `4b1a2e35-cda4-4c99-8f99-4862c182ac58` is live at 100% traffic. Custom-store sitemap, robots, llms, singular redirect and canonical links passed live checks. Platform homepage and database-backed login remain available. Binding fingerprints, encrypted secrets and runtime settings are preserved. No migration or catalogue republish; blog authoring and public articles remain later phases.
+
 # Complete implementation checkpoint register
 
 ### Store discovery foundations: phase one, local only
