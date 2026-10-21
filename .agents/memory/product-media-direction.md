@@ -28,3 +28,9 @@ The proposed Media Library AI Image Generation tab must let the merchant attach 
 **Why:** The user explicitly requested reference attachments from the media library, not a text-only generation form.
 
 **How to apply:** Carry this requirement into the generation UI and provider selection; the eventual runtime must support reference-image input. This does not select a provider or change the deferred credits decision.
+
+Do not add a merchant cropping step to the placement-based AI generation flow. The selected placement determines the output dimensions and aspect ratio before generation; review is for accepting or regenerating the result.
+
+**Why:** The user explicitly removed cropping because the image size is already decided when choosing the placement.
+
+**How to apply:** Use placement, optional library reference, description, generation, review and save as the flow. Produce the required framing and dimensions without asking the merchant to crop; retain existing crop tools for ordinary uploads.
