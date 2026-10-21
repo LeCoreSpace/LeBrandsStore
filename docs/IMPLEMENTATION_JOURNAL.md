@@ -2529,3 +2529,24 @@ decision:
 - No real account login or private merchant usage inspection was performed.
   The 16 earlier focused checks remain valid; production publication did not
   require schema changes, data writes or integration activation.
+
+### 21 October 2026: Media Library, Stage 1 (publication pending)
+
+- Added Catalogue > Media library, backed by the current store's public R2
+  metadata. Existing stores need no backfill or new schema.
+- Your media supports filename/description search, image/video/logo filters,
+  stable pagination, pixel dimensions, file sizes, storage consumption and the
+  current allowance. A details dialog previews the file and identifies saved
+  product, design, page and blog references without exposing private records.
+- Kept this first stage read-only. No upload, deletion, orphan cleanup,
+  business-document access or generation endpoint was introduced.
+- Added Image size guide and AI Image Generation tabs with explicit staged
+  explanations. Placement guidance and the agreed optional product-reference,
+  placement-sized, no-crop generation flow remain subsequent stages. Generation
+  requires a separately agreed runtime provider; no provider or billing enabled.
+- Verification: 20 focused checks passed, including actual foundational SQL,
+  tenant isolation, aggregate storage, filtering, pagination, reference
+  discovery, authentication, write rejection, navigation and Worker module
+  delivery. Cloudflare dry-run build passed; desktop/mobile layouts inspected
+  using fictional data. Final mobile capture and media/bundle requests succeeded.
+- No production publication, migration or live merchant data writes performed.

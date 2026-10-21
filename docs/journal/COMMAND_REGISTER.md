@@ -1595,3 +1595,12 @@ of this register.
 | Live verification | Downloaded the active script and confirmed usage aggregation, current-plan UI, universal social feature and payment-test controls. Pricing returned HTTP 200 with social integration on Free and four paid cards. Canonical usage CSS matched the generated release and the versioned bundle returned HTTP 200. |
 | Account health | A valid-shaped, nonexistent synthetic session returned HTTP 200 and the login form through the production database connector. No real account session, password or private merchant data was used. |
 | Safety | No schema migration, live database writes, billing activation, provider setup or credentials changes. Private usage behavior remains covered by the earlier focused tests rather than an authenticated production browser test. |
+
+### 21 October 2026: Media Library Stage 1 verification
+
+| Working directory / target | Command or operation | Purpose and observed result |
+|---|---|---|
+| Repository root / local, no credentials | `node --test --test-concurrency=1 tests/media-library.test.js tests/dashboard-navigation.test.js tests/browser-module-delivery.test.js tests/application-dialogs.test.js` | 20 checks passed. Real foundation migrations used for media, pages and blog-reference SQL; no live database connection. |
+| Repository root / local, existing Cloudflare configuration | `pnpm exec wrangler deploy --dry-run --config wrangler.jsonc` | Browser assets and Worker bundled successfully. Dry run only, no production publication. |
+| Managed preview workflows | Restart API Server; inspect logs and `/__media-library-preview` at desktop/mobile sizes | Final fixture thumbnails and browser modules returned 200; no console errors in final capture. Fictional store only. |
+| Repository root / local | `git diff --check` | Passed. No migration, upload, deletion, provider setup or live merchant mutation performed. |

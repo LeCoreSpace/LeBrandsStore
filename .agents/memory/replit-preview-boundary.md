@@ -81,3 +81,14 @@ callback's fallback route also missed the separate session/database path.
 not only a direct Worker or shell configuration check. Keep login, provider
 start and callback on the same native path. Refresh the web workflow when its
 captured environment changes; refreshing only Wrangler is insufficient.
+
+Keep production host-specific asset restrictions intact when building
+development-only visual fixtures.
+
+**Why:** A file existing in the asset bundle does not mean the account-facing
+runtime serves its public-platform path. Loosening the host gate to repair a
+fixture would change production exposure unnecessarily.
+
+**How to apply:** Use the existing development fixture asset adapter and check
+the exact image URL with an HTTP request before spending another browser capture
+on missing thumbnails. Verify the runtime actually loaded changed fixture code.

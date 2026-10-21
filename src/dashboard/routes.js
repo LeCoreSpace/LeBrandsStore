@@ -1,6 +1,7 @@
 import { renderDashboard } from "../ui/dashboard.js";
 import {isBlogDashboard,handleBlogDashboard} from "../blog/routes.js";
 import {isContentLLMPath,handleContentLLM} from "../blog/discovery-dashboard.js";
+import {isMediaLibraryPath,handleMediaLibrary} from "./media-library-routes.js";
 import{isMarketingDashboard,handleMarketingDashboard}from"./marketing-routes.js";
 import {businessEditorAccess,protectedEditorLinks} from "../store/business-access.js";
 import { renderInvoice } from "../ui/invoice.js";
@@ -25,6 +26,7 @@ import { dashboardAccess, overview, listOrders, orderDetail, listCustomers, cust
   invoiceDetail, changeOrderStatus, collectPayment, archiveProduct, adjustStock, exportRows, audit } from "./repository.js";
 
 export function isDashboardPath(path,method = "GET") {
+  if(isMediaLibraryPath(path))return true;
   if(isContentLLMPath(path))return true;
   if(isBlogDashboard(path))return true;
   if(isMarketingDashboard(path))return true;
@@ -49,6 +51,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
     if (!match || !UUID.test(match[1])) throw commerceError("Store not found.",undefined,404);
     if (!user || user.must_change_password) throw commerceError("Sign in to manage your store.",undefined,401);
     const [,id,section = "overview",child,action] = match;
+    if(section==="media-library"&&!child&&!action)return await handleMediaLibrary(request,db,user,tokenHash,id);
     if(section==="content-llm")return await handleContentLLM(request,db,user,tokenHash,id);
     if(section==="blog")return await handleBlogDashboard(request,db,user,tokenHash,id,child,action);
     if(section==="offers")return await handleOffersDashboard(request,db,user,tokenHash,id,child,action);

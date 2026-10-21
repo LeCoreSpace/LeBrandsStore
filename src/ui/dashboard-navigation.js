@@ -20,7 +20,7 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
         live("Collections", `${root}/collections`, ["collections", "collection", "collection-new"]),
         live("Stock & SKUs", `${root}/inventory`, ["inventory"]),
         ...(role === "owner" || role === "admin" ? [live("COGS", `${root}/cogs`, ["cogs"], { hint: "Private" })] : []),
-        planned("Vendors"), planned("Media library")] },
+        planned("Vendors"), live("Media library", `${root}/media-library`, ["media-library"])] },
       { key: "offers", label: "Offers & codes", icon: "money", items: [
         role === "owner" || role === "admin" ? live("Offers & codes", `${root}/offers`, ["offers"]) : { label: "Offers & codes", href: null, kind: "owner", hint: "Owner or admin", views: [] }] },
       { key: "orders", label: "Order desk", icon: "orderDesk", items: [

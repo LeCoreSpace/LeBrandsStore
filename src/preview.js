@@ -5,6 +5,7 @@ import { renderWizard } from "./ui/wizard.js";
 import {renderEditor} from "./ui/editor.js";
 import {renderStoreBlog} from "./ui/store-blog.js";
 import {renderStoreDiscovery} from "./ui/store-discovery.js";
+import {mediaLibraryPreview} from "./media-library-preview-fixture.js";
 import {serveStoreDiscovery,storeCanonicalOrigin} from "./store/discovery.js";
 import {renderPublicBlog} from "./blog/render.js";
 import {defaultPageLayouts} from "./public/aura-layout.js";
@@ -61,6 +62,8 @@ export default {
       return new Response(request.method==="HEAD"?null:body||"Unknown template",{status:body?200:404,headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
     }
     const previewUrl=new URL(request.url);
+    if(previewUrl.pathname==="/__media-library-preview"&&["GET","HEAD"].includes(request.method))
+      return mediaLibraryPreview(request,exampleFixture().store);
     if(previewUrl.pathname==="/__style-studio-preview"&&["GET","HEAD"].includes(request.method)){
       const data=exampleFixture();data.role="owner";data.products=[];data.layouts={};
       const style=previewUrl.searchParams.get("style");
