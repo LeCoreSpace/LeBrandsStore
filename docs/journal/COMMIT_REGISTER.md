@@ -1,5 +1,9 @@
 # Complete implementation checkpoint register
 
+### Icon-led bag controls: approved production release
+
+Worker `101c164a-f497-4e75-8650-66114f033ef9` serves 100% of production traffic. Live custom-domain bag icon/count markup and database-backed login passed verification. All resource bindings, encrypted secrets and runtime settings were preserved. No migration or merchant catalogue republish.
+
 ### Icon-led bag controls across themes: preview only
 
 Shared header markup/CSS provides a shopping-bag icon, live count badge, theme-aware styling and accessible focus/read-only states across regular, saved and sample themes. Existing shopping hooks are retained. Verified with 32 focused checks and mobile/desktop screenshots. Not released to production.

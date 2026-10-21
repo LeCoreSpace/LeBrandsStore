@@ -1,5 +1,11 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Approved bag-button production release
+
+- Published the user-approved shared icon/count bag controls as Worker `101c164a-f497-4e75-8650-66114f033ef9` at 100% traffic.
+- Verified shopping-bag SVG, quantity badge, accessible text and existing cart hooks on the live custom-domain collection. Database-backed invalid-session login still renders its password form.
+- Fresh pre/post-release fingerprints confirmed all 28 bindings, 17 encrypted secrets and runtime compatibility settings unchanged. No migration or merchant catalogue republish.
+
 ## 2026-10-21: Shared icon-led bag control, preview only
 
 - Regular Aura, saved-theme, style-demo, mobile-tabbar and shared commerce headers use a consistent shopping-bag SVG and an expanding quantity badge, retaining theme colours and framing.

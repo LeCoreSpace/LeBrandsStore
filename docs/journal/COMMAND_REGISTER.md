@@ -1,5 +1,12 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Approved bag-button release
+
+- Captured fresh binding fingerprints and checked configured Hyperdrive/R2 resources against production.
+- `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars`: published `101c164a-f497-4e75-8650-66114f033ef9`; confirmed 100% traffic.
+- Verified unchanged runtime/settings fingerprints, live custom-domain bag icon/count hooks and database-backed invalid-session login.
+- No database migration or merchant catalogue publication.
+
 ## 21 October 2026: Bag control polish, preview verification
 
 - `node --test --test-concurrency=1 tests/storefront-bag-button.test.js tests/storefront-commerce-shell.test.js tests/aura-showcase.test.js tests/aura-layout.test.js tests/browser-module-delivery.test.js`: 32 checks passed.
