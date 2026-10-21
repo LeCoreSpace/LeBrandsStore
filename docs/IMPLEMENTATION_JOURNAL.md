@@ -1,5 +1,17 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Store link, SSL indicator and forwarding instructions published
+
+- Owner-approved release `07f14c77-2d80-4ed4-840b-d5309b2b052f` serves
+  100%. Confirmed Open store, SSL indicator and optional forwarding step in
+  the live module; versioned entries/styles deliver successfully.
+- Binding fingerprints, compatibility settings, all three routes and active
+  fallback preserved. Public platform/account routes and the connected www
+  storefront respond successfully; protected admin support retains its
+  unauthenticated redirect. Previous 34-test result remains applicable.
+- No registrar forwarding was configured by this release; the page explains
+  the separate provider step. No DNS, activation, payment or database changes.
+
 ## 2026-10-21: Store link, SSL indicator and optional forwarding step ready
 
 - Added Open store for the exact active HTTPS hostname, opening a new tab with

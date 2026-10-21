@@ -1,5 +1,17 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Approved store link and forwarding instructions release
+
+```sh
+pnpm exec wrangler deploy --keep-vars
+```
+
+Released `07f14c77-2d80-4ed4-840b-d5309b2b052f` at 100%. Live module and
+versioned stylesheet/module delivery verified, including SSL indicator and
+forwarding text. Configuration fingerprints/routes unchanged, fallback active;
+public/account/connected-www responses and protected admin redirect passed.
+No DB, DNS, forwarding or payment writes.
+
 ## 21 October 2026: Store link and forwarding guidance, local verification
 
 ```sh

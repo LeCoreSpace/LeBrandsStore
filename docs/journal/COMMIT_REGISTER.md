@@ -1,5 +1,11 @@
 # Complete implementation checkpoint register
 
+### Store link, SSL indicator and forwarding instructions published
+
+Owner-approved `07f14c77-2d80-4ed4-840b-d5309b2b052f` serves 100%.
+Live features/assets and connected-www response verified; configuration
+preserved. No registrar forwarding, DNS/payment changes or manual commit.
+
 ### Store link, SSL status and forwarding guidance ready locally
 
 Exact active-address link, evidence-based SSL indicator and optional bare-domain
