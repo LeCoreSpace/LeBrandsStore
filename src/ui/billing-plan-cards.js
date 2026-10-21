@@ -30,7 +30,7 @@ const bytes = (n) => n >= 1073741824 ? `${+(n / 1073741824).toFixed(1)} GB` : n 
 function featText(f) {
   const name = labels[f.key] || f.name || human(f.key);
   const v = f.value;
-  if (f.included === false) return `${name}: not included`;
+  if (f.included === false) return name;
   if (v === null || v === undefined || v === "" || v === true) return name;
   const n = Number(v);
   if (typeof v !== "boolean" && Number.isFinite(n)) {
@@ -43,13 +43,8 @@ function featList(features) {
   const items = list(features).filter(Boolean);
   if (!items.length) return `<p class="pb-muted">Feature details are not listed yet.</p>`;
   return `<ul class="pb-feats">${items.map((f) => {
-    const readiness = String(f.availability || "");
-    const pending = readiness && !["available", "ready", "live", "active"].includes(readiness);
-    const status = /conditional_on/.test(readiness) ? "Setup required"
-      : /planned|upcoming|not_implemented|acceptance_required|fulfilment_confirmation/.test(readiness) ? "Not enabled"
-      : "Verification pending";
     const on = f.included !== false;
-    return `<li data-on="${on ? "yes" : "no"}"><span class="pb-sr">${on ? "Included: " : "Not included: "}</span>${esc(featText(f))}${pending && on ? ` <small class="pb-planned" title="${esc(status)}">${status}</small>` : ""}</li>`;
+    return `<li data-on="${on ? "yes" : "no"}"><span class="pb-sr">${on ? "Included: " : "Not included: "}</span>${esc(featText(f))}</li>`;
   }).join("")}</ul>`;
 }
 function freeFeatures(ents) {
@@ -121,9 +116,8 @@ export function renderPlanCards(billing, st, access, id, canFree) {
       pricing = panels.map((p) => p.pricing).join("");
       actions = panels.map((p) => p.actions).join("");
     }
-    const state = p.offer_state ? human(p.offer_state) : "Proposal";
     return `<article class="pb-plan${asked ? " is-asked" : ""}" data-plan="${esc(p.code)}"><h3>${esc(name)}${asked ? ' <span class="pb-tag">You asked about this</span>' : ""}</h3>
-      <p class="pb-state">${esc(state)}</p><div>${pricing}</div>${featList(p.features)}<div>${actions}</div></article>`;
+      <div>${pricing}</div>${featList(p.features)}<div>${actions}</div></article>`;
   }).join("");
 
   const toggle = cat.length ? `<div class="pb-toggle" role="group" aria-label="Billing interval">
@@ -137,5 +131,5 @@ export function renderPlanCards(billing, st, access, id, canFree) {
     <div class="pb-plans">${free}${paid}</div>
     ${cat.length ? "" : `<p class="pb-muted">No paid plans are listed for this store's country.</p>`}
     <p class="pb-callout">Razorpay test mode only. No real money is charged, paid benefits are not activated, and there is no automatic renewal. Yearly amounts are simulated totals paid upfront. Tax is not assessed in this sandbox.</p>
-    <p class="pb-muted">Paid checkout is not available as a live service. Review each feature's availability and setup requirements. Features marked Not enabled cannot be used.</p></section>`;
+    </section>`;
 }

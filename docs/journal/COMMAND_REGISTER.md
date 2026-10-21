@@ -1450,4 +1450,13 @@ of this register.
 | Safe diagnostic change and publication | Added fixed-category and allowlisted-vocabulary diagnostics for connector error 58000. No raw provider message, SQL, credential or session value is logged. Published with `--keep-vars`; current Worker version is `7e8fbf56-a8d4-4eee-985a-5ebac20c343c`. |
 | Confirmed cause | Production diagnostics reported `CONNECTOR_QUERY_LIMIT` and fixed signals for account usage limit exceeded. Provider documentation lists 100,000 daily database queries on Free, reset at 00:00 UTC; Workers Paid includes unlimited Hyperdrive queries. Account billing-plan lookup was forbidden by the current token, so the actual subscription must be checked by the owner. |
 | Verification and safety | Final auth/diagnostic run: 17 passed. Earlier unchanged connection tests: 20 passed. Preserved 27 Worker bindings, 17 encrypted secrets and runtime settings. Restarted the managed preview API once after the code batch; native homepage preview and assets loaded normally. Stopped diagnostic log tails. No database schema, real account passwords, account records or store data were changed. |
-| Outstanding blocker | Production database-backed sign-in remains unavailable until the provider allowance resets or the account owner enables an appropriate plan. No billing subscription or purchase was made. Preview uses the direct restricted connection and is unaffected by this connector quota. |
+| Resolution update | Production remained blocked after connector revalidation. The user subsequently confirmed production login was working again after checking the provider plan. No billing subscription or purchase was made by the agent. Preview uses the direct restricted connection and is unaffected by this connector quota. |
+
+## 2026-10-21: Dashboard plan feature copy simplified in Preview
+
+| Scope | Result |
+| --- | --- |
+| Plan cards | Removed per-feature readiness annotations and paid-card Draft/Proposal labels. Feature names and limits remain; excluded features retain their existing styling and accessible indication without a redundant visible suffix. Removed the obsolete paragraph referring to status labels. |
+| Boundaries | Prices, intervals, backend readiness, Free dates, eligibility, test-mode disclosures and disabled checkout guards are unchanged. No schema, credentials, financial records or live billing settings were changed. |
+| Verification | All six focused plan-card tests passed; whitespace checks passed. The broader companion billing-page fixture attempt passed its first three cases but timed out while setting up the synthetic authenticated fixture; it is not reported as a completed integration pass. Managed preview API was restarted once after the code batch and resumed HTTP 200 responses. |
+| Publication | Preview only. Production publication requires the user's approval. |

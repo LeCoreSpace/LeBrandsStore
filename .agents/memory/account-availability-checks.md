@@ -20,6 +20,7 @@ Preview and production availability must be evaluated separately even when
 they use the same database.
 
 **Why:** The user confirmed that Preview login worked while production failed.
+The user subsequently confirmed production login was working again.
 Preview's restricted direct connection does not pass through the production
 connector or consume its query allowance.
 

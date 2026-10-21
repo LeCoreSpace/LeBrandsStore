@@ -48,7 +48,7 @@ test("Free selection is rendered only once and active Free keeps its snapshot ca
   assert.match(active,/Current plan/);
   assert.match(active,/up to 100/);
   assert.match(active,/up to 1,000/);
-  assert.match(active,/LeBrands.Space placement: not included/);
+  assert.match(active,/<li data-on="no"><span class="pb-sr">Not included: <\/span>LeBrands\.Space placement<\/li>/);
   assert.match(active,/50 GB/);
   assert.doesNotMatch(active,/data-billing-choose-free/);
 });
@@ -66,15 +66,30 @@ test("disabled and foreign-country cards never expose an actionable checkout pri
   assert.match(foreign,/Request a quote/);
 });
 
-test("features have readable readiness labels, while quotes and escaped content cannot create payment buttons",()=>{
+test("features show names and limits without readiness or draft labels, while checkout safeguards remain",()=>{
   const html=render();
   assert.match(html,/Published products: up to 500/);
-  assert.match(html,/>Not enabled<\/small>/);
-  assert.doesNotMatch(html,/>Enforcement not implemented<\/small>/);
+  assert.doesNotMatch(html,/pb-planned|Not enabled|Verification pending|Setup required|>Draft<|>Proposal<|Features marked/);
   assert.match(html,/Quotation required/);
+  assert.match(html,/Razorpay test mode only/);
+  assert.match(html,/Test payment only\. No real money moves\./);
   const escaped=render({...billing,catalogue:[{code:"flagship",name:'<script>alert("unsafe")</script>',contract_required:true,features:[]}]});
   assert.doesNotMatch(escaped,/<script>/);
   assert.match(escaped,/&lt;script&gt;/);
+});
+
+test("all feature readiness states remain presentation-free without changing inclusion or limits",()=>{
+  const availability=["planned","upcoming","conditional_on_domain","verification_pending","acceptance_required","available"];
+  const features=availability.map((value,index)=>({key:`feature_${index}`,name:`Feature ${index}`,included:index!==1,value:42,availability:value}));
+  const html=render({...billing,catalogue:[{...catalogue[0],features}]});
+  const items=[...html.matchAll(/<li data-on="(yes|no)">([\s\S]*?)<\/li>/g)].slice(-features.length);
+  assert.equal(items.length,features.length);
+  items.forEach(([,on,content],index)=>{
+    assert.equal(on,index===1?"no":"yes");
+    assert.ok(content.includes(`Feature ${index}`));
+    if(index!==1)assert.match(content,/up to 42/);
+    assert.doesNotMatch(content,/<small|pb-planned|Setup required|Not enabled|Verification pending/);
+  });
 });
 
 test("dashboard has a single card catalogue, one Free acceptance and one consent dialog",()=>{

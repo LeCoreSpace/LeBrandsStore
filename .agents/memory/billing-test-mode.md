@@ -17,3 +17,16 @@ provide a live paid plan.
 payments as simulation-only history. When later implementing live collection,
 review tax, invoices, readiness, entitlements and launch controls separately
 rather than promoting an old test record.
+
+## Merchant plan feature presentation
+
+Dashboard plan cards should list feature names and limits without per-feature
+“Not enabled”, “Planned”, “Setup required” or “Verification pending” labels.
+Do not show Draft/Proposal headings on the paid cards. Preserve the distinction
+between included and excluded features and keep material payment disclosures.
+
+**Why:** The user requested “just tell the features alone” in dashboard Plans
+and billing.
+
+**How to apply:** This is a presentation rule, not permission to alter backend
+readiness, entitlement eligibility, prices or payment-test safeguards.
