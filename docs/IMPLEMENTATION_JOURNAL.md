@@ -1,5 +1,20 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Check connection results moved below the action
+
+- Corrected the previous flow: current checks, feedback and next step are now
+  directly below Check connection, not above it. Completed checks and failures
+  focus and reveal this result without scrolling to a different part of setup.
+- Passed 23 launch UI/server checks, including result order, focus/scroll and
+  failed-check visibility. Inspected the read-only fixture after API restart.
+- Published `19bb4a60-14ed-48c1-8e63-97aba578f987` at 100%. Verified
+  live result placement, versioned entry delivery, unchanged configuration
+  fingerprints/routes, active fallback and public/private-route responses.
+- Read-only inspection of the user-supplied domain confirmed its public TXT
+  matches the certificate challenge; ownership active, certificate still
+  pending validation with no reported validation errors. No domain, payment,
+  certificate or database mutations.
+
 ## 2026-10-21: Guided domain flow published
 
 - Published owner-approved version `80efbc45-e136-4e13-aafd-c94d4ee542c8`

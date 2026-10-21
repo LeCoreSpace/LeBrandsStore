@@ -1,5 +1,12 @@
 # Complete implementation checkpoint register
 
+### Connection results below Check connection
+
+Published `19bb4a60-14ed-48c1-8e63-97aba578f987`: corrected status/result
+position and added focus/nearest-scroll after checks or activation attempts.
+23 checks passed and rendered fixture reviewed. Live delivery/configuration
+verified; no DNS/payment/database mutations or manual commit.
+
 ### Guided domain setup published
 
 Approved release `80efbc45-e136-4e13-aafd-c94d4ee542c8`: grouped progress,

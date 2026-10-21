@@ -1,5 +1,19 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Below-button connection results
+
+```sh
+node --test --test-concurrency=1 tests/ann-launch-ui.test.js tests/ann-launch.test.js
+git diff --check
+pnpm exec wrangler deploy --keep-vars
+```
+
+23 checks passed. Fixture screenshot verified after managed API restart.
+Released `19bb4a60-14ed-48c1-8e63-97aba578f987`, verified live asset and
+configuration preservation. Read-only certificate metadata/public TXT check:
+matching challenge, pending validation, no reported errors. No DNS or
+certificate writes and no merchant activation.
+
 ## 21 October 2026: Guided domain flow verification and release
 
 ```sh

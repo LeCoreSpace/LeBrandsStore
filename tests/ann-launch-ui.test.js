@@ -6,8 +6,8 @@ import { attachAnnLaunch } from "../src/public/ann-launch-ui.js";
 const flush=async()=>{await new Promise(setImmediate);await new Promise(r=>setTimeout(r,2));};
 async function harness(readOnly=false,onStep,settingsMode=false,api="/isolated/api") {
   const previous={document:globalThis.document,fetch:globalThis.fetch};
-  const events=new Map(),requests=[];
-  const slot={innerHTML:"",scrollTop:0,contains:t=>Boolean(t),querySelector:()=>null,querySelectorAll:()=>[]};
+  const events=new Map(),requests=[],resultViews=[];
+  const slot={innerHTML:"",scrollTop:0,contains:t=>Boolean(t),querySelector:s=>s==="[data-ln-domain-result]"?{focus:options=>resultViews.push({focus:options}),scrollIntoView:options=>resultViews.push({scroll:options})}:null,querySelectorAll:()=>[]};
   globalThis.document={activeElement:null,querySelector:()=>slot,addEventListener:(name,fn)=>{
     const list=events.get(name)||[];list.push(fn);events.set(name,list);
   }};
@@ -29,7 +29,7 @@ async function harness(readOnly=false,onStep,settingsMode=false,api="/isolated/a
     for(const fn of events.get("click")||[])fn({target,preventDefault(){}});
     await flush();
   };
-  return {ui,slot,requests,click,ack:(key,checked)=>{for(const fn of events.get("change")||[])fn({target:{dataset:{lnAck:key},checked}});},input:(key,value)=>{for(const fn of events.get("input")||[])fn({target:{dataset:{ln:key},value}});},toggle:(provider,open)=>{for(const fn of events.get("toggle")||[])fn({target:{dataset:{lnProvider:provider},open}});},setFailure:v=>{fail=v;},setState:v=>{state={...state,...v};},get done(){return done;},get saved(){return saved;},
+  return {ui,slot,requests,resultViews,click,ack:(key,checked)=>{for(const fn of events.get("change")||[])fn({target:{dataset:{lnAck:key},checked}});},input:(key,value)=>{for(const fn of events.get("input")||[])fn({target:{dataset:{ln:key},value}});},toggle:(provider,open)=>{for(const fn of events.get("toggle")||[])fn({target:{dataset:{lnProvider:provider},open}});},setFailure:v=>{fail=v;},setState:v=>{state={...state,...v};},get done(){return done;},get saved(){return saved;},
     async close(){await flush();globalThis.document=previous.document;globalThis.fetch=previous.fetch;}};
 }
 test("merchant settings omit diagnostics and display active payments as a clear green success",async()=>{
@@ -292,6 +292,14 @@ test("domain setup groups progress and next action, revealing payment approval o
     await h.click({lnA:"dchk"});
     assert.equal(h.requests[0].action,"domain-check");
     assert.match(h.slot.innerHTML,/Connection checked\. The current status is shown here/);
+    assert.ok(h.slot.innerHTML.indexOf('data-ln-a="dchk"')<h.slot.innerHTML.indexOf('data-ln-domain-result'),"current status must follow the check button");
+    assert.ok(h.slot.innerHTML.indexOf('data-ln-domain-result')<h.slot.innerHTML.indexOf('aria-label="Connection progress"'),"all progress belongs inside the result below the button");
+    assert.deepEqual(h.resultViews,[{focus:{preventScroll:true}},{scroll:{block:"nearest"}}]);
+    h.setFailure(true);
+    await h.click({lnA:"dchk"});
+    assert.match(h.slot.innerHTML.split("data-ln-domain-result")[1],/Please retry\. Your choices are kept/);
+    assert.equal(h.resultViews.length,4,"failed checks also bring their result into view");
+    h.setFailure(false);
     h.setState({domain:{...domain,ssl_status:"active"}});
     await h.click({lnA:"reload"});
     assert.match(h.slot.innerHTML,/Next: confirm that Razorpay/);

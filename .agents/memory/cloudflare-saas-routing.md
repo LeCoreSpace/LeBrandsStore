@@ -60,5 +60,7 @@ instructions expandable and defer payment approval until the connection is ready
 current flow are too much for a self-serving non-technical merchant.
 
 **How to apply:** Preserve all server activation checks while using progressive
-disclosure. Do not show unrelated preference-save or duplicate status-reload
-controls on dedicated domain Settings.
+disclosure. Place current status and the next step directly below Check
+connection, bringing that result into view after a check. The user repeated
+that a result above the button is still easy to miss. Do not show unrelated
+preference-save or duplicate status-reload controls on dedicated domain Settings.
