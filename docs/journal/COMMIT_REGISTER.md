@@ -1,5 +1,12 @@
 # Complete implementation checkpoint register
 
+### Merchant-friendly domain instructions, local
+
+Existing-record guidance, understandable connection statuses and contextual
+payment website approval are implemented and verified. Ticket styling and
+server activation protections remain intact. Production release awaits owner
+approval; no migration required and no manual commit performed.
+
 ### Custom-domain platform setup activated
 
 Owner-approved SaaS route and encrypted Worker bindings are active; fallback and

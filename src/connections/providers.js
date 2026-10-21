@@ -87,11 +87,11 @@ export function domainTargetAvailable(env) {
   return /^[a-z0-9.-]+\.lebrands\.store$/.test(env.CUSTOM_DOMAIN_CNAME_TARGET || "");
 }
 async function cloudflare(env, path, options, fetcher) {
-  if (!cloudflareAvailable(env)) fail("Custom-domain provisioning needs platform configuration. You can keep using your included store address.", 503);
+  if (!cloudflareAvailable(env)) fail("Connecting your own website address is not available yet. You can keep using your included store address.", 503);
   const body = await providerJson(`https://api.cloudflare.com/client/v4/zones/${env.CLOUDFLARE_ZONE_ID}/custom_hostnames${path}`, {
     ...options, headers: { authorization: `Bearer ${env.CLOUDFLARE_API_TOKEN}`, "content-type": "application/json" },
   }, fetcher);
-  if (body.success !== true || !body.result || typeof body.result.id !== "string") fail("Cloudflare could not verify this hostname. Your current store address is unchanged.", 502);
+  if (body.success !== true || !body.result || typeof body.result.id !== "string") fail("We could not confirm this website address. Your current store address is unchanged. Please try again or contact support.", 502);
   return body.result;
 }
 export async function provisionDomain(env, hostname, fetcher = fetch) {
@@ -100,11 +100,11 @@ export async function provisionDomain(env, hostname, fetcher = fetch) {
 export async function checkDomain(env, id, hostname, fetcher = fetch) {
   if (!/^[a-f0-9-]{32,36}$/i.test(id)) fail("This domain needs to be connected again.", 400);
   const result = await cloudflare(env, `/${id}`, { method: "GET" }, fetcher);
-  if (result.hostname !== hostname) fail("The provider hostname does not match this store's connection.", 409);
+  if (result.hostname !== hostname) fail("This website address does not match your store’s saved address. Reload this page and try again.", 409);
   return { ...result, cname_verified: await verifyDomainCname(env,hostname,fetcher) };
 }
 export async function verifyDomainCname(env,hostname,fetcher=fetch) {
-  if(!domainTargetAvailable(env))fail("Domain verification target is not configured.",503);
+  if(!domainTargetAvailable(env))fail("We are still preparing your store connection. Please check again later.",503);
   const dns = await providerJson(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(hostname)}&type=CNAME`, {
     headers: { accept: "application/dns-json" },
   }, fetcher);

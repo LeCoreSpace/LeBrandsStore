@@ -61,6 +61,7 @@ test("launch setup persists independently, keeps tenant/owner isolation and neve
     tx => saveAnnLaunch(tx, id, owner, cfg, { expected_revision: state.revision, action, confirm: true, ...fields }, fetcher));
   try {
     let state = await get();
+    assert.equal(state.payment_domain_confirmation_required,false);
     assert.deepEqual(state.preferences, { address: "included", payments: "cod", delivery: "manual" });
     assert.equal(state.revision, 0); assert.equal(state.can_edit, true);
     const before = (await pg.query("SELECT settings FROM store_setup WHERE store_id=$1", [id])).rows[0].settings;
@@ -164,6 +165,7 @@ test("custom domains require real DNS and SSL evidence, explicit activation and 
     state = await save(state, "domain-check", { id: domainId });
     assert.equal(state.domain.status, "pending"); assert.equal(state.domain.cname_verified, true);
     state = await save(state, "razorpay-connect", { credentials: creds });
+    assert.equal(state.payment_domain_confirmation_required,true);
     await assert.rejects(save(state, "domain-activate", { id: domainId }), { status: 400 });
     state = await save(state, "domain-activate", { id: domainId, provider_domain_confirmed: true });
     assert.equal(state.domain.status, "active"); assert.equal(state.preferences.address, "custom");

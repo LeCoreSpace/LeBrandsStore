@@ -36,3 +36,18 @@ DNS change despite no DNS record write being issued.
 proxy status separately from Cloudflare-managed metadata. Preserve strict
 fingerprint comparisons for unrelated records, comparing multisets rather than
 matching only names/types because multiple TXT records can share both.
+
+Keep merchant domain instructions in everyday language, with no Cloudflare,
+Worker, SaaS or raw certificate-status labels. Explain how to edit an existing
+same-name record instead of adding a duplicate, and preserve unrelated/email
+records. Retain the exact record types, names and values needed at the domain
+provider.
+
+**Why:** The user explicitly requested understandable instructions after hitting
+an existing `www` record conflict and finding payment-approval wording confusing.
+
+**How to apply:** Use website-address, ownership and secure-connection status
+labels in domain Settings and shared Ann controls. Explain payment website
+approval separately from enabling payments; require acknowledgement only when
+the server reports a connected payment integration, without weakening server
+checks.

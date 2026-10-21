@@ -1,5 +1,19 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Domain instructions and payment explanation, local
+
+```sh
+node --test --test-concurrency=1 tests/ann-launch-ui.test.js tests/ann-launch.test.js tests/dashboard-navigation.test.js tests/razorpay-oauth-ui.test.js
+node --test --test-concurrency=1 tests/ann-launch-ui.test.js tests/ann-launch.test.js
+git diff --check
+```
+
+33 checks passed; the 22 affected launch/UI/provider checks passed after final
+error-copy changes. Restarted managed API workflow once, confirmed readiness
+and successful requests, and inspected the synthetic
+`/__step4-preview?view=settings&connection=domain` screenshot. No production
+deployment, migration, merchant domain or payment mutations.
+
 ## 21 October 2026: Custom-domain infrastructure setup
 
 ```sh

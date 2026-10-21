@@ -46,6 +46,7 @@ export async function prepareAnnLaunch(tx, id, userId, env = {}) {
     JOIN public.orders o ON o.store_id=j.store_id AND o.id=j.order_id WHERE j.store_id=${id} ORDER BY j.updated_at DESC LIMIT 20`:[];
   return { revision: state.revision,execution_available,jobs, can_edit: member?.role === "owner", included_address: store?.subdomain ? `${store.subdomain}.lebrands.store` : null,
     preferences: state.preferences, providers, optional: true, cod_enabled: parse(checkout?.settings)?.cod_enabled === true,
+    payment_domain_confirmation_required: state.providers.some(p => p.provider === "razorpay" && p.status === "connected"),
     domain: state.domain ? { id: state.domain.id, hostname: state.domain.hostname, status: state.domain.status,
       primary: state.domain.is_primary, ...state.evidence } : null,
     platform: { razorpay_oauth_available:oauthAvailable(env),domains_available: domainTargetAvailable(env),
@@ -147,7 +148,7 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
   } else if (body.action === "domain-add") {
     const hostname = domainHostname(body.hostname);
     if (current.domain) fail("Check or remove the existing domain before adding another.", 409);
-    if (!domainTargetAvailable(env)) fail("Custom-domain DNS target is not configured. Keep your included address for now.", 503);
+    if (!domainTargetAvailable(env)) fail("Connecting your own website address is not available yet. Keep your included address for now.", 503);
     const [reserved] = await tx`INSERT INTO public.domains(store_id,hostname,status) VALUES(${id},${hostname},'pending')
       ON CONFLICT(hostname) DO UPDATE SET status='pending'
       WHERE public.domains.store_id=${id} AND public.domains.status='disabled' RETURNING id,cloudflare_hostname_id`;
@@ -158,7 +159,7 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
       const result = reserved.cloudflare_hostname_id
         ? await checkDomain(env, reserved.cloudflare_hostname_id, hostname, fetcher)
         : await provisionDomain(env, hostname, fetcher);
-      if (result.hostname !== hostname) fail("Cloudflare did not return the requested hostname.", 502);
+      if (result.hostname !== hostname) fail("We could not confirm this website address. Your current address is unchanged. Please contact support.", 502);
       await tx`UPDATE public.domains SET cloudflare_hostname_id=${result.id} WHERE store_id=${id} AND id=${reserved.id}`;
       evidence = domainEvidence(result, env);
     }else{
@@ -180,11 +181,11 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
           checked_at:new Date().toISOString()};
       }else{
       if(!cloudflareAvailable(env))
-        fail("Cloudflare verification is not configured yet. Keep the CNAME in place and check again later.",503);
+        fail("We are still preparing your store connection. Keep your domain records in place and check again later.",503);
       let hostnameId=domain.cloudflare_hostname_id;
       if(!hostnameId){
         const created=await provisionDomain(env,domain.hostname,fetcher);
-        if(created.hostname!==domain.hostname)fail("Cloudflare did not return the requested hostname.",502);
+        if(created.hostname!==domain.hostname)fail("We could not confirm this website address. Your current address is unchanged. Please contact support.",502);
         hostnameId=created.id;
         await tx`UPDATE public.domains SET cloudflare_hostname_id=${hostnameId} WHERE store_id=${id} AND id=${domain.id}`;
       }
@@ -198,9 +199,9 @@ export async function saveAnnLaunch(tx, id, userId, env, body, fetcher = fetch) 
         preferences.address = "included";
       }
       if (body.action === "domain-activate") {
-        if (!platform.ready) fail("Domain routing still needs platform configuration. Your included address stays active.", 503);
+        if (!platform.ready) fail("Your store connection needs our attention. Your included address still works. Please contact support.", 503);
         if (evidence.hostname_status !== "active" || evidence.ssl_status !== "active" || !evidence.cname_verified)
-          fail("DNS ownership, CNAME routing and SSL must all be verified before activation.");
+          fail("We need to confirm your website address, ownership and secure connection before you can activate it.");
         if (current.providers.some(p => p.provider === "razorpay" && p.status === "connected") && body.provider_domain_confirmed !== true)
           fail("Confirm that this domain is approved in your Razorpay account before activating it.");
         await tx`UPDATE public.domains SET status='active',is_primary=true WHERE store_id=${id} AND id=${domain.id}`;

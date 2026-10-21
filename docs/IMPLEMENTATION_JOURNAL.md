@@ -1,5 +1,24 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Merchant-friendly domain connection guidance, local
+
+- Domain Settings and shared launch controls explain editing an existing `www`
+  CNAME, replacing its target rather than adding a duplicate, preserving email
+  records, adding missing TXT records and avoiding a doubled domain suffix.
+- Merchant status copy uses website address, ownership and secure connection.
+  Internal provider labels/raw certificate statuses are not rendered; domain
+  provider failure messages are also plain-language. Ticket styling is unchanged.
+- Existing server-side connected-payment state now determines whether the
+  website-approval checkbox is needed. Connected Razorpay stores receive an
+  explanation of website approval versus turning payments on. No-payment stores
+  are not asked to make a payment declaration. Server ownership, certificate,
+  routing and payment-acknowledgement checks remain unchanged.
+- All 33 focused tests passed; after final error-copy edits, the 22 affected
+  launch/provider/UI checks passed again. API workflow restarted once and serves
+  cleanly. Synthetic domain Settings screenshot verified the new instructions
+  and statuses without real account access. No migration, merchant setting
+  changes or production release performed for this UI update yet.
+
 ## 2026-10-21: Cloudflare custom-domain platform configured
 
 - With explicit owner approval, added the `*/*` route to `lebrands-store`,

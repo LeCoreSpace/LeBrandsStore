@@ -29,7 +29,7 @@ async function harness(readOnly=false,onStep,settingsMode=false,api="/isolated/a
     for(const fn of events.get("click")||[])fn({target,preventDefault(){}});
     await flush();
   };
-  return {ui,slot,requests,click,input:(key,value)=>{for(const fn of events.get("input")||[])fn({target:{dataset:{ln:key},value}});},toggle:(provider,open)=>{for(const fn of events.get("toggle")||[])fn({target:{dataset:{lnProvider:provider},open}});},setFailure:v=>{fail=v;},setState:v=>{state={...state,...v};},get done(){return done;},get saved(){return saved;},
+  return {ui,slot,requests,click,ack:(key,checked)=>{for(const fn of events.get("change")||[])fn({target:{dataset:{lnAck:key},checked}});},input:(key,value)=>{for(const fn of events.get("input")||[])fn({target:{dataset:{ln:key},value}});},toggle:(provider,open)=>{for(const fn of events.get("toggle")||[])fn({target:{dataset:{lnProvider:provider},open}});},setFailure:v=>{fail=v;},setState:v=>{state={...state,...v};},get done(){return done;},get saved(){return saved;},
     async close(){await flush();globalThis.document=previous.document;globalThis.fetch=previous.fetch;}};
 }
 test("merchant settings omit diagnostics and display active payments as a clear green success",async()=>{
@@ -72,7 +72,7 @@ test("unavailable domain choices stay readable, explain their prerequisite and c
   const h=await harness();
   try {
     assert.match(h.slot.innerHTML,/data-v="custom"[^>]*aria-disabled="true"[^>]*disabled/);
-    assert.match(h.slot.innerHTML,/Platform domain setup is needed first/);
+    assert.match(h.slot.innerHTML,/Own website addresses are not available yet/);
     assert.match(h.slot.innerHTML,/sample\.lebrands\.store/);
     await h.click({pref:"address",v:"custom"});
     assert.equal(h.ui.hasUnsavedChanges(),false);
@@ -212,12 +212,63 @@ test("custom domain Settings shows DNS names and values without premature activa
       dns_records:[{type:"CNAME",name:"www.brand.com",value:"brands.lebrands.store"}]}});
     await h.click({lnA:"reload"});
     h.ui.mount(1,{customDomainOnly:true});await flush();
-    assert.match(h.slot.innerHTML,/Update DNS at your domain provider/);
+    assert.match(h.slot.innerHTML,/Update records where you manage your domain/);
     assert.match(h.slot.innerHTML,/role="columnheader">Name/);
     assert.match(h.slot.innerHTML,/role="columnheader">Value/);
     assert.match(h.slot.innerHTML,/data-ln-copy="brands\.lebrands\.store"/);
-    assert.match(h.slot.innerHTML,/Verify DNS CNAME/);
+    assert.match(h.slot.innerHTML,/Check connection/);
     assert.match(h.slot.innerHTML,/data-ln-a="dact" disabled/);
+    assert.match(h.slot.innerHTML,/Edit that existing record instead of adding a second one/);
+    assert.match(h.slot.innerHTML,/Leave email records and records for other names unchanged/);
+    assert.doesNotMatch(h.slot.innerHTML,/Cloudflare|Platform API|SaaS|Worker|Hostname:|SSL:|Verify DNS/);
+  }finally{await h.close();}
+});
+test("domain copy keeps raw provider statuses and labels out of the merchant page",async()=>{
+  const h=await harness(false,undefined,true);
+  try{
+    h.setState({platform:{domains_available:true,domain_activation_available:true,
+      diagnostics:[{label:"Cloudflare SaaS fallback Worker",complete:true}]},domain:{
+        id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",hostname:"www.brand.com",status:"pending",
+        hostname_status:"active",ssl_status:"pending_validation",cname_verified:true,
+        dns_records:[{type:"CNAME",name:"www.brand.com",value:"brands.lebrands.store"},
+          {type:"TXT",name:"_acme-challenge.www.brand.com",value:"verification-value"}]}});
+    await h.click({lnA:"reload"});h.ui.mount(1,{customDomainOnly:true});
+    assert.match(h.slot.innerHTML,/Setting up/);
+    assert.match(h.slot.innerHTML,/Website address: <strong>Connected/);
+    assert.match(h.slot.innerHTML,/Ownership: <strong>Confirmed/);
+    assert.match(h.slot.innerHTML,/Secure connection: <strong>Being prepared/);
+    assert.match(h.slot.innerHTML,/Add any missing TXT records/);
+    assert.match(h.slot.innerHTML,/domain is not added twice/);
+    assert.doesNotMatch(h.slot.innerHTML,/Cloudflare|SaaS|Worker|pending_validation|data-ln-ack="dom"/);
+    assert.match(h.slot.innerHTML,/data-ln-a="dact" disabled/);
+    assert.deepEqual(h.requests,[]);
+  }finally{await h.close();}
+});
+test("domain activation only asks connected-payment stores for website approval and never bypasses it",async()=>{
+  const h=await harness(false,undefined,true);
+  try{
+    h.setState({payment_domain_confirmation_required:true,platform:{domains_available:true,domain_activation_available:true},
+      domain:{id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",hostname:"www.brand.com",status:"pending",
+        hostname_status:"active",ssl_status:"active",cname_verified:true}});
+    await h.click({lnA:"reload"});h.ui.mount(1,{customDomainOnly:true});
+    assert.match(h.slot.innerHTML,/data-ln-ack="dom"/);
+    assert.match(h.slot.innerHTML,/This does not turn payments on or reconnect your account/);
+    assert.match(h.slot.innerHTML,/Razorpay has approved this website address/);
+    assert.match(h.slot.innerHTML,/data-ln-a="dact" disabled/);
+    await h.click({lnA:"dact"});assert.equal(h.requests.length,0);
+    h.ack("dom",true);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="dact" disabled/);
+    await h.click({lnA:"dact"});
+    assert.equal(h.requests.length,1);
+    assert.equal(h.requests[0].provider_domain_confirmed,true);
+    h.setState({payment_domain_confirmation_required:false});
+    await h.click({lnA:"reload"});
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-ack="dom"|Your store has a Razorpay connection/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="dact" disabled/);
+    await h.click({lnA:"dact"});
+    assert.equal(h.requests.length,2);
+    assert.equal(h.requests[1].action,"domain-activate");
+    assert.equal(h.requests[1].provider_domain_confirmed,false);
   }finally{await h.close();}
 });
 test("integration setup is available in Settings before changing COD or manual delivery",async()=>{

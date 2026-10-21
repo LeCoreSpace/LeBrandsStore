@@ -2,6 +2,9 @@ import {confirmCatalogueAction as appConfirm} from "./catalogue-confirm.js";
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const HOST = /^(?=.{4,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.){2,}[a-z]{2,63}$/;
 const when = v => { if (!v) return ""; const d = new Date(v); return isNaN(d) ? "" : d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" }); };
+export const domainStatusLabel = status => ({
+  active:"Active",pending:"Setting up",failed:"Needs attention",disabled:"Removed"
+})[status] || "Setting up";
 
 export function oauthCallbackNotice(result,provider={}){
   if(result==="connected")return provider.verified&&provider.auth_type==="oauth"?
@@ -72,6 +75,8 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   const hostOk = () => HOST.test(v("host").toLowerCase());
   const domVerified = () => { const d = state?.domain, p = state?.platform; return !!d && d.hostname_status === "active" && d.ssl_status === "active" && d.cname_verified === true && !!p?.domain_activation_available; };
   const domLive = () => state?.domain?.status === "active";
+  const domainPaymentRequired = () => state?.payment_domain_confirmation_required ??
+    Boolean(state?.providers?.razorpay?.verified || state?.providers?.razorpay?.runtime_ready);
 
   async function request(method, body) {
     const res = await fetch(`${api}/launch`, { method, credentials: "same-origin", headers: body ? { "content-type": "application/json" } : undefined, body: body ? JSON.stringify(body) : undefined });
@@ -141,7 +146,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
   function opts(group, items) {
     return `<div class="ann-chips stack" role="group" aria-label="${esc(group)}">${items.map(([val, t, d]) => {
       const unavailable=group==="address" && val==="custom" && !state?.platform?.domains_available && !state?.domain;
-      const description=unavailable?"Not available yet. Platform domain setup is needed first.":d;
+      const description=unavailable?"Own website addresses are not available yet. Your included address still works.":d;
       return `<button type="button" class="ann-chip ann-launch-option" data-pref="${group}" data-v="${val}" aria-pressed="${prefs[group] === val || (group!=="address" && prefs[group]==="both")}"${unavailable?' aria-disabled="true"':""}${dis(unavailable)}><strong>${esc(t)}</strong><span>${esc(description)}</span></button>`;
     }).join("")}</div>`;
   }
@@ -185,22 +190,23 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     const own = canEdit() ? "" : `<p class="ann-callout">Only the store owner can change these settings.</p>`;
 
     // Step 1: store address and domain
-    const addr = opts("address", [["included", "Use the address that comes with your store", "Nothing to set up."], ["custom", "Use my own domain", "For example www.yourbrand.com. Add it below and point your DNS records at it."]]);
+    const addr = opts("address", [["included", "Use the address that comes with your store", "Nothing to set up."], ["custom", "Use my own domain", "For example www.yourbrand.com. Add it below, then update the records where you manage your domain."]]);
     const diagList = Array.isArray(plat.diagnostics) ? plat.diagnostics : [];
-    const diag = diagList.length ? `<ul class="ann-launch-diag" aria-label="Platform readiness">${diagList.map(x => `<li>${esc(x.label)}: <b>${x.complete ? "ready" : "not ready"}</b></li>`).join("")}</ul>` : "";
+    const diag = diagList.some(x => !x.complete) ? `<p class="ann-note">Your store connection still needs our attention. Your included address keeps working. Contact support if this continues.</p>` : "";
     let dom;
     if (!d) {
       dom = plat.domains_available
-        ? `${diag}<p class="ann-note">Enter a subdomain such as www.yourbrand.com. Bare domains like yourbrand.com are not supported.</p>${inp("host", "Domain")}${msg("dom")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="dadd"${dis(!hostOk())}>Add domain</button></div>`
-        : `<p class="ann-callout ann-success" role="status">Your included address${s.included_address?` (${esc(s.included_address)})`:""} is ready to use. Custom domains need platform setup first. You can continue to payments now.</p>`;
+        ? `${diag}<p class="ann-note">Enter a website address such as www.yourbrand.com or shop.yourbrand.com. Addresses without www or another name at the start are not supported yet.</p>${inp("host", "Website address")}${msg("dom")}<div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="dadd"${dis(!hostOk())}>Add domain</button></div>`
+        : `<p class="ann-callout ann-success" role="status">Your included address${s.included_address?` (${esc(s.included_address)})`:""} is ready to use. Connecting your own website address is not available yet. Your store can keep using its included address.</p>`;
     } else {
       const live = domLive();
       const notes = [];
-      if (!plat.domains_available) notes.push("Domain setup is not available on this platform right now. You can still check the status below.");
-      if (!live && !domVerified()) notes.push(plat.domain_activation_available ? "Activation requires the CNAME, hostname and SSL checks to pass." : "Activation is not available on this platform right now.");
-      const dns = (d.dns_records || []).length ? `<div class="ann-dns-guide"><h4>Update DNS at your domain provider</h4><p class="ann-note">Add every record below. DNS changes can take time. Then select Verify DNS and SSL. Do not remove your current records until you know which names they replace.</p><div class="ann-dns-table" role="table" aria-label="Required DNS records"><div class="ann-dns-row ann-dns-head" role="row"><span role="columnheader">Type</span><span role="columnheader">Name</span><span role="columnheader">Value</span></div>${d.dns_records.map(r => `<div class="ann-dns-row" role="row"><b role="cell">${esc(r.type)}</b><span role="cell"><code>${esc(r.name)}</code><button type="button" class="ann-dns-copy" data-ln-copy="${esc(r.name)}" aria-label="Copy DNS name">Copy</button></span><span role="cell"><code>${esc(r.value)}</code><button type="button" class="ann-dns-copy" data-ln-copy="${esc(r.value)}" aria-label="Copy DNS value">Copy</button></span></div>`).join("")}</div></div>` : "";
-      const dnsStatus=`<p class="ann-note" role="status">CNAME: <strong>${d.cname_verified ? "verified" : "waiting"}</strong> · Hostname: <strong>${esc(d.hostname_status)}</strong> · SSL: <strong>${esc(d.ssl_status)}</strong>.</p>`;
-      dom = `<p><strong>${esc(d.hostname)}</strong> <span class="ann-launch-st">${esc(d.status)}${d.primary ? ", primary" : ""}</span></p>${dnsStatus}${dns}${notes.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${diag}${live ? `<p class="ann-callout ann-success" role="status">Your custom domain is active.</p>` : `<label class="ann-check"><input type="checkbox" data-ln-ack="dom"${ack ? " checked" : ""}${dis()}><span>If I use an online payment provider, I have approved this domain there.</span></label>`}${msg("dom")}${confirmRemove ? `<div class="ann-conflict" role="alertdialog"><p>Remove ${esc(d.hostname)}? This turns off the route for your store only. Nothing is deleted at your domain host or payment provider.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="drem-yes"${dis()}>Yes, remove</button><button type="button" class="ann-btn alt sm" data-ln-a="drem-no">Keep domain</button></div></div>` : ""}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="dchk"${dis()}>${plat.domain_activation_available?"Verify DNS and SSL":"Verify DNS CNAME"}</button>${live ? "" : `<button type="button" class="ann-btn sm" data-ln-a="dact"${dis(!domVerified() || !ack)}>Activate domain</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="drem"${dis(confirmRemove)}>Remove</button></div>`;
+      if (!plat.domains_available) notes.push("We cannot add another website address right now. You can still check the address shown below.");
+      if (!live && !domVerified()) notes.push(plat.domain_activation_available ? "All three website checks must pass before you can activate this address. Changes can take time to appear. Select Check connection again after updating your records." : "We are still preparing your store connection. Your included address keeps working.");
+      const dns = (d.dns_records || []).length ? `<div class="ann-dns-guide"><h4>Update records where you manage your domain</h4><p class="ann-note">Open your domain provider’s DNS or Manage records page. Use the names and values below.</p><p class="ann-note"><strong>Already have a record with the same name, such as www?</strong> Edit that existing record instead of adding a second one. For a CNAME, replace its Value or Points to with the value below. This changes where that website address opens. If the existing record has a different type, check with your domain provider before replacing it.</p><p class="ann-note">Leave email records and records for other names unchanged. Add any missing TXT records shown below. Some providers ask for only the name before your domain, such as www or _acme-challenge.www; others accept the full name. Check that your domain is not added twice.</p><div class="ann-dns-table" role="table" aria-label="Required domain records"><div class="ann-dns-row ann-dns-head" role="row"><span role="columnheader">Type</span><span role="columnheader">Name</span><span role="columnheader">Value</span></div>${d.dns_records.map(r => `<div class="ann-dns-row" role="row"><b role="cell">${esc(r.type)}</b><span role="cell"><code>${esc(r.name)}</code><button type="button" class="ann-dns-copy" data-ln-copy="${esc(r.name)}" aria-label="Copy record name">Copy</button></span><span role="cell"><code>${esc(r.value)}</code><button type="button" class="ann-dns-copy" data-ln-copy="${esc(r.value)}" aria-label="Copy record value">Copy</button></span></div>`).join("")}</div></div>` : "";
+      const dnsStatus=`<p class="ann-note" role="status">Website address: <strong>${d.cname_verified ? "Connected" : "Waiting for your record"}</strong> · Ownership: <strong>${d.hostname_status === "active" ? "Confirmed" : "Waiting for verification"}</strong> · Secure connection: <strong>${d.ssl_status === "active" ? "Ready" : "Being prepared"}</strong>.</p>`;
+      const paymentAck = !live && domainPaymentRequired() ? `<p class="ann-note" id="ann-domain-payment-help">Your store has a Razorpay connection. Before using ${esc(d.hostname)} for online payments, add this address to the approved websites in your Razorpay account and complete any approval Razorpay requests. This does not turn payments on or reconnect your account.</p><label class="ann-check"><input type="checkbox" data-ln-ack="dom" aria-describedby="ann-domain-payment-help"${ack ? " checked" : ""}${dis()}><span>Razorpay has approved this website address for online payments.</span></label>` : "";
+      dom = `<p><strong>${esc(d.hostname)}</strong> <span class="ann-launch-st">${esc(domainStatusLabel(d.status))}${d.primary ? ", main address" : ""}</span></p>${dnsStatus}${dns}${notes.map(n => `<p class="ann-note">${esc(n)}</p>`).join("")}${diag}${live ? `<p class="ann-callout ann-success" role="status">Your custom domain is active.</p>` : paymentAck}${msg("dom")}${confirmRemove ? `<div class="ann-conflict" role="alertdialog"><p>Remove ${esc(d.hostname)}? Your store will stop using this address. Nothing is deleted at your domain or payment provider.</p><div class="ann-actions"><button type="button" class="ann-btn sm" data-ln-a="drem-yes"${dis()}>Yes, remove</button><button type="button" class="ann-btn alt sm" data-ln-a="drem-no">Keep domain</button></div></div>` : ""}<div class="ann-actions"><button type="button" class="ann-btn alt sm" data-ln-a="dchk"${dis()}>Check connection</button>${live ? "" : `<button type="button" class="ann-btn sm" data-ln-a="dact"${dis(!domVerified() || (domainPaymentRequired() && !ack))}>Activate domain</button>`}<button type="button" class="ann-btn alt sm" data-ln-a="drem"${dis(confirmRemove)}>Remove</button></div>`;
     }
     const s1 = `${own}${customOnly ? `<p class="ann-note">Your included store address keeps working. Connecting your own domain is optional.</p>` : addr}${dom}${saveRow(2)}`;
 
@@ -330,7 +336,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     else if (a === "disc-yes") { const pr = confirmDisc; confirmDisc = ""; if(pr==="razorpay"&&state?.providers?.razorpay?.auth_type==="oauth")void oauth("disconnect");else if (pr) void act("disc-" + pr, { action: "disconnect", provider: pr }); }
     else if (a === "dadd") { if (hostOk()) void act("dom", { action: "domain-add", hostname: v("host").toLowerCase() }, () => clear(["host"])); }
     else if (a === "dchk" && id) void act("dom", { action: "domain-check", id });
-    else if (a === "dact" && id && ack && domVerified() && !domLive()) void act("dom", { action: "domain-activate", id, provider_domain_confirmed: true }, () => { ack = false; });
+    else if (a === "dact" && id && (!domainPaymentRequired() || ack) && domVerified() && !domLive()) void act("dom", { action: "domain-activate", id, provider_domain_confirmed: domainPaymentRequired() && ack }, () => { ack = false; });
     else if (a === "drem") { confirmRemove = true; draw(); }
     else if (a === "drem-no") { confirmRemove = false; draw(); }
     else if (a === "drem-yes" && id) { confirmRemove = false; void act("dom", { action: "domain-remove", id }, () => { ack = false; }); }
@@ -356,7 +362,7 @@ export function attachAnnLaunch({ api, readOnly, onSaved, onDone, onStep, settin
     summary(n) {
       if(skipped.has(n))return "Left unchanged. I'll set this up later.";
       if(!state)return "";
-      if(n===1)return state.domain?`${state.domain.hostname}: ${state.domain.status}`:"Included store address; no custom domain connected.";
+      if(n===1)return state.domain?`${state.domain.hostname}: ${domainStatusLabel(state.domain.status)}`:"Included store address; no custom domain connected.";
       if(n===2)return `${state.preferences.payments==="both"?"Cash on Delivery + Razorpay":state.preferences.payments==="razorpay"?"Razorpay":"Cash on Delivery"}${state.preferences.payments!=="cod"?(state.providers?.razorpay?.runtime_ready?" · online payments active":" · online setup pending"):" · enable in checkout settings"}`;
       return `${state.preferences.delivery==="both"?"Manual tracking + Shiprocket":state.preferences.delivery==="shiprocket"?"Shiprocket":"Manual tracking"}${state.preferences.delivery!=="manual"?(state.providers?.shiprocket?.runtime_ready?" · automatic shipping active":" · partner setup pending"):" · add tracking in Orders"}`;
     },

@@ -281,8 +281,9 @@ export default {
         preferences:{address:"included",payments:"cod",delivery:"manual"},providers:{},jobs:[],
         platform:{domains_available:true,domain_activation_available:false},
         domain:{id:"00000000-0000-4000-8000-000000000099",hostname:"www.demo.example",status:"pending",
-          hostname_status:"pending",ssl_status:"pending",cname_verified:false,
-          dns_records:[{type:"CNAME",name:"www.demo.example",value:"brands.lebrands.store"}]}
+           hostname_status:"active",ssl_status:"pending_validation",cname_verified:true,
+           dns_records:[{type:"CNAME",name:"www.demo.example",value:"brands.lebrands.store"},
+             {type:"TXT",name:"_acme-challenge.www.demo.example",value:"example-verification-value"}]}
       }),{headers:{...SECURITY_HEADERS,"content-type":"application/json; charset=utf-8","cache-control":"no-store"}});
     }
     if (["GET","HEAD"].includes(request.method) && original.pathname === "/__step4-preview") {
