@@ -26,11 +26,19 @@ action. This does not place an order, send an email or turn on payments.
   active domain cannot be prepared; do not disable protection or alter routing.
 - Publish the application only after the migration and active-domain
   preparation succeed.
-- Use the established integration encryption key, or its existing session-key
-  fallback. Do not rotate either key as part of this rollout.
+- Use the checkout-only encrypted Worker binding
+  `CHECKOUT_SECURITY_ENCRYPTION_KEY`. It must be at least 32 characters and is
+  independent of merchant login/session and payment-integration keys. Do not
+  rotate those existing keys as part of this rollout.
+- Preparation outside the Worker must use that same dedicated production key;
+  never assume workspace session secrets match the deployed runtime. Prefer
+  preparation in the trusted production runtime for subsequent repairs.
 
-The implementation is staged. The migration and production publish require
-approval; neither is implied by building this feature.
+The migration and production publish require explicit approval; neither is
+implied by building this feature. The approved rollout applied migration
+0054 and prepared the existing active custom domain. Its checkout-only key is
+held as an encrypted Worker secret, not in source files or public responses.
+Production and workspace session secrets must not be assumed identical.
 
 ## Isolation and recovery
 

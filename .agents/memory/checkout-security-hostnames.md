@@ -43,3 +43,16 @@ unsuitable for a multi-store product.
 recover interrupted remote provisioning without duplicating widgets, and
 verify readiness before activation. Account limits are still real; never
 equate per-store provisioning with unlimited provider capacity.
+
+Production credential preparation must use the deployed checkout encryption
+context, never a presumed match with workspace login/session secrets.
+
+**Why:** Offline preparation could encrypt and decrypt its own credentials, but
+the deployed Worker could not read them. A separate checkout-only production
+key resolved this without rotating login or payment-integration keys.
+
+**How to apply:** Treat workspace and Cloudflare secret stores as separate
+contexts. Prepare credentials in the trusted runtime or with its explicit
+checkout key, require the dedicated key before provisioning, and verify a
+live custom-domain checkout before declaring a rollout complete. Do not
+overwrite established authentication or integration keys to repair this.

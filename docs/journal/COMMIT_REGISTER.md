@@ -1,5 +1,14 @@
 # Complete implementation checkpoint register
 
+### Automatic checkout security: approved production release
+
+Completed the staged migration, active-domain preparation and Cloudflare
+release. Added a dedicated production encryption boundary after live checks
+caught workspace/runtime credential-key mismatch. Existing authentication and
+payment keys were preserved. The custom checkout now serves the store's
+authorized managed widget, while included addresses retain shared protection.
+Production version: `1bcf1b26-865c-4326-bf60-e569383fc320` at 100%.
+
 ### Automatic checkout security setup, staged release
 
 Store-owned widget provisioning, encrypted tenant isolation, activation

@@ -1,7 +1,10 @@
 import {sealCredentials,openCredentials} from "./providers.js";
-import {keyFor} from "./runtime-client.js";
 
 const failure=()=>Object.assign(new Error("We could not finish your store’s checkout security setup. Your included address keeps working. Please contact support."),{status:503,checkoutSecurity:true});
+const storageKey=env=>{
+  if(typeof env.CHECKOUT_SECURITY_ENCRYPTION_KEY!=="string"||env.CHECKOUT_SECURITY_ENCRYPTION_KEY.length<32)throw failure();
+  return env.CHECKOUT_SECURITY_ENCRYPTION_KEY;
+};
 const accountId=/^[a-f0-9]{32}$/i;
 const siteKey=/^[A-Za-z0-9_-]{10,64}$/;
 const ownerName=id=>`LeBrands checkout ${id}`;
@@ -25,6 +28,7 @@ async function schema(tx){
 // Called only after tenant/owner/revision, real DNS, SSL and platform checks.
 // The caller's store lock serializes widget creation/reconfiguration.
 export async function ensureCheckoutSecurity(tx,storeId,hostname,env,fetcher=fetch){
+  const encryptionKey=storageKey(env);
   await schema(tx);
   await tx`SELECT store_id FROM public.stores WHERE store_id=${storeId} FOR UPDATE`;
   const [owned]=await tx`SELECT id FROM public.domains WHERE store_id=${storeId} AND hostname=${hostname} AND status<>'disabled'`;
@@ -71,7 +75,7 @@ export async function ensureCheckoutSecurity(tx,storeId,hostname,env,fetcher=fet
   const checked=(await api(env,`${root}/${widget.sitekey}`,{method:"GET"},fetcher)).result;
   if(checked?.mode!=="managed"||checked.name!==ownerName(storeId)||checked.sitekey!==widget.sitekey||checked.secret!==widget.secret||
       !domains.every(d=>covered(d,checked.domains)))throw failure();
-  const ciphertext=await sealCredentials(keyFor(env),storeId,"checkout-turnstile",{site_key:widget.sitekey,secret:widget.secret});
+  const ciphertext=await sealCredentials(encryptionKey,storeId,"checkout-turnstile",{site_key:widget.sitekey,secret:widget.secret});
   await tx`INSERT INTO public.store_checkout_security(store_id,site_key,credentials_ciphertext,hostnames)
     VALUES(${storeId},${widget.sitekey},${ciphertext},${JSON.stringify(domains)}::text::jsonb)
     ON CONFLICT(store_id) DO UPDATE SET site_key=EXCLUDED.site_key,credentials_ciphertext=EXCLUDED.credentials_ciphertext,
@@ -83,16 +87,21 @@ export async function ensureCheckoutSecurity(tx,storeId,hostname,env,fetcher=fet
 export async function checkoutSecurityEnvironment(db,store,request,env){
   const host=new URL(request.url).hostname;
   if(host.endsWith(".lebrands.store"))return env;
+  let stage="read";
   try{
   const row=await db.withStore(store.store_id,async tx=>{
     const [r]=await tx`SELECT site_key,credentials_ciphertext,hostnames::text FROM public.store_checkout_security WHERE store_id=${store.store_id}`;
     return r;
   });
+  stage="hostname";
   if(!row||!JSON.parse(row.hostnames).includes(host))throw failure();
-  const credentials=await openCredentials(keyFor(env),store.store_id,"checkout-turnstile",row.credentials_ciphertext);
+  stage="decrypt";
+  const credentials=await openCredentials(storageKey(env),store.store_id,"checkout-turnstile",row.credentials_ciphertext);
+  stage="key-match";
   if(credentials.site_key!==row.site_key||typeof credentials.secret!=="string")throw failure();
   return {...env,TURNSTILE_SITE_KEY:credentials.site_key,TURNSTILE_SECRET_KEY:credentials.secret};
-  }catch{
+  }catch(error){
+    console.error(`CHECKOUT_SECURITY_STAGE ${stage} ${/^[0-9A-Z]{5}$/.test(error?.code||"")?error.code:"CONFIGURATION"}`);
     throw Object.assign(new Error("This store’s checkout is temporarily unavailable. Your bag is kept. Please try again shortly."),{status:503});
   }
 }

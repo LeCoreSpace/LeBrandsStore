@@ -13,6 +13,7 @@ const secret = "local-test-encryption-only-not-a-real-key";
 const json = v => new Response(JSON.stringify(v), { headers: { "content-type": "application/json" } });
 const creds = { key_id: "rzp_test_12345678", key_secret: "test-secret-for-isolated-test", webhook_secret: "test-webhook-secret-for-isolated-test" };
 const cfg = { SESSION_SECRET: secret, CLOUDFLARE_API_TOKEN: "not-a-real-token", CLOUDFLARE_ZONE_ID: "a".repeat(32),
+  CHECKOUT_SECURITY_ENCRYPTION_KEY:"isolated-dedicated-checkout-security-storage-key",
   CUSTOM_DOMAIN_CNAME_TARGET: "brands.lebrands.store", CUSTOM_DOMAINS_ROUTING_READY: "true" };
 
 test("credential envelopes are randomized, tenant/provider bound, tamper resistant and never plaintext", async () => {

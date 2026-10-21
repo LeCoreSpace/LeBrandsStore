@@ -1,5 +1,25 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Automatic checkout security, approved production rollout
+
+- Applied only additive migration `0054_checkout_security.sql`.
+- Checked live DNS, ownership, TLS and SaaS routing before preparing the
+  already-active custom domain. No domain, publication or payment activation
+  settings were changed.
+- Live verification caught an offline/runtime credential-encryption mismatch.
+  Added a dedicated encrypted Worker key, rewrapped only new checkout-security
+  credentials, and required that key before provisioning side effects.
+  Existing login, payment and shared Turnstile secrets were not rotated.
+- Published Worker `1bcf1b26-865c-4326-bf60-e569383fc320` at 100%.
+  All 27 existing bindings, including 16 encrypted secrets, were preserved;
+  only the checkout-only encrypted binding was added. Three routes, runtime
+  compatibility and active fallback were preserved.
+- Live custom and included checkout pages return 200 with their correct,
+  separate public site keys and unchanged security policy. Platform homepage
+  and login return 200; unauthenticated admin support redirects to login.
+- Verified the migration checksum and denial of private-table access to the
+  public API roles. No real emails, orders, payments or refunds were generated.
+
 ## 2026-10-21: Automatic custom-domain checkout security, staged
 
 - Added store-scoped managed-widget provisioning after real DNS, ownership,

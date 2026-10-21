@@ -1,5 +1,22 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Approved checkout-security production rollout
+
+- `node db/migrate.js --staged-checkout-security`: applied and committed only
+  0054; no historical migration changes.
+- Tenant-scoped provisioning checked real domain readiness and provider widget
+  read-back, then saved encrypted private credentials. Dedicated checkout-only
+  Worker encryption was installed without exposing values or changing existing
+  authentication/payment keys.
+- The checkout-security regression suite and existing custom-domain integration
+  test passed after the key boundary fix. New lightweight key-isolation and
+  early-failure regressions cover the cause.
+- `pnpm exec wrangler deploy --keep-vars`: final active version
+  `1bcf1b26-865c-4326-bf60-e569383fc320`, 100%.
+- Compared existing binding fingerprints, routes and compatibility before/after;
+  only the dedicated encrypted checkout binding was added. Live checkout,
+  homepage, login and unauthenticated-admin checks passed, without emails/orders.
+
 ## 21 October 2026: Automatic checkout security, local verification
 
 - Executed focused backend, migration, isolation, provider-failure and UI

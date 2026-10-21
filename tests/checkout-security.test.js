@@ -7,8 +7,26 @@ import {migrationSelection} from "../db/migration-selection.js";
 import {securityProvider} from "./helpers/checkout-security-provider.js";
 const id="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",other="dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const env={CLOUDFLARE_API_TOKEN:"isolated-provider-token",CLOUDFLARE_ZONE_ID:"a".repeat(32),
+  CHECKOUT_SECURITY_ENCRYPTION_KEY:"isolated-dedicated-checkout-security-storage-key",
   SESSION_SECRET:"isolated-checkout-security-storage-secret",TURNSTILE_SITE_KEY:"platform-public-key",TURNSTILE_SECRET_KEY:"platform-private-key"};
 const hostname="www.brand.com";
+test("a dedicated encryption key is required before provisioning has side effects",async()=>{
+  let touched=false;
+  const unavailable=()=>{touched=true;throw new Error("Unexpected side effect");};
+  await assert.rejects(ensureCheckoutSecurity(unavailable,id,hostname,{...env,CHECKOUT_SECURITY_ENCRYPTION_KEY:undefined},unavailable),error=>error.status===503);
+  assert.equal(touched,false);
+});
+test("checkout credential encryption is independent of login and payment keys",async()=>{
+  const {sealCredentials}=await import("../src/connections/providers.js");
+  const credentials={site_key:"isolated-public-key",secret:"isolated-private-widget-secret"};
+  const row={site_key:credentials.site_key,hostnames:JSON.stringify([hostname]),
+    credentials_ciphertext:await sealCredentials(env.CHECKOUT_SECURITY_ENCRYPTION_KEY,id,"checkout-turnstile",credentials)};
+  const db={withStore:async(storeId,fn)=>{assert.equal(storeId,id);return fn(async()=>[row]);}};
+  const resolved=await checkoutSecurityEnvironment(db,{store_id:id},new Request(`https://${hostname}/checkout`),
+    {...env,SESSION_SECRET:"a-different-login-secret-do-not-use-for-checkout",INTEGRATION_ENCRYPTION_KEY:"a-different-payment-encryption-key"});
+  assert.equal(resolved.TURNSTILE_SITE_KEY,credentials.site_key);
+  assert.equal(resolved.TURNSTILE_SECRET_KEY,credentials.secret);
+});
 test("automatic custom-domain checkout security: persistence, isolation, recovery and failure boundaries",async t=>{
   const pg=await setupAnnFixtureDatabase(),adapter=annFixtureAdapter(pg),provider=securityProvider();
   const db={withStore:(storeId,fn)=>adapter.withMemberStore(storeId,"a".repeat(64),fn)};
