@@ -1,5 +1,9 @@
 # Complete implementation checkpoint register
 
+### Responsive collection filters: local implementation, not released
+
+The collection filters now use a left sidebar on desktop and a compact filter bar with an accessible bottom sheet on mobile, including Ann/editor iframe previews. Existing filtering and publication rules are retained. Verified with 54 focused checks, a successful asset build and desktop/mobile screenshots. Cloudflare publication remains unapproved.
+
 ### Collection filters and Ann introduction: local implementation, not released
 
 Collection-local product type, variant and descriptor filtering is shared across saved themes and regular layouts, with publication-frozen labels and same-SKU variant matching. The Ann introduction uses the requested conversational-builder copy. Existing publications with no stored type label require explicit catalogue publication. No migration or production publication is implied by this checkpoint.

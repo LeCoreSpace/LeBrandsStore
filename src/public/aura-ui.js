@@ -98,7 +98,50 @@ export function attachAuraCatalog(doc) {
   const facetInputs=[...(facetPanel?.querySelectorAll("[data-facet-group]")||[])];
   const facetActive=facetPanel?.querySelector("[data-facet-active]");
   const facetClear=facetPanel?.querySelector("[data-facet-clear]");
-  if(doc.defaultView?.matchMedia?.("(max-width:600px)")?.matches)facetPanel?.querySelector("details")?.removeAttribute("open");
+  const facetBar=doc.querySelector("[data-facet-bar]"),barOpen=facetBar?.querySelector("[data-facet-open]"),backdrop=doc.querySelector("[data-facet-backdrop]");
+  const compact=()=>!!doc.defaultView?.matchMedia?.("(max-width:860px)")?.matches;
+  const sheetOpen=()=>!!facetPanel?.hasAttribute("data-open");
+  let sheetOverflow="";
+  if(facetPanel){
+    const bg=doc.defaultView?.getComputedStyle?.(doc.body)?.backgroundColor;
+    if(bg&&!/rgba\(.*,\s*0\)|transparent/.test(bg)){
+      facetPanel.style.setProperty("--au-facet-bg",bg);
+      facetBar?.style.setProperty("--au-facet-bg",bg);
+    }
+  }
+  const setSheet=on=>{
+    if(!facetPanel||on===sheetOpen())return;
+    if(on){
+      const bg=doc.defaultView?.getComputedStyle?.(doc.body)?.backgroundColor;
+      if(bg&&!/rgba\(.*,\s*0\)|transparent/.test(bg))facetPanel.style.setProperty("--au-facet-bg",bg);
+      facetPanel.setAttribute("data-open","");sheetOverflow=doc.body.style.overflow;doc.body.style.overflow="hidden";
+      if(backdrop)backdrop.hidden=false;barOpen?.setAttribute("aria-expanded","true");
+      facetPanel.setAttribute("role","dialog");facetPanel.setAttribute("aria-modal","true");
+      facetPanel.querySelector("[data-facet-close]")?.focus();
+    }else{
+      facetPanel.removeAttribute("data-open");facetPanel.removeAttribute("role");facetPanel.removeAttribute("aria-modal");
+      doc.body.style.overflow=sheetOverflow;if(backdrop)backdrop.hidden=true;
+      barOpen?.setAttribute("aria-expanded","false");barOpen?.focus();
+    }
+  };
+  if(facetPanel){
+    if(facetBar)facetBar.hidden=false;
+    barOpen?.addEventListener("click",()=>{if(compact())setSheet(true);});
+    facetPanel.querySelector("[data-facet-close]")?.addEventListener("click",()=>setSheet(false));
+    facetPanel.querySelector("[data-facet-done]")?.addEventListener("click",()=>setSheet(false));
+    backdrop?.addEventListener("click",()=>setSheet(false));
+    doc.addEventListener("keydown",e=>{
+      if(!sheetOpen())return;
+      if(e.key==="Escape"){e.preventDefault();setSheet(false);return;}
+      if(e.key==="Tab"){
+        const f=[...facetPanel.querySelectorAll("button,input,summary")].filter(el=>!el.disabled&&!el.closest("[hidden]")&&el.offsetParent!==null);
+        if(!f.length)return;const first=f[0],last=f[f.length-1],cur=doc.activeElement;
+        if(!facetPanel.contains(cur)){e.preventDefault();(e.shiftKey?last:first).focus();return;}
+        if(e.shiftKey&&cur===first){e.preventDefault();last.focus();}else if(!e.shiftKey&&cur===last){e.preventDefault();first.focus();}
+      }
+    });
+    doc.defaultView?.addEventListener?.("resize",()=>{if(sheetOpen()&&!compact())setSheet(false);});
+  }
   const q = (new URLSearchParams(doc.defaultView?.location?.search || "").get("q") || "").trim().toLowerCase();
   doc.querySelectorAll(".au-search input").forEach((i) => { i.value = q; });
   const items = cards.map((el, i) => ({ el, title: String(el.dataset.title || ""), price: Number(el.dataset.price) || 0, available: el.dataset.available === "1", index: Number(el.dataset.index) || i, collections: (el.dataset.collections || "").split(" ").filter(Boolean),facets:records.get(el.getAttribute("href"))||facetConfig?.records?.[i]?.facts }));
@@ -132,6 +175,7 @@ export function attachAuraCatalog(doc) {
     const label=facetPanel.querySelector("[data-facet-tally]");
     if(label)label.textContent=tally?`${tally} selected`:"";
     if(facetClear)facetClear.disabled=!tally&&!stockOnly;
+    const bt=facetBar?.querySelector("[data-facet-bar-tally]");if(bt)bt.textContent=tally?String(tally):"";
   };
   const apply = () => {
     const r = catalogPage(items, { sort: sort?.value || "", stockOnly, collection: col, q, page, pageSize,filters });
@@ -142,6 +186,8 @@ export function attachAuraCatalog(doc) {
     if (count) count.textContent = `${r.total} ${r.total === 1 ? "product" : "products"}`;
     const facetResults=facetPanel?.querySelector("[data-facet-results]");
     if(facetResults){facetResults.textContent=`${r.total} ${r.total===1?"product":"products"}`;if(count)facetResults.removeAttribute("role");}
+    const barCount=facetBar?.querySelector("[data-facet-bar-count]");if(barCount)barCount.textContent=`${r.total} ${r.total===1?"product":"products"}`;
+    const done=facetPanel?.querySelector("[data-facet-done]");if(done)done.textContent=`Show ${r.total} ${r.total===1?"product":"products"}`;
     if (none){none.hidden = r.total > 0;none.textContent=Object.values(filters).some(values=>values.length)?"No products match these filters. Try removing a filter.":emptyText;}
     if (pager) { pager.hidden = r.pages < 2; if (status) status.textContent = `Page ${r.page} of ${r.pages}`; if (prev) prev.disabled = r.page <= 1; if (next) next.disabled = r.page >= r.pages; }
     paintFacets();

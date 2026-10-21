@@ -1,5 +1,12 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Responsive collection filters
+
+- `node --test --test-concurrency=1 tests/collection-filter-controls.test.js tests/collection-filters.test.js tests/aura-collections.test.js tests/storefront-product-details.test.js tests/storefront-commerce-shell.test.js tests/aura-layout.test.js tests/browser-module-delivery.test.js`: 54 checks passed.
+- `node scripts/build-browser-assets.mjs`: built 31 versioned entries and 42 files.
+- Restarted the existing web/API preview workflows once after the UI batch. Desktop 1280px and mobile 390px screenshots of the isolated collection fixture confirmed sidebar/filter-bar placement and successful module delivery.
+- `git diff --check`: clean. No production deployment or database migration.
+
 ## 21 October 2026: Collection filters and Ann copy, local verification
 
 - `node --test --test-concurrency=1 tests/collection-filter-controls.test.js tests/collection-filters.test.js tests/aura-collections.test.js tests/storefront-product-details.test.js tests/storefront-commerce-shell.test.js tests/aura-layout.test.js`: focused controller, facet, publication-boundary and theme regression coverage.

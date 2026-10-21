@@ -4,7 +4,7 @@ import {filterFacts,matchesFacets,buildFacetGroups,facetCounts} from "../src/pub
 import {storefrontProduct,productFilterProjection} from "../src/public/product-details.js";
 import {catalogPage} from "../src/public/catalog-page.js";
 import {renderAura} from "../src/public/aura.js";
-import {collectionFilterPanel} from "../src/public/collection-filter-view.js";
+import {collectionFilterPanel,addCollectionFilters,COLLECTION_FILTER_CSS} from "../src/public/collection-filter-view.js";
 import {SHOWCASE_STYLES} from "../src/public/aura-showcase.js";
 import {readFile} from "node:fs/promises";
 const product=(id,type="Kurta",material="Cotton")=>({
@@ -88,4 +88,16 @@ test("homepage uses the four requested Ann statements",async()=>{
  const text=await readFile(new URL("../src/ui/home-sections.js",import.meta.url),"utf8");
  for(const line of ["Meet Ann.","Your conversational store builder.","Beautiful themes, designed and optimised to sell.","Guided, not generated. Every choice is yours."])assert.ok(text.includes(line));
  assert.ok(!text.includes("Not AI. Just how you want it."));
+});
+test("sidebar wrapper encloses just the grid, not empty states, pagination or following sections",()=>{
+ const body='<h1>Shop</h1><section data-catalog><article><section>Nested card</section></article></section><p data-catalog-empty hidden>No matches</p><nav data-catalog-pagination>Next</nav><footer>Footer</footer>';
+ const html=addCollectionFilters(body,[product("a")]);
+ assert.match(html,/<div class="au-shop">/);
+ assert.match(html,/<\/article><\/section><\/div><p data-catalog-empty/);
+ assert.match(html,/<\/div><p data-catalog-empty hidden>No matches<\/p><nav data-catalog-pagination>Next<\/nav><footer>Footer<\/footer>$/);
+ assert.ok(html.includes("data-facet-open")&&html.includes("data-facet-close")&&html.includes("data-facet-done"));
+ assert.match(COLLECTION_FILTER_CSS,/grid-template-columns:248px minmax\(0,1fr\)/);
+ assert.match(COLLECTION_FILTER_CSS,/@media\(max-width:860px\)/);
+ assert.match(COLLECTION_FILTER_CSS,/\.au-facets\[data-open\]\{display:flex\}/);
+ assert.match(COLLECTION_FILTER_CSS,/\.au-facet-bar\[hidden\]/);
 });

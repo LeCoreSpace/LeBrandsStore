@@ -1,5 +1,13 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Responsive collection filter redesign, local only
+
+- Replaced the full-width filter grid with a left-hand desktop sidebar and a compact mobile filter bar. Collapsible groups and independently scrolling sidebar/sheet content keep products visible when collections have many descriptors.
+- Mobile opens an accessible bottom sheet with selected-count/result updates, Clear, Close and Show results. Backdrop, Escape, focus trapping/restoration, scroll locking and resizing are handled by the trusted document controller, including script-free Ann/editor frames.
+- The shared wrapper encloses only the catalogue element, leaving surrounding sections, empty messages, pagination and footer intact. Closed mobile panels use `display:none` rather than off-screen transforms.
+- Verification: 54 focused checks passed, including drawer behavior, iframe-local breakpoints, real-SKU matching, publication boundaries, wrapper placement, saved themes and Worker module delivery. Browser assets built successfully; desktop and 390px mobile collection screenshots showed the intended layout with no browser errors.
+- No migration, production write or Cloudflare publication was performed.
+
 ## 2026-10-21: Collection filters and revised Ann introduction, local only
 
 - Replaced the Ann introduction with the user's four requested statements, retaining the existing layout and imagery.
