@@ -26,3 +26,9 @@ uploading unreleased application code or replacing other Worker settings.
 **How to apply:** Do not interpret an unreadable mode/callback Secret as missing,
 or add same-named plain-text Wrangler variables without an explicit conversion.
 Keep workspace Test values and Live-only secure handoff entries separate.
+
+Compare route patterns and destination scripts, not opaque route IDs, when checking route preservation across a normal Worker publication.
+
+**Why:** Cloudflare recreated the route IDs during an otherwise unchanged release; comparing IDs incorrectly reported a routing change.
+
+**How to apply:** Exclude provider-generated route IDs from semantic route comparisons while still checking all patterns and destinations. Do not similarly omit real resource-binding identities.

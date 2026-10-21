@@ -1,3 +1,7 @@
+### Phase 3 public blogs and Content for LLM: approved production release
+
+Applied the additive publication migration manually after approval and published Worker `764d900d-7dbf-41ca-adb3-c5684fcc143a` at 100% traffic. Schema checksum, forced tenant RLS, app/API privileges, binding/secret/runtime preservation and fifteen live read-only HTTP probes passed. Earlier isolated lifecycle/theme checks remain valid. Existing drafts remain private; no signed-in production content mutations were exercised.
+
 ### Phase 3 merchant blogs and Content for LLM: local implementation, not released
 
 Adds private discovery-file inspection and Blog submenu, revision-guarded publication/unpublication with frozen public copies, permanent addresses and original dates, public themed article/listing pages and crawler integration. Fifty-eight focused checks and Worker dry run passed; desktop/mobile screenshots used read-only fictional data. Two unrelated style-studio fixture failures reproduce on unchanged HEAD. The additive publication migration is not applied, no Phase 3 deployment occurred, and signed-in live mutations were not exercised.

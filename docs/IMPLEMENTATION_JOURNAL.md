@@ -1,5 +1,12 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Approved Phase 3 production release
+
+- Applied `0057_store_blog_publications.sql` using `node db/migrate.js --staged-store-blog-publication` after explicit migration/publication approval. Read-only verification confirmed the recorded checksum, four publication policies, forced row-level security, app-role CRUD privileges and no publication-table or trigger-function privileges for external API roles.
+- Published using `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars`. Active Worker version `764d900d-7dbf-41ca-adb3-c5684fcc143a` serves 100% of traffic. All 27 non-asset bindings, 17 encrypted secrets and runtime settings matched the fresh pre-release snapshot. Route patterns and target scripts were unchanged; provider-generated route IDs changed normally during publication.
+- All 15 live HTTP probes passed: database-backed login with a nonexistent synthetic session, homepage, five fingerprinted blog/discovery CSS/JS assets, protected HTML/API discovery routes, public blog listing, missing article 404, sitemap, robots, llms and singular-llm redirect. Earlier isolated 58-check verification and desktop/mobile screenshots remain valid; no application code changed after them.
+- No merchant drafts, articles, media, catalogue content, account credentials or billing/provider records were created or modified for verification. No existing blog draft was automatically published. Signed-in production mutations were not performed.
+
 ## 2026-10-21: Phase 3 public blogs and merchant discovery inspector, local only
 
 - Added Content for LLM navigation with Discovery files and Blog children. Authenticated, tenant-scoped, read-only inspection uses the same generator and canonical origin as public robots, sitemap, llms and singular-llm redirect responses. Complete sitemap shards can be selected without truncating their contents; copy/public-open and refresh controls are available.

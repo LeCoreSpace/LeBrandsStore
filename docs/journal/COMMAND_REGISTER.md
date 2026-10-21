@@ -1,3 +1,10 @@
+## 2026-10-21: Approved Phase 3 enablement and Cloudflare publication
+
+- `node db/migrate.js --staged-store-blog-publication` committed only the approved additive publication migration to existing external Supabase.
+- Read-only schema checks verified ledger checksum, forced RLS, four policies, required app-role privileges and revoked API-role grants.
+- `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` published `764d900d-7dbf-41ca-adb3-c5684fcc143a` at 100% traffic. Existing bindings/secrets/runtime fingerprints matched. Semantic route configuration was unchanged; opaque route IDs were regenerated.
+- Fifteen read-only live HTTP probes passed for login/session lookup, homepage, fingerprinted assets, anonymous content-inspector access denial, themed blog listing, missing article, sitemap/robots/LLM files and redirect. No authenticated live mutation or real merchant content change was used.
+
 ## 2026-10-21: Phase 3 local implementation verification
 
 - Workspace root: `node --test --test-concurrency=1 tests/store-blog-drafts.test.js tests/store-blog-publication.test.js tests/store-discovery.test.js tests/dashboard-navigation.test.js tests/browser-module-delivery.test.js tests/aura-showcase.test.js tests/aura-layout.test.js tests/ann-menus.test.js tests/storefront-commerce-shell.test.js` passed 58 checks using isolated PGlite and fictional data.
