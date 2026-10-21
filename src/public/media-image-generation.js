@@ -1,4 +1,13 @@
-const root = document.querySelector("[data-ai-root]");
+export function generationBlockReason({preview,available,canGenerate,reason,busy,active,placement,prompt=""}){
+  if(preview)return "This is a read-only preview. Image generation is disabled.";
+  if(!available)return reason||"Checking image-generation availability...";
+  if(!canGenerate)return reason||"Image generation is not available right now.";
+  if(busy||active)return "An image request is already in progress.";
+  if(!placement)return "Choose where this image will be used.";
+  if(prompt.trim().length<10)return "Describe your image using at least 10 characters.";
+  return "";
+}
+const root = typeof document==="undefined"?null:document.querySelector("[data-ai-root]");
 if (root) {
   const q = s => root.querySelector(s);
   let cfg = {};
@@ -29,8 +38,11 @@ if (root) {
   const selectedPlacement = () => state.placements.find(p => p.id === $.place.value);
 
   const refresh = () => {
-    const ready = !preview && state.available && state.can_generate && $.place.value && $.prompt.value.trim() && !busy && !(job && ACTIVE.includes(job.status));
-    $.gen.disabled = !ready;
+    const reason=generationBlockReason({preview,available:state.available,canGenerate:state.can_generate,
+      reason:state.reason,busy,active:Boolean(job&&ACTIVE.includes(job.status)),placement:$.place.value,prompt:$.prompt.value});
+    $.gen.disabled=Boolean(reason);
+    const explanation=q("[data-ai-disabled-reason]");
+    if(explanation){explanation.textContent=reason;explanation.hidden=!reason;}
     $.count.textContent = String($.prompt.value.length);
     const p = selectedPlacement();
     $.pinfo.textContent = p ? `${p.category ? p.category + ". " : ""}${p.width} x ${p.height} px, ratio ${p.ratio}. The result is created at this exact size.` : "";
@@ -106,7 +118,7 @@ if (root) {
 
   const load = async () => {
     if (preview) return;
-    try { await loadState(); } catch (e) { $.status.textContent = "Availability could not be loaded. " + e.message; $.ra.hidden = false; $.save.hidden = true; $.retry.hidden = true; return; }
+    try { await loadState(); } catch (e) { state.available=false;state.reason="Availability could not be loaded. "+e.message;$.status.textContent=state.reason;$.ra.hidden = false; $.save.hidden = true; $.retry.hidden = true; refresh();return; }
   };
   const loadState = async () => {
     const d = await api(base);

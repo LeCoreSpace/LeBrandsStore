@@ -2637,3 +2637,16 @@ decision:
   SQL persistence were verified separately, not through a live merchant session.
   Ambiguous client-abort retry and unavailable-state interaction were not browser
   tested. Prompts stay private rather than becoming public media alt text.
+
+### 21 October 2026: Explain disabled image generation beside the button
+
+- A read-only check of the configured application database confirmed the image
+  jobs table and generation function are absent. Activation remains pending;
+  a filled placement, reference and prompt must not bypass this prerequisite.
+- Added the actual availability reason directly beside Generate image, including
+  missing setup, ownership, busy and input states. Client prompt validation now
+  matches the existing minimum of ten characters. Availability failures disable
+  generation and retain the entered form.
+- Three focused regression checks passed. The rebuilt managed preview serves the
+  updated module and the inline explanation was visually verified. No database
+  migration, production release or additional OpenAI request was performed.

@@ -1643,3 +1643,11 @@ of this register.
 | Repository root / build only | `pnpm exec wrangler deploy --dry-run --config wrangler.jsonc` | Successful bundle and configuration validation. Did not deploy. |
 | Managed preview / read-only | Restart API workflow, inspect logs, capture desktop/mobile Stage 3 fixture | New raw/fingerprinted modules and CSS served successfully. Default fixture disables all generation and saving; no provider request. |
 | Browser / intercepted API only | One tester, corrected readonly-fixture override within the same pass | Actual application handlers passed reference selection, one correctly shaped generation POST, polling, ready preview and explicit save; mobile fit. Untouched preview made no AI requests. No real merchant/provider mutation. Retry-abort/error-state scenarios not covered. |
+
+### 21 October 2026: Disabled generation diagnosis
+
+| Working directory / target | Command or operation | Purpose and observed result |
+|---|---|---|
+| Existing application DB / read-only | App-role transaction using `to_regclass` and `to_regprocedure` | Both generation prerequisites are absent. Returned booleans only; no merchant records or secret values read into output. |
+| Repository root | `node --test tests/media-image-availability.test.js`, syntax and diff checks | Three checks passed for activation reason, button conditions and adjacent explanation. |
+| Managed preview | Restart API workflow, inspect logs and capture updated fixture | New module rebuilt successfully; inline blocked reason visible beside Generate. Production untouched. |

@@ -33,6 +33,7 @@ ${preview ? '<p class="mig-note is-preview" role="note">Read-only preview. This 
 <p class="mig-hint"><span data-ai-count>0</span> / 1500</p></fieldset>
 <p class="mig-error" data-ai-error role="alert" hidden></p>
 <div class="mig-actions"><button type="submit" class="lb-button" data-ai-generate disabled>Generate image</button></div>
+<p class="mig-note" data-ai-disabled-reason role="status" aria-live="polite">${preview ? "This is a read-only preview. Image generation is disabled." : "Checking image-generation availability..."}</p>
 <p class="mig-hint" data-ai-trial>Controlled trial: no charge to your store. Limits: 3 requests per store per day (UTC), and unsaved previews (up to 5) count toward your storage. Only store owners can generate.</p>
 </form>
 <div class="mig-side">
