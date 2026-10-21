@@ -1,5 +1,9 @@
 # Complete implementation checkpoint register
 
+### Icon-led bag controls across themes: preview only
+
+Shared header markup/CSS provides a shopping-bag icon, live count badge, theme-aware styling and accessible focus/read-only states across regular, saved and sample themes. Existing shopping hooks are retained. Verified with 32 focused checks and mobile/desktop screenshots. Not released to production.
+
 ### Ann copy and responsive filters: approved production release
 
 Worker `c4c5e08b-ec3d-4099-bb8b-3d9048793ba7` now serves 100% of production traffic. Live Ann copy, responsive collection controls, module delivery and database-backed login passed read-only checks. Existing resource bindings, secrets and runtime settings are preserved. No schema migration or merchant catalogue republish was performed.

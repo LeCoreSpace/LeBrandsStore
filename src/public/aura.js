@@ -1,5 +1,5 @@
 import { contrastColor } from "./validation.js";
-import { renderSection, safeImage, policyTitle, imageSourceSet, HERO_IMAGE_SIZES } from "./aura-sections.js";
+import { BAG_CSS, renderSection, safeImage, policyTitle, imageSourceSet, HERO_IMAGE_SIZES } from "./aura-sections.js";
 import { getPageKey, defaultPageLayouts } from "./aura-layout.js";
 import { STYLE_IDS } from "./aura-styles.js";
 import { productHref } from "./commerce-options.js";
@@ -159,7 +159,7 @@ export function renderAura(data = {}, options = {}) {
       ${canonicalUrl ? `<link rel="canonical" href="${esc(canonicalUrl)}"><meta property="og:url" content="${esc(canonicalUrl)}">` : ""}
       <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
       ${designed ? `<style>${designed.css}</style>` : '<link rel="stylesheet" href="/assets/aura.css">'}
-      <style>:root{--accent:${accent};--accent-ink:${accentInk};--accent-label:${accentLabel};--display:${font.display};--body:${font.body};--radius:${radius}}${DESIGN_MENU_CSS}</style>
+      <style>:root{--accent:${accent};--accent-ink:${accentInk};--accent-label:${accentLabel};--display:${font.display};--body:${font.body};--radius:${radius}}${DESIGN_MENU_CSS}${BAG_CSS}</style>
       ${options.commerce || designed?.cm ? `<link rel="stylesheet" href="/assets/${designed ? "commerce-signature" : "commerce"}.css">` : ""}
       ${!designed && STYLE_IDS.includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-styles.css">' : ""}
       ${!designed && ["minimal", "vintage"].includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-extra-styles.css">' : ""}

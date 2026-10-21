@@ -1,5 +1,12 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Shared icon-led bag control, preview only
+
+- Regular Aura, saved-theme, style-demo, mobile-tabbar and shared commerce headers use a consistent shopping-bag SVG and an expanding quantity badge, retaining theme colours and framing.
+- Preserved live and preview cart/count hooks, disabled read-only behavior, accessible text and keyboard focus. No cart-data, checkout, payment or publication behavior changed.
+- Verified 32 focused checks, browser asset build and architectural-mobile/boutique-desktop screenshots. Existing managed web/API previews are running without browser errors.
+- Not published to Cloudflare; no database migration or production writes.
+
 ## 2026-10-21: Approved Ann copy and responsive-filter production release
 
 - User approved publishing the pending Ann copy and collection-filter updates.

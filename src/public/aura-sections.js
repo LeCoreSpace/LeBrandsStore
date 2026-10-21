@@ -1,3 +1,21 @@
+export const BAG_ICON = '<svg class="lb-bag-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5.2 8.5h13.6l.9 11.5H4.3L5.2 8.5Z"/><path d="M8.7 8.5V7a3.3 3.3 0 0 1 6.6 0v1.5"/></svg>';
+export function bagControl({ cls = "", extra = "", label = "", disabled = false } = {}) {
+  const name = label || (disabled ? "Bag preview, shopping disabled" : "Open bag");
+  const state = disabled ? ' disabled aria-disabled="true"' : "";
+  return `<button type="button" class="lb-bag ${cls}" data-cart-open${extra}${state}>${BAG_ICON}<span class="lb-bag-text lb-sr">${esc(name)}, items:</span><span class="lb-bag-count" data-cart-count>0</span></button>`;
+}
+export const BAG_CSS = `.lb-bag{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;padding:0 4px;background:none;border:0;border-radius:999px;color:inherit;font:inherit;cursor:pointer;gap:0;-webkit-tap-highlight-color:transparent}
+.lb-bag .lb-bag-icon{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;display:block}
+.lb-bag .lb-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.lb-bag .lb-bag-count{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;display:grid;place-items:center;border-radius:999px;background:var(--lb-badge,var(--accent,var(--acc,var(--cm-accent,#222))));color:var(--lb-badge-ink,var(--accent-ink,var(--cm-accent-ink,#fff)));font:700 11px/1 system-ui,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:0;white-space:nowrap;box-shadow:0 0 0 2px var(--lb-ring,var(--paper,var(--cm-card,#fff)))}
+body .aura-header .lb-bag[data-cart-open]{min-width:44px;min-height:44px}
+.lb-bag:hover{opacity:.82}.lb-bag:focus-visible{outline:2px solid currentColor;outline-offset:2px}.lb-bag:disabled{opacity:.5;cursor:not-allowed}
+.sc-tabbar .lb-bag{color:#fff;--lb-badge:#fff;--lb-badge-ink:var(--acc,#222);--lb-ring:var(--acc,#222)}
+.sc-boutique .sc-bag.lb-bag{background:var(--acc);color:#fff;padding:0 10px;--lb-badge:#fff;--lb-badge-ink:var(--acc);--lb-ring:var(--acc)}
+.sc-architectural .sc-bag.lb-bag{background:var(--ink);color:#fff;border-radius:0;--lb-badge:var(--acc);--lb-badge-ink:#fff;--lb-ring:var(--ink)}
+.cm-bag.lb-bag{border:1.5px solid var(--cm-ink);background:var(--cm-card);color:var(--cm-ink);min-width:46px;padding:0 10px}.cm-bag.lb-bag:hover{background:var(--cm-ink);color:var(--cm-card);opacity:1}
+.au-bag.lb-bag,.sc-bag.lb-bag,.cm-bag.lb-bag{gap:0}.au-bag.lb-bag{border:0;padding:0 4px;background:none;color:var(--ink)}.lb-bag.lb-bag .lb-bag-count{min-width:18px;height:18px;padding:0 5px;font:700 11px/1 system-ui,sans-serif;background:var(--lb-badge,var(--accent,var(--acc,var(--cm-accent,#222))));color:var(--lb-badge-ink,var(--accent-ink,var(--cm-accent-ink,#fff)))}
+@media (max-width:640px){.lb-bag .lb-bag-icon{width:22px;height:22px}}`;
 import { renderCommerceBody } from "./commerce-view.js";
 import {validateDesignMenus,renderDesignMenu} from "./ann-menu-model.js";
 import { formatPhone } from "./commerce-rules.js";
@@ -114,7 +132,7 @@ export const SECTION_RENDERERS = {
     const menus=c.settings?.ann_design?.menus;
     const links = menus?renderDesignMenu(validateDesignMenus(menus).header):list.filter((l) => l?.label && link(l.url)).map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`).join("");
     const logo = c.logoUrl ? `<img src="${esc(c.logoUrl)}" alt="${esc(c.brand)}" height="36">` : `<span class="au-wordmark">${esc(c.brand)}</span>`;
-    const bag = `<button type="button" class="au-bag au-icon-button" data-cart-open aria-label="${c.options.readOnly || !c.options.commerce ? "Bag preview, shopping disabled" : "Open bag"}" ${c.options.readOnly || !c.options.commerce ? 'disabled aria-disabled="true"' : ""}><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l1 13H4L5 8ZM8 8V6a4 4 0 0 1 8 0v2"/></svg><span data-cart-count aria-label="Items in bag">0</span></button>`;
+    const bag = bagControl({ cls: "au-bag au-icon-button", disabled: Boolean(c.options.readOnly || !c.options.commerce) });
     const search = `<button type="button" class="au-icon-button" data-search-open aria-label="Search products" aria-haspopup="dialog" aria-controls="au-search-${esc(s.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>`;
     const overlay = `<dialog class="au-search-dialog" id="au-search-${esc(s.id)}" aria-label="Search products"><div class="au-search-head"><h2>Find your next favourite</h2><button type="button" class="au-btn-quiet" data-search-close aria-label="Close search">Close</button></div><form class="au-search" role="search" action="/collections/all" method="get"><label class="au-sr" for="au-q-${esc(s.id)}">Search products</label><input id="au-q-${esc(s.id)}" name="q" type="search" placeholder="Search products" autocomplete="off"><button type="submit" class="au-btn-quiet">Search</button></form></dialog>`;
     return `<header class="aura-header au-header ${s.settings?.logo_position === "center" ? "is-center" : ""}"><a class="au-brand" href="/" aria-label="${esc(c.brand)} home">${logo}</a><nav class="au-nav" aria-label="Main navigation">${links}</nav><div class="au-actions">${search}${bag}<button type="button" class="au-menu-btn" data-menu-open aria-expanded="false" aria-controls="au-menu">Menu</button></div></header>${overlay}<div class="au-menu" id="au-menu" hidden><div class="au-menu-head"><span class="au-wordmark">${esc(c.brand)}</span><button type="button" class="au-menu-btn" data-menu-close>Close</button></div><nav aria-label="Menu">${links}</nav></div>`;

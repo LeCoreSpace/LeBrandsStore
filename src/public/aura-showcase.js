@@ -4,7 +4,7 @@
  * layouts outside the saved Ann design renderer never pass through this module.
  */
 import { SHOWCASE_MEDIA, isShowcaseImage, resolveShowcasePack } from "./aura-showcase-assets.js";
-import { safeImage, productVideo } from "./aura-sections.js";
+import { safeImage, productVideo, bagControl, BAG_CSS } from "./aura-sections.js";
 import { homeRich, productRich, collectionRich } from "./aura-showcase-sections.js";
 import { RICH_CSS } from "./aura-showcase-rich-css.js";
 import { showcaseProfile, renderNicheSections, NICHE_SECTION_CSS, profileGuidance } from "./aura-showcase-profiles.js";
@@ -210,14 +210,14 @@ function header(x) {
     editorial: `<div class="sc-announce"><span>Style demo</span><span>Issue 01</span><span>Sample prices</span></div>`,
     minimal: "",
   }[x.style]) ?? "";
-  return `${topper}<header class="sc-hd${LIVE ? " aura-header" : ""}"><button type="button" class="sc-burger" data-menu-open aria-expanded="false" aria-controls="au-menu">Menu</button><a class="sc-brand" href="/">${esc(x.brand)}</a><nav class="sc-nav" aria-label="Primary">${links}</nav><span class="sc-tools"><button type="button" class="sc-search" data-search-open aria-label="Search products" aria-haspopup="dialog" aria-controls="au-search-sc">Search</button><button type="button" class="sc-bag" data-cart-open>Bag <span data-cart-count>0</span></button></span></header>
+  return `${topper}<header class="sc-hd${LIVE ? " aura-header" : ""}"><button type="button" class="sc-burger" data-menu-open aria-expanded="false" aria-controls="au-menu">Menu</button><a class="sc-brand" href="/">${esc(x.brand)}</a><nav class="sc-nav" aria-label="Primary">${links}</nav><span class="sc-tools"><button type="button" class="sc-search" data-search-open aria-label="Search products" aria-haspopup="dialog" aria-controls="au-search-sc">Search</button>${bagControl({ cls: "sc-bag" })}</span></header>
   <dialog class="au-search-dialog sc-searchbox" id="au-search-sc" aria-label="Search products"><div class="sc-sh"><h2>${LIVE ? "Search products" : "Search the sample range"}</h2><button type="button" data-search-close aria-label="Close search">Close</button></div><form class="au-search" role="search" action="/collections/all" method="get"><label class="sc-sr" for="au-q-sc">Search products</label><input id="au-q-sc" name="q" type="search" placeholder="Search products" autocomplete="off"><button type="submit">Search</button></form></dialog>
   <nav id="au-menu" class="sc-menu" hidden aria-label="Menu"><button type="button" data-menu-close>Close</button>${links}</nav>`;
 }
 function footer(x) {
   const menus=x.settings?.ann_design?.menus;
   const links=menus?renderDesignMenu(validateDesignMenus(menus).footer,{footer:true}):NAV.map(([l,h])=>`<a href="${h}">${l}</a>`).join("")+(LIVE?(x.policies||[]).filter(p=>/^[a-z0-9-]+$/.test(String(p.kind||""))).map(p=>`<a href="/policies/${p.kind}">${esc(p.title||p.kind)}</a>`).join(""):"");
-  return `<footer class="sc-ft"><div class="sc-ft-in"><a class="sc-brand" href="/">${esc(x.brand)}</a><nav aria-label="Footer">${links}</nav>${LIVE ? `<p${dc("footer")}>${esc(x.copy.footer || x.brand)}</p>` : `<p>Style demonstration. The ${esc(x.world)} products, photographs and prices are illustrative samples, not a real range. Nothing here is saved, ordered or published.</p>`}</div></footer>${x.style === "boutique" || CONVERSION_TABBAR.includes(x.style) ? `<nav class="sc-tabbar" aria-label="Quick"><a href="/">Home</a><a href="/collections/all">Shop</a><button type="button" data-cart-open>Bag <span data-cart-count>0</span></button></nav>` : ""}`;
+  return `<footer class="sc-ft"><div class="sc-ft-in"><a class="sc-brand" href="/">${esc(x.brand)}</a><nav aria-label="Footer">${links}</nav>${LIVE ? `<p${dc("footer")}>${esc(x.copy.footer || x.brand)}</p>` : `<p>Style demonstration. The ${esc(x.world)} products, photographs and prices are illustrative samples, not a real range. Nothing here is saved, ordered or published.</p>`}</div></footer>${x.style === "boutique" || CONVERSION_TABBAR.includes(x.style) ? `<nav class="sc-tabbar" aria-label="Quick"><a href="/">Home</a><a href="/collections/all">Shop</a>${bagControl({ cls: "sc-bag-tab" })}</nav>` : ""}`;
 }
 const cta = (label, href = "/collections/all", cls = "", attr = "") => `<a class="sc-btn ${cls}"${attr} href="${href}">${esc(label)}</a>`;
 const CONV = buildConversion({ esc, rupees, img, pImg, pHref, cHref, cImg, rv, dc, num, cta, card, live: () => LIVE });
@@ -292,7 +292,7 @@ function cmHeader(x) {
   const logo = safeImage(x.settings?.logo_url) || safeImage(x.settings?.ann_design?.media?.logo?.url);
   const initials = [...String(x.brand || "S").replace(/[^\p{L}\p{N} ]/gu, "").trim().split(/\s+/).map(w => w[0]).join("").slice(0, 2)].join("").toUpperCase() || "S";
   const mark = logo ? `<img src="${esc(logo)}" alt="" width="36" height="36"><span class="cm-brand-name">${esc(x.brand)}</span>` : `<span class="cm-mono" aria-hidden="true">${esc(initials)}</span><span class="cm-brand-name">${esc(x.brand)}</span>`;
-  return `<header class="cm-hd"><div class="cm-hd-in"><a class="cm-brand" href="/" aria-label="${esc(x.brand)} home">${mark}</a><nav class="cm-nav" aria-label="Primary">${links}</nav><div class="cm-tools"><form class="cm-search" role="search" action="/collections/all" method="get"><label class="au-sr" style="position:absolute;left:-9999px" for="cm-q">Search products</label><input id="cm-q" name="q" type="search" placeholder="Search products" autocomplete="off"><button type="submit">Search</button></form><button type="button" class="cm-bag" data-cart-open aria-label="Open bag"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>Bag <span data-cart-count>0</span></button></div></div></header>`;
+  return `<header class="cm-hd"><div class="cm-hd-in"><a class="cm-brand" href="/" aria-label="${esc(x.brand)} home">${mark}</a><nav class="cm-nav" aria-label="Primary">${links}</nav><div class="cm-tools"><form class="cm-search" role="search" action="/collections/all" method="get"><label class="au-sr" style="position:absolute;left:-9999px" for="cm-q">Search products</label><input id="cm-q" name="q" type="search" placeholder="Search products" autocomplete="off"><button type="submit">Search</button></form>${bagControl({ cls: "cm-bag" })}</div></div></header>`;
 }
 function cmFooter(x) {
   const menus = x.settings?.ann_design?.menus;
@@ -534,7 +534,7 @@ const BASE_CSS = `
 .mn-rooms>div,.vt-plates>div{grid-template-columns:1fr}.mn-hero{padding-top:3rem}.mn-pop{display:none}.sc-minimal .sc-prod{gap:2rem}.vt-seal{right:0}
 .au-sticky-buy{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:25;background:#fff;border-top:1px solid var(--line);padding:.7rem 1rem;gap:1rem;align-items:center;justify-content:space-between}.au-sticky-buy button{padding:.8rem 1.2rem;background:var(--acc);color:#fff;border:0;font-weight:600}.sc-boutique .au-sticky-buy{bottom:4.2rem}.commerce-line{grid-template-columns:70px 1fr auto}.commerce-line img{width:70px;height:70px}}
 `;
-const CSS = BASE_CSS + CONVERSION_CSS + DESIGN_MENU_CSS;
+const CSS = BASE_CSS + CONVERSION_CSS + DESIGN_MENU_CSS + BAG_CSS;
 
 /* ---- saved design (real catalogue, no demo content) ---- */
 const liveMedia = o => o && typeof o === "object" && okUrl(o.url) ? { url: o.url, alt: String(o.alt || "").replace(/^illustrative\s+/i, "").replace(/^./, c => c.toUpperCase()), width: Number(o.width) || 1024, height: Number(o.height) || 1024 } : null;

@@ -1,5 +1,12 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Bag control polish, preview verification
+
+- `node --test --test-concurrency=1 tests/storefront-bag-button.test.js tests/storefront-commerce-shell.test.js tests/aura-showcase.test.js tests/aura-layout.test.js tests/browser-module-delivery.test.js`: 32 checks passed.
+- Restarted existing web/API previews once. Wrangler custom build produced 31 versioned entries and 42 files.
+- Verified architectural collection at 390px and boutique product page at 1280px in isolated sample preview, with shared icon/count controls and no browser errors.
+- No Cloudflare publication or migration performed.
+
 ## 21 October 2026: Approved responsive-filter and Ann release
 
 - Captured fresh Cloudflare settings fingerprints and verified configured database/storage resources against production without printing credentials.

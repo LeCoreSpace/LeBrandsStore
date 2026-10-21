@@ -3,6 +3,12 @@ name: Shared LeBrands commerce experience
 description: Recognisable shopping standards across saved themes while retaining merchant branding and stable public links.
 ---
 
+Bag controls should use a shopping-bag icon and a readable item-count badge in every theme, on desktop and mobile, including store previews.
+
+**Why:** The user requested a professional icon-led control across all themes after rejecting the plain “BAG 1” treatment.
+
+**How to apply:** Keep the recognisable icon/count treatment when adding or revising themes, without replacing each theme's own header identity.
+
 Product, cart, checkout and post-order pages should provide a recognisable, professional
 LeBrands.Store shopping experience across every theme, while preserving the
 merchant's logo and accent colours. Store favicons should reflect the
