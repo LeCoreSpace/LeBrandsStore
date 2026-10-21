@@ -1,5 +1,13 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Approved responsive-filter and Ann release
+
+- Captured fresh Cloudflare settings fingerprints and verified configured database/storage resources against production without printing credentials.
+- `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars`: published Worker `c4c5e08b-ec3d-4099-bb8b-3d9048793ba7`.
+- Post-release API checks: new version at 100% traffic; all 28 bindings, 17 encrypted secrets and compatibility settings unchanged.
+- Live HTTP checks: homepage Ann copy, four browser dependencies, invalid-session login password form and custom-domain collection sidebar/mobile controls passed.
+- No migration or merchant catalogue publication command was run.
+
 ## 21 October 2026: Responsive collection filters
 
 - `node --test --test-concurrency=1 tests/collection-filter-controls.test.js tests/collection-filters.test.js tests/aura-collections.test.js tests/storefront-product-details.test.js tests/storefront-commerce-shell.test.js tests/aura-layout.test.js tests/browser-module-delivery.test.js`: 54 checks passed.

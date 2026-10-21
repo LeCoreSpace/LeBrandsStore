@@ -1,5 +1,13 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Approved Ann copy and responsive-filter production release
+
+- User approved publishing the pending Ann copy and collection-filter updates.
+- Published Cloudflare Worker version `c4c5e08b-ec3d-4099-bb8b-3d9048793ba7` at 100% traffic using `wrangler deploy --keep-vars`.
+- Fresh preflight confirmed the configured Hyperdrive and R2 resources matched production. All 28 binding fingerprints, 17 encrypted secrets and runtime compatibility settings were unchanged after release.
+- Live read-only checks confirmed all four requested Ann statements, the new filter dependencies, the existing capacity helper, database-backed invalid-session login and responsive-filter markup on the custom-domain collection.
+- No database migration, merchant catalogue republish or synthetic production order/product/staff write was performed. Previous local-only entries describe the earlier checkpoints.
+
 ## 2026-10-21: Responsive collection filter redesign, local only
 
 - Replaced the full-width filter grid with a left-hand desktop sidebar and a compact mobile filter bar. Collapsible groups and independently scrolling sidebar/sheet content keep products visible when collections have many descriptors.

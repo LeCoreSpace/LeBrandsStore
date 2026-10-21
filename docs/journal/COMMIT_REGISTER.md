@@ -1,5 +1,9 @@
 # Complete implementation checkpoint register
 
+### Ann copy and responsive filters: approved production release
+
+Worker `c4c5e08b-ec3d-4099-bb8b-3d9048793ba7` now serves 100% of production traffic. Live Ann copy, responsive collection controls, module delivery and database-backed login passed read-only checks. Existing resource bindings, secrets and runtime settings are preserved. No schema migration or merchant catalogue republish was performed.
+
 ### Responsive collection filters: local implementation, not released
 
 The collection filters now use a left sidebar on desktop and a compact filter bar with an accessible bottom sheet on mobile, including Ann/editor iframe previews. Existing filtering and publication rules are retained. Verified with 54 focused checks, a successful asset build and desktop/mobile screenshots. Cloudflare publication remains unapproved.
