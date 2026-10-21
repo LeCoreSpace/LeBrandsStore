@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import { renderHome, renderPricing, renderCompare } from "../src/ui/marketing.js";
 
 test("homepage typography has its own scope without changing pricing or comparison scopes", () => {
-  assert.match(renderHome(), /<body class="m-home-document">/);
+  assert.match(renderHome(), /<body class="m-home-document m-storyboard-document">/);
   assert.match(renderPricing(), /<body class="m-pricing-document">/);
   assert.match(renderCompare(), /<body class="m-pricing-document m-compare-document">/);
 });

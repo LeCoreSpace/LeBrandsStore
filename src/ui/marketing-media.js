@@ -1,4 +1,6 @@
-export const MARKETING_MEDIA = Object.freeze({
+import { CURRENT_MARKETING_MEDIA } from "./marketing-current-media.js";
+
+const ORIGINAL_MARKETING_MEDIA = Object.freeze({
   exampleDesktop: Object.freeze({
     available: true,
     src: "/img/ann-skincare-boutique-desktop.webp",
@@ -99,4 +101,10 @@ export const MARKETING_MEDIA = Object.freeze({
     alt: "Fictional Example Studio setup wizard with a live preview, a demo store and not an actual customer.",
     caption: "Example store"
   })
+});
+
+export const LEGACY_HOME_MEDIA = ORIGINAL_MARKETING_MEDIA;
+export const MARKETING_MEDIA = Object.freeze({
+  ...ORIGINAL_MARKETING_MEDIA,
+  ...CURRENT_MARKETING_MEDIA,
 });

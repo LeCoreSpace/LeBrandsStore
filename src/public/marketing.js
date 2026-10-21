@@ -646,3 +646,74 @@
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initializeMarketing, { once: true });
   else initializeMarketing();
 })();
+
+(() => {
+  function ready(fn) { if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn, { once: true }); else fn(); }
+  const $$ = (r, s) => [...r.querySelectorAll(s)];
+  const out = (r, k, v) => $$(r, `[data-h-out="${k}"]`).forEach((e) => { e.textContent = v; });
+  ready(() => {
+    for (const root of $$(document, "[data-h-tabs]")) {
+      const tabs = $$(root, "[data-h-tab]");
+      const panels = $$(root, "[role=tabpanel]");
+      const select = (i, focus) => {
+        tabs.forEach((t, n) => { t.setAttribute("aria-selected", String(n === i)); t.tabIndex = n === i ? 0 : -1; });
+        panels.forEach((p, n) => { p.hidden = n !== i; });
+        if (focus) tabs[i].focus();
+      };
+      tabs.forEach((t, i) => t.addEventListener("click", () => select(i, false)));
+      root.querySelector("[role=tablist]").addEventListener("keydown", (e) => {
+        const cur = tabs.findIndex((t) => t.getAttribute("aria-selected") === "true");
+        const k = { ArrowRight: (cur + 1) % tabs.length, ArrowLeft: (cur - 1 + tabs.length) % tabs.length, Home: 0, End: tabs.length - 1 };
+        if (!(e.key in k)) return;
+        e.preventDefault(); select(k[e.key], true);
+      });
+    }
+    const pressed = (group, btn) => { $$(group, "button").forEach((b) => { b.classList.toggle("is-on", b === btn); b.setAttribute("aria-pressed",String(b===btn)); }); };
+    for (const v of $$(document, "[data-h-variants]")) {
+      v.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-h-var]"); if (!b) return;
+        pressed(b.parentElement, b);
+        ["price", "sku", "stock", "cost"].forEach((k) => out(v, k, b.dataset[k]));
+      });
+    }
+    for (const c of $$(document, "[data-h-checkout]")) {
+      const pin = c.querySelector("[data-h-pin]"), msg = c.querySelector("[data-h-pin-out]");
+      const base = "Type the example PIN 600001.";
+      pin.addEventListener("input", () => {
+        pin.value = pin.value.replace(/\D/g, "").slice(0, 6);
+        msg.classList.remove("is-ok");
+        if (pin.value.length < 6) { msg.textContent = base; return; }
+        if(pin.value==="600001")msg.classList.add("is-ok");
+        msg.textContent = pin.value === "600001" ? "Example only: 600001 shows Chennai, Tamil Nadu." : "This demo only knows the example PIN 600001.";
+      });
+      c.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-h-offer]"); if (!b) return;
+        pressed(b.parentElement, b);
+        const d = { pct: [176.40, "Rs. 176.40"], fix: [150, "Rs. 150.00"], none: [0, "Rs. 0.00"] }[b.dataset.hOffer];
+        out(c, "disc", d[0] ? "\u2212 " + d[1] : d[1]);
+        out(c, "total", "Rs. " + (1764 - d[0]).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+      });
+    }
+    for (const c of $$(document, "[data-h-cycle]")) {
+      const steps = $$(c, ".h-flow-live li"), btn = c.querySelector("[data-h-cycle-next]");
+      const labels = (c.dataset.hLabels || "").split("|");
+      const state = c.querySelector("[data-h-state]"), tog = c.querySelector("[data-h-toggle]"), lock = c.querySelector("[data-h-lock]");
+      let k = 0;
+      const paint = () => {
+        steps.forEach((s, n) => s.classList.toggle("is-done", n <= k));
+        if (state && labels[k]) state.textContent = labels[k];
+        if (tog) tog.classList.toggle("is-on", k >= steps.length - 1);
+        if (lock) lock.classList.toggle("is-on", k >= 2);
+        btn.textContent = k >= steps.length - 1 ? "Start again" : "Next step";
+      };
+      btn.addEventListener("click", () => { k = k >= steps.length - 1 ? 0 : k + 1; paint(); });
+    }
+    for (const g of $$(document, "[data-h-seg]")) {
+      const outEl = g.querySelector("[data-h-seg-out]");
+      g.addEventListener("click", (e) => {
+        const b = e.target.closest("[data-h-seg-btn]"); if (!b) return;
+        pressed(b.parentElement, b); outEl.textContent = b.dataset.hSegBtn;
+      });
+    }
+  });
+})();

@@ -214,7 +214,8 @@ export async function annPreviewFixture(req, res, previewOrigin) {
     }
     // Public marketing captures use only fictional, in-memory sample content.
     if (url.pathname === `${prefix}/storefront` && ["GET","HEAD"].includes(req.method)) {
-      const settings = { ...styleSettings("boutique"), brand_name: "Example Studio", category: "beauty-and-personal-care", subcategory: "skincare" };
+      const requestedStyle = url.searchParams.get("style");
+      const settings = { ...styleSettings(STYLE_IDS.includes(requestedStyle) ? requestedStyle : "boutique"), brand_name: "Example Studio", category: "beauty-and-personal-care", subcategory: "skincare" };
       const sample = stylePreviewData({ store: { store_id: storeId, name: "Example Studio" }, settings,
         products: [], collections: [], layouts: {}, policies: [], reviews: [] }, { showcase: true });
       res.setHeader("content-type","text/html; charset=utf-8");

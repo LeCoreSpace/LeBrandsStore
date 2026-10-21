@@ -1,3 +1,4 @@
+import { isCurrentHomepageImage } from "./ui/marketing-current-media.js";
 import { RESERVED_SUBDOMAINS } from "./reserved.js";
 import { isStarterImage } from "./public/aura-starter-assets.js";
 import { isShowcaseImage } from "./public/aura-showcase-assets.js";
@@ -182,7 +183,7 @@ export default {
       if (Object.hasOwn(CRAWLER_FILES, url.pathname)) return serveCrawlerFile(request, env);
       if (!["GET", "HEAD"].includes(request.method)) return page("Method not allowed", "Method not allowed", "", 405);
       if (url.pathname.startsWith("/img/")) {
-        const annLanguageCapture = /^\/img\/ann-skincare-(?:boutique-builder-home-en|architectural-builder-home-hi)(?:-(?:640|1280))?\.webp$/.test(url.pathname);
+        const annLanguageCapture = isCurrentHomepageImage(url.pathname) || /^\/img\/ann-skincare-(?:boutique-builder-home-en|architectural-builder-home-hi)(?:-(?:640|1280))?\.webp$/.test(url.pathname);
         const blogImage = BLOG_POSTS.some(post=>post.image===url.pathname||post.image.replace(/\.svg$/,".png")===url.pathname);
         if(!annLanguageCapture&&!blogImage&&!/^\/img\/(?:stonescence-(?:desktop-(?:640|1200)|mobile-(?:260|390))\.webp|ann-(?:skincare-boutique-(?:(?:desktop|product|builder)(?:-(?:640|1280))?|(?:mobile|checkout)(?:-260)?)|store-editorial-(?:desktop(?:-(?:640|1280))?|mobile(?:-260)?)|conversation-builder(?:-(?:640|1280))?)\.(?:jpg|webp)|REPLACE-[a-z0-9-]+\.(?:jpg|webp|avif|png|webm|mp4))$/.test(url.pathname))return notFound();
         if(!env.ASSETS)return new Response("Assets unavailable",{status:503});

@@ -56,6 +56,21 @@ export function previewShell(screen) {
 
 export function renderAppSample(view, searchParams) {
   const data = exampleFixture();
+  // A fixed, fictional skincare capture preset for current marketing images.
+  // This development-only adapter never reads or edits merchant records.
+  if (view === "products" && searchParams.get("showcase") === "skincare") {
+    const examples = [
+      ["Daily serum", "p01-daily-serum"],
+      ["Everyday moisturiser", "p02-everyday-moisturiser"],
+      ["Daily cleanser", "p03-daily-cleanser"],
+    ];
+    data.products = data.products.map((product, index) => {
+      const [title, photo] = examples[index % examples.length];
+      return { ...product, title: index < 3 ? title : `${title} refill`,
+        gst_rate: 18,
+        images: [`/assets/img/aura-showcases/v01/boutique/aura-boutique-skincare-${photo}-v01.webp`] };
+    });
+  }
   const user = { name: "Example owner", email: "owner@example.invalid", must_change_password: false };
   const accounts = { login: "login", signup: "signup", "forgot-password": "forgot-password", account: "account", stores: "dashboard", "new-store": "new-store" };
   let body;
