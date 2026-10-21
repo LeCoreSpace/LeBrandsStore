@@ -1393,3 +1393,13 @@ of this register.
 | `node scripts/build-browser-assets.mjs`; focused marketing, flow, hero, typography, Ann-capture, redesign and slideshow tests | Build succeeded with 31 versioned entries and 42 files. Final focused suite: 35 passed. Controller tests cover selectors, keyboard, swipe intent, retained nested state and fragment navigation. `git diff --check` clean. |
 | Managed API restart and native preview captures | Verified the final hero at 390px and 1440px widths, theme-button removal, readable founder questions and mobile Ann deep-link navigation with slideshow controls visible. Homepage, scripts, fonts and images returned HTTP 200 after restart. No browser-console errors reported. |
 | Publication boundary | Preview only. No Cloudflare publication, migrations, credential changes, orders, payments, emails or merchant data changes in this refinement. |
+
+## 2026-10-21: Approved homepage refinement published to Cloudflare
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| User approval | User explicitly requested “publish” after reviewing the refined homepage. |
+| `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` from repository root | Published the existing production Worker successfully. Version `01429d95-d216-4018-b852-0dd9a54549ed`. Build completed with 31 versioned entries and 42 files; two changed static assets uploaded. Existing routes, queue triggers and schedule retained. |
+| Production configuration comparison | All 27 non-asset binding metadata hashes matched the fresh pre-publication baseline, including 17 encrypted secrets. Runtime settings unchanged. Only hashes and non-secret settings were used for comparison. |
+| Public verification | `https://lebrands.store/` returned HTTP 200 with the current hero, four-story slideshow, light-only root and no theme toggle. Published marketing CSS and JavaScript returned HTTP 200, exactly matched approved local source hashes and retained `no-cache` canonical-asset policy. |
+| Scope | No database migrations, secret updates, merchant domain activation, orders, payment operations or emails were performed. |
