@@ -1,5 +1,11 @@
 # Complete implementation checkpoint register
 
+### Checkout security hostname configuration blocked
+
+Diagnosed separate widget hostname authorization after successful merchant SSL
+and routing. Update permission denied (403); configuration read-back unchanged.
+No app code change, publish or manual commit; security checks remain enforced.
+
 ### Store link, SSL indicator and forwarding instructions published
 
 Owner-approved `07f14c77-2d80-4ed4-840b-d5309b2b052f` serves 100%.

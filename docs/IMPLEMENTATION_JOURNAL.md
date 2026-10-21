@@ -1,5 +1,19 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Custom-domain checkout security diagnosis, blocked on permission
+
+- Confirmed the live checkout widget authorizes only the platform domain, not
+  the newly connected merchant hostname. Actual checkout CSP already permits
+  the challenge script, frame and connection host; no CSP relaxation needed.
+- Attempted a targeted widget hostname addition preserving existing settings.
+  Cloudflare rejected the update with HTTP 403. Read-back confirms no domain
+  was added; widget remains managed. No application deployment or DB changes.
+- Current token can read widget metadata but cannot update it. Platform owner
+  must add the exact hostname or grant the separate Turnstile write permission
+  before a real-browser completion check or automatic activation registration.
+- Server verification remains fail closed and hostname/action bound. No
+  emails, orders, payments or shopper-verification attempts were created.
+
 ## 2026-10-21: Store link, SSL indicator and forwarding instructions published
 
 - Owner-approved release `07f14c77-2d80-4ed4-840b-d5309b2b052f` serves

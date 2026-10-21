@@ -1,5 +1,12 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Checkout security hostname diagnosis
+
+Read-only public checkout/CSP and Turnstile widget inspection identified missing
+merchant hostname authorization. Targeted widget PUT was rejected with 403;
+read-back confirmed no change. Token values and widget secrets were not logged.
+No app publish, database writes, checkout orders or email sends.
+
 ## 21 October 2026: Approved store link and forwarding instructions release
 
 ```sh
