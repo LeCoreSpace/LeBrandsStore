@@ -1,5 +1,9 @@
 # Complete implementation checkpoint register
 
+### Collection filters and Ann introduction: local implementation, not released
+
+Collection-local product type, variant and descriptor filtering is shared across saved themes and regular layouts, with publication-frozen labels and same-SKU variant matching. The Ann introduction uses the requested conversational-builder copy. Existing publications with no stored type label require explicit catalogue publication. No migration or production publication is implied by this checkpoint.
+
 ### Subscription capacity: approved production release
 
 The approved draft-inclusive product/SKU, storage and staff-capacity migration is recorded and checksum-verified. Worker `001abcf6-826b-4a78-a026-5ac9c9df6a64` serves 100% of traffic with unchanged resource bindings and secrets. Production smoke checks were read-only and did not create merchant data. Earlier “not released” entries describe the preceding local checkpoint.

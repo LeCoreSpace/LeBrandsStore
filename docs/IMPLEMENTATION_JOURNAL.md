@@ -1,5 +1,15 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Collection filters and revised Ann introduction, local only
+
+- Replaced the Ann introduction with the user's four requested statements, retaining the existing layout and imagery.
+- Added shared collection-scoped product-type, variant and descriptor filters to regular and saved-theme renderers. Counts, selected chips, reset, sorting, stock filtering and pagination work together; variant combinations must exist on the same SKU.
+- Publication projections freeze selected product-type and individual descriptor labels without internal classification references. Operational updates retain the existing publication's facts; no draft/master lookup or automatic catalogue republish was added.
+- Legacy publications retain their available descriptors and variant filters. A missing historical product-type label requires explicit catalogue publication; unfinished edits are not silently published.
+- Added a read-only collection view to the existing isolated SKU fixture and explicit asset-gate entries for both new public dependencies.
+- Verified 52 focused checks, built assets and inspected desktop/mobile collection views. The full browser-graph regression also exposed the previous capacity helper missing from the explicit allowlist; registered that existing public dependency without widening arbitrary-file access.
+- No migration, production data change or deployment is included in this checkpoint.
+
 ## 2026-10-21: Approved subscription-capacity production release
 
 - User approved applying the manual migration and publishing the checks.

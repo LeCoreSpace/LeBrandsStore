@@ -31,6 +31,8 @@ test("Ann, dashboard, storefront and editor static module dependencies pass the 
     }
   }
   assert.ok(served.has("/product-details.js"),"The transitive Ann product-details helper must be delivered");
+  assert.ok(served.has("/collection-filters.js"),"The shared collection filter model must be delivered");
+  assert.ok(served.has("/collection-filter-view.js"),"Ann's browser renderer needs the collection filter view");
   assert.ok(visited.size>50,"Check the transitive graph, not just the entry scripts");
   const denied=await worker.fetch(new Request(`${origin}/assets/not-public.js`),env,{});
   assert.equal(denied.status,404,"The regression fix must not open arbitrary files");

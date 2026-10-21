@@ -58,6 +58,8 @@ export async function skuCheckoutPreview(req,res,previewOrigin){
       response=new Response(renderAura(data,{page:"confirmation",order,commerce:true}),{headers:{"content-type":"text/html"}});
     }else if(["/favicon.svg","/favicon.png","/favicon.ico","/apple-touch-icon.png"].includes(path)){
       response=new Response(storefrontIcon(data.settings).svg,{headers:{"content-type":"image/svg+xml"}});
+    }else if(path==="/collections/all"){
+      response=new Response(renderAura(data,{page:"collection",commerce:true}),{headers:{"content-type":"text/html"}});
     }else if(path==="/"||path===`/products/${f.product.slug}`){
       response=new Response(renderAura(data,{page:"product",productId:f.product.id,commerce:true}),{headers:{"content-type":"text/html"}});
     }else if(isCheckoutPath(path)){

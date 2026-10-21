@@ -1,5 +1,13 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Collection filters and Ann copy, local verification
+
+- `node --test --test-concurrency=1 tests/collection-filter-controls.test.js tests/collection-filters.test.js tests/aura-collections.test.js tests/storefront-product-details.test.js tests/storefront-commerce-shell.test.js tests/aura-layout.test.js`: focused controller, facet, publication-boundary and theme regression coverage.
+- `node scripts/build-browser-assets.mjs`: versioned browser assets build successfully.
+- Focused suite: 52 checks passed; `node --test tests/browser-module-delivery.test.js` verifies transitive module delivery through the Worker, including the new filter dependencies.
+- Restarted the existing preview workflows; inspected the isolated collection fixture and corrected the explicit Worker module allowlist after the visual check exposed a blocked dependency.
+- No migration or Cloudflare deployment command was run.
+
 ## 21 October 2026: Approved quota migration and Cloudflare release
 
 - Read-only production preflight confirmed prerequisite migration records, administrative role and offered Free allowances without printing credentials.

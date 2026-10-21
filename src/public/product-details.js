@@ -41,5 +41,25 @@ export function productFeatureRows(product){
 
 export function storefrontProduct(product,{detailsFrom=product}={}){
   const {classification,classification_reference,catalogue_revision,...publicProduct}=product;
-  return {...publicProduct,product_details:productDetailRows(detailsFrom)};
+  return {...publicProduct,product_details:productDetailRows(detailsFrom),product_filters:productFilterProjection(detailsFrom)};
+}
+
+export function productFilterProjection(product){
+  if(own(product,"product_filters")){
+    const frozen=product.product_filters;
+    return {product_type:text(frozen?.product_type),descriptors:list(frozen?.descriptors)
+      .filter(d=>text(d?.label)).map(d=>({label:text(d.label),values:list(d.values).map(text).filter(Boolean)}))};
+  }
+  const ref=product?.classification_reference;
+  const type=text(ref?.product_type_name);
+  const descriptors=productDetailRows(product).map(d=>({label:d.label,values:[d.value]}));
+  for(const selection of list(product?.classification?.descriptors)){
+    const field=list(ref?.descriptors).find(r=>id(r.id)&&id(r.id)===id(selection.descriptor_id));
+    if(!field||!["single_select","multi_select"].includes(field.input_type))continue;
+    const chosen=list(selection.value_ids).map(v=>list(field.values).find(r=>id(r.id)&&id(r.id)===id(v)))
+      .map(v=>text(v?.value)).filter(v=>v&&v!=="Saved value");
+    const row=descriptors.find(d=>key(d.label)===key(field.name));
+    if(row)row.values=chosen;
+  }
+  return {product_type:type==="Saved product type"?"":type,descriptors};
 }

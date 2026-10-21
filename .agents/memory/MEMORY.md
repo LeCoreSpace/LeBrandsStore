@@ -1,3 +1,4 @@
+- [Collection filtering](collection-filter-direction.md) — every theme needs product type, variant and descriptor filters scoped to the selected collection.
 - [Cloudflare password runtime](cloudflare-password-runtime.md) — user replaced the obsolete 600k requirement after confirming production Workers cap PBKDF2 at 100k.
 - [Store setup boundaries](store-setup-boundaries.md) — phase-specific Worker/R2 uploads override signed-URL roadmap; later commerce/integration features stay out.
 - [Cloudflare SaaS routing](cloudflare-saas-routing.md) — catch-all routes require SaaS enablement; adding them early partially fails ordinary production deployment.

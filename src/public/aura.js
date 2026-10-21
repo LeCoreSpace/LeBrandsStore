@@ -3,6 +3,7 @@ import { renderSection, safeImage, policyTitle, imageSourceSet, HERO_IMAGE_SIZES
 import { getPageKey, defaultPageLayouts } from "./aura-layout.js";
 import { STYLE_IDS } from "./aura-styles.js";
 import { productHref } from "./commerce-options.js";
+import {addCollectionFilters,COLLECTION_FILTER_CSS} from "./collection-filter-view.js";
 
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({
   "&": "&amp;",
@@ -132,7 +133,12 @@ export function renderAura(data = {}, options = {}) {
     out.push(html);
   }
   if (mainOpen) out.push("</main>");
-  const body = designed ? designed.body : out.join("");
+  let body = designed ? designed.body : out.join("");
+  if(page==="collection"){
+    const gridCollection=activeCol||(!designed&&data.collections?.find(c=>String(c.id)===String(sections.find(s=>s.type==="product-grid")?.settings?.collection_id)));
+    const list=gridCollection?products.filter(p=>Array.isArray(gridCollection.product_ids)?gridCollection.product_ids.includes(p.id):p.collection_ids?.includes(gridCollection.id)):products;
+    body=addCollectionFilters(body,list);
+  }
   const noindex = page === "404" || options.preview || commercePage;
   return `<!doctype html>
   <html lang="en">
@@ -158,6 +164,7 @@ export function renderAura(data = {}, options = {}) {
       ${!designed && STYLE_IDS.includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-styles.css">' : ""}
       ${!designed && ["minimal", "vintage"].includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-extra-styles.css">' : ""}
       <link rel="stylesheet" href="/assets/typography.css">
+      ${page==="collection"?`<style>${COLLECTION_FILTER_CSS}</style>`:""}
     </head>
     <body ${designed ? `class="${designed.bodyClass}" data-style="${designed.style}" data-design-page="${esc(page)}"` : "data-aura"} data-preset="${preset}" ${!designed && STYLE_IDS.includes(settings.style_preset) ? `data-style="${settings.style_preset}"` : ""} data-font="${esc(fonts[settings.font_preset] ? settings.font_preset : "modern")}">${body}${options.commerce && !commercePage ? `<template data-commerce-config data-store-key="${esc(store.store_id || options.storeKey || "")}" data-site-key="${esc(options.siteKey || "")}" data-page="${esc(page)}" data-read-only="${options.readOnly === true ? "true" : "false"}"></template>` : ""}${options.embeddedPreview ? "" : '<script type="module" src="/assets/aura-ui.js"></script>'}${options.commerce ? `<div id="commerce-mount"></div>${options.embeddedPreview ? "" : '<script type="module" src="/assets/commerce.js"></script>'}` : ""}</body>
   </html>`;

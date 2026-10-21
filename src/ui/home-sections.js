@@ -68,7 +68,7 @@ export function homeSections({ img, M, SIGNUP, LOGIN, FAQ }) {
       </div>
       <div class="h-show-stage" data-h-show-stage>
     <div class="h-slide h-answer" id="features" data-h-slide data-slide-name="Meet Ann" role="group" aria-roledescription="slide" aria-labelledby="h-answer-title">
-      <div class="h-answer-head m-reveal"><h2 class="h-ann-intro">Meet Ann.</h2><h1 id="h-answer-title">A flagship store, built for you in a conversation.</h1><p class="h-sub">Not AI. Just how you want it.</p><div class="h-final-cta"><a class="m-cta" href="${SIGNUP}">Start free</a><a class="m-text-link" href="/pricing">See pricing</a></div></div>
+      <div class="h-answer-head m-reveal"><h2 class="h-ann-intro">Meet Ann.</h2><h1 id="h-answer-title">Your conversational store builder.</h1><p>Beautiful themes, designed and optimised to sell.</p><p class="h-sub">Guided, not generated. Every choice is yours.</p><div class="h-final-cta"><a class="m-cta" href="${SIGNUP}">Start free</a><a class="m-text-link" href="/pricing">See pricing</a></div></div>
       <figure class="h-relief m-reveal"><div class="h-relief-img"><img src="/img/home-founder-ann-laptop.webp" width="1024" height="1024" loading="lazy" decoding="async" alt="Founder working with Ann on her laptop"></div><figcaption><span>Answer a few questions. Watch your store appear.</span></figcaption></figure>
     </div>
     <div class="h-slide h-ann" id="ann" data-h-slide data-slide-name="Languages" role="group" aria-roledescription="slide" aria-labelledby="h-ann-title">

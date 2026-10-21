@@ -1,3 +1,4 @@
+import {facetCounts} from "./collection-filters.js";
 // The saved design uses the same progressive motion enhancement as its preview.
 // Cart actions remain owned by commerce.js, not by the demonstration layer.
 if (typeof document !== "undefined" && document.body?.dataset.designPage) {
@@ -85,22 +86,77 @@ export function attachAuraCatalog(doc) {
   const pager = doc.querySelector("[data-catalog-pagination]"), status = pager?.querySelector("[data-page-status]");
   const prev = pager?.querySelector("[data-page-prev]"), next = pager?.querySelector("[data-page-next]");
   const pageSize = Number(catalog.dataset.pageSize) || 0;
-  let stockOnly = false, col = "", page = 1;
+  let stockOnly = false, col = "", page = 1, filters={};
+  const facetPanel=doc.querySelector("[data-catalog-facets]");
+  let facetConfig=null;
+  if(facetPanel){
+    try{facetConfig=JSON.parse(facetPanel.dataset.catalogFacets);}
+    catch{facetPanel.textContent="Filters could not be loaded. All products are still shown.";}
+    facetPanel.hidden=false;
+  }
+  const records=new Map((facetConfig?.records||[]).map(r=>[r.href,r.facts]));
+  const facetInputs=[...(facetPanel?.querySelectorAll("[data-facet-group]")||[])];
+  const facetActive=facetPanel?.querySelector("[data-facet-active]");
+  const facetClear=facetPanel?.querySelector("[data-facet-clear]");
+  if(doc.defaultView?.matchMedia?.("(max-width:600px)")?.matches)facetPanel?.querySelector("details")?.removeAttribute("open");
   const q = (new URLSearchParams(doc.defaultView?.location?.search || "").get("q") || "").trim().toLowerCase();
   doc.querySelectorAll(".au-search input").forEach((i) => { i.value = q; });
-  const items = cards.map((el, i) => ({ el, title: String(el.dataset.title || ""), price: Number(el.dataset.price) || 0, available: el.dataset.available === "1", index: Number(el.dataset.index) || i, collections: (el.dataset.collections || "").split(" ").filter(Boolean) }));
+  const items = cards.map((el, i) => ({ el, title: String(el.dataset.title || ""), price: Number(el.dataset.price) || 0, available: el.dataset.available === "1", index: Number(el.dataset.index) || i, collections: (el.dataset.collections || "").split(" ").filter(Boolean),facets:records.get(el.getAttribute("href"))||facetConfig?.records?.[i]?.facts }));
+  const emptyText=none?.textContent;
+  const paintFacets=()=>{
+    if(!facetConfig)return;
+    const base=catalogPage(items,{stockOnly,collection:col,q}).ordered;
+    const counts=facetCounts(base,facetConfig.groups,filters,stockOnly);
+    for(const input of facetInputs){
+      const n=counts[input.dataset.facetGroup]?.[input.value]||0;
+      const label=input.closest("label");
+      label.querySelector("[data-facet-count]").textContent=String(n);
+      input.disabled=!n&&!input.checked;label.hidden=!n&&!input.checked;
+    }
+    facetPanel.querySelectorAll("[data-facet-field]").forEach(field=>{
+      field.hidden=![...field.querySelectorAll("label")].some(label=>!label.hidden);
+    });
+    if(facetActive){
+      facetActive.replaceChildren();
+      for(const input of facetInputs.filter(input=>input.checked)){
+        const group=facetConfig.groups.find(g=>g.key===input.dataset.facetGroup);
+        const name=group?.values.find(v=>v.value===input.value)?.label||input.value;
+        const button=doc.createElement("button");button.type="button";
+        button.textContent=`${group?.label}: ${name} ×`;
+        button.setAttribute("aria-label",`Remove ${group?.label}: ${name}`);
+        button.addEventListener("click",()=>{input.checked=false;input.dispatchEvent(new doc.defaultView.Event("change",{bubbles:true}));});
+        facetActive.append(button);
+      }
+    }
+    const tally=facetInputs.filter(input=>input.checked).length;
+    const label=facetPanel.querySelector("[data-facet-tally]");
+    if(label)label.textContent=tally?`${tally} selected`:"";
+    if(facetClear)facetClear.disabled=!tally&&!stockOnly;
+  };
   const apply = () => {
-    const r = catalogPage(items, { sort: sort?.value || "", stockOnly, collection: col, q, page, pageSize });
+    const r = catalogPage(items, { sort: sort?.value || "", stockOnly, collection: col, q, page, pageSize,filters });
     page = r.page;
     const shown = new Set(r.visible);
     for (const it of items) it.el.hidden = !shown.has(it);
     for (const it of r.ordered) catalog.append(it.el);
     if (count) count.textContent = `${r.total} ${r.total === 1 ? "product" : "products"}`;
-    if (none) none.hidden = r.total > 0;
+    const facetResults=facetPanel?.querySelector("[data-facet-results]");
+    if(facetResults){facetResults.textContent=`${r.total} ${r.total===1?"product":"products"}`;if(count)facetResults.removeAttribute("role");}
+    if (none){none.hidden = r.total > 0;none.textContent=Object.values(filters).some(values=>values.length)?"No products match these filters. Try removing a filter.":emptyText;}
     if (pager) { pager.hidden = r.pages < 2; if (status) status.textContent = `Page ${r.page} of ${r.pages}`; if (prev) prev.disabled = r.page <= 1; if (next) next.disabled = r.page >= r.pages; }
+    paintFacets();
   };
   const reset = (fn) => (e) => { fn(e); page = 1; apply(); };
   sort?.addEventListener("change", reset(() => {}));
+  facetInputs.forEach(input=>input.addEventListener("change",reset(()=>{
+    filters=Object.create(null);
+    for(const checked of facetInputs.filter(input=>input.checked))
+      (filters[checked.dataset.facetGroup]??=[]).push(checked.value);
+  })));
+  facetClear?.addEventListener("click",reset(()=>{
+    filters={};facetInputs.forEach(input=>{input.checked=false;});stockOnly=false;
+    const stock=doc.querySelector("[data-catalog-stock]");if(stock)stock.checked=false;
+  }));
   doc.querySelector("[data-catalog-stock]")?.addEventListener("change", reset((e) => { stockOnly = e.target.checked; }));
   prev?.addEventListener("click", () => { page -= 1; apply(); });
   next?.addEventListener("click", () => { page += 1; apply(); });

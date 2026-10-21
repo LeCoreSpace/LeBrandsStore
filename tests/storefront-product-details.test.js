@@ -127,6 +127,14 @@ test("live response reads the tenant publication only, not draft products or cur
       }
       if(sql.includes("information_schema.columns"))return[{enabled:false}];
       if(sql.includes("to_regclass"))return[{pages_enabled:false}];
+      // Live stock is mutable, but classification must still come only from
+      // the frozen publication. Permit only this tenant/ID-scoped stock read.
+      if(sql.includes("AS sku_stock")&&sql.includes("JOIN jsonb_array_elements_text")){
+        assert.equal(values.at(-1),STORE);
+        assert.deepEqual(JSON.parse(values[0]),products.map(p=>p.id));
+        assert.ok(!sql.includes("classification")&&!sql.includes("catalogue_product_types"));
+        return [];
+      }
       throw Error(`Live storefront must not read draft or master data: ${sql}`);
     });
   }};
