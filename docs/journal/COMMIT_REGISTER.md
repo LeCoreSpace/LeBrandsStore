@@ -1,5 +1,9 @@
 # Complete implementation checkpoint register
 
+### Subscription capacity: approved production release
+
+The approved draft-inclusive product/SKU, storage and staff-capacity migration is recorded and checksum-verified. Worker `001abcf6-826b-4a78-a026-5ac9c9df6a64` serves 100% of traffic with unchanged resource bindings and secrets. Production smoke checks were read-only and did not create merchant data. Earlier “not released” entries describe the preceding local checkpoint.
+
 ### Draft-inclusive subscription capacity: local implementation, not released
 
 Quota guards, pre-upload storage checks, reservation-aware staff invitations and capacity UI are a single pending release. Existing over-limit records are retained. New growth fails atomically; permission denials retain their isolation behavior. Migration and production deployment are not implied by a code checkpoint.

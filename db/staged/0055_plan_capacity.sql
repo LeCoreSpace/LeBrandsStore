@@ -1,6 +1,8 @@
--- Manual migration. Never apply automatically. Existing above-limit records
--- are retained; only growth beyond the subscribed allowance is rejected.
-BEGIN;
+-- Manual migration: node db/migrate.js --staged-plan-capacity.
+-- The migration runner owns the transaction and checksum record atomically.
+-- Existing above-limit records are retained; only excess growth is rejected.
+SET LOCAL lock_timeout='5s';
+SET LOCAL statement_timeout='60s';
 CREATE TABLE public.plan_capacity_transactions (
  store_id uuid PRIMARY KEY REFERENCES public.stores(store_id) ON DELETE CASCADE,
  transaction_id bigint NOT NULL,
@@ -233,4 +235,3 @@ BEGIN
   END IF;
  END LOOP;
 END $$;
-COMMIT;

@@ -17,3 +17,9 @@ Report historical discrepancies without calling them pending migrations or
 silently repairing them. A UI-only code release can proceed without migrations
 when comparing deployed/release runtime modules confirms no database-dependent
 runtime change. Reconcile historical SQL separately with owner-approved scope.
+
+New migrations selected through the shared runner must let that runner own the transaction, including the checksum insertion.
+
+**Why:** An inner COMMIT in the SQL source would release the runner's advisory lock and commit schema changes before its checksum record, breaking the intended atomic boundary.
+
+**How to apply:** Keep new runner-managed SQL free of nested transaction boundaries. Do not rewrite already-applied historical files to retrofit this convention.

@@ -1,5 +1,14 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Approved subscription-capacity production release
+
+- User approved applying the manual migration and publishing the checks.
+- Added the explicit `--staged-plan-capacity` selector. The migration runner owns the transaction, advisory lock and checksum record; the new SQL does not commit inside that transaction.
+- Applied `0055_plan_capacity.sql` using the administrative runner. Exact checksum verified; all four stores have confirmed numeric allowances. Twelve quota triggers installed, protected ledger empty, and internal function execution denied to APP and Supabase API roles.
+- Published Worker version `001abcf6-826b-4a78-a026-5ac9c9df6a64` at 100% traffic. All 28 bindings, 17 encrypted secrets and runtime settings matched the pre-release fingerprints.
+- Verified the restricted APP role can read capacity in a synthetic empty tenant context without writing store records. Live pricing reflects drafts; database-backed invalid-session login returns the password form; the deployed dashboard entry and capacity bundle return HTTP 200.
+- Local verification: prior 36 focused checks plus the new migration-selector check; the 14-check capacity suite also confirms existing invitation function identities survive replacement. No real product, upload, invitation or order was created for release verification.
+
 ## 2026-10-21: Draft-inclusive subscription capacity, awaiting production approval
 
 - User explicitly changed quota scope: drafts consume product/SKU allowances; uploaded unused files consume storage; active non-owner staff plus distinct pending invitations consume seats.

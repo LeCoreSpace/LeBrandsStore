@@ -5,7 +5,11 @@ import {PGlite} from "@electric-sql/pglite";
 import {capacityError,requireStorageCapacity} from "../src/billing/capacity.js";
 import {renderCapacity} from "../src/ui/plan-capacity.js";
 import {projectedCapacity,showCapacityFailure} from "../src/public/plan-capacity.js";
+import {migrationSelection} from "../db/migration-selection.js";
 const read=path=>readFile(new URL(`../${path}`,import.meta.url),"utf8");
+test("manual capacity migration selects only its approved staged file",()=>{
+ assert.deepEqual(migrationSelection(["--staged-plan-capacity"]),{staged:true,filename:"0055_plan_capacity.sql",requires:"0037_platform_billing.sql"});
+});
 const table=(text,name)=>{
  const found=text.match(new RegExp(`CREATE TABLE public\\.${name}\\s*\\([\\s\\S]*?\\);`));
  if(!found)throw new Error(`Real DDL not found: ${name}`);

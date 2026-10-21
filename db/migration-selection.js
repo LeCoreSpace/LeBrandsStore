@@ -1,4 +1,7 @@
 export function migrationSelection(args) {
+  if(args.length===1&&args[0]==="--staged-plan-capacity"){
+    return{staged:true,filename:"0055_plan_capacity.sql",requires:"0037_platform_billing.sql"};
+  }
   if(args.length===1&&args[0]==="--staged-checkout-security"){
     return{staged:true,filename:"0054_checkout_security.sql",requires:"0017_ann_launch_setup.sql"};
   }

@@ -1,5 +1,13 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Approved quota migration and Cloudflare release
+
+- Read-only production preflight confirmed prerequisite migration records, administrative role and offered Free allowances without printing credentials.
+- `node --test --test-concurrency=1 tests/plan-capacity.test.js`: 14 checks passed, including the manual selector and preservation of existing callable identities.
+- `node db/migrate.js --staged-plan-capacity`: committed the new schema and checksum together. Historical migration checksums were not rewritten.
+- `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars`: published version `001abcf6-826b-4a78-a026-5ac9c9df6a64`.
+- Post-release Cloudflare API comparison: 100% traffic to the new version; 28 bindings, 17 encrypted secrets and runtime settings unchanged. Read-only APP-capacity probe and live pricing/login/dashboard-bundle checks passed.
+
 ## 21 October 2026: Draft-inclusive capacity verification
 
 - Local-only: `node --test --test-concurrency=1 tests/plan-capacity.test.js tests/platform-billing-usage.test.js tests/platform-billing-usage-sql.test.js tests/platform-billing-cards.test.js`.
