@@ -1,3 +1,7 @@
+### Blog exit confirmation: approved production release
+
+Published Worker `e80fbbec-f0cb-436a-b8b0-4e6cfdbdbff4` at 100% traffic. Four live module hashes match the release; the duplicate native unload handler is absent and shared exit confirmation remains. Login and configuration preservation checks passed. No schema or merchant content changes.
+
 ### Blog exit confirmation: local regression fix
 
 Removed the redundant native unload prompt so the existing shared application dialog is the sole navigation confirmation. Eighteen focused dialog, navigation and blog checks passed; read-only editor preview rendered. No schema/data changes or production publication.

@@ -1,3 +1,8 @@
+## 2026-10-21: Approved blog exit-dialog publication
+
+- `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` published `e80fbbec-f0cb-436a-b8b0-4e6cfdbdbff4` at 100% traffic. Fresh pre/post binding, encrypted-secret, runtime and semantic-route comparisons passed.
+- Read-only HTTPS checks verified exact hashes of the blog entry and three shared modules, native-handler removal, shared exit-dialog inclusion and database-backed login. No migration or production content mutation.
+
 ## 2026-10-21: Blog duplicate exit prompt regression
 
 - `node --test --test-concurrency=1 tests/application-dialogs.test.js tests/store-blog-drafts.test.js tests/browser-module-delivery.test.js tests/navigation-loading.test.js`: all 18 passed. Whitespace check passed; API restart built current browser entries and resumed successful responses.

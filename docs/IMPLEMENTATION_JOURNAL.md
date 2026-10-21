@@ -1,5 +1,11 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Approved blog exit fix published
+
+- Published with `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars`; Worker `e80fbbec-f0cb-436a-b8b0-4e6cfdbdbff4` serves 100% traffic.
+- Verified exact live hashes for all four blog entry/dependency modules, absence of the duplicate native unload handler and presence of the shared exit-dialog implementation. Database-backed login remains available.
+- All 27 non-asset bindings, 17 encrypted secrets, runtime settings and semantic routes match the immediate pre-release baseline. Earlier 18 focused checks and editor screenshot remain valid; no source changes followed those checks. No schema or merchant data changes, and no signed-in production mutation test.
+
 ## 2026-10-21: Blog duplicate exit confirmation corrected locally
 
 - Removed the blog-specific native unload handler, retaining the shared dirty-state application navigation guard. This restores the existing in-app-only confirmation boundary without changing draft persistence, publication or deletion.
