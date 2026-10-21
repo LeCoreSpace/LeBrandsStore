@@ -1,5 +1,20 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Guided domain flow verification and release
+
+```sh
+node --test --test-concurrency=1 tests/ann-launch-ui.test.js tests/ann-launch.test.js tests/dashboard-navigation.test.js
+git diff --check
+pnpm exec wrangler deploy --keep-vars
+```
+
+32 tests passed; desktop and mobile screenshots inspected after restarting
+the managed API. Released `80efbc45-e136-4e13-aafd-c94d4ee542c8` at 100%.
+Pre/post-release configuration fingerprints matched. Fallback active.
+Live assets verified through versioned stylesheet/module entries, and public
+site, login and protected admin redirect responses passed. No DB operations
+or merchant domain/payment mutations.
+
 ## 21 October 2026: Approved domain guidance release
 
 ```sh

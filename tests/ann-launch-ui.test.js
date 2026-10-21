@@ -212,12 +212,12 @@ test("custom domain Settings shows DNS names and values without premature activa
       dns_records:[{type:"CNAME",name:"www.brand.com",value:"brands.lebrands.store"}]}});
     await h.click({lnA:"reload"});
     h.ui.mount(1,{customDomainOnly:true});await flush();
-    assert.match(h.slot.innerHTML,/Update records where you manage your domain/);
+    assert.match(h.slot.innerHTML,/Update your domain records/);
     assert.match(h.slot.innerHTML,/role="columnheader">Name/);
     assert.match(h.slot.innerHTML,/role="columnheader">Value/);
     assert.match(h.slot.innerHTML,/data-ln-copy="brands\.lebrands\.store"/);
     assert.match(h.slot.innerHTML,/Check connection/);
-    assert.match(h.slot.innerHTML,/data-ln-a="dact" disabled/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="dact"/);
     assert.match(h.slot.innerHTML,/Edit that existing record instead of adding a second one/);
     assert.match(h.slot.innerHTML,/Leave email records and records for other names unchanged/);
     assert.doesNotMatch(h.slot.innerHTML,/Cloudflare|Platform API|SaaS|Worker|Hostname:|SSL:|Verify DNS/);
@@ -240,7 +240,7 @@ test("domain copy keeps raw provider statuses and labels out of the merchant pag
     assert.match(h.slot.innerHTML,/Add any missing TXT records/);
     assert.match(h.slot.innerHTML,/domain is not added twice/);
     assert.doesNotMatch(h.slot.innerHTML,/Cloudflare|SaaS|Worker|pending_validation|data-ln-ack="dom"/);
-    assert.match(h.slot.innerHTML,/data-ln-a="dact" disabled/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="dact"/);
     assert.deepEqual(h.requests,[]);
   }finally{await h.close();}
 });
@@ -269,6 +269,40 @@ test("domain activation only asks connected-payment stores for website approval 
     assert.equal(h.requests.length,2);
     assert.equal(h.requests[1].action,"domain-activate");
     assert.equal(h.requests[1].provider_domain_confirmed,false);
+  }finally{await h.close();}
+});
+test("domain setup groups progress and next action, revealing payment approval only when ready",async()=>{
+  const h=await harness(false,undefined,true);
+  try{
+    const domain={id:"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",hostname:"www.brand.com",status:"pending",
+      hostname_status:"active",ssl_status:"pending_validation",cname_verified:true,
+      dns_records:[{type:"CNAME",name:"www.brand.com",value:"brands.lebrands.store"},
+        {type:"TXT",name:"_acme-challenge.www.brand.com",value:"verification-value"}]};
+    h.setState({payment_domain_confirmation_required:true,platform:{domains_available:true,domain_activation_available:true},domain});
+    await h.click({lnA:"reload"});h.ui.mount(1,{customDomainOnly:true});
+    const current=h.slot.innerHTML.split('<section aria-label="Domain connection">')[1].split("</section>")[0];
+    assert.match(current,/Connection progress/);
+    assert.match(current,/Next: add the verification record/);
+    assert.match(current,/data-ln-copy="verification-value"/);
+    assert.match(current,/data-ln-a="dchk"/);
+    assert.doesNotMatch(current,/data-ln-copy="brands\.lebrands\.store"|data-ln-a="dact"|data-ln-ack="dom"/);
+    assert.match(h.slot.innerHTML,/<details class="ann-domain-record-help"><summary>Need help/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="choose"|data-ln-a="reload"|latest status below/);
+    await h.click({lnA:"dact"});assert.equal(h.requests.length,0,"hidden activation remains guarded");
+    await h.click({lnA:"dchk"});
+    assert.equal(h.requests[0].action,"domain-check");
+    assert.match(h.slot.innerHTML,/Connection checked\. The current status is shown here/);
+    h.setState({domain:{...domain,ssl_status:"active"}});
+    await h.click({lnA:"reload"});
+    assert.match(h.slot.innerHTML,/Next: confirm that Razorpay/);
+    assert.match(h.slot.innerHTML,/data-ln-ack="dom"/);
+    h.ack("dom",true);
+    assert.match(h.slot.innerHTML,/Everything is ready/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="dact" disabled/);
+    h.setState({domain:{...domain,status:"active",ssl_status:"active"}});
+    await h.click({lnA:"reload"});
+    assert.match(h.slot.innerHTML,/ann-callout ann-success[^>]*>Customers can now use this address/);
+    assert.doesNotMatch(h.slot.innerHTML,/data-ln-ack="dom"|data-ln-a="dact"/);
   }finally{await h.close();}
 });
 test("integration setup is available in Settings before changing COD or manual delivery",async()=>{

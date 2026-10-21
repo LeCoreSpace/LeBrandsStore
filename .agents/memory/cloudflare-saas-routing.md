@@ -51,3 +51,14 @@ labels in domain Settings and shared Ann controls. Explain payment website
 approval separately from enabling payments; require acknowledgement only when
 the server reports a connected payment integration, without weakening server
 checks.
+
+Keep domain connection progress, its current next step and the check action
+together. Reveal only the current setup task by default; keep full record
+instructions expandable and defer payment approval until the connection is ready.
+
+**Why:** The user explicitly said scattered status and information without a
+current flow are too much for a self-serving non-technical merchant.
+
+**How to apply:** Preserve all server activation checks while using progressive
+disclosure. Do not show unrelated preference-save or duplicate status-reload
+controls on dedicated domain Settings.

@@ -1,5 +1,20 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Guided domain flow published
+
+- Published owner-approved version `80efbc45-e136-4e13-aafd-c94d4ee542c8`
+  at 100% traffic. Connection progress, current next step, relevant records and
+  check action now share one flow. Completed records/help remain expandable;
+  payment acknowledgement appears only after connection checks pass.
+- Dedicated domain Settings no longer shows unrelated preference save or
+  duplicate reload controls. Existing server enforcement and explicit activation
+  remain intact; no domains or payments were activated.
+- Passed 32 launch UI, server isolation/activation and navigation tests.
+  Inspected desktop and mobile read-only fixtures; workflow ready and assets
+  delivered. Production binding fingerprints, compatibility, three routes and
+  active fallback preserved. Verified live versioned assets and public/sign-in
+  routes. No migration required.
+
 ## 2026-10-21: Domain guidance published
 
 - Owner-approved release `16d60e6d-f434-4840-96cc-300b648f954f` now serves 100%.

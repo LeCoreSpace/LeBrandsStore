@@ -392,8 +392,7 @@ function connectionSettingsPage(data) {
     <div class="lbc-grid">
     <section class="lb-card lb-connection-settings lbc-surface" data-connection-kind="${kind}"><div class="lbc-surface-head"><h2>Integration setup</h2><small>Status is read from your store</small></div>
     <div id="ann-launch-slot" aria-live="polite"></div></section>
-    <aside class="lbc-aside"><section class="lbc-note-card"><h3>How it works</h3><ol class="lbc-steps">${T.steps.map(([t,d])=>`<li><strong>${esc(t)}</strong><span>${esc(d)}</span></li>`).join("")}</ol></section>
-    <section class="lbc-note-card"><h3>Good to know</h3><ul class="lbc-notes">${T.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul></section>
+    <aside class="lbc-aside">${kind==="domain"?`<details class="lbc-note-card"><summary>About connecting your domain</summary><ol class="lbc-steps">${T.steps.map(([t,d])=>`<li><strong>${esc(t)}</strong><span>${esc(d)}</span></li>`).join("")}</ol><ul class="lbc-notes">${T.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul></details>`:`<section class="lbc-note-card"><h3>How it works</h3><ol class="lbc-steps">${T.steps.map(([t,d])=>`<li><strong>${esc(t)}</strong><span>${esc(d)}</span></li>`).join("")}</ol></section><section class="lbc-note-card"><h3>Good to know</h3><ul class="lbc-notes">${T.notes.map(n=>`<li>${esc(n)}</li>`).join("")}</ul></section>`}
     <nav class="lbc-links" aria-label="Related pages">${T.links.map(([l,h])=>`<a href="${h}">${esc(l)}</a>`).join("")}<a href="${root}/settings">All settings</a></nav></aside>
     </div></div>`;
 }

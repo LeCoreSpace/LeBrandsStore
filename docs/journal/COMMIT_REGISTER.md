@@ -1,5 +1,13 @@
 # Complete implementation checkpoint register
 
+### Guided domain setup published
+
+Approved release `80efbc45-e136-4e13-aafd-c94d4ee542c8`: grouped progress,
+contextual next action, progressive record help and deferred payment approval.
+32 checks and responsive fixture review passed. Live versioned assets confirmed;
+production bindings, compatibility and routing preserved. No migration or
+manual commit.
+
 ### Merchant-friendly domain instructions published
 
 Owner-approved version `16d60e6d-f434-4840-96cc-300b648f954f` serves 100%.
