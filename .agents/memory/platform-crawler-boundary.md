@@ -33,3 +33,9 @@ been finalised. Machine-readable data is still a public marketing claim.
 
 **How to apply:** Keep FAQ schema and displayed answers sourced together; use
 confirmed company facts and avoid unsupported freshness dates.
+
+Merchant blogs should be separate from the platform blog, with fillable content sections and a hero creative.
+
+**Why:** The user described a store-specific blog where merchants fill sections and add their own hero creative.
+
+**How to apply:** Preserve this structured merchant-authoring direction when scoping store blogs.
