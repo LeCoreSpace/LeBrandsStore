@@ -1,3 +1,7 @@
+### Phase 2 store-blog draft authoring: local implementation, not released
+
+Uncommitted implementation adds private merchant blog CRUD, structured sections, hero/media selection and crop UI, optimistic revisions and an additive manually selected migration. Twenty-four focused checks and the Worker build dry run passed; desktop/mobile checks used a read-only fictional preview. No production migration or release has occurred. Live signed-in save/upload verification and all public-blog publishing remain pending.
+
 ### Phase 1 store discovery: approved production release
 
 Worker `4b1a2e35-cda4-4c99-8f99-4862c182ac58` is live at 100% traffic. Custom-store sitemap, robots, llms, singular redirect and canonical links passed live checks. Platform homepage and database-backed login remain available. Binding fingerprints, encrypted secrets and runtime settings are preserved. No migration or catalogue republish; blog authoring and public articles remain later phases.

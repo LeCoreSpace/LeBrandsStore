@@ -1,4 +1,5 @@
 import { renderDashboard } from "../ui/dashboard.js";
+import {isBlogDashboard,handleBlogDashboard} from "../blog/routes.js";
 import{isMarketingDashboard,handleMarketingDashboard}from"./marketing-routes.js";
 import {businessEditorAccess,protectedEditorLinks} from "../store/business-access.js";
 import { renderInvoice } from "../ui/invoice.js";
@@ -23,6 +24,7 @@ import { dashboardAccess, overview, listOrders, orderDetail, listCustomers, cust
   invoiceDetail, changeOrderStatus, collectPayment, archiveProduct, adjustStock, exportRows, audit } from "./repository.js";
 
 export function isDashboardPath(path,method = "GET") {
+  if(isBlogDashboard(path))return true;
   if(isMarketingDashboard(path))return true;
   if(/^\/stores\/[^/]+\/offers$/.test(path)||/^\/api\/stores\/[^/]+\/offers(?:\/[^/]+\/status)?$/.test(path))return true;
   if (/^\/(?:api\/)?stores\/new(?:\/|$)/.test(path)) return false;
@@ -45,6 +47,7 @@ export async function handleDashboard(request,db,user,tokenHash,env={}) {
     if (!match || !UUID.test(match[1])) throw commerceError("Store not found.",undefined,404);
     if (!user || user.must_change_password) throw commerceError("Sign in to manage your store.",undefined,401);
     const [,id,section = "overview",child,action] = match;
+    if(section==="blog")return await handleBlogDashboard(request,db,user,tokenHash,id,child,action);
     if(section==="offers")return await handleOffersDashboard(request,db,user,tokenHash,id,child,action);
     if(section==="analytics")return await handleAnalyticsDashboard(request,db,user,tokenHash,id,child,action);
     if(section==="cogs")return await handleCogsDashboard(request,db,user,tokenHash,id,child,action);

@@ -1,3 +1,10 @@
+## 2026-10-21: Phase 2 store-blog local verification
+
+- Workspace root: `node --test --test-concurrency=1 tests/store-blog-drafts.test.js tests/store-discovery.test.js tests/browser-module-delivery.test.js tests/dashboard-navigation.test.js` passed 24 checks. These use isolated PGlite and fictional fixtures, not the shared live database.
+- Workspace root: `pnpm exec wrangler deploy --dry-run --config wrangler.jsonc` succeeded; no Cloudflare deployment occurred. Managed web/API previews were restarted after the coherent change set and came up cleanly.
+- Suggested only, not executed: `node db/migrate.js --staged-store-blog`, using the existing administrative Supabase migration secret, requires the recorded capacity migration. Requires separate production approval; no catalogue republish is required.
+- Visual checks: `/__blog-preview?page=editor` at desktop and 390px mobile renders a read-only fictional draft. It is not authenticated save/upload verification.
+
 ## 2026-10-21: Approved Phase 1 production publication
 
 - Captured fresh Cloudflare settings fingerprints and confirmed configured Hyperdrive/R2 resources matched production.

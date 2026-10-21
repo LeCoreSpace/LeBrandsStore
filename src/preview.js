@@ -3,6 +3,7 @@
 import worker from "./index.js";
 import { renderWizard } from "./ui/wizard.js";
 import {renderEditor} from "./ui/editor.js";
+import {renderStoreBlog} from "./ui/store-blog.js";
 import {defaultPageLayouts} from "./public/aura-layout.js";
 import {starterLayouts} from "./public/aura-skeleton.js";
 import {starterPreview} from "./public/aura-starters.js";
@@ -73,6 +74,18 @@ export default {
         {headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
     }
     const original = new URL(request.url);
+    if(original.pathname==="/__blog-preview" && ["GET","HEAD"].includes(request.method)){
+      const store=exampleFixture().store;
+      const article={id:"12345678-1234-4234-8234-123456789123",title:"A slower morning, a softer routine",
+        slug:"a-slower-morning",summary:"How thoughtful daily rituals make space for what matters.",
+        author:"Example Studio",category:"Stories",hero_media_id:null,hero_alt:"",
+        revision:"1",updated_at:new Date("2026-10-21T08:00:00Z").toISOString(),
+        sections:[{id:"12345678-1234-4234-8234-123456789124",type:"text",heading:"Begin with intention",body:"The simplest routines can feel the most personal."}]};
+      const data={store,role:"viewer",available:true,articles:[article],
+        article:original.searchParams.get("page")==="editor"?article:null,media:[],products:[],list_offset:0,has_more:false};
+      return new Response(request.method==="HEAD"?null:renderStoreBlog(data,{name:"Example reviewer"}),
+        {headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
+    }
     if (original.pathname === "/__account-preview" && request.method === "GET") {
       const html = renderAccount("dashboard", {
         user: { name: "Sample owner" },

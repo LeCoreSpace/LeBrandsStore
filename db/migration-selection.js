@@ -1,4 +1,7 @@
 export function migrationSelection(args) {
+  if(args.length===1&&args[0]==="--staged-store-blog"){
+    return{staged:true,filename:"0056_store_blog_drafts.sql",requires:"0055_plan_capacity.sql"};
+  }
   if(args.length===1&&args[0]==="--staged-plan-capacity"){
     return{staged:true,filename:"0055_plan_capacity.sql",requires:"0037_platform_billing.sql"};
   }

@@ -5,7 +5,7 @@ import worker from "../src/index.js";
 
 test("Ann, dashboard, storefront and editor static module dependencies pass the actual Worker asset gate",async()=>{
   const origin="https://accounts.lebrands.store";
-  const pending=["ann-builder.js","dashboard.js","aura.js","editor.js"].map(name=>`${origin}/assets/${name}`);
+  const pending=["ann-builder.js","dashboard.js","aura.js","editor.js","store-blog.js"].map(name=>`${origin}/assets/${name}`);
   const visited=new Set(),served=new Set();
   const env={ASSETS:{async fetch(request){
     const path=new URL(request.url).pathname;

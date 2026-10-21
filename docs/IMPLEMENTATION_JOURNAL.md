@@ -1,5 +1,14 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Phase 2 merchant blog draft editor, local only
+
+- Added a Blog entry under Store studio with draft listing, creation, editing, deletion, metadata and hero creative. Seven reorderable section types cover text, images, image/text, quotes, published-product spotlights, FAQ pairs and closing calls to action. Copy is stored as structured plain text and escaped when rendered.
+- Integrated the existing tenant media library and R2 upload endpoint, preserving upload/storage capacity checks. The editor offers browser-side aspect selection, panning, zoom and crop output; library paging uses the existing offset contract. Removing an article does not delete tracked media or free its counted storage.
+- Added the manual additive `0056_store_blog_drafts.sql` migration and `--staged-store-blog` selector. Session-and-tenant RLS protects drafts independently of public storefront context. Numeric revisions reject stale edits/deletes, duplicate slugs have a distinct error, and saving disables form changes until the request finishes.
+- Private previews require merchant membership, use no-store/noindex responses and do not enter discovery files. The shared table works for existing stores without per-store backfills or unrelated catalogue publication. Public blog routes and article publication remain Phase 3.
+- Verification: 24 focused checks passed, including actual staged SQL on authoritative foundational DDL in isolated PGlite, actual repository/API create/reload/update/conflict/preview/delete contracts, tenant/session isolation, safe rendering and browser-module delivery. Worker build dry run passed; desktop/mobile read-only fictional editor screenshots rendered successfully, and managed web/API workflows started cleanly.
+- No production migration, deployment or merchant write performed. Signed-in live draft and upload journeys remain unverified until migration/release approval. The local `/__blog-preview` is explicitly a read-only fictional display, not production persistence evidence.
+
 ## 2026-10-21: Approved Phase 1 store-discovery production release
 
 - Published Worker `4b1a2e35-cda4-4c99-8f99-4862c182ac58` at 100% traffic after user approval.
