@@ -1632,3 +1632,14 @@ of this register.
 | Repository root / Cloudflare, explicit user approval | `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` | Published version `456682e8-f0ee-43bf-abef-ed49e157764e`, 100% traffic; existing schedule, producer and consumer retained. |
 | Production / read-only | Fetch canonical and fingerprinted guide CSS, active Worker source, unauthenticated media API and synthetic-session login | CSS matched release bytes; bundle returned 200; Worker included Stage 2 markers. API remained 401 and database-backed login returned its form with 200. No private records inspected. |
 | Verification correction / no application changes | Resolve bundle names from generated output; GET Worker script root rather than `/content` | Initial check assumed an absolute bundle URL and the wrong Cloudflare GET endpoint (405). Corrected verification passed; no republish or configuration repair required. |
+
+### 21 October 2026: Media Library Stage 3 preparation
+
+| Working directory / target | Command or operation | Purpose and observed result |
+|---|---|---|
+| Repository root / isolated PGlite | `node --test tests/media-image-trial.test.js` | Thirteen checks passed using real foundational DDL and the staged migration. A fixture initially omitted the earlier upload-type DDL; corrected by applying the real wizard ALTER statements. The budget test needed additional storage headroom to reach the intended budget guard. |
+| Repository root / existing regression suites | Media library, size guide, browser delivery and plan-capacity Node tests, concurrency one | Existing regressions passed; no live database access. |
+| Repository root / OpenAI, explicit user request | Two server-side generation calls with existing secret; one text-only and one synthetic product reference | Validated WebP outputs: 1024x1024 at 12,904ms; 1024x1280 at 12,920ms. No secret values printed and no merchant reference supplied. |
+| Repository root / build only | `pnpm exec wrangler deploy --dry-run --config wrangler.jsonc` | Successful bundle and configuration validation. Did not deploy. |
+| Managed preview / read-only | Restart API workflow, inspect logs, capture desktop/mobile Stage 3 fixture | New raw/fingerprinted modules and CSS served successfully. Default fixture disables all generation and saving; no provider request. |
+| Browser / intercepted API only | One tester, corrected readonly-fixture override within the same pass | Actual application handlers passed reference selection, one correctly shaped generation POST, polling, ready preview and explicit save; mobile fit. Untouched preview made no AI requests. No real merchant/provider mutation. Retry-abort/error-state scenarios not covered. |

@@ -2602,3 +2602,38 @@ decision:
   nonexistent session returned the database-backed form successfully.
 - No migration, merchant-media changes, generation provider or AI billing
   activation. Stage 3 remains later.
+
+### 21 October 2026: Media Library Stage 3 controlled image trial
+
+- Added placement, optional tenant-library product reference, prompt, generation,
+  review and explicit Save to library. No crop or automatic assignment/publication.
+- The runtime uses the existing platform `OPENAI_API` credential, not an alias
+  that would reactivate the historical AI store builder. Provider requests stay
+  server-side and use one low-quality image with validated exact dimensions.
+- Prepared, but did not apply, `0058_media_image_trial.sql`. It preserves existing
+  capacity/budget function identities, enforces owner/session/tenant access and
+  counts pending generated images against storage. Saving atomically transfers
+  reservation into a normal media record.
+- Trial protections: three requests/store/day UTC, one active request/store,
+  five unsaved previews, conservative shared platform-budget reservations and
+  no automatic paid retry after a provider dispatch. Scheduled recovery retries
+  queue delivery, not generation. Candidate R2 objects remain nonpublic until saved.
+- Two real OpenAI API calls succeeded using generic synthetic product imagery:
+  text-to-image 1024x1024 in 12,904 ms and reference-based 1024x1280 in 12,920 ms.
+  Verified actual WebP dimensions and inspected both outputs. These development
+  benchmarks are saved only under ignored generated artifacts, not merchant media.
+  They are real billable OpenAI requests, not wallet purchases.
+- Verification: 13 new focused checks passed, including actual foundational DDL,
+  tenant/session denial, idempotency, storage reservations, explicit saving,
+  API-role grants, daily/busy limits and shared budget. Related media/capacity
+  regressions passed. Worker dry run succeeded; managed preview restarted cleanly,
+  and desktop/mobile read-only layouts were inspected.
+- Production migration, secret binding and publication remain pending approval.
+  No merchant records or live R2 objects were changed; wallet billing stays off.
+- Browser contract check passed reference search/selection, exact placement,
+  queued/generating/ready states and explicit save with actual application
+  scripts and intercepted API responses. Mobile controls fit without overflow;
+  untouched preview made no generation API requests. Real provider calls and
+  SQL persistence were verified separately, not through a live merchant session.
+  Ambiguous client-abort retry and unavailable-state interaction were not browser
+  tested. Prompts stay private rather than becoming public media alt text.

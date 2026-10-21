@@ -1,6 +1,7 @@
 import {renderMediaLibrary} from "./ui/media-library.js";
 import {mediaLibraryFilters} from "./dashboard/media-library.js";
 import {buildMediaSizeGuide} from "./public/media-placement-guide.js";
+import {imagePlacements} from "./media-images/placements.js";
 
 // Read-only, development-only visual fixture. Never registered by production.
 export function mediaLibraryPreview(request,store,settings={}){
@@ -15,7 +16,8 @@ export function mediaLibraryPreview(request,store,settings={}){
     &&m.filename.includes(filters.query.toLowerCase()));
   const data={store,role:"editor",...filters,items:selected.slice(filters.offset,filters.offset+36),
     total:selected.length,library_total:items.length,has_more:false,storage:{used:410000,limit:536870912},
-    size_guide:buildMediaSizeGuide({storeId:store.store_id,settings,theme:filters.guide_theme,category:filters.guide_category})};
-  return new Response(request.method==="HEAD"?null:renderMediaLibrary(data,{name:"Example reviewer"},{base:"/__media-library-preview"}),
+    size_guide:buildMediaSizeGuide({storeId:store.store_id,settings,theme:filters.guide_theme,category:filters.guide_category}),
+    image_placements:imagePlacements(settings,store.store_id)};
+  return new Response(request.method==="HEAD"?null:renderMediaLibrary(data,{name:"Example reviewer"},{base:"/__media-library-preview",preview:true}),
     {headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
 }

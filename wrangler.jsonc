@@ -11,6 +11,7 @@
 "watch_dir": ["src/public", "src/browser-assets.js", "scripts/build-browser-assets.mjs"]
 },
 	"vars": {
+"MEDIA_IMAGE_TRIAL_ENABLED": "true",
 "TURNSTILE_SITE_KEY": "0x4AAAAAAFPIugBBD4F7Xgfb",
 "CUSTOM_DOMAIN_CNAME_TARGET": "brands.lebrands.store",
 "CLOUDFLARE_WORKER_NAME": "lebrands-store",

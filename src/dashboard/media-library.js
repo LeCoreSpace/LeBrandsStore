@@ -3,6 +3,7 @@ import {capacityState} from "../billing/capacity.js";
 import {commerceError} from "../public/commerce-rules.js";
 import {STYLE_IDS} from "../public/aura-styles.js";
 import {buildMediaSizeGuide,MEDIA_GUIDE_CATEGORIES} from "../public/media-placement-guide.js";
+import {imagePlacements} from "../media-images/placements.js";
 
 export function mediaLibraryFilters(url){
   const query=(url.searchParams.get("q")||"").trim();
@@ -88,6 +89,7 @@ export async function mediaLibrary(tx,id,filters){
       alt_text:m.alt_text,created_at:m.created_at,usage,usage_checked:true};
   });
   return {store,items,total:number(count.total),library_total:number(summary.total),...filters,size_guide,
-    has_more:rows.length>limit,storage:{used:number(summary.used),
+    image_placements:imagePlacements(decode(setup?.settings)||{},id),
+    has_more:rows.length>limit,storage:{used:number(capacity?.used?.storage??summary.used),
       limit:capacity?.limits?.storage==null?null:number(capacity.limits.storage)}};
 }

@@ -686,3 +686,31 @@ mtime_ms = 1792382623760
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/b26120a4-a9be-414e-90a6-132427a64b24/9e46159e-1392-4b9b-a8e4-94de684e5b0c"
 storage_version_token = "1792382656312805"
 content_type = "text/html"
+
+[[outputs]]
+id = "Jkgj3r-pscW9tkKiJAQu0"
+uri = "file://generated-artifacts/media-image-trial.webp"
+type = "image"
+title = "Text-to-image trial"
+description = "Generated with your OpenAI API account in 12.9 seconds. Exact output: 1024 × 1024 WebP."
+logical_id = "847befdb-a9ef-453c-87c9-9333cf72b6c7"
+content_hash = "sha256:56bee3ff93d8b3b106eca347158c415f4900cee7c627475723947fc538e4570d"
+size = 788936
+mtime_ms = 1792614523580
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/847befdb-a9ef-453c-87c9-9333cf72b6c7/cca4d336-3317-40c9-a3dd-8bc1ae1ad51f"
+storage_version_token = "1792615824841160"
+content_type = "image/webp"
+
+[[outputs]]
+id = "DBjGLYYkAhdal1WUI6jl3"
+uri = "file://generated-artifacts/media-image-reference-trial.webp"
+type = "image"
+title = "Product-reference trial"
+description = "Used the first image as a product reference. Generated in 12.9 seconds at exactly 1024 × 1280."
+logical_id = "12fa6be4-1ef8-4d37-a6f6-08d63a36605d"
+content_hash = "sha256:3b585a9eb32fd16f1f97000f2c0d5491df2564cb5c66983653234981a296efce"
+size = 1081572
+mtime_ms = 1792614932600
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:ec4a2267-dc81-4742-aff6-207881f757ff/12fa6be4-1ef8-4d37-a6f6-08d63a36605d/ba527f0f-e93b-48ff-bc98-598cab8ae655"
+storage_version_token = "1792615826267885"
+content_type = "image/webp"

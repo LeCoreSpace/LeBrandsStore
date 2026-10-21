@@ -1,4 +1,7 @@
 export function migrationSelection(args) {
+  if(args.length===1&&args[0]==="--staged-media-image-trial"){
+    return{staged:true,filename:"0058_media_image_trial.sql",requires:"0057_store_blog_publications.sql"};
+  }
   if(args.length===1&&args[0]==="--staged-store-blog-publication"){
     return{staged:true,filename:"0057_store_blog_publications.sql",requires:"0056_store_blog_drafts.sql"};
   }

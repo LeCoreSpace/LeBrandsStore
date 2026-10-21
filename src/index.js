@@ -28,6 +28,7 @@ import {razorpayOAuthWebhook} from "./connections/razorpay-oauth-webhook.js";
 import {scheduleOAuthRefresh} from "./connections/razorpay-oauth-refresh.js";
 import {withNavigation} from "./ui/navigation-loader.js";
 import {isBrowserBundle} from "./browser-assets.js";
+import {processMediaImage,scheduleMediaImages} from "./media-images/worker.js";
 
 const ROOT_DOMAIN = ".lebrands.store";
 const STORE_NAME_PATTERN = /^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])$/;
@@ -88,13 +89,14 @@ export default {
   async queue(batch,env){
     for(const message of batch.messages){
       try{
-        if(message.body?.type==="ai")await processAiMessage(message.body,env);
+        if(message.body?.type==="media-image")await processMediaImage(message.body,env);
+        else if(message.body?.type==="ai")await processAiMessage(message.body,env);
         else await processEmailMessage(message.body,env);
         message.ack();
       }catch{message.retry({delaySeconds:Math.min(900,10*2**Math.min(message.attempts||1,6))});}
     }
   },
-  async scheduled(event,env,ctx){ctx.waitUntil(schedulePendingEmails(env));ctx.waitUntil(scheduleCommerce(env));ctx.waitUntil(scheduleOAuthRefresh(env));ctx.waitUntil(scheduleMarketing(env));},
+  async scheduled(event,env,ctx){ctx.waitUntil(schedulePendingEmails(env));ctx.waitUntil(scheduleCommerce(env));ctx.waitUntil(scheduleOAuthRefresh(env));ctx.waitUntil(scheduleMarketing(env));ctx.waitUntil(scheduleMediaImages(env));},
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const hostname = url.hostname;
@@ -121,7 +123,7 @@ export default {
       const filename = url.pathname.slice("/assets/".length);
       const reusableSectionAsset=["support.js","support.css","section-instance-model.js","section-instances.js","section-drag.js","section-insert-rules.js","section-layouts.js","section-layout-css.js","section-layout-preview.js","section-grid-model.js","section-grid-render.js","section-grid-ui.js","section-grid-ui.css"].includes(filename);
       const inventoryAsset=["billing-test.js","plan-billing.js","plan-billing.css","plan-capacity.js","inventory.js","inventory.css","today-stock.js","product-details.js","collection-filters.js","collection-filter-view.js"].includes(filename);
-      const settingsAsset = ["media-size-guide.css","marketing-integrations.js","marketing-integrations.css","store-tracking.js","store-tracking.css","platform-admin.js","platform-admin.css","analytics.js","analytics-charts.js","analytics-chart-model.js","analytics.css","cogs.js","cogs.css","offers.js","business-review.css","settings-connections.js","settings-business-documents.js","store-essentials.js","catalogue-classification-ui.js","catalogue-classification-model.js","catalogue-custom-values.js"].includes(filename);
+      const settingsAsset = ["media-image-generation.js","media-image-generation.css","media-size-guide.css","marketing-integrations.js","marketing-integrations.css","store-tracking.js","store-tracking.css","platform-admin.js","platform-admin.css","analytics.js","analytics-charts.js","analytics-chart-model.js","analytics.css","cogs.js","cogs.css","offers.js","business-review.css","settings-connections.js","settings-business-documents.js","store-essentials.js","catalogue-classification-ui.js","catalogue-classification-model.js","catalogue-custom-values.js"].includes(filename);
       const showcaseAsset = ["ann-adaptive-layout.js","section-library.js","section-library-ui.js","ann-rich-text.js","ann-rich-editor.js","ann-plan-ui.js","ann-reply-fields.js","ann-section-layout.js","ann-section-content.js","ann-onboarding-ui.js","ann-theme-editor.js","ann-branding-ui.js","ann-browser-preview.js","aura-showcase-interactions.js","aura-showcase-profiles.js","aura-showcase-sections.js","aura-showcase-rich-css.js","aura-conversion-styles.js","ann-design-model.js","ann-design-ui.js","ann-design-workspace.js","aura-design.js"].includes(filename);
       const starterAsset = isStarterImage(url.pathname) || isShowcaseImage(url.pathname) || showcaseAsset || ["store-discovery.js","store-discovery.css","store-articles.css","store-blog.js","store-blog.css","product-media-editor.js","product-media-processing.js","product-media-editor.css","catalogue-confirm.js","catalogue-modal.js","ann-language.js","ann-language-regional.js","ann-language-onboarding.js","ann-preview-navigation.js","ann-menu-model.js","ann-workspace.css","catalogue-reference.js","catalogue-form.js","catalogue-model.js","aura-taxonomy.js","aura-taxonomy-data.js","aura-starters.js","aura-starter-data.js","aura-starter-assets.js"].includes(filename);
       const builderAsset = isBrowserBundle(filename) || ["media-library.js","media-library.css","registration.js","ann-business-gate.js","ann-business-documents-ui.js","ann-business-documents.css","builder-choice.css","aura-styles.js","aura-styles.css","aura-extra-styles.css","aura-motion.js","aura-showcase-assets.js","aura-showcase.js","aura-showcase.css","ann-config.js","ann-builder.js","ann-builder.css","ann-projection.js","ann-category-copy.js","ann-application-ui.js","ann-readiness-ui.js","ann-launch-ui.js","ann-products-ui.js","ann-money.js","style-demo-copy.js","style-preview.js","style-preview-interactions.js","style-studio.js","style-studio.css"].includes(filename);

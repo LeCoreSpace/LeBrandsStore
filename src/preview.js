@@ -55,6 +55,8 @@ function dashboardPreviewLink(path, aura = false) {
 }
 
 export default {
+  async queue(batch,env){return worker.queue(batch,livePreviewEnv(env));},
+  async scheduled(event,env,ctx){return worker.scheduled(event,livePreviewEnv(env),ctx);},
   async fetch(request, env, ctx) {
     const emailUrl=new URL(request.url);
     if(emailUrl.pathname==="/__email-preview"&&["GET","HEAD"].includes(request.method)){

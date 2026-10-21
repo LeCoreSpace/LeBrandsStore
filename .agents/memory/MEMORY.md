@@ -54,7 +54,7 @@
 - [Business verification direction](business-verification-direction.md) — country-aware registration and private evidence; restricted review is approved, broader admin tooling remains later.
 - [Cloudflare scanner runtime](cloudflare-scanner-runtime.md) — use manual redirects and fail closed; Node probes cannot catch Workers rejecting redirect:error.
 - [Ann translation coverage](ann-translation-coverage.md) — conditional prompts and system replies need coverage; never translate merchant-entered records.
-- [Product media direction](product-media-direction.md) — existing Cloudflare R2 for product uploads and crop previews; AI credits are later and OpenAI generation is excluded.
+- [Product media direction](product-media-direction.md) — existing R2; placement-based OpenAI image trial now approved, without reactivating AI store building or adding wallet billing.
 - [Shared commerce experience](shared-commerce-experience.md) — recognisable cross-theme shopping, merchant favicons and stable slugs; test real saved themes on mobile.
 - [Store offers boundaries](store-offers-boundaries.md) — separate menu, staged offer types and future bundles; preserve historical allocations and best final payable total.
 - [Shopper email verification](shopper-email-verification.md) — verified email is mandatory before new orders; keep shopper checkout identity separate from merchant accounts.

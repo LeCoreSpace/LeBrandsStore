@@ -2,6 +2,7 @@ import { renderDashboard } from "../ui/dashboard.js";
 import {isBlogDashboard,handleBlogDashboard} from "../blog/routes.js";
 import {isContentLLMPath,handleContentLLM} from "../blog/discovery-dashboard.js";
 import {isMediaLibraryPath,handleMediaLibrary} from "./media-library-routes.js";
+import {isMediaImagePath,handleMediaImages} from "../media-images/routes.js";
 import{isMarketingDashboard,handleMarketingDashboard}from"./marketing-routes.js";
 import {businessEditorAccess,protectedEditorLinks} from "../store/business-access.js";
 import { renderInvoice } from "../ui/invoice.js";
@@ -26,6 +27,7 @@ import { dashboardAccess, overview, listOrders, orderDetail, listCustomers, cust
   invoiceDetail, changeOrderStatus, collectPayment, archiveProduct, adjustStock, exportRows, audit } from "./repository.js";
 
 export function isDashboardPath(path,method = "GET") {
+  if(isMediaImagePath(path))return true;
   if(isMediaLibraryPath(path))return true;
   if(isContentLLMPath(path))return true;
   if(isBlogDashboard(path))return true;
@@ -42,6 +44,7 @@ export function isDashboardPath(path,method = "GET") {
   return /^\/api\/stores\/[^/]+\/(?:products\/[^/]+\/(?:archive|stock)|exports\/(?:customers|orders|products))$/.test(path);
 }
 export async function handleDashboard(request,db,user,tokenHash,env={}) {
+  if(isMediaImagePath(new URL(request.url).pathname))return handleMediaImages(request,env,db,user,tokenHash);
   if(isMarketingDashboard(new URL(request.url).pathname))return handleMarketingDashboard(request,db,user,tokenHash,env);
   const url = new URL(request.url), api = url.pathname.startsWith("/api/");
   const match = url.pathname.match(/^\/(?:api\/)?stores\/([^/]+)(?:\/([^/]+)(?:\/([^/]+)(?:\/([^/]+))?)?)?$/);

@@ -1,11 +1,13 @@
 import { escapeHtml } from "./layout.js";
 import { documentPage } from "./dashboard.js";
 import {renderMediaSizeGuide} from "./media-size-guide.js";
+import {renderMediaImageGeneration} from "./media-image-generation.js";
+import {imagePlacements} from "../media-images/placements.js";
 
 const esc = escapeHtml;
 const list = v => Array.isArray(v) ? v : [];
 const safeJson = v => JSON.stringify(v ?? {}).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-const head = '<link rel="stylesheet" href="/assets/media-library.css"><link rel="stylesheet" href="/assets/media-size-guide.css"><script type="module" src="/assets/media-library.js"></script>';
+const head = '<link rel="stylesheet" href="/assets/media-library.css"><link rel="stylesheet" href="/assets/media-size-guide.css"><link rel="stylesheet" href="/assets/media-image-generation.css"><script type="module" src="/assets/media-library.js"></script><script type="module" src="/assets/media-image-generation.js"></script>';
 const safeUrl = v => { try { const s = String(v || ""); const u = new URL(s, "https://app.lebrands.store"); return u.protocol === "https:" || (s.startsWith("/") && !s.startsWith("//")) ? s : ""; } catch { return ""; } };
 const bytes = n => { n = Number(n); if (!Number.isFinite(n) || n < 0) return "Not recorded"; if (n < 1024) return `${n} B`; if (n < 1048576) return `${(n / 1024).toFixed(1)} KB`; if (n < 1073741824) return `${(n / 1048576).toFixed(1)} MB`; return `${(n / 1073741824).toFixed(2)} GB`; };
 const dims = i => i.width > 0 && i.height > 0 ? `${i.width} x ${i.height} px` : "Not recorded";
@@ -37,13 +39,14 @@ export function renderMediaLibrary(data = {}, user, options={}) {
   const sizes = data.size_guide
     ?renderMediaSizeGuide(data.size_guide,{base,theme:data.guide_theme,category:data.guide_category})
     :'<section class="lml-info"><h2>Image size guide</h2><p>Size guidance could not be loaded. Refresh to try again.</p></section>';
-  const ai = `<section class="lml-info"><h2>AI Image Generation</h2><span class="lml-stage">Planned, not available yet</span><p>Image generation is not connected. Nothing on this page creates, sends or charges for images.</p><p>The planned flow:</p><ol class="lml-steps"><li>Pick a placement. It sets the dimensions and aspect ratio.</li><li>Optionally choose a reference image from your media library.</li><li>Describe the image you want.</li><li>Generate, then review the result.</li><li>Accept it or regenerate.</li><li>Save the accepted image to your library.</li></ol><p>There is no cropping step, because the placement sets the shape up front.</p></section>`;
+  const ai=renderMediaImageGeneration({storeId:sid,preview:Boolean(options.preview),
+    placements:data.image_placements||imagePlacements({},sid)});
   const panels = { library, sizes, ai };
   const selectedTab=tabs.some(([key])=>key===data.tab)?data.tab:"library";
   const refreshUrl=selectedTab==="library"?qs(offset):`${base}?${new URLSearchParams({
     tab:selectedTab,guide_theme:data.guide_theme||"current",guide_category:data.guide_category||"all"})}`;
   const boot = { items: items.map(i => ({ id: i.id, url: safeUrl(i.url), filename: i.filename, kind: i.kind, upload_type: i.upload_type, content_type: i.content_type, size: bytes(i.size_bytes), dims: dims(i), alt: i.alt_text || "", created: when(i.created_at), usage: list(i.usage).map(u => ({ label: u.label, href: safeUrl(u.href) })) })) };
-  const body = `<div class="lml" data-ml-root><div class="lb-page-heading"><div><h1>Media library</h1><p>Browse the images and videos saved for ${esc(store.name || "your store")}. This view is read only.</p></div><div class="lb-heading-actions"><a class="lb-button lb-button-outline" href="${esc(refreshUrl)}">Refresh</a></div></div>
+  const body = `<div class="lml" data-ml-root><div class="lb-page-heading"><div><h1>Media library</h1><p>Browse your saved media, check placement sizes and create images for ${esc(store.name || "your store")}.</p></div><div class="lb-heading-actions"><a class="lb-button lb-button-outline" href="${esc(refreshUrl)}">Refresh</a></div></div>
     <div class="lml-tabs" role="tablist" aria-label="Media library sections">${tabs.map(([k, l]) => `<button type="button" role="tab" id="lml-tab-${k}" aria-controls="lml-panel-${k}" aria-selected="${k === selectedTab}" tabindex="${k === selectedTab ? 0 : -1}" data-tab="${k}">${l}</button>`).join("")}</div>
     ${tabs.map(([k]) => `<div role="tabpanel" id="lml-panel-${k}" aria-labelledby="lml-tab-${k}" tabindex="0" data-panel="${k}"${k !== selectedTab ? " hidden" : ""}>${panels[k]}</div>`).join("")}
     <dialog class="lml-dialog" data-dialog aria-labelledby="lml-dlg-title"><div class="lml-dlg"><header><h2 id="lml-dlg-title" tabindex="-1" data-d-title></h2><button type="button" class="lb-button lb-button-small lb-button-outline" data-close>Close</button></header><div class="lml-preview" data-d-preview></div><dl class="lml-facts" data-d-facts></dl><h3>Where it is used</h3><div data-d-usage></div></div></dialog>
