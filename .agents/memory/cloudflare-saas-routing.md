@@ -64,3 +64,15 @@ disclosure. Place current status and the next step directly below Check
 connection, bringing that result into view after a check. The user repeated
 that a result above the button is still easy to miss. Do not show unrelated
 preference-save or duplicate status-reload controls on dedicated domain Settings.
+
+Show SSL preparation with an explicit ongoing-state indicator, not only vague
+secure-connection wording. Offer Open store for the exact active hostname and,
+after a www address is active, explain optional forwarding of its bare address
+at the domain provider.
+
+**Why:** The user asked for an ongoing status indicator and a forwarding step
+after opening the bare domain's parked page instead of the connected www address.
+
+**How to apply:** Keep the forwarding step separate from platform activation.
+Do not imply that changing a www record redirects the bare domain or that the
+platform can edit the registrar's parked page.

@@ -1,5 +1,18 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Store link and forwarding guidance, local verification
+
+```sh
+node --test --test-concurrency=1 tests/ann-launch-ui.test.js tests/ann-launch.test.js tests/dashboard-navigation.test.js
+git diff --check
+```
+
+34 checks passed, including exact safe HTTPS links, inactive/invalid hostname
+suppression, www-only forwarding instructions and SSL state classification.
+Managed API restarted, pending-state screenshot inspected, no browser errors.
+Read-only public/domain inspection confirmed SSL active and the www address
+responding successfully. No registrar/merchant writes or publication yet.
+
 ## 21 October 2026: Below-button connection results
 
 ```sh

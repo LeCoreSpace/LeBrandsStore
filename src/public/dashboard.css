@@ -914,6 +914,15 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 #ann-launch-slot ul[aria-label="Connection progress"]>li{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 16px;padding:8px 0;border-bottom:1px dashed var(--lb-line)}
 #ann-launch-slot .ann-domain-record-help{margin-top:12px}
 #ann-launch-slot .ann-domain-record-help>summary{cursor:pointer;font-size:12px;font-weight:600}
+.ann-ssl-indicator{display:inline-flex;align-items:center;gap:7px;border-radius:99px;padding:3px 9px;background:#f3f4f6;color:#374151;font-size:11px}
+.ann-ssl-indicator i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.ann-ssl-indicator[data-state="progress"]{background:#fff7ed;color:#9a3412}
+.ann-ssl-indicator[data-state="progress"] i{animation:ann-ssl-pulse 1.8s ease-in-out infinite}
+.ann-ssl-indicator[data-state="ready"]{background:#effaf3;color:#166534}
+.ann-ssl-indicator[data-state="attention"]{background:#fbeae7;color:#7a271a}
+.ann-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@keyframes ann-ssl-pulse{50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.ann-ssl-indicator[data-state="progress"] i{animation:none}}
 #ann-launch-slot .ann-dns-table{border:1px solid var(--lb-line);border-radius:6px;overflow:hidden}
 #ann-launch-slot .ann-dns-row{display:grid;grid-template-columns:64px minmax(0,1fr) minmax(0,1.4fr);gap:10px;padding:10px 12px;border-top:1px dashed #d7cbd0;font-size:12px;align-items:start}
 #ann-launch-slot .ann-dns-row:first-child{border-top:0}

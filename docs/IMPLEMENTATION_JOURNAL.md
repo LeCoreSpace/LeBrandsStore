@@ -1,5 +1,20 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Store link, SSL indicator and optional forwarding step ready
+
+- Added Open store for the exact active HTTPS hostname, opening a new tab with
+  safe link attributes. Inactive or malformed hostnames do not receive the link.
+- Added an explicit SSL indicator for in-progress, ready, needs-attention and
+  unconfirmed evidence, with last-check time when available. Only ongoing
+  preparation pulses; reduced-motion is respected. No claimed automatic
+  refresh or invented percentage/ETA.
+- Active www addresses now show an optional next step for forwarding the bare
+  address at the domain provider, with exact source/destination, Permanent/
+  unmasked guidance and instructions to retain email/verification records.
+- 34 relevant UI/server/navigation checks passed; restarted API and reviewed
+  the read-only pending-state fixture. Public connected www address responded
+  successfully. No DNS, domain activation or database writes. Not yet published.
+
 ## 2026-10-21: Check connection results moved below the action
 
 - Corrected the previous flow: current checks, feedback and next step are now

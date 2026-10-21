@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { attachAnnLaunch } from "../src/public/ann-launch-ui.js";
+import { attachAnnLaunch, sslCertificateStatus } from "../src/public/ann-launch-ui.js";
 
 const flush=async()=>{await new Promise(setImmediate);await new Promise(r=>setTimeout(r,2));};
 async function harness(readOnly=false,onStep,settingsMode=false,api="/isolated/api") {
@@ -236,12 +236,50 @@ test("domain copy keeps raw provider statuses and labels out of the merchant pag
     assert.match(h.slot.innerHTML,/Setting up/);
     assert.match(h.slot.innerHTML,/Website address: <strong>Connected/);
     assert.match(h.slot.innerHTML,/Ownership: <strong>Confirmed/);
-    assert.match(h.slot.innerHTML,/Secure connection: <strong>Being prepared/);
+    assert.match(h.slot.innerHTML,/SSL certificate: <strong class="ann-ssl-indicator" data-state="progress"/);
     assert.match(h.slot.innerHTML,/Add any missing TXT records/);
     assert.match(h.slot.innerHTML,/domain is not added twice/);
     assert.doesNotMatch(h.slot.innerHTML,/Cloudflare|SaaS|Worker|pending_validation|data-ln-ack="dom"/);
     assert.doesNotMatch(h.slot.innerHTML,/data-ln-a="dact"/);
     assert.deepEqual(h.requests,[]);
+  }finally{await h.close();}
+});
+test("SSL indicator distinguishes ongoing, ready, failed and unknown evidence without invented progress",()=>{
+  for(const status of ["pending_validation","pending_issuance","pending_deployment"])assert.equal(sslCertificateStatus(status).state,"progress");
+  assert.equal(sslCertificateStatus("active").state,"ready");
+  for(const status of ["validation_timed_out","issuance_timed_out","certificate_authority_error"])assert.equal(sslCertificateStatus(status).state,"attention");
+  assert.equal(sslCertificateStatus(undefined).state,"unknown");
+  assert.equal(sslCertificateStatus("future_status").state,"unknown");
+});
+test("Open store uses the exact active HTTPS hostname, never an inactive domain or unsafe URL",async()=>{
+  const h=await harness(false,undefined,true);
+  try{
+    const domain={hostname:"www.brand.com",status:"active",ssl_status:"active",hostname_status:"active",cname_verified:true,checked_at:"2026-10-21T04:00:00Z"};
+    h.setState({domain,platform:{domains_available:true,domain_activation_available:true}});
+    await h.click({lnA:"reload"});h.ui.mount(1,{customDomainOnly:true});
+    assert.match(h.slot.innerHTML,/href="https:\/\/www\.brand\.com\/" target="_blank" rel="noopener noreferrer">Open store/);
+    assert.match(h.slot.innerHTML,/SSL certificate: <strong class="ann-ssl-indicator" data-state="ready"/);
+    assert.match(h.slot.innerHTML,/Last checked:/);
+    assert.match(h.slot.innerHTML,/Next: make your address work without www \(optional\)/);
+    assert.match(h.slot.innerHTML,/Forward <strong>brand\.com<\/strong> to <strong>https:\/\/www\.brand\.com\//);
+    assert.match(h.slot.innerHTML,/Leave email records and the verification records you added unchanged/);
+    h.setState({domain:{...domain,status:"pending",ssl_status:"pending_validation"}});
+    await h.click({lnA:"reload"});
+    assert.doesNotMatch(h.slot.innerHTML,/>Open store/);
+    assert.doesNotMatch(h.slot.innerHTML,/Optional address forwarding/);
+    assert.match(h.slot.innerHTML,/data-state="progress"/);
+    h.setState({domain:{...domain,status:"pending",ssl_status:"validation_timed_out"}});
+    await h.click({lnA:"reload"});
+    assert.match(h.slot.innerHTML,/data-state="attention"/);
+    assert.match(h.slot.innerHTML,/help with your SSL certificate/);
+    h.setState({domain:{...domain,hostname:'javascript:alert(1)'}});
+    await h.click({lnA:"reload"});
+    assert.doesNotMatch(h.slot.innerHTML,/href="javascript:|>Open store/);
+    h.setState({domain:{...domain,hostname:"shop.brand.com"}});
+    await h.click({lnA:"reload"});
+    assert.match(h.slot.innerHTML,/href="https:\/\/shop\.brand\.com\/"/);
+    assert.doesNotMatch(h.slot.innerHTML,/Optional address forwarding/);
+    assert.deepEqual(h.requests,[],"rendering status and links does not mutate the store");
   }finally{await h.close();}
 });
 test("domain activation only asks connected-payment stores for website approval and never bypasses it",async()=>{

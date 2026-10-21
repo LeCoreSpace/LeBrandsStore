@@ -1,5 +1,11 @@
 # Complete implementation checkpoint register
 
+### Store link, SSL status and forwarding guidance ready locally
+
+Exact active-address link, evidence-based SSL indicator and optional bare-domain
+forwarding step implemented and tested. 34 checks passed. No migration,
+registrar edits, merchant activation, production publication or manual commit.
+
 ### Connection results below Check connection
 
 Published `19bb4a60-14ed-48c1-8e63-97aba578f987`: corrected status/result
