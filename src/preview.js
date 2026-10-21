@@ -89,7 +89,7 @@ export default {
       const origin=storeCanonicalOrigin(data),headers={...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"};
       if(original.pathname==="/__discovery-preview"){
         const files=[];
-        for(const path of ["/robots.txt","/sitemap.xml","/llms.txt","/llm.txt"]){
+        for(const path of ["/robots.txt","/sitemap.xml","/llms.txt"]){
           const r=serveStoreDiscovery(new Request(origin+path),data,origin);
           files.push({name:path.slice(1),path,url:origin+path,status:r.status,content:await r.text(),location:r.headers.get("location")});
         }

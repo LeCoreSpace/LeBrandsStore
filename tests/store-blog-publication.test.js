@@ -61,7 +61,7 @@ test("real publication API freezes revisions, protects URLs and isolates public 
     headers:{origin:"https://app.lebrands.store","content-type":"application/json"},...(body?{body:JSON.stringify(body)}:{})});
   const call=(method,path,body,article,action)=>handleBlogDashboard(req(method,path,body),db,{id:user},token,id,article,action);
   let r=await call("POST","",{...value,hero_media_id:foreignMedia});assert.equal(r.status,400);
-  r=await call("POST","",{...value,hero_media_id:mediaId,hero_alt:"Merchant-written hero description",sections:[...value.sections,{id:foreignMedia,type:"product",heading:"An everyday essential",body:"",product_id:productId}]});assert.equal(r.status,201);
+  r=await call("POST","",{...value,hero_media_id:mediaId,hero_alt:"Merchant-written hero description",sections:[...value.sections,{id:"99999999-9999-4999-8999-999999999999",type:"faq",heading:"Frequently asked questions",body:"How should I use it?\nApply a small amount.\n\nWho is it for?\nRead the product guidance."},{id:foreignMedia,type:"product",heading:"An everyday essential",body:"",product_id:productId}]});assert.equal(r.status,201);
   let draft=(await r.json()).article;const aid=draft.id;
   const publish=rev=>call("POST",`/${aid}/publish`,{expected_revision:rev},aid,"publish");
   r=await publish("1");assert.equal(r.status,200,await r.clone().text());
@@ -73,6 +73,10 @@ test("real publication API freezes revisions, protects URLs and isolates public 
   const published=await publicData();
   assert.equal(published.blog_article.hero_image.alt,"Merchant-written hero description");
   assert.equal(published.blog_article.media[0].id,mediaId);
+  assert.equal(draft.sections.find(s=>s.type==="faq").body,published.blog_article.sections.find(s=>s.type==="faq").body);
+  const faqHtml=renderPublicBlog({store:{name:"Fixture"},...published},{page:"blog-article"});
+  assert.match(faqHtml,/<dt>How should I use it\?<\/dt>/);
+  assert.match(faqHtml,/<dd>Apply a small amount\.<\/dd>/);
   assert.deepEqual(published.blog_article.products,[{id:productId,name:"Example serum",href:"/products/example-serum"}]);
   assert(!JSON.stringify(published).includes("cost_paise"));
   const update={...value,sections:[{...value.sections[0],body:"Private next draft."}],expected_revision:"2"};
@@ -103,9 +107,9 @@ test("real publication API freezes revisions, protects URLs and isolates public 
   assert.equal(head.status,200);assert.equal(await head.text(),"");
   const invalidPage=await serveStorefront(new Request("https://www.fixture.example/blog?page=2"),db,{store_id:id,name:"Fixture store",subdomain:"fixture-store",status:"live"});
   assert.equal(invalidPage.status,404);
-  assert.equal(view.files.find(f=>f.path==="/llm.txt").location,"https://www.fixture.example/llms.txt");
+  assert.equal(view.files.find(f=>f.path==="/llm.txt"),undefined);
   const contentResponse=await handleContentLLM(new Request(`https://app.lebrands.store/api/stores/${id}/content-llm`),db,{id:user},token,id);
-  assert.equal(contentResponse.status,200);assert.equal((await contentResponse.json()).files.length,4);
+  assert.equal(contentResponse.status,200);assert.equal((await contentResponse.json()).files.length,3);
   await db.withStore(id,async t=>{
     assert.equal((await t`SELECT count(*)::int AS n FROM store_blog_drafts`)[0].n,0);
     assert.equal((await t`SELECT count(*)::int AS n FROM store_blog_publications`)[0].n,1);

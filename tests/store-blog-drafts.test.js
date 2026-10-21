@@ -8,6 +8,20 @@ import {renderStoreBlog,renderStoreBlogPreview} from "../src/ui/store-blog.js";
 import {migrationSelection} from "../db/migration-selection.js";
 import {saveBlogArticle,deleteBlogArticle,blogDashboard} from "../src/blog/repository.js";
 
+test("FAQ authoring offers a direct shortcut, example format and existing section contract",async()=>{
+  const source=await readFile(new URL("../src/public/store-blog.js",import.meta.url),"utf8");
+  assert.match(source,/data-add-faq/);
+  assert.match(source,/Add FAQ section/);
+  assert.match(source,/type === "faq" \? "Frequently asked questions"/);
+  assert.match(source,/How do I use this product/);
+  const faq={id:"99999999-9999-4999-8999-999999999999",type:"faq",heading:"Frequently asked questions",body:"Can I use it daily?\nFollow the product guidance.\n\nHow do I store it?\nKeep it cool and dry."};
+  const parsed=blogInput({title:"Product guide",slug:"product-guide",sections:[faq]});
+  assert.equal(parsed.sections[0].body,faq.body);
+  const html=renderStoreBlogPreview({store:{store_id:"11111111-1111-4111-8111-111111111111",name:"Example"},article:{...parsed},media:[],products:[]});
+  assert.match(html,/<dt>Can I use it daily\?<\/dt>/);
+  assert.match(html,/<dd>Keep it cool and dry\.<\/dd>/);
+});
+
 const a="11111111-1111-4111-8111-111111111111", b="22222222-2222-4222-8222-222222222222";
 const user="33333333-3333-4333-8333-333333333333", article="44444444-4444-4444-8444-444444444444";
 const token="a".repeat(64);

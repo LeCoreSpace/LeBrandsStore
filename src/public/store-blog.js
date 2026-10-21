@@ -52,7 +52,7 @@ function init() {
   }
   function field(label, name, val, o = {}) {
     const d = can ? (o.ro ? "readonly" : "") : "disabled", err = errors[o.errKey || name];
-    const ctl = o.area ? `<textarea data-f="${name}" rows="${o.rows || 5}" maxlength="${o.max}" ${d}>${esc(val)}</textarea>` : `<input data-f="${name}" maxlength="${o.max}" value="${esc(val)}" ${d}>`;
+    const ctl = o.area ? `<textarea data-f="${name}" rows="${o.rows || 5}" maxlength="${o.max}" ${o.placeholder ? `placeholder="${esc(o.placeholder)}"` : ""} ${d}>${esc(val)}</textarea>` : `<input data-f="${name}" maxlength="${o.max}" value="${esc(val)}" ${d}>`;
     return `<label class="lb-field"><span>${label}</span>${ctl}${o.hint ? `<small>${esc(o.hint)}</small>` : ""}${err ? `<small class="lbb-err" role="alert">${esc(err)}</small>` : ""}</label>`;
   }
   function sectionCard(s, i, n) {
@@ -61,7 +61,7 @@ function init() {
       if (k === "media") return mediaField("section", s.media_id, s.alt, "alt", i);
       if (k === "product") return `<label class="lb-field"><span>Product</span><select data-f="product_id" ${d}><option value="">Choose a published product</option>${boot.products.map(p => `<option value="${esc(p.id)}" ${p.id === s.product_id ? "selected" : ""}>${esc(p.name)}</option>`).join("")}</select>${errors["s" + i + "product_id"] ? `<small class="lbb-err" role="alert">${esc(errors["s" + i + "product_id"])}</small>` : ""}</label>`;
       if (k === "alt") return "";
-      return field(L[k] || (k === "href" ? "Link" : k === "body" ? "Text" : "Heading"), k, s[k], { max: LIM[k], area: k === "body", rows: s.type === "faq" ? 8 : 5, hint: k === "body" && HINTS[s.type] || k === "href" && HINTS.cta || "", errKey: "s" + i + k });
+      return field(L[k] || (k === "href" ? "Link" : k === "body" ? "Text" : "Heading"), k, s[k], { max: LIM[k], area: k === "body", rows: s.type === "faq" ? 8 : 5, placeholder: s.type === "faq" && k === "body" ? "How do I use this product?\nWrite your answer here.\n\nWho is this product for?\nWrite your answer here." : "", hint: k === "body" && HINTS[s.type] || k === "href" && HINTS.cta || "", errKey: "s" + i + k });
     }).join("");
     return `<li class="lbb-sec" data-sid="${esc(s.id)}" data-idx="${i}"><div class="lbb-sec-head"><span class="lbb-num">${i + 1}</span>
       <label class="lbb-type"><span class="lb-sr-only">Section type</span><select data-f="type" aria-label="Section ${i + 1} type" ${d}>${Object.entries(TYPES).map(([k, v]) => `<option value="${k}" ${k === s.type ? "selected" : ""}>${v}</option>`).join("")}</select></label>
@@ -83,6 +83,7 @@ function init() {
         ${field("Slug", "slug", art.slug, { max: LIM.slug, ro: !!art.published_slug, hint: art.published_slug ? "This public address is kept permanently, even if you unpublish the article, so existing links keep working." : "Lower case letters, numbers and hyphens. Used in the article address once published." })}</section>
       <section class="lb-card lbb-card"><div class="lb-card-heading"><h2>Hero image</h2></div>${mediaField("hero", art.hero_media_id, art.hero_alt, "hero_alt")}${errors.hero_media_id ? `<small class="lbb-err" role="alert">${esc(errors.hero_media_id)}</small>` : ""}</section>
       <section class="lb-card lbb-card"><div class="lb-card-heading"><h2>Sections</h2><small>${art.sections.length} of 40</small></div>
+        ${can ? `<div class="lbb-faq-add"><div><strong>Answer your readers' questions</strong><p class="lbb-muted">Add FAQs to this article. Write a question, its answer on the next line, then leave a blank line before the next question.</p></div><button type="button" class="lb-button lb-button-outline" data-add-faq ${art.sections.length >= 40 ? "disabled" : ""}>Add FAQ section</button></div>` : ""}
         ${art.sections.length ? `<ol class="lbb-secs">${art.sections.map((s, i) => sectionCard(s, i, art.sections.length)).join("")}</ol>` : `<p class="lbb-muted lbb-none">No sections yet. Add text, images, a quote, a product, FAQs or a call to action.</p>`}
         ${can ? `<div class="lbb-add"><label class="lb-field"><span>Add a section</span><select data-add-type>${Object.entries(TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label><button type="button" class="lb-button lb-button-outline" data-add ${art.sections.length >= 40 ? "disabled" : ""}>Add section</button></div>` : ""}</section></div>
       <aside class="lbb-side"><section class="lb-card lbb-card"><div class="lb-card-heading"><h2>Publishing</h2><span class="lbb-tag" data-state="${pstate()}">${PL[pstate()]}</span></div><p class="lbb-muted">Saved drafts are private. Changes never reach your public blog until you publish.</p>
@@ -121,7 +122,7 @@ function init() {
     if (b.matches("[data-preview]") && b.getAttribute("aria-disabled") === "true") { e.preventDefault(); toast("Save your changes first. Preview shows the saved draft."); return; }
     if (b.matches("[data-back]") && dirty()) { /* leave guard handles navigation */ return; }
     const li = b.closest("[data-sid]"), idx = li ? Number(li.dataset.idx) : -1;
-    if (b.matches("[data-add]")) { if (art.sections.length >= 40) return; const s = { id: crypto.randomUUID(), type: ed.querySelector("[data-add-type]").value, heading: "", body: "", media_id: null, alt: "", product_id: null, href: "" }; art.sections.push(s); paint(`[data-sid="${s.id}"] [data-f]`); markStatus(); ed.querySelector(`[data-sid="${s.id}"]`)?.scrollIntoView({ block: "center" }); }
+    if (b.matches("[data-add], [data-add-faq]")) { if (!can || art.sections.length >= 40) return; const type = b.matches("[data-add-faq]") ? "faq" : ed.querySelector("[data-add-type]").value; const s = { id: crypto.randomUUID(), type, heading: type === "faq" ? "Frequently asked questions" : "", body: "", media_id: null, alt: "", product_id: null, href: "" }; art.sections.push(s); paint(`[data-sid="${s.id}"] [data-f=${type === "faq" ? "body" : "type"}]`); markStatus(); ed.querySelector(`[data-sid="${s.id}"]`)?.scrollIntoView({ block: "center" }); live(type === "faq" ? "FAQ section added. Enter your questions and answers." : "Section added."); }
     else if (b.matches("[data-move]")) { const to = idx + Number(b.dataset.move); if (to < 0 || to >= art.sections.length) return; const [s] = art.sections.splice(idx, 1); art.sections.splice(to, 0, s); paint(`[data-sid="${s.id}"] [data-move="${b.dataset.move}"]:not(:disabled), [data-sid="${s.id}"] [data-move]:not(:disabled)`); markStatus(); live(`Section moved to position ${to + 1} of ${art.sections.length}.`); }
     else if (b.matches("[data-remove]")) { const ok = await confirmCatalogueAction("This section is removed from the draft when you save.", { title: "Remove this section?", confirmLabel: "Remove", cancelLabel: "Keep it" }); if (!ok) return; art.sections.splice(idx, 1); paint(art.sections.length ? "[data-add-type]" : "[data-add-type]"); markStatus(); live("Section removed."); }
     else if (b.matches("[data-pick]")) {

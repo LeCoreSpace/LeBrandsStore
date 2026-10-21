@@ -11,6 +11,11 @@
 .lbb-row-meta{display:grid;gap:4px;justify-items:end;flex:none;color:var(--b-mute);font-size:12px}
 .lbb-tag{padding:2px 10px;border-radius:99px;background:#f1e4e9;color:var(--b-brand);font-weight:600;font-size:12px}
 .lbb-unavailable{margin-top:8px}
+.lbb-faq-add{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0 0 18px;padding:16px;border:1px solid var(--b-line);border-radius:10px;background:var(--b-wash)}
+.lbb-faq-add strong{display:block;margin-bottom:5px}
+.lbb-faq-add .lbb-muted{margin:0;max-width:60ch}
+.lbb-faq-add button{flex-shrink:0}
+@media(max-width:640px){.lbb-faq-add{align-items:stretch;flex-direction:column}.lbb-faq-add button{width:100%}}
 .lbb-grid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:20px;align-items:start}
 .lbb-main{display:grid;gap:18px;min-width:0}
 .lbb-side{position:sticky;top:76px}

@@ -1,3 +1,8 @@
+## 2026-10-21: FAQ authoring and redundant file removal, local checks
+
+- `node --test --test-concurrency=1 tests/store-blog-drafts.test.js tests/store-blog-publication.test.js tests/store-discovery.test.js tests/browser-module-delivery.test.js`: 18 passed with isolated fixtures.
+- `git diff --check`, browser-controller syntax check and Wrangler dry run passed. Managed API restarted; read-only discovery preview visually confirmed three files. No migration, production publication or merchant content writes.
+
 ## 2026-10-21: Approved Phase 3 enablement and Cloudflare publication
 
 - `node db/migrate.js --staged-store-blog-publication` committed only the approved additive publication migration to existing external Supabase.

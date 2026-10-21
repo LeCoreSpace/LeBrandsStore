@@ -24,7 +24,7 @@ export async function storeDiscoveryDashboard(tx,id){
     Object.assign(data,await blogPublications(tx,id));
   }
   const origin=storeCanonicalOrigin({store},publication?.hostname);
-  const paths=["/robots.txt","/sitemap.xml","/llms.txt","/llm.txt"];
+  const paths=["/robots.txt","/sitemap.xml","/llms.txt"];
   const shards=published?Math.ceil(storeDiscoveryPages(data).length/20000):0;
   // A bounded view page shows complete shard bodies, never truncated files.
   const files=[];

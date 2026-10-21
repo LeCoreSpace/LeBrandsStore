@@ -57,8 +57,8 @@ test("robots and llms use the same canonical store origin and avoid private data
   assert.doesNotMatch(guide, /private-owner|example\.lebrands\.store|shipping/);
   assert.match(guide, /not a guarantee/);
   const alias = serveStoreDiscovery(request("/llm.txt"), data, "https://brand.test");
-  assert.equal(alias.status, 308);
-  assert.equal(alias.headers.get("location"), "https://brand.test/llms.txt");
+  assert.equal(alias.status, 404);
+  assert.equal(alias.headers.get("location"), null);
 });
 
 test("HEAD, unsupported methods, unpublished and suspended stores fail safely", async () => {

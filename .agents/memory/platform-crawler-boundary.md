@@ -51,3 +51,9 @@ Keep merchant discovery-file contents and blog management together under “Cont
 **Why:** The user explicitly requested that brands see each generated file's contents in this menu and create, edit and delete blogs beneath it.
 
 **How to apply:** Preserve this information grouping when extending merchant content tools. Keep merchant content separate from platform marketing content.
+
+Expose `llms.txt`, not a separate `llm.txt` alias, in merchant discovery tools.
+
+**Why:** The user asked to remove the redundant singular file after seeing its empty redirect card.
+
+**How to apply:** Keep the standard plural guide and do not reintroduce the singular file or its dashboard card.

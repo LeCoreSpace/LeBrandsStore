@@ -1,3 +1,7 @@
+### FAQ shortcut and singular LLM removal: local only
+
+Three-file discovery inspector, explicit 404 for the removed singular alias and prominent FAQ shortcut with format guidance. Existing FAQ draft/publication storage is retained; no migration. Eighteen focused checks, dry-run build and discovery preview passed. Awaiting publication approval.
+
 ### Phase 3 public blogs and Content for LLM: approved production release
 
 Applied the additive publication migration manually after approval and published Worker `764d900d-7dbf-41ca-adb3-c5684fcc143a` at 100% traffic. Schema checksum, forced tenant RLS, app/API privileges, binding/secret/runtime preservation and fifteen live read-only HTTP probes passed. Earlier isolated lifecycle/theme checks remain valid. Existing drafts remain private; no signed-in production content mutations were exercised.

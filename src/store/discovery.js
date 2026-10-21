@@ -86,7 +86,8 @@ export function serveStoreDiscovery(request, data, origin) {
   if (!data || data.store?.status !== "live" || !origin) {
     return new Response(request.method === "HEAD" ? null : "Published store unavailable", { status: 404, headers });
   }
-  if (path === "/llm.txt") return new Response(null, { status: 308, headers: { ...headers, location: `${origin}/llms.txt` } });
+  // Retain route recognition solely to return a real 404, not storefront HTML.
+  if (path === "/llm.txt") return new Response(request.method === "HEAD" ? null : "Not found", { status: 404, headers });
   const pages = storeDiscoveryPages(data);
   const xmlFile = path === "/sitemap.xml" || path.startsWith("/sitemaps/");
   headers["content-type"] = xmlFile ? "application/xml; charset=utf-8" : "text/plain; charset=utf-8";

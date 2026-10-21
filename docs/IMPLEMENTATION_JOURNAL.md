@@ -1,5 +1,12 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Singular LLM file removal and visible FAQ authoring, local only
+
+- Removed the redundant `llm.txt` discovery card; the removed route now returns a real 404 instead of redirecting or falling through to storefront HTML. `llms.txt`, robots and sitemap remain unchanged.
+- Added an explicit Add FAQ section shortcut, default FAQ heading, authoring instructions and example placeholder. Reuses the existing FAQ section format and draft/publication flow; no new database schema or content mutation.
+- Eighteen focused tests passed, including FAQ save/publication/rendering and three-file inspection, existing tenant/session isolation and browser asset delivery. Worker dry-run build passed. Restarted the existing API service; discovery screenshot confirmed only the three intended file cards. Temporary client disconnect/proxy errors occurred during restart; subsequent preview requests and screenshot succeeded.
+- Production remains on the previously approved Phase 3 release; these follow-up changes are not published.
+
 ## 2026-10-21: Approved Phase 3 production release
 
 - Applied `0057_store_blog_publications.sql` using `node db/migrate.js --staged-store-blog-publication` after explicit migration/publication approval. Read-only verification confirmed the recorded checksum, four publication policies, forced row-level security, app-role CRUD privileges and no publication-table or trigger-function privileges for external API roles.
