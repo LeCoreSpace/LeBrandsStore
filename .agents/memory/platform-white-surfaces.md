@@ -13,9 +13,9 @@ sections, accent colours, semantic warnings and statuses, and merchant-chosen
 storefront presets. Theme thumbnails represent merchant presets, not platform
 backgrounds.
 
-On the public homepage, only the hero and footer retain dark backgrounds.
-All other sections must be white in both display modes, including the promises
-carousel surface. Preserve the actual UI colours inside operational screenshots.
+On the public homepage, only the hero and footer may have nonwhite backgrounds.
+All other sections must be white, including the promises carousel surface.
+Preserve the actual UI colours inside operational screenshots.
 
 **Why:** The user explicitly requested white for every homepage section except
 the hero and footer, superseding the earlier alternating dark-band direction.
@@ -23,6 +23,15 @@ the hero and footer, superseding the earlier alternating dark-band direction.
 **How to apply:** Scope this exception to the homepage; keep merchant themes and
 the pricing page separate. The "In one sitting" section should describe building
 with Ann, not the retired setup wizard.
+
+The homepage is light-only and must not offer a light/dark switch.
+
+**Why:** The user explicitly asked to remove light/dark mode while refining the
+homepage hero.
+
+**How to apply:** Keep the homepage light even when the browser or a saved
+preference is dark. Do not overwrite the saved preference used by other pages
+or remove merchant theme controls.
 
 Aura's default should also be white, with typography like premium Shopify
 stores rather than the heavy serif shown in the original skeleton.

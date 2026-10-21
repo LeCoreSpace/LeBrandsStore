@@ -1374,3 +1374,22 @@ of this register.
 | `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars`, from repository root | Approved Cloudflare publication succeeded, followed by publication of the user's final heading-size correction. Initial version `de54b6eb-5dab-4503-8b8f-bbd59864b046`; final version `9d0e3137-6acc-4e7f-8e96-c9957620b126`. Existing routes, queue and schedule retained. |
 | Read-only production metadata, homepage and asset checks | HTTP 200; latest narrative and larger story/Meet Ann headings with smaller flagship line confirmed. Nine published portrait/Ann image files byte-match local sources; heading font HTTP 200. All 27 non-asset bindings, 17 encrypted secrets, checkout-security encryption-key presence and runtime settings match the pre-publication snapshot. No secret values disclosed. |
 | Scope boundary | No schema migration, database write, merchant-domain activation, order, payment, email send, environment-variable change or credential rotation. |
+
+## 2026-10-21: Homepage hero, launch-section removal and footer contrast follow-up
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| Homepage and scoped stylesheet edits | Removed the standalone “Three clear steps” section. Used the user's two-statement hero heading about conversion and connecting payments, delivery, domain and ads. Footer CTA now has explicit dark text on a light peach background, with contrasting hover and keyboard-focus states. |
+| `node scripts/build-browser-assets.mjs` and the six focused homepage test files listed above | Build succeeded, 31 versioned entries and 42 files. Updated obsolete launch-section assertions; final result 29 passed. `git diff --check` clean. |
+| Managed API restart, logs and native preview screenshots | Final mobile hero and desktop FAQ/footer captured successfully. All six concerns remain beside the portraits; the footer CTA text is visibly readable. Temporary proxy refusals during restart recovered to HTTP 200. |
+| Publication boundary | Preview changes only at this point. No new Cloudflare publication, database operation, credential change or external merchant mutation. |
+
+## 2026-10-21: Homepage slideshow and responsive visual refinement
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| Homepage visual refinement | Unified Meet Ann, languages, looks and business-desk stories into one manual slideshow. Preserved the selected images, six founder questions and existing language/style/business controls. Refined typography, buttons, cards and screenshot frames without rewriting the approved narrative. |
+| Responsive hero and homepage theme | Desktop uses a headline/portrait-card composition; mobile uses avatars with full-width questions. Compact header retains navigation and the store-opening action. Removed the homepage theme button and enforced light mode without overwriting theme preferences on other pages. |
+| `node scripts/build-browser-assets.mjs`; focused marketing, flow, hero, typography, Ann-capture, redesign and slideshow tests | Build succeeded with 31 versioned entries and 42 files. Final focused suite: 35 passed. Controller tests cover selectors, keyboard, swipe intent, retained nested state and fragment navigation. `git diff --check` clean. |
+| Managed API restart and native preview captures | Verified the final hero at 390px and 1440px widths, theme-button removal, readable founder questions and mobile Ann deep-link navigation with slideshow controls visible. Homepage, scripts, fonts and images returned HTTP 200 after restart. No browser-console errors reported. |
+| Publication boundary | Preview only. No Cloudflare publication, migrations, credential changes, orders, payments, emails or merchant data changes in this refinement. |

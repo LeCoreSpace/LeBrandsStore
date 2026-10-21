@@ -70,15 +70,14 @@ test("homepage connects launch, commerce and support with honest availability la
   assert.doesNotMatch(html, /m-statement|Built around your point of view|Most store builders give you a website/);
   for(const required of [
     "Your products. Your flagship store.",
-    "Ann","30 minutes","Razorpay","Cash on Delivery","GST",
+    "Ann","Razorpay","Cash on Delivery","GST",
     "Meta","Google","LeBrandsSpace Digital Private Limited","Chennai"
   ])assert.ok(copy.includes(required),`Missing requested copy: ${required}`);
   assert.equal((html.match(/class="m-faq-item /g)||[]).length,7);
   assert.match(copy,/valid GSTIN is required to publish/i);
   assert.doesNotMatch(copy,/First publication requires platform approval/);
-  assert.match(copy,/target/i);
-  assert.match(copy,/approval/i);
-  assert.match(copy,/DNS|domain.*verification/i);
+  assert.doesNotMatch(html,/id="launch"|Three clear steps/);
+  assert.match(copy,/approved Razorpay account/i);
   assert.match(html,/href="\/support"/);
   for(const page of [html,renderPricing()]){
     assert.doesNotMatch(page,/300[,\s]?000|shoppers already looking|listing mean/i);
@@ -145,7 +144,7 @@ test("homepage middle sections are white in both modes without changing hero, fo
   assert.match(band,/--m-paper:\s*#ffffff/);
   assert.match(css,/\.m-footer, \.m-pricing-page \.m-footer \{ background-color: #0c090b; background-image: var\(--m-dark-grad\)/);
   assert.match(css,/#top \.m-principles \.m-promise-stage \{ background: #ffffff; color: #38282b/);
-  const section=html.match(/<section class="h-sec h-ann[\s\S]*?<\/section>/)?.[0];
+  const section=html.match(/<div class="h-slide h-ann"[\s\S]*?(?=<div class="h-slide h-store")/)?.[0];
   assert.match(section,/Ann/);
   assert.ok(section.includes(MARKETING_MEDIA.annBuilder.src));
   assert.doesNotMatch(section,/<video|REPLACE-wizard/);
@@ -231,7 +230,7 @@ test("marketing motion honours reduced motion and automatic video playback only 
 
 test("landing theme initializes before DOM readiness, follows OS, and preserves an explicit choice",async()=>{
   const source=await readFile("src/public/marketing.js","utf8");
-  function setup(saved=null,blocked=false){
+  function setup(saved=null,blocked=false,lightOnly=false){
     const attrs={},buttonAttrs={},metaAttrs={},events={},buttonEvents={};
     const label={textContent:""},classes=new Set();
     const system={matches:true,addEventListener(_name,cb){this.change=cb;}};
@@ -247,7 +246,7 @@ test("landing theme initializes before DOM readiness, follows OS, and preserves 
       },
       document:{
         readyState:"loading",
-        documentElement:{setAttribute(k,v){attrs[k]=v;},classList:{add(k){classes.add(k);},remove(k){classes.delete(k);},toggle(k,on){on?classes.add(k):classes.delete(k);}}},
+        documentElement:{getAttribute(k){return k==="data-theme-lock"&&lightOnly?"light":null;},setAttribute(k,v){attrs[k]=v;},classList:{add(k){classes.add(k);},remove(k){classes.delete(k);},toggle(k,on){on?classes.add(k):classes.delete(k);}}},
         querySelector(selector){return selector==="[data-m-theme-color]"?{setAttribute(k,v){metaAttrs[k]=v;}}:selector==="[data-theme-label]"?label:null;},
         querySelectorAll(selector){return selector==="[data-theme-toggle]"?[button]:[];},
         addEventListener(k,cb){const previous=events[k];events[k]=event=>{previous?.(event);cb(event);};}
@@ -273,11 +272,16 @@ test("landing theme initializes before DOM readiness, follows OS, and preserves 
   unavailable.ready();unavailable.click();
   assert.equal(unavailable.attrs["data-theme"],"light","Toggle still works if storage is blocked");
   assert.ok(!unavailable.classes.has("m-motion"));
+  const locked=setup("dark",false,true);
+  assert.equal(locked.attrs["data-theme"],"light","Homepage stays light even with a saved dark preference");
+  locked.ready();
+  assert.equal(locked.stored,"dark","Homepage must not overwrite preferences used by other pages");
+  assert.equal(typeof locked.system.change,"undefined","Locked homepage must not follow OS theme changes");
 });
 
 test("landing preserves supplied logos and provides interactive visual feature stories",async()=>{
   const html=renderHome(),css=await readFile("src/public/marketing.css","utf8");
-  assert.match(html,/data-theme-toggle/);
+  assert.doesNotMatch(html,/data-theme-toggle|data-theme-label/);
   assert.match(html,/<script src="\/assets\/marketing\.js"><\/script>/);
   for(const variant of ["light","dark"]){
     assert.match(html,new RegExp(`REPLACE-lebrands-${variant}-transparent\\.webp`));
@@ -293,6 +297,12 @@ test("landing preserves supplied logos and provides interactive visual feature s
   assert.match(css,/:root\[data-theme="dark"\] #top > section\.m-band-dark/);
   assert.match(css,/:root\[data-theme="dark"\] #top > section\.m-band-light/);
   assert.match(css,/@media \(prefers-reduced-motion: reduce\)/);
+});
+
+test("homepage is light-only without removing theme controls from other marketing pages",()=>{
+  assert.match(renderHome(),/<html lang="en" data-theme="light" data-theme-lock="light">/);
+  assert.doesNotMatch(renderHome(),/data-theme-toggle/);
+  assert.match(renderPricing(),/data-theme-toggle/);
 });
 
 test("showcase autoplay, manual selection, explicit pause and motion preferences work together",async()=>{

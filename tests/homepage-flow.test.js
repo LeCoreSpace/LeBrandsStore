@@ -8,12 +8,14 @@ test("the current storyboard starts with founder pain, then Ann and the store", 
   const sections = [...html.matchAll(/<section class="([^"]+)"/g)].map(match => match[1]);
   assert.match(sections[0], /\bh-pain\b/);
   assert.match(sections[1], /\bh-presence\b/);
-  assert.match(sections[2], /\bh-answer\b/);
-  assert.ok(sections.some(section=>/\bh-ann\b/.test(section)));
+  assert.match(sections[2], /\bh-show\b/);
+  assert.match(html, /class="h-slide h-answer"/);
+  assert.match(html, /class="h-slide h-ann"/);
   assert.ok(sections.some(section=>/\bh-find\b/.test(section)));
   assert.doesNotMatch(html, /class="m-hero"|m-hs-slide-store/);
   assert.match(html, /Sound familiar\?/);
-  assert.match(html, /Why is selling online so complicated\?/);
+  assert.match(html.replace(/<[^>]+>/g, ""), /Getting a website that converts is one thing\./);
+  assert.match(html, /Connecting payments, delivery, your domain and ads is another\./);
   assert.doesNotMatch(html, /tech headache/i);
   const opening = html.match(/<section class="h-sec h-pain[\s\S]*?<\/section>/)[0];
   assert.doesNotMatch(opening, /h-fc-ans|Meet Ann|No developer needed|Keep your sales|Start free/);

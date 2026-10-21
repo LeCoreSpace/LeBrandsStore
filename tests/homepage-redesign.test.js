@@ -20,29 +20,30 @@ test("homepage archives the exact original hero and retains deterministic access
   assert.doesNotMatch(renderPricing(),/m-footer-home|data-h-tabs/);
 });
 
-test("launch promises are qualified and the visual stories cover core product differences",()=>{
+test("visual stories cover core product differences without a standalone launch promise",()=>{
   const html=renderHome(),copy=html.replace(/<[^>]+>/g," ").replace(/\s+/g," ");
-  assert.match(copy,/30 minutes/);
-  assert.match(copy,/hour/i);
-  assert.match(copy,/target.*not a guarantee/i);
-  assert.match(copy,/approval/i);
-  assert.match(copy,/domain verification.*longer/i);
+  assert.match(copy,/approved Razorpay account/i);
+  assert.doesNotMatch(html,/id="launch"|Three clear steps/);
   for(const feature of ["Ann","Tamil","Marathi","Telugu","SKU","cost","Collections","Cash on Delivery","offer","returns","RTO","GST","margin","CSV","Excel","Razorpay","Shiprocket","domain","Meta","Google Analytics","Google Ads","shopper consent","review","Support","Created","Pending","Closed","Team roles","Download reports","Free","/compare","/blog"])assert.ok(html.toLowerCase().includes(feature.toLowerCase()),`Missing feature: ${feature}`);
   assert.match(html,/www\.yourbrand\.in/);
   assert.match(copy,/Free discovery on LeBrands\.Space for all approved stores/);
   assert.doesNotMatch(html,/undo anything|shoppers already trust/i);
 });
 
-test("homepage removes the requested sections and explains four integrations and three launch steps",()=>{
+test("homepage removes the requested sections and explains four integrations",()=>{
   const html=renderHome();
   assert.doesNotMatch(html, /<section[^>]*(?:h-editor|h-checkout)|Make it yours|From idea to open|class="h-lanes/);
   const connections=html.match(/<section class="h-sec h-connect[\s\S]*?<\/section>/)[0];
   assert.equal((connections.match(/<article\b/g)||[]).length,4);
   for(const label of ["Custom domain","Social marketing","Razorpay","Delivery partner"])assert.ok(connections.includes(label));
-  const launch=html.match(/<section class="h-sec h-launch[\s\S]*?<\/section>/)[0];
-  assert.equal((launch.match(/<li class="h-gstep\b/g)||[]).length,3);
-  assert.match(launch,/Optional, another 30 minutes/);
-  assert.match(launch,/business and GST checks/i);
+  assert.doesNotMatch(html, /h-launch|h-launch-title|class="h-guide|Three clear steps/);
+});
+
+test("homepage footer CTA has explicit contrasting text, hover and focus colours",async()=>{
+  const css=await readFile("src/public/marketing.css","utf8");
+  assert.match(css,/\.m-footer-home \.hf-brand > \.m-cta\s*\{[^}]*color:\s*#2e2025;[^}]*background:\s*#f1b8ad;/);
+  assert.match(css,/\.m-footer-home \.hf-brand > \.m-cta:hover\s*\{[^}]*color:\s*#2e2025;/);
+  assert.match(css,/\.m-footer-home \.hf-brand > \.m-cta:focus-visible\s*\{[^}]*outline:\s*2px solid #fff;/);
 });
 
 function element(dataset={}){
@@ -60,11 +61,12 @@ function element(dataset={}){
 }
 async function initialize(roots){
   const source=await readFile("src/public/marketing.js","utf8");
-  const start=source.lastIndexOf("\n(() => {");
+  const end=source.indexOf("/* Homepage slideshow:");
+  const start=source.lastIndexOf("\n(() => {",end);
   assert.ok(start>0);
   const document=element();document.readyState="complete";
   for(const[s,items]of Object.entries(roots))document.selectors.set(s,items);
-  runInNewContext(source.slice(start),{document});
+  runInNewContext(source.slice(start,end),{document});
 }
 
 test("visual-story tabs switch by pointer and keyboard with correct accessibility state",async()=>{

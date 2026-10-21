@@ -1,5 +1,6 @@
 (() => {
   const root = document.documentElement;
+  const lightOnly = root.getAttribute?.("data-theme-lock") === "light";
   const storageKey = "lebrands-theme";
   const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
   let savedTheme = null;
@@ -8,7 +9,7 @@
   } catch (_) {
     savedTheme = null;
   }
-  const initialTheme = savedTheme === "light" || savedTheme === "dark"
+  const initialTheme = lightOnly ? "light" : savedTheme === "light" || savedTheme === "dark"
     ? savedTheme
     : systemTheme.matches ? "dark" : "light";
   if (typeof root.setAttribute === "function") root.setAttribute("data-theme", initialTheme);
@@ -16,6 +17,7 @@
   if (colorMeta) colorMeta.setAttribute("content", initialTheme === "dark" ? "#21191b" : "#ffffff");
 
   function installThemeToggle() {
+    if (lightOnly) return;
     const buttons = [...document.querySelectorAll("[data-theme-toggle]")];
     const label = document.querySelector("[data-theme-label]");
     if (!buttons.length) return;
@@ -714,6 +716,83 @@
         const b = e.target.closest("[data-h-seg-btn]"); if (!b) return;
         pressed(b.parentElement, b); outEl.textContent = b.dataset.hSegBtn;
       });
+    }
+  });
+})();
+
+/* Homepage slideshow: Meet Ann, Languages, Looks, After the order. Manual, no timers. */
+(() => {
+  function ready(fn) { if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn, { once: true }); else fn(); }
+  ready(() => {
+    const root = document.querySelector("[data-h-show]");
+    if (!root) return;
+    const slides = [...root.querySelectorAll("[data-h-slide]")];
+    const tabs = [...root.querySelectorAll("[data-h-show-tab]")];
+    const nav = root.querySelector("[data-h-show-nav]");
+    const count = root.querySelector("[data-h-show-count]");
+    const stage = root.querySelector("[data-h-show-stage]");
+    if (slides.length < 2 || !nav || !stage) return;
+    const ids = slides.map((s) => s.id);
+    let cur = 0;
+    const show = (i, opts = {}) => {
+      cur = (i + slides.length) % slides.length;
+      slides.forEach((s, n) => {
+        const on = n === cur;
+        if (on && s.hidden) {
+          s.hidden = false;
+          s.classList.remove("is-entering"); void s.offsetWidth; s.classList.add("is-entering");
+          s.querySelectorAll(".m-reveal").forEach((r) => r.classList.add("is-visible"));
+        } else if (!on) { s.hidden = true; s.classList.remove("is-entering"); }
+      });
+      tabs.forEach((t, n) => { if (n === cur) t.setAttribute("aria-current", "true"); else t.removeAttribute("aria-current"); t.tabIndex = n === cur ? 0 : -1; });
+      if (count) count.textContent = `${cur + 1} of ${slides.length}`;
+      if (opts.focus) tabs[cur].focus();
+      if (opts.scroll && root.getBoundingClientRect().top < 0) root.scrollIntoView({ block: "start" });
+    };
+    root.classList.add("is-enhanced");
+    nav.hidden = false;
+    show(0);
+    tabs.forEach((t, n) => t.addEventListener("click", () => show(n, { scroll: true })));
+    root.querySelector("[data-h-show-prev]").addEventListener("click", () => show(cur - 1, { scroll: true }));
+    root.querySelector("[data-h-show-next]").addEventListener("click", () => show(cur + 1, { scroll: true }));
+    nav.addEventListener("keydown", (e) => {
+      const k = { ArrowRight: cur + 1, ArrowLeft: cur - 1, Home: 0, End: slides.length - 1 }[e.key];
+      if (k === undefined || !e.target.closest("[data-h-show-tab]")) return;
+      e.preventDefault(); show(k, { focus: true });
+    });
+    // Swipe: horizontal only, never from nested controls, vertical scroll stays native.
+    let sx = 0, sy = 0, tracking = false;
+    stage.addEventListener("touchstart", (e) => {
+      tracking = e.touches.length === 1 && !e.target.closest("button, a, input, select, textarea, [role=tablist], [role=tab]");
+      if (tracking) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }
+    }, { passive: true });
+    stage.addEventListener("touchend", (e) => {
+      if (!tracking) return; tracking = false;
+      const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+      if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.6) show(cur + (dx < 0 ? 1 : -1), { scroll: true });
+    }, { passive: true });
+    stage.addEventListener("touchcancel", () => { tracking = false; }, { passive: true });
+    const fromHash = (id) => {
+      const n = ids.indexOf(id);
+      if (n < 0) return false;
+      show(n);
+      requestAnimationFrame(() => root.scrollIntoView({ block: "start" }));
+      return true;
+    };
+    const decodeHash = (hash) => { try { return decodeURIComponent(hash); } catch { return ""; } };
+    const syncHash = () => fromHash(decodeHash(location.hash.slice(1)));
+    window.addEventListener("hashchange", syncHash);
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest("a[href^='#']");
+      if (!a || a.closest("[data-h-show-nav]")) return;
+      const id = decodeHash(a.getAttribute("href").slice(1));
+      if (ids.includes(id) && fromHash(id)) { e.preventDefault(); history.replaceState(null, "", "#" + id); }
+    });
+    if (location.hash) {
+      syncHash();
+      // The browser can restore its native fragment position after initial layout.
+      // Re-align once loading settles so the slide selectors stay above the story.
+      if (document.readyState !== "complete") window.addEventListener("load", syncHash, { once: true });
     }
   });
 })();

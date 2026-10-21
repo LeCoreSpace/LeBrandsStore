@@ -32,8 +32,9 @@ function imageMarkup(media, { eager = false, className = "", alt = media.alt } =
 }
 
 function shell({ title = TITLE, description = DESCRIPTION, canonical = "https://lebrands.store", pageClass = "", body, head = "", seo = true, ogType = "website" }) {
+  const lightOnly = pageClass.split(/\s+/).includes("m-storyboard-document");
   return `<!doctype html>
-<html lang="en">
+<html lang="en"${lightOnly ? ' data-theme="light" data-theme-lock="light"' : ""}>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -65,7 +66,7 @@ ${body}
 </html>`;
 }
 
-function nav({ pricing = false } = {}) {
+function nav({ pricing = false, themeToggle = true } = {}) {
   return `<header class="m-nav${pricing ? "" : " m-nav-home"}">
   <div class="m-nav-inner">
     <a class="m-wordmark" href="${pricing ? "https://lebrands.store" : "#top"}" aria-label="LeBrands.Store home"><img class="m-logo-light" src="/img/REPLACE-lebrands-light-transparent.webp" width="900" height="320" alt=""><img class="m-logo-dark" src="/img/REPLACE-lebrands-dark-transparent.webp" width="900" height="320" alt="">${pricing ? "" : '<img class="m-logo-hero" src="/img/REPLACE-lebrands-hero-transparent.png" width="900" height="320" alt="">'}</a>
@@ -76,7 +77,7 @@ function nav({ pricing = false } = {}) {
       <a href="/blog">Blog</a>
       <a href="${pricing ? "/#faq" : "#faq"}">FAQ</a>
       <a class="m-nav-login" href="${LOGIN}">Log in</a>
-      <button class="m-theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false"><span class="m-theme-icon" aria-hidden="true"></span><span data-theme-label>Dark</span></button>
+      ${themeToggle ? '<button class="m-theme-toggle" type="button" data-theme-toggle aria-label="Switch to dark mode" aria-pressed="false"><span class="m-theme-icon" aria-hidden="true"></span><span data-theme-label>Dark</span></button>' : ""}
       <a class="m-nav-cta" href="${SIGNUP}">Open your store</a>
     </nav>
   </div>
@@ -220,7 +221,7 @@ ${footer({ home: true })}`;
 }
 
 export function renderHome() {
-  const body = `${nav()}
+  const body = `${nav({ themeToggle: false })}
 <main id="top">
   ${homeSections({ img: imageMarkup, M: MARKETING_MEDIA, SIGNUP, LOGIN, FAQ: PLATFORM_FAQ })}
 </main>

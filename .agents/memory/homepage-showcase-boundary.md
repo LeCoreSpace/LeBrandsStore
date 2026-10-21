@@ -27,12 +27,28 @@ not permission to change live merchant stores or operational behaviour.
 The homepage should be about 90% visual, engaging and aspirational, focused on
 ease of use. Follow the uploaded storyboard's sequence: founder pain, Ann's
 answer, languages, storefront looks, operations, connections
-and discovery, then launch. Keep copy short and understandable.
+and discovery. Keep copy short and understandable.
+The homepage content is approved. Visual refinements should improve text type,
+size, hierarchy and overall presentation without rewriting copy, replacing
+selected imagery or changing the agreed stories.
+
+**Why:** The user explicitly said the entire homepage content was decided and
+asked for a more professional web-development/hosting marketing-page feel.
+
+Combine “Meet Ann”, “Ann, your store guide”, “Try a look” and “After the order”
+into one slideshow, in that order, rather than four separate scrolling sections.
+
+**Why:** The user explicitly requested these four stories as a single slideshow.
+
+**How to apply:** Keep the pain-only hero and product-presence transition
+outside this group. Preserve the current screenshots, language choices,
+style previews, operations views and Ann's no-AI positioning inside the slides.
+
 Do not restore the standalone product-page, “Make it yours”/editor or Checkout
-marketing sections.
+marketing sections, or the “Three clear steps” launch section.
 Connections should have four distinct cards: custom domain, social marketing,
-Razorpay and delivery partners. Explain launch through clear numbered steps,
-not the former “From idea to open” progress bars.
+Razorpay and delivery partners. The user subsequently requested removal of
+the entire standalone launch guide, not another timeline redesign.
 
 **Why:** The user explicitly removed those sections and found the launch
 timeline difficult to understand.
@@ -92,7 +108,8 @@ One hour is a launch target, not a provider-approval guarantee.
 **Why:** The user explicitly requested the 30-minute plus 30-minute launch
 story for merchants who already have their Razorpay account and domain.
 
-**How to apply:** Keep the qualification near the timeline: products, images,
+**How to apply:** Do not restore the removed launch section. If timing is used
+elsewhere, qualify it: products, images,
 business details and required checks must be ready; payment-provider approval
 and domain verification can take longer.
 

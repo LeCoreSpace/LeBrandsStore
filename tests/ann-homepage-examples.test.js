@@ -6,7 +6,7 @@ import { renderHome } from "../src/ui/marketing.js";
 import { MARKETING_MEDIA } from "../src/ui/marketing-media.js";
 
 test("the Ann story uses the supplied current English and Hindi Modern Boutique homepage captures", async () => {
-  const section = renderHome().match(/<section class="h-sec h-ann[\s\S]*?<\/section>/)[0];
+  const section = renderHome().match(/<div class="h-slide h-ann"[\s\S]*?(?=<div class="h-slide h-store")/)[0];
   assert.match(section, /role="tablist"/);
   assert.match(section, /English/);
   assert.match(section, /Hindi|हिन्दी/);

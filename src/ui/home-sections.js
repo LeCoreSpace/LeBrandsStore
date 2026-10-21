@@ -41,7 +41,7 @@ export function homeSections({ img, M, SIGNUP, LOGIN, FAQ }) {
   return `
   <section class="h-sec h-pain h-first" id="why" aria-labelledby="h-pain-title">
     <div class="m-wrap">
-      <div class="h-head h-head-wide m-reveal"><span class="m-kicker">Sound familiar?</span><h2 id="h-pain-title">Why is selling online so complicated?</h2></div>
+      <div class="h-head h-head-wide m-reveal"><span class="m-kicker">Sound familiar?</span><h2 id="h-pain-title"><span>Getting a website that <em class="h-conv">converts</em> is one thing.</span> <span>Connecting payments, delivery, your domain and ads is another.</span></h2></div>
       <div class="h-fcards">
         <article class="h-fc m-reveal"><div class="h-fc-photo"><img src="/img/home-founder-opening-portrait.webp" width="512" height="640" loading="eager" fetchpriority="high" decoding="async" alt="Founder working through her website setup on a laptop"></div><div class="h-fc-body"><span class="h-founder-stage">I just started my brand</span><ul class="h-fc-qs"><li>I do not know coding. Do I have to hire someone?</li><li>Does every small change mean calling my developer again?</li><li>Where do I even start?</li></ul></div></article>
         <article class="h-fc h-fc-b m-reveal"><div class="h-fc-photo"><img src="/img/home-founder-man.webp" width="512" height="512" loading="eager" fetchpriority="high" decoding="async" alt="Indian homeware founder in his product studio"></div><div class="h-fc-body"><span class="h-founder-stage">I am already selling online</span><ul class="h-fc-qs"><li>Why lose a cut of every sale?</li><li>Why pay extra every month just for the basics?</li><li>How do I connect payments, delivery and my web address?</li></ul></div></article>
@@ -59,38 +59,37 @@ export function homeSections({ img, M, SIGNUP, LOGIN, FAQ }) {
     </div>
   </section>
 
-  <section class="h-sec h-answer" id="features" aria-labelledby="h-answer-title">
+  <section class="h-sec h-show" aria-label="Ann, looks and the business desk" data-h-show>
     <div class="m-wrap">
+      <div class="h-show-nav" data-h-show-nav hidden>
+        <div class="h-show-tabs" role="group" aria-label="Choose a slide"><button type="button" class="h-show-tab" data-h-show-tab aria-controls="features"><i aria-hidden="true">1</i><span>Meet Ann</span></button><button type="button" class="h-show-tab" data-h-show-tab aria-controls="ann"><i aria-hidden="true">2</i><span>Languages</span></button><button type="button" class="h-show-tab" data-h-show-tab aria-controls="storefront"><i aria-hidden="true">3</i><span>Looks</span></button><button type="button" class="h-show-tab" data-h-show-tab aria-controls="business"><i aria-hidden="true">4</i><span>After the order</span></button></div>
+        <div class="h-show-step"><button type="button" class="h-show-arrow" data-h-show-prev aria-label="Previous slide"><span aria-hidden="true">&larr;</span></button><span class="h-show-count" data-h-show-count aria-live="polite">1 of 4</span><button type="button" class="h-show-arrow" data-h-show-next aria-label="Next slide"><span aria-hidden="true">&rarr;</span></button></div>
+      </div>
+      <div class="h-show-stage" data-h-show-stage>
+    <div class="h-slide h-answer" id="features" data-h-slide data-slide-name="Meet Ann" role="group" aria-roledescription="slide" aria-labelledby="h-answer-title">
       <div class="h-answer-head m-reveal"><h2 class="h-ann-intro">Meet Ann.</h2><h1 id="h-answer-title">A flagship store, built for you in a conversation.</h1><p class="h-sub">Not AI. Just how you want it.</p><div class="h-final-cta"><a class="m-cta" href="${SIGNUP}">Start free</a><a class="m-text-link" href="/pricing">See pricing</a></div></div>
       <figure class="h-relief m-reveal"><div class="h-relief-img"><img src="/img/home-founder-ann-laptop.webp" width="1024" height="1024" loading="lazy" decoding="async" alt="Founder working with Ann on her laptop"></div><figcaption><span>Answer a few questions. Watch your store appear.</span></figcaption></figure>
     </div>
-  </section>
-
-  <section class="h-sec h-ann" id="ann" aria-labelledby="h-ann-title">
-    <div class="m-wrap">
+    <div class="h-slide h-ann" id="ann" data-h-slide data-slide-name="Languages" role="group" aria-roledescription="slide" aria-labelledby="h-ann-title">
       <div class="h-head h-head-wide m-reveal"><span class="m-kicker">Ann, your store guide</span><h2 id="h-ann-title">Ann speaks your language.</h2></div>
       <ul class="h-pillrow m-reveal"><li>Five languages</li><li>Guided questions and choices</li><li>Live preview beside every step</li></ul>
       <p class="h-hint m-reveal">English, Hindi, Tamil, Marathi and Telugu. Choose a conversation preview below.</p>
       <div class="m-reveal">${annTabs}</div>
       <p class="h-fine">Speak to Ann in your language. Your product names and business details stay exactly as you enter them.</p>
     </div>
-  </section>
-
-  <section class="h-sec h-store" id="storefront" aria-labelledby="h-store-title">
-    <div class="m-wrap">
+    <div class="h-slide h-store" id="storefront" data-h-slide data-slide-name="Looks" role="group" aria-roledescription="slide" aria-labelledby="h-store-title">
       <div class="h-head h-head-wide m-reveal"><span class="m-kicker">Try a look</span><h2 id="h-store-title">Find the look that feels like your brand.</h2></div>
       <p class="h-hint m-reveal">Tap a look to preview it.</p>
       <div class="m-reveal">${looks}</div>
       <ul class="h-pillrow h-pillrow-soft m-reveal" aria-label="More looks in the style library"><li>Editorial</li><li>Minimal</li><li>Vintage</li><li>Social Pop</li><li>Creator Feed</li><li>Proof &amp; Detail</li></ul>
       <p class="h-fine">Try looks on sample products and collections. Your real catalogue stays separate until you choose to use it.</p>
     </div>
-  </section>
-
-  <section class="h-sec h-ops" id="business" aria-labelledby="h-ops-title">
-    <div class="m-wrap">
+    <div class="h-slide h-ops" id="business" data-h-slide data-slide-name="After the order" role="group" aria-roledescription="slide" aria-labelledby="h-ops-title">
       <div class="h-head h-head-wide m-reveal"><span class="m-kicker">After the order</span><h2 id="h-ops-title">Run the whole business from one desk.</h2></div>
       <p class="h-hint m-reveal">Everything you need, in one place.</p>
       <div class="m-reveal">${desk}</div>
+    </div>
+      </div>
     </div>
   </section>
 
@@ -152,20 +151,6 @@ export function homeSections({ img, M, SIGNUP, LOGIN, FAQ }) {
       <div><b>0%</b><span>Sales commission</span></div>
       <div><b>Yours.</b><span>Your domain, payments and customer data</span></div>
       <div><b>Always.</b><span>We never market to your customers.</span></div>
-    </div>
-  </section>
-
-  <section class="h-sec h-launch" id="launch" aria-labelledby="h-launch-title">
-    <div class="m-wrap">
-      <div class="h-head h-head-wide m-reveal"><span class="m-kicker">Three clear steps</span><h2 id="h-launch-title">Your store, live in about an hour.</h2><p>Start with Cash on Delivery in about 30 minutes. Add your own domain and Razorpay when ready.</p></div>
-      <ol class="h-guide m-reveal">
-        <li class="h-gstep"><span class="h-gnum" aria-hidden="true">1</span><span class="h-gwho">You bring</span><h3>Your basics</h3><p>Products, photos and your business details, with your GST checks ready.</p></li>
-        <li class="h-gstep"><span class="h-gnum" aria-hidden="true">2</span><span class="h-gwho">About 30 minutes</span><h3>Talk to Ann and publish</h3><p>Answer Ann's questions, pick a look and open a store that takes Cash on Delivery.</p></li>
-        <li class="h-gstep h-gstep-opt"><span class="h-gnum" aria-hidden="true">3</span><span class="h-gwho">Optional, another 30 minutes</span><h3>Add Razorpay and your domain</h3><p>Connect your existing Razorpay account and your own web address.</p></li>
-      </ol>
-      <p class="h-qual m-reveal">A target, not a guarantee. Razorpay approval and domain verification are not instant and can take longer, and publishing needs your business and GST checks.</p>
-      <div class="h-final-cta m-reveal"><a class="m-cta" href="${SIGNUP}">Start free</a><a class="m-text-link" href="${LOGIN}">Log in</a><a class="m-text-link" href="/pricing">See pricing</a></div>
-      <p class="h-fine">Your free live period starts when you first publish. Help is available before you launch.</p>
     </div>
   </section>
 
