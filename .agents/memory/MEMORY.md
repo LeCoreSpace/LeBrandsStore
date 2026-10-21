@@ -8,6 +8,7 @@
 - [Catalogue costs](catalogue-costs.md) — Catalogue placement, optional form costs and prospective historical-margin boundaries.
 - [Catalogue form interactions](catalogue-form-interactions.md) — keep classification together; use in-app merchant dialogs; reference rendering is not an edit.
 - [SKU publication boundary](sku-publication-boundary.md) — published SKU prices/options, live SKU stock and copied order selections have separate authority.
+- [Subscription capacity policy](subscription-capacity-policy.md) — drafts consume product/SKU allowances; unused uploads consume storage, with no unlimited-draft workaround.
 - [Prepared function identity](prepared-function-identity.md) — preserve callable PostgreSQL function identities when adding guards; published Workers retain prepared calls.
 - [GST registration and exempt invoices](gstin-registration-boundary.md) — publication requires valid checksum/state-matched GSTIN; zero-rate lines are Exempt, not a new Bill of Supply flow.
 - [Invoice permission boundary](invoice-privilege-boundary.md) — APP financial writes must use tenant-checked functions; preserve strict 42501 isolation denials.

@@ -43,7 +43,12 @@ export async function handleEmailAccount(request,env,db,user,sessionHash){
  const tokenHash=await sha256(token);
  if(purpose==="invite"){
   if(!user||!sessionHash)return html('<p>Sign in with the invited email address and reopen this link.</p><a href="/login">Sign in</a>',401);
-  const[row]=await db.account(tx=>tx`SELECT public.email_accept_invite(${tokenHash},${sessionHash}) AS id`);
+  let row;
+  try{[row]=await db.account(tx=>tx`SELECT public.email_accept_invite(${tokenHash},${sessionHash}) AS id`);}
+  catch(error){
+   if(error.code!=="PQU01")throw error;
+   return html('<h1 style="font-size:28px">No staff seat available</h1><p>The store owner needs to make a seat available or choose a plan with more capacity. Your invitation has not been accepted.</p>',409);
+  }
   return redirect(`/stores/${row.id}`);
  }
  const password=String(form.get("password")||""),error=validatePassword(password);

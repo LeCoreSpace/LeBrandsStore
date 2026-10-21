@@ -1,5 +1,11 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Draft-inclusive capacity verification
+
+- Local-only: `node --test --test-concurrency=1 tests/plan-capacity.test.js tests/platform-billing-usage.test.js tests/platform-billing-usage-sql.test.js tests/platform-billing-cards.test.js`.
+- SQL tests use one sequential disposable PGlite instance with real foundational/table DDL. No production database queries or mutations and no real R2 uploads.
+- Staged `db/staged/0055_plan_capacity.sql` requires explicit manual migration approval before activation. Production deployment remains unapproved for this request.
+
 ## 21 October 2026: Approved checkout-security production rollout
 
 - `node db/migrate.js --staged-checkout-security`: applied and committed only

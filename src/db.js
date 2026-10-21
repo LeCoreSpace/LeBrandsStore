@@ -1,3 +1,14 @@
+import {capacityError} from "./billing/capacity.js";
+
+async function capacityTransaction(sql,callback){
+  try{return await sql.begin(callback);}
+  catch(error){
+    const capacity=capacityError(error);
+    if(capacity)Object.assign(error,{status:capacity.status,message:capacity.message,quota:capacity.quota});
+    throw error;
+  }
+}
+
 import postgres from "postgres";
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -28,7 +39,7 @@ export function createDb(env) {
 
   return {
     async account(fn) {
-      return sql.begin(async (tx) => {
+      return capacityTransaction(sql,async (tx) => {
         await assertAppRole(tx);
         return fn(tx);
       });
@@ -43,7 +54,7 @@ export function createDb(env) {
     async withStore(storeId, fn) {
       if (!UUID_PATTERN.test(storeId)) throw new TypeError("storeId must be a UUID.");
       if (typeof fn !== "function") throw new TypeError("fn must be a function.");
-      return sql.begin(async (tx) => {
+      return capacityTransaction(sql,async (tx) => {
         await assertAppRole(tx);
         await tx`SELECT set_config('app.store_id', ${storeId}, true)`;
         // Use only this transaction client; the outer client has no tenant context.
@@ -54,7 +65,7 @@ export function createDb(env) {
       if (!UUID_PATTERN.test(storeId) || !/^[0-9a-f]{64}$/.test(tokenHash ?? "")) {
         throw Object.assign(new Error("Store not found."), { status: 404 });
       }
-      return sql.begin(async (tx) => {
+      return capacityTransaction(sql,async (tx) => {
         await assertAppRole(tx);
         const [access] = await tx`SELECT public.authorize_store_session(${tokenHash}, ${storeId}) AS allowed`;
         if (!access?.allowed) throw Object.assign(new Error("You do not have access to this store."), { status: 403 });

@@ -44,21 +44,25 @@ export function renderPlanUsage(entitlements, usage) {
   const available = usage?.available === true;
   const rows = Object.entries(ents).map(([key,e])=>{
     e = e && typeof e === "object" ? e : {};
-    const title = names[key] || key.replace(/_/g," ").replace(/^./,s=>s.toUpperCase());
+    const resource={published_products:"products",published_skus:"skus",public_media_bytes:"storage",additional_staff_seats:"staff"}[key];
+    const capacity=resource&&usage?.capacity;
+    const title = capacity&&key==="published_products"?"Catalogue products, including drafts":capacity&&key==="published_skus"?"Catalogue SKUs, including drafts":names[key] || key.replace(/_/g," ").replace(/^./,s=>s.toUpperCase());
     const allowance = e.included === false ? "Not included in this plan" : e.included !== true
       ? "Plan allowance not recorded" : e.value == null || e.value === true ? "Included" : String(e.value).replace(/_/g," ");
     let detail = allowance, extra = "", over = false;
     if (numeric.has(key)) {
       if (!available) detail = "Usage unavailable";
       else {
-        const used = usage[key], format = key === "public_media_bytes" ? mediaSize : count;
-        const limit = e.included === true && e.value !== null && e.value !== undefined && e.value !== "" && typeof e.value !== "boolean" && Number.isFinite(Number(e.value)) ? Number(e.value) : null;
+        const used = capacity?capacity.used[resource]:usage[key], format = key === "public_media_bytes" ? mediaSize : count;
+        const limit = capacity?capacity.limits[resource]:e.included === true && e.value !== null && e.value !== undefined && e.value !== "" && typeof e.value !== "boolean" && Number.isFinite(Number(e.value)) ? Number(e.value) : null;
         over = limit !== null && used > limit;
         detail = limit !== null ? `${format(used)} of ${format(limit)} used` : `${format(used)} used`;
         extra = limit !== null
           ? `<progress class="pb-usage-meter" max="${Math.max(1,limit)}" value="${Math.min(used,Math.max(1,limit))}" aria-label="${esc(title)}: ${esc(detail)}"></progress>${over?'<small class="pb-usage-warning">Above your plan allowance</small>':""}`
           : `<small>${esc(e.included === true ? "No fixed limit recorded" : allowance)}</small>`;
         if(key === "public_media_bytes" && limit !== null) extra += `<small>${count(used)} of ${count(limit)} bytes</small>`;
+        if(capacity&&key==="additional_staff_seats")extra+=`<small>${count(capacity.used.staff_active)} active · ${count(capacity.used.staff_pending)} pending invitations</small>`;
+        if(capacity&&["published_products","published_skus"].includes(key))extra+=`<small>${count(usage[key])} currently published. Drafts also count toward your allowance.</small>`;
       }
     } else if (key in connections) {
       const kind=connections[key], row=usage?.[kind];
@@ -73,5 +77,5 @@ export function renderPlanUsage(entitlements, usage) {
   }).join("");
   return `${!available?'<p class="pb-callout" role="status">Current usage could not be loaded. Refresh to try again. No usage has been assumed.</p>':""}
     <ul class="pb-ents pb-usage">${rows}</ul>
-    <p class="pb-muted">Counts use your published catalogue and uploaded store media. Staff seats exclude the owner. Connection status reflects saved settings, not a fresh provider test.</p>`;
+    <p class="pb-muted">${usage?.capacity?"Drafts and items currently live count once per product and SKU. All uploaded store media uses storage, including unused files. Staff seats include pending invitations and exclude owners.":"Counts use your published catalogue and uploaded store media. Staff seats exclude the owner."} Connection status reflects saved settings, not a fresh provider test.</p>`;
 }

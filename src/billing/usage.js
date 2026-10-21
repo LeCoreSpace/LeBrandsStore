@@ -1,4 +1,5 @@
 import {marketingAvailable} from "../marketing/service.js";
+import {capacityState} from "./capacity.js";
 
 // Called only inside the owner-authorized, tenant-scoped billing transaction.
 // One aggregate read, never provider calls, credentials or individual records.
@@ -43,5 +44,6 @@ export async function planUsage(tx, id) {
     "additional_staff_seats","monthly_order_soft_band"].some(key=>!Number.isSafeInteger(usage[key])||usage[key]<0)) {
     throw Object.assign(new Error("Current plan usage could not be read."),{status:503});
   }
-  return usage;
+  const capacity=await capacityState(tx,id);
+  return capacity?{...usage,capacity}:usage;
 }

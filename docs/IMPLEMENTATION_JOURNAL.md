@@ -1,5 +1,14 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Draft-inclusive subscription capacity, awaiting production approval
+
+- User explicitly changed quota scope: drafts consume product/SKU allowances; uploaded unused files consume storage; active non-owner staff plus distinct pending invitations consume seats.
+- Added staged manual migration `0055_plan_capacity.sql`. Store-row locking and protected transaction baselines enforce net growth at commit, preserve existing overages and allow non-growing edits/replacements. Published identities remain counted; checkout stock-only updates do not acquire new capacity locks.
+- Upload preflight runs before R2 writes; generated image derivatives also consume storage. Pending invitations reserve seats, resends replace earlier links and acceptance rechecks current limits. Failed writes roll back; invitation email is not queued on rejection.
+- Added product-form capacity cards and variant estimates, staff usage/error UI, draft-inclusive billing counts, and consistent public quota descriptions. Existing snapshots, plan amounts, Free clocks and financial approval rules are unchanged.
+- Verification and activation are separate: isolated SQL/UI tests only. No production database migration or Cloudflare publication has been performed for this change.
+- Local verification passed: 36 focused SQL/UI/media tests, syntax checks on the changed JavaScript entry points, and `git diff --check`. True multi-connection PostgreSQL concurrency and signed-in browser journeys were not exercised by this isolated suite.
+
 ## 2026-10-21: Automatic checkout security, approved production rollout
 
 - Applied only additive migration `0054_checkout_security.sql`.

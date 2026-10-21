@@ -1,5 +1,9 @@
 # Complete implementation checkpoint register
 
+### Draft-inclusive subscription capacity: local implementation, not released
+
+Quota guards, pre-upload storage checks, reservation-aware staff invitations and capacity UI are a single pending release. Existing over-limit records are retained. New growth fails atomically; permission denials retain their isolation behavior. Migration and production deployment are not implied by a code checkpoint.
+
 ### Automatic checkout security: approved production release
 
 Completed the staged migration, active-domain preparation and Cloudflare

@@ -10,7 +10,7 @@ export const PLATFORM_GUIDES=[
     [
       section("name-and-plan","Start with the brand and review its plan",[
         "Begin with the name customers should recognise. Ann includes plan selection after the store-name step, so the commercial choice is part of setup rather than an unrelated dashboard task. Read the applicable terms in the modal before accepting; opening or reviewing the plan is not itself a paid purchase.",
-        "The agreed Free allowance is 100 published products and 1,000 published SKUs, with 30 live days beginning at the first successful publication. It does not include LeBrands.Space placement. Do not confuse the first day spent editing a draft with the start of that live period, and check the offer applicable to your store before continuing.",
+        "The Free allowance is 100 catalogue products and 1,000 SKUs, including drafts and items currently live, with 30 live days beginning at the first successful publication. Uploaded files count toward storage even when unused. It does not include LeBrands.Space placement. Do not confuse the first day spent editing a draft with the start of that live period, and check the offer applicable to your store before continuing.",
       ]),
       section("business-context","Provide the business facts the store needs",[
         "Ann asks for business context alongside design decisions. Country affects the registration evidence required, while business-document review remains distinct from GST verification and publication approval. For an Indian GST-registered business, confirm the returned legal identity and invoice address carefully rather than treating them as decorative profile text.",

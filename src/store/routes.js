@@ -1,4 +1,5 @@
 import { renderWizard } from "../ui/wizard.js";
+import {capacityError,requireStorageCapacity} from "../billing/capacity.js";
 import { SECURITY_HEADERS } from "../auth/security.js";
 import {requireBusinessEditorAccess} from "./business-access.js";
 import {requireAnnPlan} from "../billing/build-access.js";
@@ -157,6 +158,7 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
         if(type==="video"&&!await pagesEnabled(tx))throw badInput("Video uploads require the store-page migration first.");
         if (!file || typeof file.arrayBuffer !== "function" || typeof alt !== "string" || alt.length > 200) throw badInput("Choose an image or video and keep its description within 200 characters.");
         const data = new Uint8Array(await file.arrayBuffer()), metadata = validateUpload(data, type);
+        await requireStorageCapacity(tx,id,data.length);
         uploadedKey = `stores/${id}/${crypto.randomUUID()}.${metadata.ext}`;
         await env.MEDIA.put(uploadedKey, data, {
           httpMetadata: { contentType: metadata.contentType, cacheControl: "public, max-age=31536000, immutable" },
@@ -189,6 +191,8 @@ export async function handleStoreRoutes(request, env, db, user, tokenHash) {
       try { await env.MEDIA.delete(uploadedKey); }
       catch { console.error("Orphan media cleanup failed", { code: "R2_CLEANUP_FAILED" }); }
     }
+    const capacity=capacityError(error);
+    if(capacity)return json({error:capacity.message,quota:capacity.quota},capacity.status);
     console.error("Store setup request failed", storeFailureDetails(error, request, fieldNames));
     let status = error.status ?? 503;
     let message = error.status ? error.message : "Store services are temporarily unavailable. Please try again.";

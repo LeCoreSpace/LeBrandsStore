@@ -86,7 +86,7 @@ const ADDONS = [
 
 const BILLING_TERMS = [
   ["Free plan", "30 days free from your first successful store publication on your included yourbrand.lebrands.store address. Prepare your store before the live period begins. Choose a paid plan to continue after 30 days."],
-  ["Free catalogue allowance", "Up to 100 published products and 1,000 published SKUs in total. Each sellable combination counts as one SKU; a product without variations counts as one. A parent product is not counted again on top of its variants. Multiple collection placements do not add SKUs. Published out-of-stock variants count; drafts, archived variants and sample-preview products do not."],
+  ["Free catalogue allowance", "Up to 100 catalogue products and 1,000 SKUs, including drafts and items currently live. Each sellable combination counts as one SKU; a product without variations counts as one. The same product or SKU is not counted again just because it appears in multiple collections or both the draft and live catalogue. Uploaded files use storage even when they are not attached to a page. Sample-preview products do not count."],
   ["Variant limits", "Up to 3 product options and 200 variants per product, within your remaining store-wide SKU allowance. Descriptive specifications do not create SKUs."],
   ["Paid catalogue allowances", "Paid SKU allowances are still to be finalised. The entry paid plan must support at least the Free plan's 1,000 SKUs, so upgrading does not require shrinking your catalogue."],
   ["Free plan reminders and expiry", "Show remaining days and catalogue usage, with advance expiry reminders. Upgrade without rebuilding: preserve your design, products, media and URLs. Without an upgrade, pause new order-taking after expiry, but keep existing orders and fulfilment accessible. Data retention and draft inactivity limits will be disclosed before this offer is activated."],
@@ -159,7 +159,7 @@ export function pricingMain() {
           <p>Build and launch your complete store free for 30 days.</p>
           <ul class="m-pr-free-features">
             <li>Build with Ann and customise in the theme editor.</li>
-             <li>Up to <strong>100 published products</strong> and <strong>1,000 published SKUs in total</strong>.</li>
+             <li>Up to <strong>100 catalogue products</strong> and <strong>1,000 SKUs in total</strong>, including drafts.</li>
              <li>Up to 3 product options and 200 variants per product, within the total SKU allowance.</li>
              <li>Your 30 live days start with your first successful publication, not during store preparation.</li>
             <li>Use your included <strong>yourbrand.lebrands.store</strong> address.</li>
@@ -167,7 +167,7 @@ export function pricingMain() {
             <li>Custom domain integration is available on paid plans only.</li>
           </ul>
           <p class="m-pr-note">Each sellable combination counts as one SKU. A product without variations counts as one.</p>
-          <p class="m-pr-note">Free enrolment is available. Your live period starts with your first successful publication. Catalogue-limit enforcement and expiry controls are being introduced in later phases.</p>
+          <p class="m-pr-note">Your live period starts with your first successful publication. Draft products and SKUs count toward your allowance. All uploaded files use storage, including unused files.</p>
         </div>
         <div class="m-pr-free-action">
           <p class="m-pr-price"><b>₹0</b><span>for 30 days</span></p>

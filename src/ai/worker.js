@@ -1,4 +1,5 @@
 import { createDb } from "../db.js";
+import {requireStorageCapacity} from "../billing/capacity.js";
 import { getJob, updateJob, prospectiveDraft,ownedMedia } from "./repository.js";
 import { loadDraft } from "../store/repository.js";
 import { systemPrompt,validateCandidate,optionalFacts,productContent } from "./plan.js";
@@ -138,20 +139,24 @@ export async function processAiMessage(body,env) {
       const output=await paid(db,job.store_id,job.id,"image",()=>generateImage(env,sourceBytes,"image/webp",image.style));
       const metadata=validateUpload(output.bytes,"image"), mediaId=crypto.randomUUID();
       const key=`stores/${job.store_id}/${mediaId}.webp`;
-      await env.MEDIA.put(key,output.bytes,{httpMetadata:{contentType:"image/webp",cacheControl:"private, no-store"},customMetadata:{ai_generated:"true"}});
-      uploaded.push(key);
-      const renditions=[];
+      const files=[{key,bytes:output.bytes}],renditions=[];
       for(const width of [480,768]){
         const resized=await env.IMAGES.input(new Blob([output.bytes]).stream()).transform({width}).output({format:"image/webp"});
         const variant=`stores/${job.store_id}/${crypto.randomUUID()}.webp`;
-        await env.MEDIA.put(variant,await resized.image(),{httpMetadata:{contentType:"image/webp",cacheControl:"private, no-store"},customMetadata:{ai_generated:"true"}});
-        uploaded.push(variant);renditions.push({url:mediaUrl(variant),width,height:Math.round(metadata.height*width/metadata.width)});
+        const bytes=new Uint8Array(await new Response(await resized.image()).arrayBuffer());
+        files.push({key:variant,bytes});renditions.push({url:mediaUrl(variant),width,height:Math.round(metadata.height*width/metadata.width)});
       }
       await db.withStore(job.store_id,async tx=>{
+        const totalBytes=files.reduce((sum,file)=>sum+file.bytes.length,0);
+        await requireStorageCapacity(tx,job.store_id,totalBytes);
         const[sourceRow]=await tx`SELECT id FROM public.media WHERE store_id=${job.store_id} AND object_key=${image.source_key} AND NOT ai_generated`;
         if(!sourceRow)throw aiError("Source photo does not belong to this store.");
+        for(const file of files){
+          uploaded.push(file.key);
+          await env.MEDIA.put(file.key,file.bytes,{httpMetadata:{contentType:"image/webp",cacheControl:"private, no-store"},customMetadata:{ai_generated:"true"}});
+        }
         await tx`INSERT INTO public.media(id,store_id,object_key,kind,content_type,upload_type,size_bytes,width,height,alt_text,renditions,ai_generated,source_media_id,approval_status)
-          VALUES(${mediaId},${job.store_id},${key},'image','image/webp','image',${output.bytes.length},${metadata.width},${metadata.height},${image.label},
+          VALUES(${mediaId},${job.store_id},${key},'image','image/webp','image',${totalBytes},${metadata.width},${metadata.height},${image.label},
             ${tx.json(renditions)},true,${sourceRow.id},'pending')`;
         image.media_id=mediaId;image.key=key;image.width=metadata.width;image.height=metadata.height;image.sources=renditions;
         job=await updateJob(tx,job,{candidate,status:candidate.images.some(i=>!i.media_id&&i.status==="pending")?"queued":"review",lease_until:null});

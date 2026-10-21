@@ -34,6 +34,7 @@ const mediaRecord = (m) => ({
 async function loadStoreHeader(tx,storeId){
   // to_jsonb is compatible both before and after the staged approval migration.
   const [store] = await tx`SELECT store_id, name, subdomain, status, subdomain_changed_at,
+    to_regprocedure('public.plan_capacity(uuid)') IS NOT NULL AS plan_capacity_enabled,
     to_jsonb(s) ? 'approved_at' AS approval_enabled,
     to_regprocedure('public.business_publication_access(uuid)') IS NOT NULL AS business_review_enabled,
     to_regprocedure('public.business_publication_ready(uuid)') IS NOT NULL AS pending_review_enabled,
@@ -138,6 +139,10 @@ export async function loadDraft(tx, storeId, { includeArchived = false, includeD
     }
   }
   if(store.approval_enabled)data.gstinVerification=await verificationState(tx,storeId,data.settings);
+  if(store.plan_capacity_enabled){
+    const [row]=await tx`SELECT public.plan_capacity(${storeId}) AS capacity`;
+    data.capacity=typeof row.capacity==="string"?JSON.parse(row.capacity):row.capacity;
+  }
   return data;
 }
 async function ensureSetup(tx, id) {

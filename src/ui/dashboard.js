@@ -1,4 +1,5 @@
 import {renderPlanBillingContent} from "./plan-billing.js";
+import {renderCapacity} from "./plan-capacity.js";
 import { escapeHtml, layout } from "./layout.js";
 import { LE_BRANDS_LOGO, LE_BRANDS_MARK } from "./brand.js";
 import { validateProduct } from "../public/validation.js";
@@ -256,7 +257,7 @@ function productEditor(data, isNew) {
   </form>`;
   const validationMessage = Object.keys(errors).length ? `<div class="lb-validation-summary"><strong>Before you save</strong><ul>${Object.values(errors).map(error => `<li>${esc(error)}</li>`).join("")}</ul></div>` : "";
   const editorActions=`<button class="lb-button" type="submit" form="lb-product-form" data-product-save>${isNew ? "Save product" : "Save changes"}</button>${buttonLink(`/stores/${storeId}/products`, "Back to products", "quiet")}`;
-  return `${pageHeading("", isNew ? "Add product" : esc(product.title || "Edit product"), "", editorActions)}${actionError(data)}${validationMessage}${formFields}`;
+  return `${pageHeading("", isNew ? "Add product" : esc(product.title || "Edit product"), "", editorActions)}${actionError(data)}${renderCapacity(data.draft?.capacity||data.capacity,storeId,{owner:data.role==="owner",newProduct:isNew,product})}${validationMessage}${formFields}`;
 }
 
 function customerTable(rows, storeId) {

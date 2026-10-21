@@ -1,3 +1,5 @@
+import {mountPlanCapacity,showCapacityFailure} from "./plan-capacity.js";
+mountPlanCapacity();
 import {confirmCatalogueAction as appConfirm,promptCatalogueValue as appPrompt} from "./catalogue-confirm.js";
 import {mountTodayStock} from "./today-stock.js";
 import {mountSettingsBusinessDocuments} from "./settings-business-documents.js";
@@ -55,7 +57,10 @@ async function request(url, options = {}) {
   });
   const type = response.headers.get("content-type") || "";
   const result = type.includes("json") ? await response.json().catch(() => ({})) : await response.text();
-  if (!response.ok) throw Object.assign(new Error(result?.error || `Request failed (${response.status}).`),{errors:result?.errors || {}});
+  if (!response.ok) {
+    showCapacityFailure(result);
+    throw Object.assign(new Error(result?.error || `Request failed (${response.status}).`),{errors:result?.errors || {},quota:result?.quota});
+  }
   return result;
 }
 function busy(button, value, text) {

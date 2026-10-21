@@ -1025,3 +1025,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 
 /* Flat ticket: a table inside a panel or card shares the parent's single boundary and rail. */
 .lb-app .lb-panel .lb-table-wrap,.lb-app .lb-card .lb-table-wrap,.lb-app .lb-side-box .lb-table-wrap{border:0;border-left:0;border-radius:0;box-shadow:none;background:transparent}
+.lb-capacity{padding:22px;margin:20px 0;border:1px solid var(--lb-border,#e7dfe2);border-top:3px solid var(--lb-green,#761937);border-radius:12px;background:var(--lb-panel,#fff)}
+.lb-capacity-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin-bottom:18px}
+.lb-capacity-heading h2{font-size:17px;margin:0 0 6px}.lb-capacity-heading p{margin:0;max-width:70ch;font-size:13px;line-height:1.6;color:var(--lb-muted,#71636a)}
+.lb-capacity-heading>a{white-space:nowrap}.lb-capacity-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.lb-capacity-item{display:grid;gap:7px;padding:15px;background:var(--lb-bg,#faf7f8);border:1px solid var(--lb-border,#e7dfe2);border-radius:8px;min-width:0}
+.lb-capacity-item>span,.lb-capacity-item small{font-size:12px;color:var(--lb-muted,#71636a)}.lb-capacity-item strong{font-size:19px;font-variant-numeric:tabular-nums}
+.lb-capacity-item progress{display:block;width:100%;height:7px;accent-color:var(--lb-green,#761937)}
+.lb-capacity-item[data-capacity-state=full]{border-color:#bd873b;background:#fff9ee}.lb-capacity-item[data-capacity-state=full] small{color:#815318}
+.lb-capacity-error:not([hidden]){display:block;padding:15px;border:1px solid #d7a74f;border-radius:8px;background:#fff9ee;color:#714712;line-height:1.6;font-size:14px}
+.lb-capacity-estimate{font-size:13px;line-height:1.6;margin:14px 0 0;color:var(--lb-muted,#71636a)}.lb-capacity-estimate[data-over=true]{color:#815318;font-weight:600}
+@media(max-width:600px){.lb-capacity{padding:16px}.lb-capacity-heading{flex-direction:column;gap:10px}.lb-capacity-grid{grid-template-columns:1fr}.lb-capacity-item strong{font-size:18px}}

@@ -22,7 +22,7 @@ const money = (minor, currency, exp = 2) => {
   catch { return `${(n / 10 ** e).toFixed(e)} ${esc(currency || "")}`; }
 };
 const LABELS = {
-  published_products: "Published products", published_skus: "Published SKUs", lebrands_space_placement: "LeBrands.Space placement",
+  published_products: "Catalogue products, including drafts", published_skus: "Catalogue SKUs, including drafts", lebrands_space_placement: "LeBrands.Space placement",
   custom_domain: "Custom domain", live_days: "Live days",
 };
 const label = (k) => LABELS[k] || human(k);

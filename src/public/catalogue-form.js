@@ -273,6 +273,7 @@ export function initCatalogueForm(scope, { model, notify = () => {}, confirm = (
     state.generated = axesKey();
     showError(""); paint(); markChanged();
     notify(n ? `${n} ${n === 1 ? "variant" : "variants"} ready.` : "Variants cleared.");
+    scope.dispatchEvent(new CustomEvent("lebrands:capacity-variants",{bubbles:true,detail:{count:Math.max(1,n)}}));
     return true;
     }catch(error){showError(error.message||"Variants could not be generated. Please try again.");return false;}
     finally{
