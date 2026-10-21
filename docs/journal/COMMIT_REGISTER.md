@@ -1,3 +1,7 @@
+### Phase 2 blog-draft authoring: approved migration and production release
+
+Applied the additive blog-draft migration manually and published Worker `479fbe70-ae13-4f9f-98eb-23e3c8fc6998` at 100% traffic. Production schema permissions, migration checksum, compiled editor assets, anonymous-route protection, database-backed login and existing public pages passed read-only verification. Bindings and runtime are preserved; no merchant draft/media records were changed. Live signed-in mutation checks were not performed. Public blog publishing remains Phase 3.
+
 ### Phase 2 store-blog draft authoring: local implementation, not released
 
 Uncommitted implementation adds private merchant blog CRUD, structured sections, hero/media selection and crop UI, optimistic revisions and an additive manually selected migration. Twenty-four focused checks and the Worker build dry run passed; desktop/mobile checks used a read-only fictional preview. No production migration or release has occurred. Live signed-in save/upload verification and all public-blog publishing remain pending.

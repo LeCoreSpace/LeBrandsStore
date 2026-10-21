@@ -1,5 +1,13 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Approved Phase 2 blog-draft migration and production release
+
+- Applied the user-approved additive `0056_store_blog_drafts.sql` migration through the documented manual selector, then published Worker `479fbe70-ae13-4f9f-98eb-23e3c8fc6998` at 100% traffic.
+- Read-only production metadata checks verified the exact recorded migration checksum, enabled/forced RLS, member policy, intended application grants and denied table/function access for Supabase API roles.
+- Live checks passed for the editor script/styles and compiled dependencies, database-backed login, unsigned blog-dashboard login redirect, unchanged platform homepage and store sitemap without draft article URLs. Fresh pre/post-release fingerprints matched all 28 bindings, 17 encrypted secrets and runtime settings.
+- The editor is enabled for existing and future stores without per-store initialization or catalogue republishing. No merchant drafts, media, accounts or catalogue records were created or changed during release verification. Signed-in live save/upload journeys were not performed; isolated persistence tests and read-only fictional UI checks are recorded separately above.
+- Public article publishing, store blog listing/article routes and article discovery integration remain Phase 3.
+
 ## 2026-10-21: Phase 2 merchant blog draft editor, local only
 
 - Added a Blog entry under Store studio with draft listing, creation, editing, deletion, metadata and hero creative. Seven reorderable section types cover text, images, image/text, quotes, published-product spotlights, FAQ pairs and closing calls to action. Copy is stored as structured plain text and escaped when rendered.

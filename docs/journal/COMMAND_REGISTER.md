@@ -1,3 +1,10 @@
+## 2026-10-21: Approved Phase 2 production enablement
+
+- Workspace root: `node db/migrate.js --staged-store-blog` committed the additive blog-draft migration to the configured external Supabase database after explicit user approval.
+- Workspace root: `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` published version `479fbe70-ae13-4f9f-98eb-23e3c8fc6998`; Cloudflare reports 100% traffic. Binding fingerprints and runtime settings matched the fresh baseline.
+- Read-only production schema queries verified migration checksum, forced tenant/session RLS and effective app/API-role privileges. No merchant content rows were inspected or changed.
+- HTTPS smoke checks passed for editor assets and compiled dependencies, unsigned dashboard redirect, database-backed login, homepage and existing store sitemap. Live authenticated draft or media mutations were not performed.
+
 ## 2026-10-21: Phase 2 store-blog local verification
 
 - Workspace root: `node --test --test-concurrency=1 tests/store-blog-drafts.test.js tests/store-discovery.test.js tests/browser-module-delivery.test.js tests/dashboard-navigation.test.js` passed 24 checks. These use isolated PGlite and fictional fixtures, not the shared live database.
