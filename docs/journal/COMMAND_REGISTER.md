@@ -1,5 +1,17 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Approved domain guidance release
+
+```sh
+pnpm exec wrangler deploy --keep-vars
+```
+
+Published `16d60e6d-f434-4840-96cc-300b648f954f` at 100% traffic. Compared
+pre/post-release binding hashes, compatibility and routes; all unchanged.
+Fallback active. Verified updated domain guidance in live public module and
+successful root/sign-in/protected-route responses. No database operations,
+merchant domain activations or payment mutations.
+
 ## 21 October 2026: Domain instructions and payment explanation, local
 
 ```sh

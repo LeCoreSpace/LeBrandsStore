@@ -1,5 +1,16 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Domain guidance published
+
+- Owner-approved release `16d60e6d-f434-4840-96cc-300b648f954f` now serves 100%.
+  Live public module contains existing-record guidance, Check connection and
+  clarified payment website approval. Previous local tests/screenshot remain
+  applicable; no app source changed during release.
+- All 27 binding fingerprints, 16 encrypted secrets, compatibility settings and
+  all three Worker routes were preserved. Fallback remains active. Main site,
+  account/admin sign-in and private admin redirect checks passed.
+- No migration, merchant domain activation or payment setting changes.
+
 ## 2026-10-21: Merchant-friendly domain connection guidance, local
 
 - Domain Settings and shared launch controls explain editing an existing `www`

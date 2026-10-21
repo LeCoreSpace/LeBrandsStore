@@ -1,5 +1,11 @@
 # Complete implementation checkpoint register
 
+### Merchant-friendly domain instructions published
+
+Owner-approved version `16d60e6d-f434-4840-96cc-300b648f954f` serves 100%.
+Live module verified; bindings, secrets, routes and active fallback preserved.
+No migration, merchant domain activation, payment mutation or manual commit.
+
 ### Merchant-friendly domain instructions, local
 
 Existing-record guidance, understandable connection statuses and contextual
