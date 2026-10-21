@@ -35,6 +35,13 @@ selected imagery or changing the agreed stories.
 **Why:** The user explicitly said the entire homepage content was decided and
 asked for a more professional web-development/hosting marketing-page feel.
 
+Continue the approved homepage visual direction rather than introducing
+unrelated styles in later sections.
+
+**Why:** The user called the existing treatment “awesome” and asked for the same
+treatment on Help and trust, LeBrands.Space discovery, the ownership promises
+and the FAQ.
+
 Combine “Meet Ann”, “Ann, your store guide”, “Try a look” and “After the order”
 into one slideshow, in that order, rather than four separate scrolling sections.
 

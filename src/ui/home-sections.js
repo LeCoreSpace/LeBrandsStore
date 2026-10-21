@@ -49,12 +49,13 @@ export function homeSections({ img, M, SIGNUP, LOGIN, FAQ }) {
     </div>
   </section>
 
-  <section class="h-sec h-presence" aria-labelledby="h-presence-title">
+  <section class="h-sec h-presence" id="your-store" aria-labelledby="h-presence-title">
     <div class="m-wrap">
       <div class="h-head h-head-wide m-reveal">
         <p class="h-presence-lead">Your product is ready.</p>
         <p class="h-presence-lead">Now let’s give it an online presence.</p>
         <h2 id="h-presence-title">A store that tells your brand story and sells.</h2>
+        <p class="h-presence-note">Not charging on every sale. Not holding your customer data and payments.</p>
       </div>
     </div>
   </section>
@@ -133,10 +134,10 @@ export function homeSections({ img, M, SIGNUP, LOGIN, FAQ }) {
     <div class="m-wrap">
       <div class="h-head m-reveal"><h2 id="h-grow-title">Help and trust, built in.</h2></div>
       <ul class="h-strip">
-        <li class="m-reveal"><b>Help before and after launch</b><span>Support tickets: Created, Pending or Closed. Emails when a request opens and closes.</span></li>
-        <li class="m-reveal"><b>Team roles</b><span>Owner, admin or editor.</span></li>
-        <li class="m-reveal"><b>Private documents</b><span>Seen only by you and our review team.</span></li>
-        <li class="m-reveal"><b>Plan in Ann</b><span>Choose a plan as you build. <a href="/pricing">See pricing</a></span></li>
+        <li class="m-reveal"><i class="h-ico" aria-hidden="true"><svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8a3 3 0 0 1 3-3h16a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H15l-6 5v-5H8a3 3 0 0 1-3-3z"/><path d="M11 11h10M11 15h6"/></svg></i><b>Help before and after launch</b><span>Support tickets: Created, Pending or Closed. Emails when a request opens and closes.</span></li>
+        <li class="m-reveal"><i class="h-ico" aria-hidden="true"><svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="11" r="4"/><circle cx="22" cy="12" r="3"/><path d="M4 26c0-5 3.6-8 8-8s8 3 8 8M20 19c4 0 8 2 8 7"/></svg></i><b>Team roles</b><span>Owner, admin or editor.</span></li>
+        <li class="m-reveal"><i class="h-ico" aria-hidden="true"><svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h11l6 6v20H8z"/><path d="M19 3v6h6"/><rect x="12" y="16" width="9" height="7" rx="1.5"/><path d="M14 16v-2a2.5 2.5 0 0 1 5 0v2"/></svg></i><b>Private documents</b><span>Seen only by you and our review team.</span></li>
+        <li class="m-reveal"><i class="h-ico" aria-hidden="true"><svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="24" height="18" rx="3"/><path d="M4 13h24M9 20h6"/></svg></i><b>Plan in Ann</b><span>Choose a plan as you build. <a href="/pricing">See pricing</a></span></li>
       </ul>
     </div>
   </section>
@@ -148,9 +149,9 @@ export function homeSections({ img, M, SIGNUP, LOGIN, FAQ }) {
       <figure class="h-space m-reveal m-reveal-delay"><div class="h-browser"><div class="h-bar" aria-hidden="true"><i></i><i></i><i></i><span>lebrands.space</span></div><a class="h-shot" href="https://lebrands.space/" target="_blank" rel="noopener noreferrer" aria-label="Visit LeBrands.Space (opens in a new tab)">${M.discovery && M.discovery.available ? img(M.discovery) : '<img src="/img/REPLACE-lebrands-space-homepage.webp" width="1600" height="900" loading="lazy" decoding="async" alt="LeBrands.Space virtual mall homepage">'}</a></div></figure>
     </div>
     <div class="m-wrap h-brand-promises m-reveal">
-      <div><b>0%</b><span>Sales commission</span></div>
-      <div><b>Yours.</b><span>Your domain, payments and customer data</span></div>
-      <div><b>Always.</b><span>We never market to your customers.</span></div>
+      <div class="hp-zero"><i class="h-ico" aria-hidden="true"><svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="16" r="12"/><path d="M9 23L23 9"/><circle cx="12" cy="12" r="1.8"/><circle cx="20" cy="20" r="1.8"/></svg></i><b>0%</b><span>Sales commission</span></div>
+      <div class="hp-yours"><i class="h-ico" aria-hidden="true"><svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="16" r="6"/><path d="M17 16h12M24 16v5M28 16v3"/></svg></i><b>Yours.</b><span>Your domain, payments and customer data</span></div>
+      <div class="hp-always"><i class="h-ico" aria-hidden="true"><svg viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4l10 4v8c0 6-4 10-10 12C10 26 6 22 6 16V8z"/><path d="M11 16l4 4 6-8"/></svg></i><b>Always.</b><span>We never market to your customers.</span></div>
     </div>
   </section>
 

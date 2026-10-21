@@ -1403,3 +1403,30 @@ of this register.
 | Production configuration comparison | All 27 non-asset binding metadata hashes matched the fresh pre-publication baseline, including 17 encrypted secrets. Runtime settings unchanged. Only hashes and non-secret settings were used for comparison. |
 | Public verification | `https://lebrands.store/` returned HTTP 200 with the current hero, four-story slideshow, light-only root and no theme toggle. Published marketing CSS and JavaScript returned HTTP 200, exactly matched approved local source hashes and retained `no-cache` canonical-asset policy. |
 | Scope | No database migrations, secret updates, merchant domain activation, orders, payment operations or emails were performed. |
+
+## 2026-10-21: Lower-homepage visual refinement in Preview
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| Scoped homepage markup and stylesheet changes | Refined Help and trust, LeBrands.Space discovery and the three ownership promises. Added seven decorative line-art icons, readable service cards, a larger framed discovery screenshot and prominent promise cards. Preserved all approved copy, destinations, the real screenshot, hero, header and slideshow. |
+| `node scripts/build-browser-assets.mjs` and eight focused homepage test files from repository root | Build succeeded with 31 versioned entries and 42 files. Final suite: 38 passed, including new copy/link preservation and decorative-graphic accessibility checks. `git diff --check` clean. |
+| Managed API restart, logs and native screenshots | Verified all three areas at 1440px, support cards at 390px and discovery/promises at 320px. No visible text overflow or clipped cards. Public preview assets and page returned HTTP 200; no new browser-console errors reported. |
+| Publication boundary | Preview only; the previously published homepage is unchanged. No deployment, database operations, credentials, payments, emails or merchant data changes. |
+
+## 2026-10-21: Homepage FAQ visual refinement in Preview
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| Scoped FAQ stylesheet refinement | Added rounded question cards, responsive typography, numbered question rows, circular CSS-drawn plus/minus indicators, a blush open state and visible keyboard focus. Preserved all seven questions, answers, links, shared FAQ schema and independent native details/summary behavior. Other page styles remain separate. |
+| Build and regression checks | Browser asset build succeeded with 31 versioned entries and 42 files. All 40 focused cases were verified across the regression run and final five-case closing/FAQ rerun; corrected a test assertion to recognize the CSS-drawn indicator. `git diff --check` clean. |
+| Managed API restart, logs and native preview captures | Verified closed FAQ layouts at 1440px and 320px, with readable questions and no clipped cards. Open/focus rules and disclosure markup were checked in source/tests, not claimed as interaction screenshots. Page and assets returned HTTP 200 after restart; no new browser-console errors reported. |
+| Publication boundary | Preview only, together with the pending lower-homepage refinements. No production publication, database operations or external mutations. |
+
+## 2026-10-21: Brand-story transition refined in Preview
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| Presence-section markup and scoped stylesheet | Added the exact requested supporting message beneath the main headline: “Not charging on every sale. Not holding your customer data and payments.” Retained the three existing narrative lines, refined typography and spacing, and added a small wine accent rule on the white section. |
+| Build and regression checks | Browser assets built successfully. All 41 focused homepage tests passed; final 14-case regression/closing rerun also passed after adding the section anchor. `git diff --check` clean. |
+| Managed API restart and native preview captures | Verified the section at 1440px and 320px: prominent brand-story headline, smaller supporting copy and no clipped text. Public page/assets returned HTTP 200 after restart; no new browser-console errors reported. |
+| Publication boundary | Preview only. Pending lower sections, FAQ and this transition have not been published. No database, credentials, payment, email or merchant-data operations. |
