@@ -1623,3 +1623,12 @@ of this register.
 | Repository root / local, existing Cloudflare config | `pnpm exec wrangler deploy --dry-run --config wrangler.jsonc` | Worker and versioned browser assets built successfully; no publication. |
 | Managed preview / fictional store | Restart API Server, inspect workflow logs, screenshot guide query routes on desktop and mobile | 39 browser entries rebuilt; guide stylesheet and bundles returned 200. No browser errors in captures. No real merchant records inspected. |
 | Repository root / local | `git diff --check` | Passed. No migration, uploads/deletions, provider calls or live publication performed. |
+
+### 21 October 2026: Approved Media Library Stage 2 publication
+
+| Working directory / target | Command or operation | Purpose and observed result |
+|---|---|---|
+| Repository root / existing Cloudflare account | `node generated-artifacts/media-library-release-check.mjs before` and `after` | Pre/post fingerprints matched for 27 non-asset bindings, 17 encrypted secrets, runtime and three semantic routes. Hyperdrive identity matched configuration before release. |
+| Repository root / Cloudflare, explicit user approval | `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` | Published version `456682e8-f0ee-43bf-abef-ed49e157764e`, 100% traffic; existing schedule, producer and consumer retained. |
+| Production / read-only | Fetch canonical and fingerprinted guide CSS, active Worker source, unauthenticated media API and synthetic-session login | CSS matched release bytes; bundle returned 200; Worker included Stage 2 markers. API remained 401 and database-backed login returned its form with 200. No private records inspected. |
+| Verification correction / no application changes | Resolve bundle names from generated output; GET Worker script root rather than `/content` | Initial check assumed an absolute bundle URL and the wrong Cloudflare GET endpoint (405). Corrected verification passed; no republish or configuration repair required. |

@@ -2571,7 +2571,7 @@ decision:
   provider activation or billing changes. Size guidance and generation remain
   the subsequent stages.
 
-### 21 October 2026: Media Library Stage 2 (publication pending)
+### 21 October 2026: Media Library Stage 2 (published)
 
 - Replaced the Image size guide placeholder with authenticated, store-scoped
   recommendations for the saved design, plus view-only comparison across all
@@ -2592,5 +2592,13 @@ decision:
   seven-check rerun. Worker dry run and rebuilt managed preview succeeded.
   Desktop/mobile screenshots showed the guide and real asset delivery without
   browser errors. Existing tenant isolation and read-only write rejection hold.
-- No migration, production publication, merchant-media changes, generation
-  provider or AI billing activation. Stage 3 remains later.
+- Published with explicit user approval as Cloudflare Worker
+  `456682e8-f0ee-43bf-abef-ed49e157764e`, at 100% traffic. All 27 non-asset
+  bindings, 17 encrypted secrets, runtime configuration and three semantic
+  routes matched the pre-publication snapshot; existing triggers remained.
+- Production guide stylesheet matched release bytes and its fingerprinted
+  stylesheet returned 200. Active Worker source contained Stage 2 markers.
+  The unauthenticated library API remained 401; login with a synthetic
+  nonexistent session returned the database-backed form successfully.
+- No migration, merchant-media changes, generation provider or AI billing
+  activation. Stage 3 remains later.
