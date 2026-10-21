@@ -47,3 +47,13 @@ still viewing a product; that is not entering checkout.
 
 **How to apply:** Enforce page eligibility centrally and guard concurrent event
 initialisation. Re-consent must not manufacture a new funnel step.
+
+Social media Ad Integration is included in every plan, including Free.
+
+**Why:** The user explicitly requested this as a feature in all plans while
+asking for actual usage and integration status on the billing dashboard.
+
+**How to apply:** Keep plan feature lists consistent with the existing
+store-level Meta/Google settings. Do not interpret this as ad-account OAuth,
+campaign management, included ad spend or permission to change historical
+subscription snapshots.

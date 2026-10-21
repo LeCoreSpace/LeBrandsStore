@@ -1,4 +1,5 @@
 import { escapeHtml as esc } from "./layout.js";
+import {withSocialAdIntegration} from "../billing/features.js";
 
 const obj = (v) => (v && typeof v === "object" ? v : {});
 const list = (v) => (Array.isArray(v) ? v : []);
@@ -40,7 +41,7 @@ function featText(f) {
   return `${name}: ${String(v).replace(/_/g, " ")}`;
 }
 function featList(features) {
-  const items = list(features).filter(Boolean);
+  const items = withSocialAdIntegration(list(features));
   if (!items.length) return `<p class="pb-muted">Feature details are not listed yet.</p>`;
   return `<ul class="pb-feats">${items.map((f) => {
     const on = f.included !== false;

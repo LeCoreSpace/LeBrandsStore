@@ -82,7 +82,7 @@ test("all feature readiness states remain presentation-free without changing inc
   const availability=["planned","upcoming","conditional_on_domain","verification_pending","acceptance_required","available"];
   const features=availability.map((value,index)=>({key:`feature_${index}`,name:`Feature ${index}`,included:index!==1,value:42,availability:value}));
   const html=render({...billing,catalogue:[{...catalogue[0],features}]});
-  const items=[...html.matchAll(/<li data-on="(yes|no)">([\s\S]*?)<\/li>/g)].slice(-features.length);
+  const items=[...html.matchAll(/<li data-on="(yes|no)">([\s\S]*?)<\/li>/g)].filter(([, ,content])=>/Feature \d/.test(content));
   assert.equal(items.length,features.length);
   items.forEach(([,on,content],index)=>{
     assert.equal(on,index===1?"no":"yes");
@@ -90,6 +90,16 @@ test("all feature readiness states remain presentation-free without changing inc
     if(index!==1)assert.match(content,/up to 42/);
     assert.doesNotMatch(content,/<small|pb-planned|Setup required|Not enabled|Verification pending/);
   });
+});
+
+test("every plan card includes Social media Ad Integration exactly once",()=>{
+  const html=render({...billing,catalogue:[
+    ...catalogue,
+    ...["grow","scale"].map(code=>({...catalogue[0],code,name:code})),
+  ]});
+  const cards=[...html.matchAll(/<article class="pb-plan[^"]*"[\s\S]*?<\/article>/g)];
+  assert.equal(cards.length,5);
+  for(const [card] of cards)assert.equal((card.match(/Social media Ad Integration/g)||[]).length,1);
 });
 
 test("dashboard has a single card catalogue, one Free acceptance and one consent dialog",()=>{

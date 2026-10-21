@@ -4,6 +4,8 @@ import {businessEditorAccess,protectedEditorLinks} from "../store/business-acces
 import {annPlanAccess} from "./build-access.js";
 import {freeSubscriptionState} from "./free.js";
 import {testBillingState} from "./checkout.js";
+import {planUsage} from "./usage.js";
+import {withSocialAdIntegration} from "./features.js";
 import {billingSelection,billingDestination,isBillingPagePath} from "./entry.js";
 import {renderDashboard} from "../ui/dashboard.js";
 import {renderAccount} from "../ui/accounts.js";
@@ -47,7 +49,8 @@ export async function billingPageData(tx,id,user,tokenHash,selection={}){
     const invoices=await tx`SELECT id,mode,invoice_number,status,currency,total_minor,issued_at,created_at
       FROM public.billing_invoices WHERE store_id=${id} AND status IN ('issued','void')
       ORDER BY created_at DESC,id DESC LIMIT 50`;
-    billing={state,access,catalogue:plans.map(p=>({...p,prices:decode(p.prices),features:decode(p.features)})),
+    const usage=await planUsage(tx,id);
+    billing={state,access,usage,catalogue:plans.map(p=>({...p,prices:decode(p.prices),features:withSocialAdIntegration(decode(p.features))})),
       payments,invoices,testCheckout,requestedPlan:selection.plan,requestedInterval:selection.interval};
   }catch(error){
     // Expected staged deployment only. A present but failing DB function never

@@ -2356,3 +2356,45 @@ decision:
   and truthful delivery state, plus an optional private attachment stage.
 - Design/documentation only. No application behavior, database schema, provider
   settings or production deployment was changed; no emails were sent.
+
+## 2026-10-21: Current-plan usage and integration status
+
+- Replaced the static current-plan entitlement list with current usage against
+  saved allowances: published products/SKUs, public media storage, non-owner
+  staff seats and orders created in the current UTC month. Uses published
+  catalogue snapshots rather than counting unpublished catalogue edits.
+- Added payment, delivery and custom-domain state, plus distinct Meta, Google,
+  both, disabled and unavailable marketing configurations. Test payment
+  connections remain visibly test mode; saved configuration is not represented
+  as a fresh provider health check.
+- Added Social media Ad Integration to all dashboard and public pricing plan
+  feature lists, including Free. This universal existing capability is a display
+  projection; saved subscription snapshots, limits and checkout gates are
+  unchanged.
+- All reads remain owner-authorized and tenant-scoped. Usage is read through an
+  aggregate query without credentials or individual customer records. Refresh
+  usage reloads the page without accepting or changing a plan. Missing readings
+  are never silently replaced with zero.
+- Verification: 16 focused checks passed, including real isolated PostgreSQL
+  aggregates with foundational DDL, different-store counts, draft exclusion,
+  legacy/base SKUs, staff-owner exclusion, monthly boundaries, optional marketing
+  schema handling, non-owner denial, all-plan feature inclusion and payment-test
+  safeguards. Public Pricing screenshot and managed Preview startup verified.
+- No live database mutation, migration, integration activation or production
+  publication. Publication awaits approval; working-tree changes are uncommitted.
+
+### 2026-10-21: Current-plan usage release published
+
+- Published after explicit approval through the existing Cloudflare pipeline.
+  Worker version: `0c2f6fd5-5c74-4c65-8ba9-b9ca33b760c9`.
+- Verified the deployed script contains the owner-scoped usage aggregation and
+  new section, with existing payment-test controls retained. All 27 non-asset
+  bindings, 17 encrypted-secret bindings and runtime settings match the
+  immediately preceding production snapshot.
+- Live Pricing confirms Social media Ad Integration on Free and all four paid
+  cards. Canonical and versioned usage CSS respond successfully and match the
+  release build. A nonexistent synthetic session returned HTTP 200 with the
+  login form, confirming production database-backed session lookup is healthy.
+- No real account login or private merchant usage inspection was performed.
+  The 16 earlier focused checks remain valid; production publication did not
+  require schema changes, data writes or integration activation.

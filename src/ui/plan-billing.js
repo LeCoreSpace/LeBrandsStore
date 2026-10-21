@@ -1,6 +1,7 @@
 import { escapeHtml, layout, accountHeader, footer } from "./layout.js";
 import {renderBillingTest} from "./billing-test.js";
 import {renderPlanCards} from "./billing-plan-cards.js";
+import {renderPlanUsage} from "./billing-usage.js";
 
 const esc = escapeHtml;
 const obj = (v) => (v && typeof v === "object" ? v : {});
@@ -174,7 +175,7 @@ export function renderPlanBillingContent(data) {
   if (access.available === false) parts.push(`<p class="pb-callout" role="status">Plan gating is not available for this store yet, so plan limits are not applied.</p>`);
   if (sub) {
     parts.push(subscriptionCard(sub, id, access));
-    parts.push(`<details class="pb-card"><summary>Current plan limits and features</summary>${entRows(sub.entitlements)}</details>`);
+    parts.push(`<details class="pb-card" open><summary>Current plan usage and connections</summary>${renderPlanUsage(sub.entitlements,b.usage)}<div class="pb-actions">${reloadBtn("Refresh usage")}</div></details>`);
   } else {
     parts.push(noSubscription(st, access, id));
   }

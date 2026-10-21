@@ -11,3 +11,13 @@ Use the published SKU price and option identity for customer purchases, current 
 Bulk inventory maintenance is strictly stock-only: retain the existing publication's other fields rather than copying the current administrative product.
 
 **Why:** The administrative product may contain unfinished titles, prices or option edits; changing quantities is not permission to publish those edits.
+
+Current-plan product/SKU usage retains the published-catalogue definition.
+
+**Why:** The user explicitly approved the usage overview (“perfect with this
+data”). The existing allowances describe published products and SKUs, so early
+editing checks must not silently redefine what consumes those allowances.
+
+**How to apply:** Keep draft preparation distinct from publication validation.
+Changing the counted scope requires an explicit commercial-policy decision,
+not merely moving a warning into the product form.

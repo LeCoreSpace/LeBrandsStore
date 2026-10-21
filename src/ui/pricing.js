@@ -26,6 +26,7 @@ const SECTIONS = [
     ["Custom domain with SSL", Y, Y, Y, Y],
     ["Media library", Y, Y, Y, Y],
     ["SEO basics (titles, sitemap, product data)", Y, Y, Y, Y],
+    ["Social media Ad Integration", Y, Y, Y, Y],
     ["Custom sections and design work", N, N, N, Y],
   ] },
   { title: "Product page, cart and checkout", rows: [
@@ -121,6 +122,7 @@ function planCard(p, i) {
     <div><dt>LeBrands.Space plan</dt><dd>${p.space}</dd></div>
     <div><dt>Support</dt><dd>${p.support}</dd></div>
     <div><dt>Custom domain with SSL</dt><dd>Included</dd></div>
+    <div><dt>Social media Ad Integration</dt><dd>Included</dd></div>
   </dl>
   <a class="m-pr-btn" href="https://app.lebrands.store/plans?plan=${encodeURIComponent(p.name.toLowerCase())}">View ${p.name} plan</a>
 </article>`;
@@ -161,6 +163,7 @@ export function pricingMain() {
              <li>Up to 3 product options and 200 variants per product, within the total SKU allowance.</li>
              <li>Your 30 live days start with your first successful publication, not during store preparation.</li>
             <li>Use your included <strong>yourbrand.lebrands.store</strong> address.</li>
+            <li>Social media Ad Integration included.</li>
             <li>Custom domain integration is available on paid plans only.</li>
           </ul>
           <p class="m-pr-note">Each sellable combination counts as one SKU. A product without variations counts as one.</p>

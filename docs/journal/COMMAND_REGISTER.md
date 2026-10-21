@@ -1459,4 +1459,26 @@ of this register.
 | Plan cards | Removed per-feature readiness annotations and paid-card Draft/Proposal labels. Feature names and limits remain; excluded features retain their existing styling and accessible indication without a redundant visible suffix. Removed the obsolete paragraph referring to status labels. |
 | Boundaries | Prices, intervals, backend readiness, Free dates, eligibility, test-mode disclosures and disabled checkout guards are unchanged. No schema, credentials, financial records or live billing settings were changed. |
 | Verification | All six focused plan-card tests passed; whitespace checks passed. The broader companion billing-page fixture attempt passed its first three cases but timed out while setting up the synthetic authenticated fixture; it is not reported as a completed integration pass. Managed preview API was restarted once after the code batch and resumed HTTP 200 responses. |
-| Publication | Preview only. Production publication requires the user's approval. |
+| Publication | Published after explicit approval using the existing Cloudflare pipeline with `--keep-vars`. Worker version: `ea08d814-10eb-4f29-ae2e-6018a1c99476`. Downloaded the active script and confirmed simplified feature lists, removal of the old status markup, and preservation of payment-test controls. All 27 non-asset bindings, 17 encrypted secrets and runtime settings, including limits, match the immediately preceding production snapshot. |
+| Live availability | A valid-shaped but nonexistent synthetic session returned HTTP 200 with the login form, confirming the production connector can perform session lookup again. No real account credentials or sessions were used. Native Preview login was also visually checked. |
+
+## 2026-10-21: Current-plan usage and connection status prepared
+
+| Operation | Result and boundaries |
+| --- | --- |
+| Implementation | Added owner-authorized aggregate usage to billing page data and the current-plan section. Shows saved-plan allowances, readable media storage, staff excluding owners, UTC-month created orders, saved payment/delivery/domain state and enabled Meta/Google configuration. A refresh is read-only. |
+| Universal feature | Social media Ad Integration appears once per dashboard plan and on Free plus all paid public pricing cards and their comparison. Historical subscription snapshots, prices, limits and financial activation gates are untouched. |
+| Verification | `node --test --test-concurrency=1 tests/platform-billing-cards.test.js tests/platform-billing-usage.test.js tests/platform-billing-usage-sql.test.js`: all 16 passed. PostgreSQL tests use isolated PGlite and real foundational DDL, never production. Whitespace checks passed. |
+| Runtime and visual check | Restarted the existing managed API once after the code batch. Preview returned HTTP 200 for Pricing and assets; screenshot confirmed the new feature across Free and the four paid cards. Private usage markup and owner denial were checked by focused tests, not a signed-in browser session. |
+| Database and publication | No migrations or live writes, no provider calls/activation, and no production publication. Awaiting user approval. |
+
+## 2026-10-21: Approved current-plan usage release published
+
+| Operation | Actual result and boundaries |
+| --- | --- |
+| Pre-release | Confirmed the existing 16-test pass and clean whitespace checks; recorded fresh binding/runtime fingerprints without reading or logging secret values. |
+| Publish | Ran `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` from the workspace root after explicit approval. Uploaded the canonical usage CSS, its versioned bundle and browser build manifest. Worker version: `0c2f6fd5-5c74-4c65-8ba9-b9ca33b760c9`. Existing routes, schedule and queue triggers were retained. |
+| Preservation | All 27 non-asset bindings, 17 encrypted-secret bindings, compatibility flags, usage model, placement, logging and runtime limits matched the immediate pre-release snapshot. |
+| Live verification | Downloaded the active script and confirmed usage aggregation, current-plan UI, universal social feature and payment-test controls. Pricing returned HTTP 200 with social integration on Free and four paid cards. Canonical usage CSS matched the generated release and the versioned bundle returned HTTP 200. |
+| Account health | A valid-shaped, nonexistent synthetic session returned HTTP 200 and the login form through the production database connector. No real account session, password or private merchant data was used. |
+| Safety | No schema migration, live database writes, billing activation, provider setup or credentials changes. Private usage behavior remains covered by the earlier focused tests rather than an authenticated production browser test. |
