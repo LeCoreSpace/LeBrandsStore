@@ -1,14 +1,22 @@
 import {mediaUrl} from "../store/media.js";
 import {capacityState} from "../billing/capacity.js";
 import {commerceError} from "../public/commerce-rules.js";
+import {STYLE_IDS} from "../public/aura-styles.js";
+import {buildMediaSizeGuide,MEDIA_GUIDE_CATEGORIES} from "../public/media-placement-guide.js";
 
 export function mediaLibraryFilters(url){
   const query=(url.searchParams.get("q")||"").trim();
   const type=url.searchParams.get("type")||"all";
   const raw=url.searchParams.get("offset")||"0";
+  const tab=url.searchParams.get("tab")||"library";
+  const guide_theme=url.searchParams.get("guide_theme")||"current";
+  const guide_category=url.searchParams.get("guide_category")||"all";
   if(query.length>100||!["all","image","video","logo"].includes(type)||!/^(0|[1-9]\d{0,5})$/.test(raw))
     throw commerceError("Choose a valid search, media type and page.",undefined,400);
-  return {query,type,offset:Number(raw),limit:36};
+  if(!["library","sizes","ai"].includes(tab)||!(guide_theme==="current"||STYLE_IDS.includes(guide_theme))
+    ||!(guide_category==="all"||MEDIA_GUIDE_CATEGORIES.some(c=>c.id===guide_category)))
+    throw commerceError("Choose a valid media tab, theme and placement category.",undefined,400);
+  return {query,type,offset:Number(raw),limit:36,tab,guide_theme,guide_category};
 }
 const decode=value=>typeof value==="string"?JSON.parse(value):value;
 const number=value=>{
@@ -26,6 +34,12 @@ export async function mediaLibrary(tx,id,filters){
     to_regclass('public.store_blog_publications') IS NOT NULL AS blog_publications`;
   const [summary]=await tx`SELECT count(*) AS total,coalesce(sum(size_bytes),0) AS used
     FROM public.media WHERE store_id=${id}`;
+  const [setup]=await tx`SELECT settings FROM public.store_setup WHERE store_id=${id}`;
+  const layouts=schema.pages
+    ?await tx`SELECT page_key,draft_layout::text AS layout FROM public.store_pages WHERE store_id=${id} ORDER BY page_key`:[];
+  const size_guide=buildMediaSizeGuide({settings:decode(setup?.settings)||{},
+    layouts:layouts.map(l=>({page_key:l.page_key,layout:decode(l.layout)})),storeId:id,
+    theme:filters.guide_theme,category:filters.guide_category});
   const capacity=await capacityState(tx,id);
   const where=tx`m.store_id=${id}
     AND (${type}='all' OR (${type}='logo' AND m.upload_type='logo')
@@ -73,7 +87,7 @@ export async function mediaLibrary(tx,id,filters){
       content_type:m.content_type,size_bytes:number(m.size_bytes),width:m.width,height:m.height,
       alt_text:m.alt_text,created_at:m.created_at,usage,usage_checked:true};
   });
-  return {store,items,total:number(count.total),library_total:number(summary.total),...filters,
+  return {store,items,total:number(count.total),library_total:number(summary.total),...filters,size_guide,
     has_more:rows.length>limit,storage:{used:number(summary.used),
       limit:capacity?.limits?.storage==null?null:number(capacity.limits.storage)}};
 }

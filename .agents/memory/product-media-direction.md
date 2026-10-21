@@ -34,3 +34,15 @@ Do not add a merchant cropping step to the placement-based AI generation flow. T
 **Why:** The user explicitly removed cropping because the image size is already decided when choosing the placement.
 
 **How to apply:** Use placement, optional library reference, description, generation, review and save as the flow. Produce the required framing and dimensions without asking the merchant to crop; retain existing crop tools for ordinary uploads.
+
+Placement guidance must distinguish recommended creative exports from hard
+upload limits, and follow the current page renderer rather than old showcase
+mockups.
+
+**Why:** Saved Ann designs and classic Aura themes use different media frames;
+some storefront pages share a newer commerce surface despite retaining themed
+navigation. A desktop/mobile crop difference does not create a second upload.
+
+**How to apply:** Check the active renderer and effective responsive CSS before
+recommending ratios. Label natural/flexible frames honestly, explain reuse of
+the same asset, and keep theme comparison read-only.

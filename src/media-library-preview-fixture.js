@@ -1,8 +1,9 @@
 import {renderMediaLibrary} from "./ui/media-library.js";
 import {mediaLibraryFilters} from "./dashboard/media-library.js";
+import {buildMediaSizeGuide} from "./public/media-placement-guide.js";
 
 // Read-only, development-only visual fixture. Never registered by production.
-export function mediaLibraryPreview(request,store){
+export function mediaLibraryPreview(request,store,settings={}){
   const filters=mediaLibraryFilters(new URL(request.url));
   const items=["indigo-shirt","ecru-shirt","rust-kurta","olive-overshirt","ecru-trousers","indigo-kurta"].map((name,i)=>({
     id:`example-media-${i}`,url:`/__example-media/${name}.webp`,filename:`${name}.webp`,
@@ -13,7 +14,8 @@ export function mediaLibraryPreview(request,store){
   const selected=items.filter(m=>(filters.type==="all"||filters.type===m.kind)
     &&m.filename.includes(filters.query.toLowerCase()));
   const data={store,role:"editor",...filters,items:selected.slice(filters.offset,filters.offset+36),
-    total:selected.length,library_total:items.length,has_more:false,storage:{used:410000,limit:536870912}};
-  return new Response(request.method==="HEAD"?null:renderMediaLibrary(data,{name:"Example reviewer"}),
+    total:selected.length,library_total:items.length,has_more:false,storage:{used:410000,limit:536870912},
+    size_guide:buildMediaSizeGuide({storeId:store.store_id,settings,theme:filters.guide_theme,category:filters.guide_category})};
+  return new Response(request.method==="HEAD"?null:renderMediaLibrary(data,{name:"Example reviewer"},{base:"/__media-library-preview"}),
     {headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
 }

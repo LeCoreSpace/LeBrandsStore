@@ -3,6 +3,7 @@ if (root) {
   const tabs = [...root.querySelectorAll("[role=tab]")];
   const show = (t, focus) => {
     tabs.forEach(b => { const on = b === t; b.setAttribute("aria-selected", on); b.tabIndex = on ? 0 : -1; root.querySelector(`[data-panel=${b.dataset.tab}]`).hidden = !on; });
+    const url=new URL(location.href);url.searchParams.set("tab",t.dataset.tab);history.replaceState(null,"",url);
     if (focus) t.focus();
   };
   tabs.forEach((t, i) => {

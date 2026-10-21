@@ -14,8 +14,8 @@ const table=(s,n)=>s.match(new RegExp(`CREATE TABLE public\\.${n}\\s*\\([\\s\\S]
 const url=query=>new URL(`https://app.lebrands.store/stores/${id}/media-library${query||""}`);
 
 test("library filters are bounded, route mapping is exact and writes/auth failures stop before SQL",async()=>{
-  assert.deepEqual(mediaLibraryFilters(url()),{query:"",type:"all",offset:0,limit:36});
-  for(const q of ["?type=bad","?offset=-1","?offset=1.5","?offset=1000000","?q="+"x".repeat(101)])
+  assert.deepEqual(mediaLibraryFilters(url()),{query:"",type:"all",offset:0,limit:36,tab:"library",guide_theme:"current",guide_category:"all"});
+  for(const q of ["?type=bad","?offset=-1","?offset=1.5","?offset=1000000","?tab=bad","?guide_theme=bad","?guide_category=bad","?q="+"x".repeat(101)])
     assert.throws(()=>mediaLibraryFilters(url(q)));
   assert(isMediaLibraryPath(url().pathname));assert(isDashboardPath(url().pathname));
   assert(!isMediaLibraryPath(url().pathname+"/delete"));
@@ -80,6 +80,8 @@ test("actual media SQL is tenant scoped, counts all storage and finds draft/publ
     const api=q=>handleMediaLibrary(new Request(`https://app.lebrands.store/api/stores/${id}/media-library${q||""}`),db,{id:user},token,id);
     const data=await(await api()).json();
     assert.equal(data.total,3);assert.equal(data.storage.used,600);assert.equal(data.storage.limit,null);
+    assert.equal(data.size_guide.theme.id,"aura");
+    assert(data.size_guide.items.length>10);
     const own=data.items.find(m=>m.id===image);
     assert(own.usage.some(u=>u.label==="Product: Example serum"));
     assert(own.usage.some(u=>u.label==="Published storefront"));
@@ -88,6 +90,15 @@ test("actual media SQL is tenant scoped, counts all storage and finds draft/publ
     assert(own.usage.some(u=>u.label==="Published blog articles"));
     assert(!JSON.stringify(data).includes("private_cost"));assert(!JSON.stringify(data).includes("not-for-client"));
     assert(!JSON.stringify(data).includes("123456"));assert(!JSON.stringify(data).includes(foreign));
+    const compared=await(await api("?tab=sizes&guide_theme=boutique&guide_category=blog")).json();
+    assert.equal(compared.size_guide.theme.id,"boutique");
+    assert.equal(compared.size_guide.saved_theme.id,"aura");
+    assert(compared.size_guide.items.every(i=>i.category==="blog"));
+    assert.equal(compared.tab,"sizes");
+    const guidePage=await handleMediaLibrary(new Request(url("?tab=sizes&guide_theme=boutique&guide_category=blog")),db,{id:user},token,id);
+    const guideHtml=await guidePage.text();
+    assert.match(guideHtml,/aria-selected="true"[^>]*data-tab="sizes"/);
+    assert.match(guideHtml,/Blog post cover|Blog list card|Blog listing/);
     for(const [q,total,kind]of[["?type=video",1,"video"],["?type=logo",1,"image"],["?type=image",1,"image"],["?q=portrait",1,"image"],["?q=unknown",0,null]]){
       const response=await api(q);assert.equal(response.status,200);const d=await response.json();assert.equal(d.total,total);
       assert.equal(d.storage.used,600);if(kind)assert.equal(d.items[0].kind,kind);

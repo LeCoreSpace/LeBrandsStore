@@ -62,8 +62,10 @@ export default {
       return new Response(request.method==="HEAD"?null:body||"Unknown template",{status:body?200:404,headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
     }
     const previewUrl=new URL(request.url);
-    if(previewUrl.pathname==="/__media-library-preview"&&["GET","HEAD"].includes(request.method))
-      return mediaLibraryPreview(request,exampleFixture().store);
+    if(previewUrl.pathname==="/__media-library-preview"&&["GET","HEAD"].includes(request.method)){
+      const example=exampleFixture();
+      return mediaLibraryPreview(request,example.store,example.settings);
+    }
     if(previewUrl.pathname==="/__style-studio-preview"&&["GET","HEAD"].includes(request.method)){
       const data=exampleFixture();data.role="owner";data.products=[];data.layouts={};
       const style=previewUrl.searchParams.get("style");

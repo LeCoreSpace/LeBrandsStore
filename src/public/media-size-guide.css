@@ -1,0 +1,23 @@
+.msg{--g-ink:#2b1f26;--g-mute:#6e6268;--g-line:#e4dbdf;--g-brand:#711b3b;--g-wash:#faf6f7;display:grid;gap:14px}
+.msg h2,.msg h3{margin:0}.msg-lead{margin:0;color:var(--g-mute);max-width:70ch}
+.msg-banner{margin:0;padding:12px 14px;border:1px solid var(--g-line);border-left:4px solid var(--g-brand);border-radius:8px;background:var(--g-wash);font-size:14px}
+.msg-banner.is-compare{border-left-color:#b07d12;background:#fff8e8}
+.msg-form{display:flex;flex-wrap:wrap;gap:12px;align-items:end}
+.msg-form label{display:grid;gap:4px;font-size:13px;font-weight:600;flex:1 1 220px}
+.msg-form select{min-height:44px;padding:8px 10px;border:1px solid #d8cbd1;border-radius:6px;font:inherit;background:#fff;color:inherit}
+.msg-form button{min-height:44px}.msg-count{margin:0;font-size:13px;color:var(--g-mute)}
+.msg-grid{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:16px}
+.msg-card{display:grid;gap:12px;align-content:start;padding:16px;border:1px solid var(--g-line);border-radius:10px;background:#fff;min-width:0}
+.msg-card header p{margin:2px 0 0;font-size:13px;color:var(--g-mute)}
+.msg-tag{display:inline-block;margin-left:6px;padding:1px 8px;border-radius:99px;background:#f1ecee;font-size:11px;font-weight:600}
+.msg-figs{display:flex;gap:14px;align-items:end;flex-wrap:wrap}
+.msg-fig{margin:0;display:grid;gap:6px;font-size:12px;color:var(--g-mute);min-width:0}
+.msg-fig b{display:block;color:var(--g-ink);font-size:13px}
+.msg-frame{display:grid;place-items:center;width:min(150px,38vw);border:2px solid var(--g-brand);border-radius:4px;background:repeating-linear-gradient(135deg,#f6e9ee 0 8px,#fbf3f6 8px 16px);color:var(--g-brand);font-weight:700;font-size:12px}
+.msg-frame.is-natural{border-style:dashed}
+.msg-facts{display:flex;gap:20px;flex-wrap:wrap;margin:0;font-size:13px}.msg-facts dt{color:var(--g-mute)}.msg-facts dd{margin:0;font-weight:600}
+.msg-notes{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px}
+.msg-links{margin:0;display:flex;gap:8px;flex-wrap:wrap}
+.msg-limits{padding:16px;border:1px solid var(--g-line);border-radius:10px;background:var(--g-wash)}.msg-limits ul{margin:8px 0 0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.msg :focus-visible{outline:3px solid #c99cac;outline-offset:2px}
+@media(max-width:560px){.msg-card{padding:12px}.msg-frame{width:120px}}

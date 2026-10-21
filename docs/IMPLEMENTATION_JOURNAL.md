@@ -2570,3 +2570,27 @@ decision:
 - No database migration, file upload/deletion, merchant data mutation, AI
   provider activation or billing changes. Size guidance and generation remain
   the subsequent stages.
+
+### 21 October 2026: Media Library Stage 2 (publication pending)
+
+- Replaced the Image size guide placeholder with authenticated, store-scoped
+  recommendations for the saved design, plus view-only comparison across all
+  eight themes and placement-category filtering.
+- Added desktop/mobile frame diagrams, recommended pixels, aspect ratios,
+  accepted formats, actual upload limits, framing advice and editor links for
+  brand logos, heroes/posters, product photos/videos/cards, collection media,
+  stories/galleries/press, blogs and reused commerce thumbnails.
+- Kept validated Ann design authority separate from classic Aura presets.
+  Checked current render paths instead of treating old showcase product CSS
+  as live: saved Ann product pages use the shared 4:5 gallery, while collection
+  card crops vary by theme. Blog-list covers use 16:10; natural and flexible
+  placements are labelled separately. Mobile recommendations reuse one upload.
+- Added selected-tab URL persistence and preserved guide filters when
+  refreshing; development-fixture GET forms now stay on the fixture route.
+  Raw settings and layouts remain server-only; the API returns guide metadata.
+- Verification: 27 focused tests passed; the final guide correction passed its
+  seven-check rerun. Worker dry run and rebuilt managed preview succeeded.
+  Desktop/mobile screenshots showed the guide and real asset delivery without
+  browser errors. Existing tenant isolation and read-only write rejection hold.
+- No migration, production publication, merchant-media changes, generation
+  provider or AI billing activation. Stage 3 remains later.
