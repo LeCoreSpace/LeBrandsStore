@@ -27,10 +27,22 @@ test("launch promises are qualified and the visual stories cover core product di
   assert.match(copy,/target.*not a guarantee/i);
   assert.match(copy,/approval/i);
   assert.match(copy,/domain verification.*longer/i);
-  for(const feature of ["Ann","Tamil","Marathi","Telugu","Reusable sections","grids","Photo framing","SKU","cost","Collections","Cash on Delivery","PIN","email","offer","returns","RTO","GST","credit","margin","CSV","Excel","Razorpay","Shiprocket","domain","Meta","Google Analytics","Google Ads","shopper permission","review","Support","Created","Pending","Closed","Team roles","Download reports","Free","/compare","/blog"])assert.ok(html.toLowerCase().includes(feature.toLowerCase()),`Missing feature: ${feature}`);
+  for(const feature of ["Ann","Tamil","Marathi","Telugu","SKU","cost","Collections","Cash on Delivery","offer","returns","RTO","GST","margin","CSV","Excel","Razorpay","Shiprocket","domain","Meta","Google Analytics","Google Ads","shopper consent","review","Support","Created","Pending","Closed","Team roles","Download reports","Free","/compare","/blog"])assert.ok(html.toLowerCase().includes(feature.toLowerCase()),`Missing feature: ${feature}`);
   assert.match(html,/www\.yourbrand\.in/);
   assert.match(copy,/Free discovery on LeBrands\.Space for all approved stores/);
   assert.doesNotMatch(html,/undo anything|shoppers already trust/i);
+});
+
+test("homepage removes the requested sections and explains four integrations and three launch steps",()=>{
+  const html=renderHome();
+  assert.doesNotMatch(html, /<section[^>]*(?:h-editor|h-checkout)|Make it yours|From idea to open|class="h-lanes/);
+  const connections=html.match(/<section class="h-sec h-connect[\s\S]*?<\/section>/)[0];
+  assert.equal((connections.match(/<article\b/g)||[]).length,4);
+  for(const label of ["Custom domain","Social marketing","Razorpay","Delivery partner"])assert.ok(connections.includes(label));
+  const launch=html.match(/<section class="h-sec h-launch[\s\S]*?<\/section>/)[0];
+  assert.equal((launch.match(/<li class="h-gstep\b/g)||[]).length,3);
+  assert.match(launch,/Optional, another 30 minutes/);
+  assert.match(launch,/business and GST checks/i);
 });
 
 function element(dataset={}){

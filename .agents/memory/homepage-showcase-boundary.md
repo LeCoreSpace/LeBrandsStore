@@ -7,6 +7,16 @@ Use current real platform screenshots with fictional sample data, including
 Ann's language options and the latest dashboard, editor and checkout. Use the
 Ann skincare sample in Modern Boutique for its English/storefront examples.
 
+The “Ann, your store guide” language section now uses the user's supplied
+English and Hindi screenshots, both showing Modern Boutique clothing.
+
+**Why:** The user explicitly selected those two current captures. This
+supersedes the older Hindi/different-theme choice for that section.
+
+**How to apply:** Match captions to the supplied screens, and do not replace
+them with older skincare-builder captures or invented interfaces. The separate
+storefront examples can remain skincare.
+
 **Why:** The user selected the skincare Modern Boutique example and repeatedly
 pointed out that homepage screenshots, including the dashboard, were outdated.
 
@@ -16,8 +26,19 @@ not permission to change live merchant stores or operational behaviour.
 
 The homepage should be about 90% visual, engaging and aspirational, focused on
 ease of use. Follow the uploaded storyboard's sequence: founder pain, Ann's
-answer, languages, storefront looks, editing, checkout, operations, connections
+answer, languages, storefront looks, operations, connections
 and discovery, then launch. Keep copy short and understandable.
+Do not restore the standalone product-page, “Make it yours”/editor or Checkout
+marketing sections.
+Connections should have four distinct cards: custom domain, social marketing,
+Razorpay and delivery partners. Explain launch through clear numbered steps,
+not the former “From idea to open” progress bars.
+
+**Why:** The user explicitly removed those sections and found the launch
+timeline difficult to understand.
+
+**How to apply:** Keep these changes limited to the homepage. They are not
+permission to remove editing or checkout features from the actual product.
 
 **Why:** The user approved the current storyboard and explicitly changed the
 earlier hero exclusion: preserve the old hero code for reuse but remove it
@@ -29,12 +50,40 @@ hero notes below are reference only, not instructions for the current page.
 
 Use realistic generated founder portraits expressing pain points and a founder
 comfortably using Ann on a laptop. Show the actual current interface on its screen.
+Use the user's selected opening portrait of a woman working through her
+website setup on a laptop. Keep the separate “Meet Ann” laptop scene.
 
 **Why:** The user specifically requested avatars talking about pain points and
-generated images showing how easy working with Ann is.
+generated images showing how easy working with Ann is, then explicitly requested
+a supplied replacement portrait for the opening woman.
 
-**How to apply:** Label these as illustrative scenarios or generated imagery,
-not verified customers, endorsements or invented testimonials.
+**How to apply:** Use these as generic founder scenarios, never verified
+customers, endorsements or invented testimonials.
+
+Use customer-facing marketing copy, not storyboard or pitch-deck annotations
+such as “Illustrative founder scenarios” or production notes about generated
+scenes. Keep a concise example-data disclosure separate from the sales story.
+The opening must cover both new and existing sellers: no coding skills,
+agency/change costs, sales cuts, add-on fees, where to start, and connecting
+payments, delivery and a web address.
+
+**Why:** The user explicitly said this is a marketing page, not a pitch deck,
+requested removal of wording like “Illustrative founder scenarios”, and
+asked that the opening cover the storyboard's pain points.
+
+**How to apply:** Keep the two audience labels and short plain-language pain
+statements. Describe Ann as a guided builder, not an AI product.
+Use professional, plain wording rather than “tech headache”.
+All six concerns must be clearly visible beside the portraits in the opening
+hero, three for a new founder and three for an existing seller, not hidden
+below large images.
+The hero must contain pain points only, without solution statements. Follow
+it with “Your product is ready. Now let’s give it an online presence. A store
+that tells your brand story and sells.” Then introduce Meet Ann and a flagship
+store built for the founder through a conversation.
+
+**Why:** The user repeatedly said the pain points were missing from the hero,
+then explicitly specified this pain-only, product-presence, Meet Ann sequence.
 
 Position the launch as a 30-minute COD-ready setup, followed by another
 30 minutes for optional existing Razorpay and custom-domain connections.
@@ -47,15 +96,15 @@ story for merchants who already have their Razorpay account and domain.
 business details and required checks must be ready; payment-provider approval
 and domain verification can take longer.
 
-Keep section headings restrained and use visible motion while sections are being
-viewed, not only entrance fades that finish before the user notices them.
+Use fade-in appearances for the current storyboard's section entrances, not
+directional slides, particularly not sliding down from above.
 
-**Why:** The user repeatedly said the landing page looked static and its section
-headings were too big.
+**Why:** The user explicitly requested that section transitions appear rather
+than slide in from the top. This supersedes earlier entrance-motion directions.
 
-**How to apply:** Preserve readable, stationary body copy; animate decorative
-elements and media, and verify actual movement in a browser rather than relying
-on static screenshots. Keep reduced-motion and offscreen/tab-hidden pauses.
+**How to apply:** Keep reveal elements stationary and transition opacity only,
+including tab-panel entrances. Preserve reduced-motion handling and keep the
+archived hero's separate motion intact.
 
 Free discovery through the LeBrands.Space virtual mall is available to every
 approved store. It is provided manually, not automatically.
@@ -164,14 +213,3 @@ visible hero while preserving its code.
 
 **How to apply:** Keep any archived pattern behind readable content if that
 design is explicitly reused. Prioritise the current storyboard for the live page.
-
-The Ann demonstration should show real Ann screenshots in two languages
-and styles: English with Modern Boutique and Hindi with Bold Architectural.
-Both should show a store homepage, not a product detail page. Hindi applies to
-Ann's conversation, not to merchant content or the rest of the interface.
-
-**Why:** The user explicitly requested English in one theme and Hindi in another
-for this section.
-
-**How to apply:** Use isolated fictional-store captures and keep each screenshot
-large enough to inspect, with a clear language/style selector.

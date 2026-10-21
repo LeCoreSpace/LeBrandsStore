@@ -22,17 +22,22 @@ test("Ann replaces the old wizard and dashboard captures retain current branding
 import worker from "../src/index.js";
 
 const text=html=>html.replace(/<[^>]+>/g," ").replace(/\s+/g," ");
-test("the storyboard uses current Ann and Modern Boutique skincare captures",async()=>{
+test("the storyboard uses current skincare storefronts and the selected Ann guide captures",async()=>{
   const html=renderHome();
   assert.match(html,/Current Modern Boutique skincare sample storefront/);
   assert.doesNotMatch(html,/ann-store-editorial|REPLACE-store-photo|REPLACE-checkout|ann-conversation-builder\./);
-  for(const media of [MARKETING_MEDIA.exampleDesktop,MARKETING_MEDIA.exampleMobile,MARKETING_MEDIA.annBuilder]){
+  for(const media of [MARKETING_MEDIA.exampleDesktop,MARKETING_MEDIA.exampleMobile]){
     assert.match(media.src,/^\/img\/ann-skincare-boutique-/);
     assert.match(media.alt,/skincare/i);
     assert.ok(html.includes(media.src));
     for(const url of [media.src,...media.srcset.split(",").map(value=>value.trim().split(" ")[0])]){
       assert.ok((await stat("src/public"+url)).size>0,`Missing skincare preview: ${url}`);
     }
+  }
+  for(const media of [MARKETING_MEDIA.annBuilder,MARKETING_MEDIA.annBuilderHindi]){
+    assert.match(media.src,/^\/img\/home-ann-guide-current-builder-home-/);
+    assert.match(media.alt,/Modern Boutique clothing/);
+    assert.ok(html.includes(media.src));
   }
 });
 const forbidden=/\b(?:unleash|elevate|empower|seamless|seamlessly|supercharge|effortless|effortlessly|revolutionise|game-changer|next-level|cutting-edge|robust|leverage|unlock|journey|tailored|delve|world-class|in today's fast-paced)\b/i;
@@ -51,9 +56,9 @@ test("homepage has the exact title, canonical, Ann store OG image, single H1 and
   assert.match(html,/<link rel="canonical" href="https:\/\/lebrands\.store">/);
   assert.match(html,/<meta property="og:image" content="https:\/\/lebrands\.store\/img\/ann-skincare-boutique-desktop\.jpg">/);
   assert.doesNotMatch(html,/stonescence/i);
-  assert.match(html,/fictional Example Studio store/);
+  assert.match(html,/Store previews use example products and figures/);
   assert.equal((html.match(/<h1\b/g)||[]).length,1);
-  assert.match(html,/<h1[^>]*>A flagship store, built in a conversation\.<\/h1>/);
+  assert.match(html,/<h1[^>]*>A flagship store, built for you in a conversation\.<\/h1>/);
   for(const href of ["https://app.lebrands.store/signup","https://app.lebrands.store/login","/pricing","/refund-policy","/privacy","/terms","/contact"]){
     assert.ok(html.includes(`href="${href}"`),`Missing working destination: ${href}`);
   }
@@ -170,7 +175,7 @@ test("marketing routes are read-only, scoped CSP supports font/video, and previe
   }
   const annMedia=Object.values(MARKETING_MEDIA).filter(media=>media.src.endsWith(".webp"));
   const annPaths=annMedia.flatMap(media=>[media.src,...(media.srcset||"").split(",").filter(Boolean).map(value=>value.trim().split(" ")[0])]);
-  for(const pathname of ["/assets/marketing.css","/assets/marketing.js","/assets/instrument-sans-latin.woff2","/img/home-founder-woman.webp","/img/home-founder-man.webp","/img/home-founder-ann-laptop.webp",...new Set(annPaths)]){
+  for(const pathname of ["/assets/marketing.css","/assets/marketing.js","/assets/instrument-sans-latin.woff2","/img/home-founder-opening-portrait.webp","/img/home-founder-man.webp","/img/home-founder-ann-laptop.webp",...new Set(annPaths)]){
     const response=await worker.fetch(new Request("https://lebrands.store"+pathname),env,{});
     assert.equal(response.status,200);assert.equal(response.headers.get("x-content-type-options"),"nosniff");
   }
@@ -280,7 +285,7 @@ test("landing preserves supplied logos and provides interactive visual feature s
   }
   assert.ok((html.match(/\bdata-h-tabs\b/g)||[]).length>=3);
   assert.match(html,/data-h-variants/);
-  assert.match(html,/data-h-checkout/);
+  assert.doesNotMatch(html,/data-h-checkout/);
   assert.doesNotMatch(html,/class="m-detail-row/);
   assert.match(html,/data-h-cycle/);
   assert.match(css,/\.m-craft-carousel:not\(\.is-enhanced\)/);

@@ -5,12 +5,13 @@ import { runInNewContext } from "node:vm";
 import { renderHome } from "../src/ui/marketing.js";
 import { MARKETING_MEDIA } from "../src/ui/marketing-media.js";
 
-test("the Ann story shows English and Hindi with different styles and homepage captures", async () => {
+test("the Ann story uses the supplied current English and Hindi Modern Boutique homepage captures", async () => {
   const section = renderHome().match(/<section class="h-sec h-ann[\s\S]*?<\/section>/)[0];
   assert.match(section, /role="tablist"/);
   assert.match(section, /English/);
   assert.match(section, /Hindi|हिन्दी/);
-  assert.match(section, /Bold Architectural/);
+  assert.match(section, /Modern Boutique/);
+  assert.doesNotMatch(section, /Bold Architectural/);
   assert.match(section, /role="tab"[^>]+aria-selected="true"/);
   assert.match(section, /role="tabpanel"[^>]+hidden/);
   for (const [language, media] of [["English", MARKETING_MEDIA.annBuilder], ["Hindi", MARKETING_MEDIA.annBuilderHindi]]) {

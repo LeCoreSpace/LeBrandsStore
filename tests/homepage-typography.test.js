@@ -16,3 +16,16 @@ test("homepage font follows the Pricing stack, with scoped headline refinement",
   assert.match(css, /body\.m-home-document[^{]*\.m-section-title/);
   assert.match(css, /body\.m-home-document[^{]*\.m-statement p/);
 });
+
+test("storyboard headings consistently use the self-hosted semibold face, including the primary H1", async () => {
+  const css = await readFile("src/public/marketing.css", "utf8");
+  const headings = css.slice(css.lastIndexOf("/* ===== Homepage heading typography"));
+  assert.match(headings, /--h-head-font:\s*"Instrument Sans"/);
+  assert.match(css, /@font-face\s*\{[^}]*font-family:\s*"Instrument Sans"[^}]*font-weight:\s*400 600/);
+  for (const selector of [".h-sec h1", ".h-sec h2", ".h-sec h3", ".m-faq-item summary", ".hf-cols h2"]) {
+    assert.ok(headings.includes(selector), `Missing homepage heading: ${selector}`);
+  }
+  assert.match(headings, /font-weight:\s*600/);
+  assert.match(headings, /@media \(max-width: 600px\)[\s\S]*\.h-sec h1/);
+  assert.doesNotMatch(headings, /\.m-pricing-document|\.m-hero|https?:\/\//);
+});

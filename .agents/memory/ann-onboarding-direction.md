@@ -3,6 +3,18 @@ name: Ann-only onboarding direction
 description: User-requested replacement of the Ann/Standard chooser and the required Ann-to-editor handoff.
 ---
 
+Ann must not be marketed as AI-powered. The user states, “we are not using AI
+anywhere in Ann.”
+
+**Why:** This explicit product clarification supersedes older AI-builder
+positioning.
+
+**How to apply:** Describe Ann as a guided conversational store builder.
+Remove AI claims from Ann's marketing copy without treating a copy change as
+permission to remove unrelated backend capabilities.
+The user explicitly wants the Ann introduction to say “Not AI. Just how you
+want it.” Keep this negative clarification; do not mistake it for an AI claim.
+
 Use Ann as the single store-building entry point. Remove Standard Builder choices
 from the app, while keeping the theme editor for subsequent design editing and
 publishing. Products and Collections should be separate dashboard menu entries.

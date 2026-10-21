@@ -1361,3 +1361,16 @@ of this register.
 | --- | --- |
 | Read-only source/DDL inspection of Help & support, user/store membership, platform administrators and transactional email infrastructure | Confirmed existing support popover, identity references and durable platform email jobs. No database connection or mutation. |
 | Schema documentation and requirements memory | Wrote the proposed eight-table design, privacy/workflow constraints and delivery sequence. Design only; no executable migration, deployment, email send or app behavior change. |
+
+## 2026-10-21: Approved storyboard homepage publication and heading refinement
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| Homepage markup, current-media and stylesheet changes | Preserved the archived original hero. Used the user-selected opening portrait and supplied English/Hindi Ann captures. Opening now contains only six founder concerns, followed by the product-presence message and Meet Ann. Removed the requested editor, checkout and standalone product-page sections. Added four integration cards and the numbered launch guide. |
+| `node scripts/build-browser-assets.mjs` | Successful final compilation: 31 versioned entries, 42 files. Instrument Sans headings, opacity-only entrances and exact public image allowlists retained. |
+| `node --test --test-concurrency=1 tests/marketing.test.js tests/homepage-flow.test.js tests/homepage-hero-white.test.js tests/homepage-typography.test.js tests/ann-homepage-examples.test.js tests/homepage-redesign.test.js` | Final focused verification: 28 passed. Covers narrative order, six concerns inside two founder cards, requested section removals, four integrations, three launch steps, current captures, typography, archived-hero integrity and interactive demo controls. |
+| Earlier `tests/browser-bundles.test.js` check | Passed after adding only the missing `ann-adaptive-layout.js` filename to the existing static module allowlist. No general asset-gate relaxation. |
+| Managed API/frontend restarts, logs and native preview screenshots | Desktop/mobile opening and desktop connections verified. Mobile launch guide and final Ann heading hierarchy verified. One later desktop screenshot timed out during local Worker reconnection; subsequent native requests recovered to HTTP 200. No new browser testing agent or live merchant-data access. |
+| `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars`, from repository root | Approved Cloudflare publication succeeded, followed by publication of the user's final heading-size correction. Initial version `de54b6eb-5dab-4503-8b8f-bbd59864b046`; final version `9d0e3137-6acc-4e7f-8e96-c9957620b126`. Existing routes, queue and schedule retained. |
+| Read-only production metadata, homepage and asset checks | HTTP 200; latest narrative and larger story/Meet Ann headings with smaller flagship line confirmed. Nine published portrait/Ann image files byte-match local sources; heading font HTTP 200. All 27 non-asset bindings, 17 encrypted secrets, checkout-security encryption-key presence and runtime settings match the pre-publication snapshot. No secret values disclosed. |
+| Scope boundary | No schema migration, database write, merchant-domain activation, order, payment, email send, environment-variable change or credential rotation. |
