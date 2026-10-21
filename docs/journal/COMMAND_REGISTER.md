@@ -1604,3 +1604,12 @@ of this register.
 | Repository root / local, existing Cloudflare configuration | `pnpm exec wrangler deploy --dry-run --config wrangler.jsonc` | Browser assets and Worker bundled successfully. Dry run only, no production publication. |
 | Managed preview workflows | Restart API Server; inspect logs and `/__media-library-preview` at desktop/mobile sizes | Final fixture thumbnails and browser modules returned 200; no console errors in final capture. Fictional store only. |
 | Repository root / local | `git diff --check` | Passed. No migration, upload, deletion, provider setup or live merchant mutation performed. |
+
+### 21 October 2026: Approved Media Library Stage 1 publication
+
+| Working directory / target | Command or operation | Purpose and observed result |
+|---|---|---|
+| Repository root / existing Cloudflare production account | Opaque credential-backed settings/deployment/route snapshot, before and after publication | Stored only binding fingerprints and non-secret runtime metadata locally. All 27 non-asset bindings, 17 encrypted secrets, runtime settings and three semantic routes unchanged. No credential values logged. |
+| Repository root / Cloudflare, explicit user approval | `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` | Published Worker `9a8c37b1-a811-44af-b87e-3651bc8452d2` at 100% traffic. Existing queue and schedule triggers retained. |
+| Production, read-only | Fetch canonical media-library CSS/JS, fingerprinted bundles and active Worker source | Canonical assets matched release bytes; versioned bundles returned 200. Server route/backend markers confirmed in Worker; client details marker confirmed separately in its browser bundle. |
+| Account hostname, read-only | Unauthenticated library API and synthetic nonexistent-session login request | Library denied with 401; database-backed login form returned 200. No real session, private media inspection, migration, file mutation or provider activation. |

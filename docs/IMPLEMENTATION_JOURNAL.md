@@ -2550,3 +2550,23 @@ decision:
   delivery. Cloudflare dry-run build passed; desktop/mobile layouts inspected
   using fictional data. Final mobile capture and media/bundle requests succeeded.
 - No production publication, migration or live merchant data writes performed.
+
+### 21 October 2026: Media Library Stage 1 published
+
+- After explicit user approval, published Stage 1 to the existing Cloudflare
+  Worker with `--keep-vars`. Version `9a8c37b1-a811-44af-b87e-3651bc8452d2`
+  serves 100% of traffic.
+- Compared pre/post fingerprints: all 27 non-asset bindings, 17 encrypted
+  secrets, compatibility/runtime settings and three semantic routes preserved.
+  The existing schedule and queue producer/consumer triggers remain configured.
+- Live canonical media-library JS/CSS matched the release bytes; fingerprinted
+  browser bundles returned 200. Downloaded active Worker code confirmed the
+  media route/backend markers; the client-only details text was independently
+  verified in its browser bundle. Unauthenticated library API returned 401.
+- A valid-shaped, nonexistent synthetic session returned the database-backed
+  login form with HTTP 200. No real account session or private merchant media
+  was inspected. The earlier 20 local checks and responsive fixture validation
+  remain valid; no source behavior changed during publication.
+- No database migration, file upload/deletion, merchant data mutation, AI
+  provider activation or billing changes. Size guidance and generation remain
+  the subsequent stages.
