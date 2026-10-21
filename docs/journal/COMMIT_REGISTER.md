@@ -1,3 +1,7 @@
+### Blog exit confirmation: local regression fix
+
+Removed the redundant native unload prompt so the existing shared application dialog is the sole navigation confirmation. Eighteen focused dialog, navigation and blog checks passed; read-only editor preview rendered. No schema/data changes or production publication.
+
 ### FAQ shortcut and singular LLM removal: approved production release
 
 Published Worker `66193ed3-9741-4704-89fd-e92cd176240d` at 100% traffic. Nine live probes passed, including removed singular-file 404 and delivery of the FAQ shortcut controller/CSS. Existing settings, resource bindings and encrypted secrets are preserved. No schema or merchant content changes.

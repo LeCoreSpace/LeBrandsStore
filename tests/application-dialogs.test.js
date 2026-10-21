@@ -21,6 +21,12 @@ function harness(){
 }
 const settle=async()=>{await Promise.resolve();await Promise.resolve();await Promise.resolve();};
 
+test("blog exits use only the shared application guard, never a second browser prompt",()=>{
+  const blog=readFileSync("src/public/store-blog.js","utf8");
+  assert.match(blog,/registerLeaveGuard\(\(\) => dirty\(\)\)/);
+  assert.doesNotMatch(blog,/\b(?:onbeforeunload|beforeunload)\b/);
+});
+
 test("application navigation cancellation preserves state, approval navigates once and cannot remain bypassed",async()=>{
   const h=harness();
   assert.equal(h.click().defaultPrevented,true);await settle();

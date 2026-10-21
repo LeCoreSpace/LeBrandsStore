@@ -1,3 +1,8 @@
+## 2026-10-21: Blog duplicate exit prompt regression
+
+- `node --test --test-concurrency=1 tests/application-dialogs.test.js tests/store-blog-drafts.test.js tests/browser-module-delivery.test.js tests/navigation-loading.test.js`: all 18 passed. Whitespace check passed; API restart built current browser entries and resumed successful responses.
+- Read-only editor preview rendered. The interaction regression is checked with the navigation guard harness and controller contract, not an authenticated production browser. No live writes or publication.
+
 ## 2026-10-21: Approved FAQ and file-cleanup publication
 
 - `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` published version `66193ed3-9741-4704-89fd-e92cd176240d` at 100% traffic after explicit approval. Binding/secret/runtime and route configuration fingerprints match the immediate baseline.

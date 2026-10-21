@@ -1,5 +1,11 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Blog duplicate exit confirmation corrected locally
+
+- Removed the blog-specific native unload handler, retaining the shared dirty-state application navigation guard. This restores the existing in-app-only confirmation boundary without changing draft persistence, publication or deletion.
+- Eighteen focused dialog/navigation/blog checks passed, including cancellation retaining state, approved navigation occurring once, multiple guards sharing one dialog and a new blog regression assertion. Managed API rebuilt and restarted; the read-only editor preview rendered successfully.
+- No signed-in browser mutation, production publication, migration or merchant data change was performed. Browser tab closing cannot show an application-owned dialog; no native close prompt is introduced.
+
 ## 2026-10-21: Approved FAQ and singular-file update published
 
 - Published the approved follow-up using Wrangler with `--keep-vars`; active version `66193ed3-9741-4704-89fd-e92cd176240d` serves 100% traffic.

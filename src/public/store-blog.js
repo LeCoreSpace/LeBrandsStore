@@ -31,7 +31,6 @@ function init() {
   const dirty = () => snap() !== saved;
   const can = boot.canEdit;
   registerLeaveGuard(() => dirty());
-  addEventListener("beforeunload", e => { if (dirty()) { e.preventDefault(); e.returnValue = ""; } });
 
   async function req(url, opts = {}) {
     const isForm = opts.body instanceof FormData;
