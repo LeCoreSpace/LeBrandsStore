@@ -130,7 +130,8 @@ export const SECTION_RENDERERS = {
     const defaults = [{ label: "Collection", url: "/collections/all" }, { label: "About", url: "/pages/about" }, { label: "Contact", url: "/pages/contact" }];
     const list = Array.isArray(s.settings?.links) && s.settings.links.length ? s.settings.links : defaults;
     const menus=c.settings?.ann_design?.menus;
-    const links = menus?renderDesignMenu(validateDesignMenus(menus).header):list.filter((l) => l?.label && link(l.url)).map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`).join("");
+    let links = menus?renderDesignMenu(validateDesignMenus(menus).header):list.filter((l) => l?.label && link(l.url)).map((l) => `<a href="${esc(l.url)}">${esc(l.label)}</a>`).join("");
+    if(c.data?.blog_enabled&&!links.includes('href="/blog"'))links+='<a href="/blog">Blog</a>';
     const logo = c.logoUrl ? `<img src="${esc(c.logoUrl)}" alt="${esc(c.brand)}" height="36">` : `<span class="au-wordmark">${esc(c.brand)}</span>`;
     const bag = bagControl({ cls: "au-bag au-icon-button", disabled: Boolean(c.options.readOnly || !c.options.commerce) });
     const search = `<button type="button" class="au-icon-button" data-search-open aria-label="Search products" aria-haspopup="dialog" aria-controls="au-search-${esc(s.id)}"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg></button>`;
@@ -224,7 +225,8 @@ export const SECTION_RENDERERS = {
     const social = custom(s.settings?.social_links);
     const line = str(s.settings?.brand_line);
     const menus=c.settings?.ann_design?.menus;
-    const links=menus?renderDesignMenu(validateDesignMenus(menus).footer,{footer:true}):(mine||'<a href="/collections/all">Collection</a><a href="/pages/about">About</a><a href="/pages/contact">Contact</a>')+'<a href="/track">Track order</a>'+POLICIES.map(k=>`<a href="/policies/${k}">${policyTitle(k)}</a>`).join("");
+    let links=menus?renderDesignMenu(validateDesignMenus(menus).footer,{footer:true}):(mine||'<a href="/collections/all">Collection</a><a href="/pages/about">About</a><a href="/pages/contact">Contact</a>')+'<a href="/track">Track order</a>'+POLICIES.map(k=>`<a href="/policies/${k}">${policyTitle(k)}</a>`).join("");
+    if(c.data?.blog_enabled&&!links.includes('href="/blog"'))links+='<a href="/blog">Blog</a>';
     return `<footer class="aura-footer au-footer"><div><a class="au-wordmark" href="/">${esc(c.brand)}</a>${line ? `<p>${esc(line)}</p>` : ""}</div><nav aria-label="Store links and policies">${links}</nav>${social ? `<nav class="au-social" aria-label="Social">${social}</nav>` : ""}</footer>`;
   },
   "product-grid"(s, c) {

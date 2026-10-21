@@ -4,6 +4,9 @@ import worker from "./index.js";
 import { renderWizard } from "./ui/wizard.js";
 import {renderEditor} from "./ui/editor.js";
 import {renderStoreBlog} from "./ui/store-blog.js";
+import {renderStoreDiscovery} from "./ui/store-discovery.js";
+import {serveStoreDiscovery,storeCanonicalOrigin} from "./store/discovery.js";
+import {renderPublicBlog} from "./blog/render.js";
 import {defaultPageLayouts} from "./public/aura-layout.js";
 import {starterLayouts} from "./public/aura-skeleton.js";
 import {starterPreview} from "./public/aura-starters.js";
@@ -74,6 +77,29 @@ export default {
         {headers:{"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});
     }
     const original = new URL(request.url);
+    if(["/__blog-public-preview","/__discovery-preview"].includes(original.pathname)&&["GET","HEAD"].includes(request.method)){
+      const data=exampleFixture();
+      const article={id:"12345678-1234-4234-8234-123456789123",slug:"a-simple-routine",title:"A slower morning, a softer routine",
+        summary:"Small rituals, thoughtfully made. Find a routine that leaves room for what matters.",author:"Example Studio",category:"Stories",
+        hero_media_id:null,hero_alt:"",first_published_at:"2026-10-21T08:00:00Z",updated_at:"2026-10-21T08:00:00Z",media:[],products:[],
+        sections:[{id:"12345678-1234-4234-8234-123456789124",type:"text",heading:"Begin with intention",body:"The simplest routines can feel the most personal.\n\nChoose what works for you, and give yourself a moment to enjoy it."},
+        {id:"12345678-1234-4234-8234-123456789125",type:"quote",heading:"Example Studio",body:"A little care, every day."},
+        {id:"12345678-1234-4234-8234-123456789126",type:"cta",heading:"Explore the collection",body:"Meet your everyday essentials.",href:"/collections/all"}]};
+      data.store.status="live";data.blogs=[article];data.blog_article=article;data.blog_enabled=true;
+      const origin=storeCanonicalOrigin(data),headers={...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"};
+      if(original.pathname==="/__discovery-preview"){
+        const files=[];
+        for(const path of ["/robots.txt","/sitemap.xml","/llms.txt","/llm.txt"]){
+          const r=serveStoreDiscovery(new Request(origin+path),data,origin);
+          files.push({name:path.slice(1),path,url:origin+path,status:r.status,content:await r.text(),location:r.headers.get("location")});
+        }
+        return new Response(request.method==="HEAD"?null:renderStoreDiscovery({store:data.store,role:"viewer",available:true,published:true,origin,files},{name:"Example reviewer"}),{headers});
+      }
+      const style=original.searchParams.get("style");
+      if(["editorial","boutique","architectural","minimal","vintage"].includes(style))data.settings.ann_design={version:1,style,copy:{},media:{}};
+      const options={page:original.searchParams.has("listing")?"blog":"blog-article",blogPage:1,canonicalOrigin:origin,commerce:true,preview:true};
+      return new Response(request.method==="HEAD"?null:renderAura(data,{...options,publicBlogHtml:renderPublicBlog(data,options)}),{headers});
+    }
     if(original.pathname==="/__blog-preview" && ["GET","HEAD"].includes(request.method)){
       const store=exampleFixture().store;
       const article={id:"12345678-1234-4234-8234-123456789123",title:"A slower morning, a softer routine",
@@ -81,7 +107,7 @@ export default {
         author:"Example Studio",category:"Stories",hero_media_id:null,hero_alt:"",
         revision:"1",updated_at:new Date("2026-10-21T08:00:00Z").toISOString(),
         sections:[{id:"12345678-1234-4234-8234-123456789124",type:"text",heading:"Begin with intention",body:"The simplest routines can feel the most personal."}]};
-      const data={store,role:"viewer",available:true,articles:[article],
+      const data={store,role:"viewer",available:true,publishing_available:true,articles:[article],
         article:original.searchParams.get("page")==="editor"?article:null,media:[],products:[],list_offset:0,has_more:false};
       return new Response(request.method==="HEAD"?null:renderStoreBlog(data,{name:"Example reviewer"}),
         {headers:{...SECURITY_HEADERS,"content-type":"text/html; charset=utf-8","cache-control":"no-store","x-robots-tag":"noindex, nofollow"}});

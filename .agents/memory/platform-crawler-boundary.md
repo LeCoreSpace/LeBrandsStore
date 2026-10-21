@@ -45,3 +45,9 @@ Store-level blogs and discovery files should be delivered in phases and apply to
 **Why:** The user explicitly requested phased implementation “even for existing 4 stores”.
 
 **How to apply:** Avoid new-store-only initialization or requiring merchants to republish unrelated catalogue drafts to receive discovery features.
+
+Keep merchant discovery-file contents and blog management together under “Content for LLM”, with Blog as a submenu.
+
+**Why:** The user explicitly requested that brands see each generated file's contents in this menu and create, edit and delete blogs beneath it.
+
+**How to apply:** Preserve this information grouping when extending merchant content tools. Keep merchant content separate from platform marketing content.

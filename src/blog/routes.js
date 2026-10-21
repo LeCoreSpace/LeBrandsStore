@@ -5,9 +5,10 @@ import {commerceError} from "../public/commerce-rules.js";
 import {dashboardAccess,audit} from "../dashboard/repository.js";
 import {blogAvailable,blogDashboard,saveBlogArticle,deleteBlogArticle} from "./repository.js";
 import {renderStoreBlog,renderStoreBlogPreview} from "../ui/store-blog.js";
+import {changeBlogPublication} from "./publication.js";
 
 export function isBlogDashboard(path) {
-  return /^\/(?:api\/)?stores\/[^/]+\/blog(?:\/[^/]+(?:\/preview)?)?$/.test(path);
+  return /^\/(?:api\/)?stores\/[^/]+\/blog(?:\/[^/]+(?:\/(?:preview|publish|unpublish))?)?$/.test(path);
 }
 export async function handleBlogDashboard(request,db,user,token,id,child,action) {
   const url = new URL(request.url), api = url.pathname.startsWith("/api/"), read = ["GET","HEAD"].includes(request.method);
@@ -17,9 +18,12 @@ export async function handleBlogDashboard(request,db,user,token,id,child,action)
   try {
     if (!user || user.must_change_password) throw commerceError("Sign in to manage articles.",undefined,401);
     if (!UUID.test(id) || (child && child !== "new" && !UUID.test(child))) throw commerceError("Article not found.",undefined,404);
-    if ((action && (action!=="preview" || !child || child==="new" || api || !read)) ||
-      (api && child==="new") || (!read && (!api || action || !["POST","PUT","DELETE"].includes(request.method))) ||
-      (!read && (request.method==="POST" ? !!child : !child)))
+    const publishing=["publish","unpublish"].includes(action);
+    if(publishing && (!api || read || request.method!=="POST" || !child || child==="new"))
+      throw commerceError("Method not allowed.",undefined,405);
+    if ((!publishing && action && (action!=="preview" || !child || child==="new" || api || !read)) ||
+      (api && child==="new") || (!read && !publishing && (!api || action || !["POST","PUT","DELETE"].includes(request.method))) ||
+      (!read && !publishing && (request.method==="POST" ? !!child : !child)))
       throw commerceError("Method not allowed.",undefined,405);
     if (!read && request.headers.get("origin") !== url.origin) throw commerceError("Reload your dashboard before saving.",undefined,403);
     const rawOffset=url.searchParams.get("offset") || "0";
@@ -32,14 +36,15 @@ export async function handleBlogDashboard(request,db,user,token,id,child,action)
       if (!read && !await blogAvailable(tx)) throw commerceError("The blog editor needs its database update before saving.",undefined,503);
       let saved = null;
       if (!read) {
-        if (request.method==="DELETE") await deleteBlogArticle(tx,id,child,body);
+        if(publishing)await changeBlogPublication(tx,id,child,body,action);
+        else if (request.method==="DELETE") await deleteBlogArticle(tx,id,child,body);
         else saved = await saveBlogArticle(tx,id,child || null,body);
-        await audit(tx,id,user.id,request.method==="DELETE"?"blog.deleted":child?"blog.edited":"blog.created","blog",child || saved.id);
+        await audit(tx,id,user.id,publishing?`blog.${action}`:request.method==="DELETE"?"blog.deleted":child?"blog.edited":"blog.created","blog",child || saved.id);
       }
-      const detailId = read ? (child && child!=="new" ? child : null) : saved?.id;
+      const detailId = publishing?child:read ? (child && child!=="new" ? child : null) : saved?.id;
       return {...await blogDashboard(tx,id,{articleId:detailId,includeResources:api || !!child,offset:Number(rawOffset)}),role};
     },{lockStore:!read});
-    if (api) return json(data,request.method==="POST"?201:200);
+    if (api) return json(data,request.method==="POST"&&!publishing?201:200);
     return new Response(request.method==="HEAD"?null:action==="preview"?renderStoreBlogPreview(data):renderStoreBlog({...data,editing:!!child},user),
       {headers:{...headers,"content-type":"text/html; charset=utf-8"}});
   } catch (error) {

@@ -110,6 +110,7 @@ test("all four existing-store fixtures work without republishing, including lega
           return [{ snapshot: data, canonical_hostname: `${name}.brand.test` }];
         }
         if (query.includes("pages_enabled")) return [{ pages_enabled: false }];
+        if (query.includes("to_regclass('public.store_blog_publications')")) return [{ available: false }];
         throw Error("Discovery must not read mutable catalogue or draft data");
       });
     } };

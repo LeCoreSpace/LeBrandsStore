@@ -64,12 +64,16 @@ export function storeDiscoveryPages(data) {
       pages.push({ path: `/policies/${policy.kind}`, title: policy.title || policy.kind });
     }
   }
+  const articles=(Array.isArray(data.blogs)?data.blogs:[]).filter(b=>SLUG.test(String(b.slug||"")));
+  if(articles.length)pages.push({path:"/blog",title:"Blog"});
+  for(const article of articles)pages.push({path:`/blog/${article.slug}`,title:article.title||"Article",
+    ...(article.updated_at && Number.isFinite(Date.parse(article.updated_at))?{lastmod:new Date(article.updated_at).toISOString()}:{} )});
   return [...new Map(pages.map(page => [page.path, page])).values()];
 }
 
 function sitemap(pages, origin) {
   // Do not fabricate lastmod dates from request time or mutable draft timestamps.
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages.map(page => `<url><loc>${xml(origin + page.path)}</loc></url>`).join("\n")}\n</urlset>\n`;
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${pages.map(page => `<url><loc>${xml(origin + page.path)}</loc>${page.lastmod?`<lastmod>${xml(page.lastmod)}</lastmod>`:""}</url>`).join("\n")}\n</urlset>\n`;
 }
 
 export function serveStoreDiscovery(request, data, origin) {
@@ -103,11 +107,12 @@ export function serveStoreDiscovery(request, data, origin) {
   } else {
     const brand = markdown(data.settings?.brand_name || data.store?.name || "Store");
     const description = markdown(plain(data.settings?.description).slice(0, 600));
-    const overview = pages.filter(page => !page.path.startsWith("/products/") && !page.path.startsWith("/collections/"));
+    const overview = pages.filter(page => !page.path.startsWith("/products/") && !page.path.startsWith("/collections/") && !page.path.startsWith("/blog/"));
     const collections = pages.filter(page => page.path.startsWith("/collections/")).slice(0, 50);
     const products = pages.filter(page => page.path.startsWith("/products/")).slice(0, 20);
+    const articles=pages.filter(page=>page.path.startsWith("/blog/")).slice(0,20);
     const links = list => list.map(page => `- [${markdown(page.title)}](${origin}${page.path})`).join("\n");
-    body = `# ${brand}\n\n${description ? `> ${description}\n\n` : ""}Public information from this store's published content. Product availability and prices should be checked on the product pages.\n\n## Store\n${links(overview)}\n\n## Collections\n${links(collections)}\n${products.length ? `\n## Selected products\n${links(products)}\n` : ""}\n## Complete public URL list\n- [Sitemap](${origin}/sitemap.xml)\n\nThis file is a discovery aid, not a guarantee of search indexing or AI recommendations.\n`;
+    body = `# ${brand}\n\n${description ? `> ${description}\n\n` : ""}Public information from this store's published content. Product availability and prices should be checked on the product pages.\n\n## Store\n${links(overview)}\n\n## Collections\n${links(collections)}\n${products.length ? `\n## Selected products\n${links(products)}\n` : ""}${articles.length?`\n## Articles\n${links(articles)}\n`:""}\n## Complete public URL list\n- [Sitemap](${origin}/sitemap.xml)\n\nThis file is a discovery aid, not a guarantee of search indexing or AI recommendations.\n`;
   }
   return new Response(request.method === "HEAD" ? null : body, { headers });
 }

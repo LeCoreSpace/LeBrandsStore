@@ -1,4 +1,5 @@
 import {blogInput,blogRevision} from "./input.js";
+import {blogPublishingAvailable,blogOrigin,publicationMeta} from "./publication.js";
 import {commerceError} from "../public/commerce-rules.js";
 
 const missing = () => commerceError("Article not found.",undefined,404);
@@ -9,7 +10,7 @@ export async function blogAvailable(tx) {
   return row?.available === true;
 }
 export async function blogArticle(tx,id,articleId) {
-  const [row] = await tx`SELECT id,title,slug,summary,author,category,hero_media_id,hero_alt,sections,
+  const [row] = await tx`SELECT id,title,slug,summary,author,category,hero_media_id,hero_alt,sections,to_jsonb(store_blog_drafts)->>'published_slug' AS published_slug,
     revision::text AS revision,created_at::text AS created_at,updated_at::text AS updated_at
     FROM public.store_blog_drafts WHERE store_id=${id} AND id=${articleId}`;
   if (!row) throw missing();
@@ -18,7 +19,7 @@ export async function blogArticle(tx,id,articleId) {
 export async function blogDashboard(tx,id,{articleId=null,includeResources=false,offset=0}={}) {
   const [store] = await tx`SELECT store_id,name,subdomain,status FROM public.stores WHERE store_id=${id}`;
   const available = await blogAvailable(tx);
-  const data = {store,available,articles:[],article:null,media:[],products:[],list_offset:offset};
+  const data = {store,available,articles:[],article:null,media:[],products:[],list_offset:offset,publishing_available:false};
   if (!available) return data;
   data.articles = await tx`SELECT id,title,summary,revision::text AS revision,updated_at::text AS updated_at
     FROM public.store_blog_drafts WHERE store_id=${id} ORDER BY updated_at DESC,id LIMIT 201 OFFSET ${offset}`;
@@ -26,6 +27,18 @@ export async function blogDashboard(tx,id,{articleId=null,includeResources=false
   data.has_more = data.articles.length > 200;
   data.articles = data.articles.slice(0,200);
   if (articleId) data.article = await blogArticle(tx,id,articleId);
+  data.publishing_available=await blogPublishingAvailable(tx);
+  if(data.publishing_available){
+    const origin=await blogOrigin(tx,id,store);
+    const publications=await tx`SELECT article_id,slug,revision::text,first_published_at::text,updated_at::text
+      FROM public.store_blog_publications WHERE store_id=${id}`;
+    const byId=new Map(publications.map(p=>[p.article_id,p]));
+    for(const row of [...data.articles,...(data.article?[data.article]:[])])
+      row.publication=publicationMeta(byId.get(row.id),origin);
+    const addresses=await tx`SELECT id,published_slug FROM public.store_blog_drafts WHERE store_id=${id} AND published_slug IS NOT NULL`;
+    const byAddress=new Map(addresses.map(a=>[a.id,a.published_slug]));
+    for(const row of data.articles)row.published_slug=byAddress.get(row.id)||null;
+  }
   if (includeResources) {
     const rows = await tx`SELECT id,object_key,upload_type,alt_text,width,height FROM public.media
       WHERE store_id=${id} AND upload_type='image' ORDER BY created_at DESC,id DESC LIMIT 200`;
@@ -49,6 +62,11 @@ export async function blogDashboard(tx,id,{articleId=null,includeResources=false
 export async function saveBlogArticle(tx,id,articleId,input) {
   const value = blogInput(input);
   const revision = articleId ? blogRevision(input.expected_revision) : null;
+  if(articleId){
+    const previous=await blogArticle(tx,id,articleId);
+    if(previous.published_slug && previous.published_slug!==value.slug)
+      throw commerceError("A published article keeps its original address.",undefined,400);
+  }
   const images = [...new Set([value.hero_media_id,...value.sections.map(s=>s.media_id)].filter(Boolean))];
   if(images.length) {
     const media = await tx`SELECT id FROM public.media WHERE store_id=${id}

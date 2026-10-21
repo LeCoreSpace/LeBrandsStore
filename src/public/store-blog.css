@@ -107,3 +107,7 @@ body:has(.lbbp){background:#f7f2ee}
 .lbb-frame canvas{max-width:100%;height:auto;background:#fff}
 .lbb-frame:focus-visible{outline:3px solid #c99cac}
 .lbb-foot{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.lbb-tag[data-state=published]{background:#edf6f1;color:#2f6b4f}
+.lbb-tag[data-state=changes]{background:#fff6e5;color:#7a5a12}
+.lbb-tag[data-state=unpublished]{background:#eee;color:#555}
+.lbb-card input[readonly]{background:var(--b-wash);color:var(--b-mute)}

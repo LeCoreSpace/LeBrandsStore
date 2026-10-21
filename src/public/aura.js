@@ -78,6 +78,8 @@ export function renderAura(data = {}, options = {}) {
   const store = data.store || {};
   const products = Array.isArray(data.products) ? data.products : [];
   const page = options.page || "home";
+  const blogPage=["blog","blog-article"].includes(page);
+  const article=page==="blog-article"?data.blog_article:null;
   const brand = settings.brand_name || store.name || "Your brand";
   const description = settings.description || "";
   const subdomain = slug(settings.subdomain || store.subdomain);
@@ -106,24 +108,27 @@ export function renderAura(data = {}, options = {}) {
         : page === "cart" ? `Your bag · ${brand}` : page === "checkout" ? `Checkout · ${brand}` : page === "track" ? `Track your order · ${brand}`
           : page === "confirmation" ? `Order confirmed · ${brand}` : brand;
   const seo=page==="product"?prodForPage?.catalogue:page==="collection"?activeCol:null;
-  const title=seo?.seo_title||defaultTitle;
-  const descriptionText = String(seo?.seo_description || (page==="product"?prodForPage?.description:activeCol?.description) || description).replace(/<[^>]*>/g," ").replace(/\s+/g, " ").trim().slice(0, 160);
+  const title=blogPage?`${article?.title||"Blog"}${page==="blog"&&options.blogPage>1?` · Page ${options.blogPage}`:""} · ${brand}`:seo?.seo_title||defaultTitle;
+  const descriptionText = String(article?.summary || (blogPage&&!article?`Stories and guides from ${brand}.`:"") || seo?.seo_description || (page==="product"?prodForPage?.description:activeCol?.description) || description).replace(/<[^>]*>/g," ").replace(/\s+/g, " ").trim().slice(0, 160);
   const canonicalPath = page === "collection" ? (activeCol && /^[a-z0-9-]+$/.test(String(activeCol.slug || "")) ? `/collections/${activeCol.slug}` : "/collections/all") : page === "product" ? productHref(prodForPage)
     : page === "about" ? "/pages/about" : page === "contact" ? "/pages/contact" : page === "faq" ? "/pages/faq" : page === "policy" ? `/policies/${slug(options.policyKind)}` : "/";
   const canonicalOrigin = /^https:\/\/[a-z0-9.-]+$/i.test(String(options.canonicalOrigin || ""))
     ? options.canonicalOrigin : subdomain ? `https://${subdomain}.lebrands.store` : "";
-  const canonicalUrl = canonicalOrigin && !commercePage && page !== "404" ? `${canonicalOrigin}${canonicalPath}` : "";
+  const canonicalUrl = canonicalOrigin && !commercePage && page !== "404" ? `${canonicalOrigin}${blogPage?article?`/blog/${article.slug}`:`/blog${options.blogPage>1?`?page=${options.blogPage}`:""}`:canonicalPath}` : "";
   const logoUrl = safeImage(settings.logo_url);
   const pageKey = getPageKey({ ...options, page });
   const layouts = data.layouts && typeof data.layouts === "object" ? data.layouts : defaultPageLayouts(data);
-  const sections = Array.isArray(layouts[pageKey]) ? layouts[pageKey] : [];
+  const sections = Array.isArray(layouts[blogPage?"home":pageKey]) ? layouts[blogPage?"home":pageKey] : [];
   const hero = sections.find(section=>section.type==="hero"&&section.settings?.enabled!==false);
   const heroImage = hero?.settings?.variant==="video"?hero.settings.poster:hero?.settings?.image;
   const heroResource = imageSourceSet(heroImage);
   const heroSizes = hero?.settings?.variant==="fullbleed"||hero?.settings?.variant==="video"?"100vw":HERO_IMAGE_SIZES;
-  const heroPreload = heroResource.url ? `<link rel="preload" as="image" href="${esc(heroResource.url)}"${heroResource.srcset?` imagesrcset="${esc(heroResource.srcset)}" imagesizes="${esc(heroSizes)}"`:""} fetchpriority="high">` : "";
+  const heroPreload = !blogPage && heroResource.url ? `<link rel="preload" as="image" href="${esc(heroResource.url)}"${heroResource.srcset?` imagesrcset="${esc(heroResource.srcset)}" imagesizes="${esc(heroSizes)}"`:""} fetchpriority="high">` : "";
   const ctx = { layout: sections, data, options: { ...options, page }, settings, brand, products, product: prodForPage, logoUrl, renderDescription };
-  const designed = renderSavedDesign({ ...data, products }, { ...options, page, productId: prodForPage?.id, collectionId: activeCol?.id });
+  // Server-owned, escaped article markup. Never import account/server modules
+  // into this renderer, which is also delivered to browser theme previews.
+  const publicBlogHtml=blogPage?options.publicBlogHtml||"":"";
+  const designed = renderSavedDesign({ ...data, products }, { ...options, page, publicBlogHtml, productId: prodForPage?.id, collectionId: activeCol?.id });
   const out = [];
   let mainOpen = false;
   for (const section of (designed ? [] : sections)) {
@@ -136,6 +141,12 @@ export function renderAura(data = {}, options = {}) {
   }
   if (mainOpen) out.push("</main>");
   let body = designed ? designed.body : out.join("");
+  if(blogPage&&!designed)body=sections.filter(s=>["announcement","header"].includes(s.type)).map(s=>renderSection(s,ctx)).join("")+
+    publicBlogHtml+sections.filter(s=>s.type==="footer").map(s=>renderSection(s,ctx)).join("");
+  const articleSchema=article?{"@context":"https://schema.org","@type":"BlogPosting",headline:article.title,description:article.summary,
+    datePublished:new Date(article.first_published_at).toISOString(),dateModified:new Date(article.updated_at).toISOString(),mainEntityOfPage:canonicalUrl,
+    ...(article.author?{author:{"@type":"Person",name:article.author}}:{}),
+    ...(article.hero_image?.url?{image:article.hero_image.url}:{}),publisher:{"@type":"Organization",name:brand}}:null;
   if(page==="collection"){
     const gridCollection=activeCol||(!designed&&data.collections?.find(c=>String(c.id)===String(sections.find(s=>s.type==="product-grid")?.settings?.collection_id)));
     const list=gridCollection?products.filter(p=>Array.isArray(gridCollection.product_ids)?gridCollection.product_ids.includes(p.id):p.collection_ids?.includes(gridCollection.id)):products;
@@ -154,10 +165,12 @@ export function renderAura(data = {}, options = {}) {
       <meta name="description" content="${esc(descriptionText)}">
       <meta name="theme-color" content="${esc(paper)}">
       ${noindex ? '<meta name="robots" content="noindex, nofollow">' : ""}
-      <meta property="og:type" content="website">
+      <meta property="og:type" content="${article?"article":"website"}">
       <meta property="og:site_name" content="${esc(brand)}">
       <meta property="og:title" content="${esc(title)}">
       <meta property="og:description" content="${esc(descriptionText)}">
+      ${article?.hero_image?.url?`<meta property="og:image" content="${esc(article.hero_image.url)}">`:""}
+      ${articleSchema?`<script type="application/ld+json">${JSON.stringify(articleSchema).replace(/</g,"\\u003c").replace(/\u2028/g,"\\u2028").replace(/\u2029/g,"\\u2029")}</script>`:""}
       ${canonicalUrl ? `<link rel="canonical" href="${esc(canonicalUrl)}"><meta property="og:url" content="${esc(canonicalUrl)}">` : ""}
       <link rel="preload" href="/assets/instrument-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
       ${designed ? `<style>${designed.css}</style>` : '<link rel="stylesheet" href="/assets/aura.css">'}
@@ -166,6 +179,7 @@ export function renderAura(data = {}, options = {}) {
       ${!designed && STYLE_IDS.includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-styles.css">' : ""}
       ${!designed && ["minimal", "vintage"].includes(settings.style_preset) ? '<link rel="stylesheet" href="/assets/aura-extra-styles.css">' : ""}
       <link rel="stylesheet" href="/assets/typography.css">
+      ${blogPage?'<link rel="stylesheet" href="/assets/store-articles.css">':""}
       ${page==="collection"?`<style>${COLLECTION_FILTER_CSS}</style>`:""}
     </head>
     <body ${designed ? `class="${designed.bodyClass}" data-style="${designed.style}" data-design-page="${esc(page)}"` : "data-aura"} data-preset="${preset}" ${!designed && STYLE_IDS.includes(settings.style_preset) ? `data-style="${settings.style_preset}"` : ""} data-font="${esc(fonts[settings.font_preset] ? settings.font_preset : "modern")}">${body}${options.commerce && !commercePage ? `<template data-commerce-config data-store-key="${esc(store.store_id || options.storeKey || "")}" data-site-key="${esc(options.siteKey || "")}" data-page="${esc(page)}" data-read-only="${options.readOnly === true ? "true" : "false"}"></template>` : ""}${options.embeddedPreview ? "" : '<script type="module" src="/assets/aura-ui.js"></script>'}${options.commerce ? `<div id="commerce-mount"></div>${options.embeddedPreview ? "" : '<script type="module" src="/assets/commerce.js"></script>'}` : ""}</body>

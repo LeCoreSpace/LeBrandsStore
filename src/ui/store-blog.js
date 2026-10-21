@@ -6,6 +6,8 @@ const esc = escapeHtml;
 const list = v => Array.isArray(v) ? v : [];
 const safeJson = v => JSON.stringify(v ?? {}).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 const head = '<link rel="stylesheet" href="/assets/store-blog.css"><script type="module" src="/assets/store-blog.js"></script>';
+const pubState = a => a?.publication ? (String(a.publication.revision) === String(a.revision) ? "published" : "changes") : a?.published_slug ? "unpublished" : "draft";
+const pubLabel = a => ({ published: "Published", changes: "Unpublished changes", unpublished: "Unpublished", draft: "Draft" })[pubState(a)];
 const when = v => { const d = new Date(v); return Number.isNaN(d.getTime()) ? "Not recorded" : d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" }); };
 const safeMediaUrl = v => { try { const u = new URL(String(v || ""), "https://app.lebrands.store"); return u.protocol === "https:" || String(v).startsWith("/") ? String(v) : ""; } catch { return ""; } };
 
@@ -13,15 +15,15 @@ export function renderStoreBlog(data = {}, user) {
   const store = data.store || {};
   const sid = String(store.store_id || "");
   const base = `/stores/${encodeURIComponent(sid)}/blog`;
-  const heading = (actions = "") => `<div class="lb-page-heading"><div><h1>Blog</h1><p>Write and refine drafts for your store. Drafts are private. Publishing arrives in a later release.</p></div>${actions}</div>`;
+  const heading = (actions = "") => `<div class="lb-page-heading"><div><h1>Blog</h1><p>Write and refine drafts for your store. Drafts are private until you publish them.</p></div>${actions}</div>`;
   if (data.available === false) {
     return documentPage("blog", data, user, `${heading()}<section class="lb-empty lbb-unavailable" role="alert"><h2>Blog drafts are not available yet</h2><p>The blog database update has not been applied to this store, so drafts cannot be saved. The rest of your dashboard is unaffected. Try again after the update is live.</p><a class="lb-button lb-button-outline" href="${base}">Check again</a></section>`, head);
   }
   const canEdit = ["owner", "admin", "editor"].includes(data.role);
   const articles = list(data.articles);
   const offset = Math.max(0, Number.parseInt(data.list_offset, 10) || 0);
-  const boot = { storeId: sid, base, role: data.role || "", canEdit, article: data.article || null, media: list(data.media), products: list(data.products), articles };
-  const rows = articles.length ? `<ul class="lbb-list">${articles.map(a => `<li><a class="lbb-row" href="${base}/${encodeURIComponent(a.id)}"><span class="lbb-row-main"><strong>${esc(a.title || "Untitled draft")}</strong><small>${esc(a.summary || "No summary yet")}</small></span><span class="lbb-row-meta"><span class="lbb-tag">Draft</span><small>Updated ${esc(when(a.updated_at))}</small></span></a></li>`).join("")}</ul>`
+  const boot = { storeId: sid, base, role: data.role || "", canEdit, article: data.article || null, publishingAvailable: data.publishing_available === true, media: list(data.media), products: list(data.products), articles };
+  const rows = articles.length ? `<ul class="lbb-list">${articles.map(a => `<li><a class="lbb-row" href="${base}/${encodeURIComponent(a.id)}"><span class="lbb-row-main"><strong>${esc(a.title || "Untitled draft")}</strong><small>${esc(a.summary || "No summary yet")}</small></span><span class="lbb-row-meta"><span class="lbb-tag" data-state="${pubState(a)}">${pubLabel(a)}</span><small>Updated ${esc(when(a.updated_at))}</small></span></a></li>`).join("")}</ul>`
     : `<section class="lb-empty lbb-empty"><span class="lb-empty-mark" aria-hidden="true"></span><h2>No drafts yet</h2><p>Start an article about a launch, a care guide or the story behind your products. Nothing is public until you publish.</p>${canEdit ? `<a class="lb-button" href="${base}/new">Write your first draft</a>` : ""}</section>`;
   const body = `<div class="lbb" data-blog-root>
     <div data-blog-list ${data.article ? "hidden" : ""}>${heading(canEdit ? `<div class="lb-heading-actions"><a class="lb-button" href="${base}/new" data-blog-new>New draft</a></div>` : "")}${rows}${(offset > 0 || data.has_more === true) ? `<nav class="lbb-pager" aria-label="Draft pages"><span>Showing ${articles.length ? offset + 1 : 0} to ${offset + articles.length}. 200 articles per page.</span><span class="lbb-pager-links">${offset > 0 ? `<a class="lb-button lb-button-outline lb-button-small" href="${base}?offset=${Math.max(0, offset - 200)}" rel="prev">Previous</a>` : ""}${data.has_more === true ? `<a class="lb-button lb-button-outline lb-button-small" href="${base}?offset=${offset + 200}" rel="next">Next</a>` : ""}</span></nav>` : ""}</div>

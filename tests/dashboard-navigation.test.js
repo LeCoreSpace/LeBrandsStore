@@ -10,10 +10,12 @@ import worker from "../src/index.js";
 const ID = "11111111-1111-4111-8111-111111111111";
 const nav = (o = {}) => renderSidebarNav({ storeId: ID, subdomain: "demo", role: "owner", ...o });
 
-test("eight groups plus Today with offers separate from Catalogue", () => {
+test("nine groups plus Today with offers separate from Catalogue", () => {
   const html = nav();
   for (const g of ["Catalogue", "Order desk", "Money &amp; records", "Store studio", "Brand reach", "Business pulse", "Settings"]) assert.match(html, new RegExp(`<span class="lbn-label">${g}</span>`));
-  assert.equal((html.match(/data-nav-group=/g) || []).length, 8);
+  assert.equal((html.match(/data-nav-group=/g) || []).length, 9);
+  assert.ok(html.includes("Content for LLM"));
+  assert.ok(navigationModel(`/stores/${ID}`).groups.find(g=>g.key==="content").items.some(i=>i.label==="Blog"));
   const model=navigationModel(`/stores/${ID}`,{role:"owner"});
   assert.equal(model.groups.find(g=>g.label==="Catalogue").items.some(i=>i.label==="Offers & codes"),false);
   assert.ok(model.groups.some(g=>g.label==="Offers & codes"));

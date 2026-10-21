@@ -21,7 +21,7 @@ export function annDesign(settings) {
 export function renderSavedDesign(data = {}, options = {}) {
   const design = annDesign(data.settings);
   const page = options.page || "home";
-  if (!design || ![...DESIGN_PAGES,"cart","checkout","track","confirmation"].includes(page)) return null;
+  if (!design || ![...DESIGN_PAGES,"blog","blog-article","cart","checkout","track","confirmation"].includes(page)) return null;
   const rendered=renderDesignLive(data, { ...data.settings, style_preset: design.style }, { ...options, page }, design);
   if(rendered?.body&&DESIGN_PAGES.includes(page)){
     rendered.body=injectSectionInstances(rendered.body,design.sections,data,options);

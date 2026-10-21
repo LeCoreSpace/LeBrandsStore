@@ -38,8 +38,10 @@ export function navigationModel(root, { subdomain = "", role = "editor" } = {}) 
         live("Theme editor", `${root}/editor`),
         planned("Menus & links"),
         live("Pages & policies", `${settings}#policies`),
-        live("Blog", `${root}/blog`, ["blog"]),
         storeUrl ? { label: "Browser preview", href: storeUrl, kind: "external", hint: "Opens store", views: [] } : { label: "Browser preview", href: null, kind: "unavailable", hint: "Unavailable", views: [] }] },
+      { key: "content", label: "Content for LLM", icon: "studio", items: [
+        live("Discovery files", `${root}/content-llm`, ["content-llm"]),
+        live("Blog", `${root}/blog`, ["blog"])] },
       { key: "reach", label: "Brand reach", icon: "reach", items: [planned("Email campaigns"), planned("WhatsApp messages"), planned("Social campaigns")] },
       { key: "pulse", label: "Business pulse", icon: "pulse", items: [
         ...(role === "owner" || role === "admin" ? [live("Analytics", `${root}/analytics`, ["analytics"], { hint: "Private" })] : []),

@@ -19,12 +19,15 @@ function init() {
   if (!boot.article && !isNew) return;
   listEl.hidden = true; ed.hidden = false;
   const media = new Map(boot.media.map(m => [String(m.id), m]));
-  const blank = () => ({ id: "", title: "", slug: "", summary: "", author: "", category: "", hero_media_id: null, hero_alt: "", sections: [], revision: 0 });
-  const norm = a => ({ ...blank(), ...a, hero_media_id: a.hero_media_id || null, sections: (a.sections || []).map(s => ({ id: s.id || crypto.randomUUID(), type: s.type || "text", heading: s.heading || "", body: s.body || "", media_id: s.media_id || null, alt: s.alt || "", product_id: s.product_id || null, href: s.href || "" })) });
+  const blank = () => ({ id: "", title: "", slug: "", summary: "", author: "", category: "", hero_media_id: null, hero_alt: "", sections: [], revision: 0, publication: null, published_slug: null });
+  const norm = a => ({ ...blank(), ...a, publication: a.publication || null, published_slug: a.published_slug || null, hero_media_id: a.hero_media_id || null, sections: (a.sections || []).map(s => ({ id: s.id || crypto.randomUUID(), type: s.type || "text", heading: s.heading || "", body: s.body || "", media_id: s.media_id || null, alt: s.alt || "", product_id: s.product_id || null, href: s.href || "" })) });
   let art = norm(boot.article || blank());
   const snap = () => JSON.stringify([art.title, art.slug, art.summary, art.author, art.category, art.hero_media_id, art.hero_alt, art.sections]);
   let saved = snap(), busy = false, status = { kind: "", msg: "" }, errors = {}, slugTouched = !!art.slug;
   const persisted = () => !!art.id;
+  const pstate = () => art.publication ? (String(art.publication.revision) === String(art.revision) ? "published" : "changes") : art.published_slug ? "unpublished" : "draft";
+  const PL = { published: "Published", changes: "Unpublished changes", unpublished: "Unpublished", draft: "Draft" };
+  const pubUrl = () => { try { const u = new URL(String(art.publication?.url || "")); return u.protocol === "https:" ? u.href : ""; } catch { return ""; } };
   const dirty = () => snap() !== saved;
   const can = boot.canEdit;
   registerLeaveGuard(() => dirty());
@@ -48,7 +51,7 @@ function init() {
       <label class="lb-field"><span>Alt text</span><input data-f="${altKey}" maxlength="${LIM.alt}" value="${esc(alt)}" ${d}><small>Describe the image for people who cannot see it.</small></label></div></div>`;
   }
   function field(label, name, val, o = {}) {
-    const d = can ? "" : "disabled", err = errors[o.errKey || name];
+    const d = can ? (o.ro ? "readonly" : "") : "disabled", err = errors[o.errKey || name];
     const ctl = o.area ? `<textarea data-f="${name}" rows="${o.rows || 5}" maxlength="${o.max}" ${d}>${esc(val)}</textarea>` : `<input data-f="${name}" maxlength="${o.max}" value="${esc(val)}" ${d}>`;
     return `<label class="lb-field"><span>${label}</span>${ctl}${o.hint ? `<small>${esc(o.hint)}</small>` : ""}${err ? `<small class="lbb-err" role="alert">${esc(err)}</small>` : ""}</label>`;
   }
@@ -68,7 +71,7 @@ function init() {
 
   function paint(focusSel) {
     const url = persisted() ? `${boot.base}/${encodeURIComponent(art.id)}` : "";
-    ed.innerHTML = `<div class="lb-page-heading"><div><h1>${persisted() ? esc(art.title || "Untitled draft") : "New draft"}</h1><p>${can ? "Edits stay on this page until you save." : "You have view-only access to drafts."} Not public.</p></div>
+    ed.innerHTML = `<div class="lb-page-heading"><div><h1>${persisted() ? esc(art.title || "Untitled draft") : "New draft"}</h1><p>${can ? "Edits stay on this page until you save." : "You have view-only access to drafts."} </p></div>
       <div class="lb-heading-actions"><a class="lb-button lb-button-outline" href="${boot.base}" data-back>All drafts</a>${persisted() ? `<a class="lb-button lb-button-outline" href="${url}/preview" target="_blank" rel="noopener" data-preview ${dirty() ? 'aria-disabled="true" title="Save your changes to preview them"' : ""}>Preview</a>` : ""}</div></div>
       <div class="lbb-status" data-status role="${status.kind === "error" ? "alert" : "status"}" data-kind="${status.kind || (dirty() ? "dirty" : "")}">${esc(status.msg || (dirty() ? "Unsaved changes" : persisted() ? "All changes saved" : "Not saved yet"))}${status.kind === "conflict" ? ` <button type="button" class="lb-text-button" data-reload>Reload latest version</button>` : ""}</div>
       ${!persisted() ? "" : `<p class="lbb-muted">Revision ${art.revision}. Preview shows the last saved version.${dirty() ? " Save first to see recent edits." : ""}</p>`}
@@ -77,14 +80,18 @@ function init() {
         ${field("Title", "title", art.title, { max: LIM.title })}
         ${field("Summary", "summary", art.summary, { max: LIM.summary, area: true, rows: 3, hint: "A short introduction shown in lists." })}
         <div class="lbb-row2">${field("Author", "author", art.author, { max: LIM.author })}${field("Category", "category", art.category, { max: LIM.category })}</div>
-        ${field("Slug", "slug", art.slug, { max: LIM.slug, hint: "Lower case letters, numbers and hyphens. Used in the article address once published." })}</section>
+        ${field("Slug", "slug", art.slug, { max: LIM.slug, ro: !!art.published_slug, hint: art.published_slug ? "This public address is kept permanently, even if you unpublish the article, so existing links keep working." : "Lower case letters, numbers and hyphens. Used in the article address once published." })}</section>
       <section class="lb-card lbb-card"><div class="lb-card-heading"><h2>Hero image</h2></div>${mediaField("hero", art.hero_media_id, art.hero_alt, "hero_alt")}${errors.hero_media_id ? `<small class="lbb-err" role="alert">${esc(errors.hero_media_id)}</small>` : ""}</section>
       <section class="lb-card lbb-card"><div class="lb-card-heading"><h2>Sections</h2><small>${art.sections.length} of 40</small></div>
         ${art.sections.length ? `<ol class="lbb-secs">${art.sections.map((s, i) => sectionCard(s, i, art.sections.length)).join("")}</ol>` : `<p class="lbb-muted lbb-none">No sections yet. Add text, images, a quote, a product, FAQs or a call to action.</p>`}
         ${can ? `<div class="lbb-add"><label class="lb-field"><span>Add a section</span><select data-add-type>${Object.entries(TYPES).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select></label><button type="button" class="lb-button lb-button-outline" data-add ${art.sections.length >= 40 ? "disabled" : ""}>Add section</button></div>` : ""}</section></div>
-      <aside class="lbb-side"><section class="lb-card lbb-card"><div class="lb-card-heading"><h2>Draft</h2></div><p class="lbb-muted">Drafts are private to your team. Publishing is not available yet.</p>
-        ${can ? `<button type="button" class="lb-button lbb-wide" data-save ${busy ? "disabled" : ""}>${busy ? "Saving" : persisted() ? "Save changes" : "Create draft"}</button>` : ""}
-        ${can && persisted() ? `<button type="button" class="lb-button lb-button-outline lbb-wide lbb-danger-btn" data-delete ${busy ? "disabled" : ""}>Delete draft</button>` : ""}</section></aside></div>`;
+      <aside class="lbb-side"><section class="lb-card lbb-card"><div class="lb-card-heading"><h2>Publishing</h2><span class="lbb-tag" data-state="${pstate()}">${PL[pstate()]}</span></div><p class="lbb-muted">Saved drafts are private. Changes never reach your public blog until you publish.</p>
+        ${art.publication && pubUrl() ? `<p class="lbb-muted"><a href="${esc(pubUrl())}" target="_blank" rel="noopener">View public article</a></p>` : ""}
+        ${persisted() && pstate() === "unpublished" ? '<p class="lbb-muted">Not public. The address is retained.</p>' : ""}
+        ${persisted() && boot.publishingAvailable !== true ? '<p class="lbb-muted" role="status">Publishing is unavailable right now. Drafts can still be saved.</p>' : ""}
+        ${can ? `<button type="button" class="lb-button lbb-wide" data-save ${busy ? "disabled" : ""}>${busy ? "Working" : persisted() ? "Save changes" : "Create draft"}</button>` : ""}
+        ${can && persisted() && boot.publishingAvailable === true ? `<button type="button" class="lb-button lb-button-outline lbb-wide" data-publish ${busy || dirty() ? "disabled" : ""}>${art.publication ? "Publish update" : "Publish"}</button>${dirty() ? '<small class="lbb-muted">Save your edits before publishing.</small>' : ""}${art.publication ? `<button type="button" class="lb-button lb-button-outline lbb-wide lbb-danger-btn" data-unpublish ${busy || dirty() ? "disabled" : ""}>Unpublish</button>` : ""}` : ""}
+        ${can && persisted() ? `<button type="button" class="lb-button lb-button-outline lbb-wide lbb-danger-btn" data-delete ${busy ? "disabled" : ""}>Delete ${art.publication ? "article" : "draft"}</button>` : ""}</section></aside></div>`;
     if (busy) ed.querySelectorAll("input,textarea,select,button").forEach(control=>{control.disabled=true;});
     if (focusSel) ed.querySelector(focusSel)?.focus();
   }
@@ -127,6 +134,8 @@ function init() {
     else if (b.matches("[data-clear]")) { const mf = b.closest("[data-media-field]"); if (mf.dataset.mediaField === "hero") { art.hero_media_id = null; art.hero_alt = ""; } else { art.sections[idx].media_id = null; art.sections[idx].alt = ""; } paint(); markStatus(); }
     else if (b.matches("[data-save]")) save();
     else if (b.matches("[data-delete]")) del();
+    else if (b.matches("[data-publish]")) pub("publish");
+    else if (b.matches("[data-unpublish]")) pub("unpublish");
     else if (b.matches("[data-reload]")) { if (dirty() && !(await confirmCatalogueAction("Your unsaved edits will be replaced with the latest saved version.", { title: "Discard your edits?", confirmLabel: "Reload latest", cancelLabel: "Keep editing" }))) return; await reload(); }
   });
 
@@ -165,7 +174,7 @@ function init() {
       else res = await req(`/api/stores/${encodeURIComponent(boot.storeId)}/blog`, { method: "POST", body: JSON.stringify(body) });
       const wasNew = !persisted();
       const server = res.article || {};
-      art = { ...art, id: server.id || art.id, revision: server.revision ?? art.revision, slug: server.slug ?? art.slug };
+      art = norm({ ...art, ...server, publication: res.publication ?? server.publication ?? art.publication });
       saved = snap(); status = { kind: "ok", msg: "Draft saved." }; busy = false;
       if (wasNew && art.id) history.replaceState(null, "", `${boot.base}/${encodeURIComponent(art.id)}`);
       paint("[data-save]"); toast("Draft saved.");
@@ -182,8 +191,24 @@ function init() {
       art = norm(res.article); saved = snap(); errors = {}; status = { kind: "ok", msg: "Loaded the latest saved version." }; paint("[data-status]");
     } catch (x) { status = { kind: "error", msg: x.message }; paint(); }
   }
+  async function pub(kind) {
+    if (busy || !can || dirty() || !persisted()) return;
+    const up = kind === "publish";
+    const ok = await confirmCatalogueAction(up ? "The last saved version becomes visible to customers on your blog." : "The article is removed from your public blog. Its address is kept and the draft stays here.", { title: up ? (art.publication ? "Publish this update?" : "Publish this article?") : "Unpublish this article?", confirmLabel: up ? "Publish" : "Unpublish", cancelLabel: "Cancel" });
+    if (!ok) return;
+    busy = true; status = { kind: "progress", msg: up ? "Publishing" : "Unpublishing" }; paint();
+    try {
+      const res = await req(`/api/stores/${encodeURIComponent(boot.storeId)}/blog/${encodeURIComponent(art.id)}/${kind}`, { method: "POST", body: JSON.stringify({ expected_revision: art.revision }) });
+      art = norm({ ...art, ...(res.article || {}), publication: res.publication ?? res.article?.publication ?? null });
+      saved = snap(); busy = false; status = { kind: "ok", msg: up ? "Published." : "Unpublished." }; paint("[data-status]"); toast(status.msg);
+    } catch (x) {
+      busy = false;
+      status = x.status === 409 ? { kind: "conflict", msg: "This article changed since you opened it, so nothing was changed. Reload to review the latest version." } : { kind: "error", msg: x.message || "The action could not be completed." };
+      paint("[data-status]");
+    }
+  }
   async function del() {
-    const ok = await confirmCatalogueAction(`"${art.title || "Untitled draft"}" will be deleted permanently. This cannot be undone.`, { title: "Delete this draft?", confirmLabel: "Delete draft", cancelLabel: "Keep draft" });
+    const ok = await confirmCatalogueAction(art.publication ? `"${art.title || "Untitled"}" is live. Deleting removes it from your public blog and cannot be undone.` : `"${art.title || "Untitled draft"}" will be deleted permanently. This cannot be undone.`, { title: "Delete this " + (art.publication ? "live article" : "draft") + "?", confirmLabel: "Delete draft", cancelLabel: "Keep draft" });
     if (!ok) return;
     busy = true; paint();
     try {

@@ -199,7 +199,8 @@ const NAV = [["Home", "/"], ["Shop", "/collections/all"], ["About", "/pages/abou
 
 function header(x) {
   const menus=x.settings?.ann_design?.menus;
-  const links = menus?renderDesignMenu(validateDesignMenus(menus).header):NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("");
+  let links = menus?renderDesignMenu(validateDesignMenus(menus).header):NAV.map(([l, h]) => `<a href="${h}">${l}</a>`).join("");
+  if(x.data?.blog_enabled&&!links.includes('href="/blog"'))links+='<a href="/blog">Blog</a>';
   const topper = conversionTopper(x, Boolean(LIVE), esc) ?? (LIVE ? (x.copy.kicker ? ({
     architectural: `<div class="sc-ticker" aria-hidden="true"><div>${Array(8).fill(`<span>${esc(x.copy.kicker)}</span>`).join("")}</div></div>`,
     boutique: `<div class="sc-announce">${esc(x.copy.kicker)}</div>`, vintage: `<div class="sc-announce">${esc(x.copy.kicker)}</div>`,
@@ -216,7 +217,8 @@ function header(x) {
 }
 function footer(x) {
   const menus=x.settings?.ann_design?.menus;
-  const links=menus?renderDesignMenu(validateDesignMenus(menus).footer,{footer:true}):NAV.map(([l,h])=>`<a href="${h}">${l}</a>`).join("")+(LIVE?(x.policies||[]).filter(p=>/^[a-z0-9-]+$/.test(String(p.kind||""))).map(p=>`<a href="/policies/${p.kind}">${esc(p.title||p.kind)}</a>`).join(""):"");
+  let links=menus?renderDesignMenu(validateDesignMenus(menus).footer,{footer:true}):NAV.map(([l,h])=>`<a href="${h}">${l}</a>`).join("")+(LIVE?(x.policies||[]).filter(p=>/^[a-z0-9-]+$/.test(String(p.kind||""))).map(p=>`<a href="/policies/${p.kind}">${esc(p.title||p.kind)}</a>`).join(""):"");
+  if(x.data?.blog_enabled&&!links.includes('href="/blog"'))links+='<a href="/blog">Blog</a>';
   return `<footer class="sc-ft"><div class="sc-ft-in"><a class="sc-brand" href="/">${esc(x.brand)}</a><nav aria-label="Footer">${links}</nav>${LIVE ? `<p${dc("footer")}>${esc(x.copy.footer || x.brand)}</p>` : `<p>Style demonstration. The ${esc(x.world)} products, photographs and prices are illustrative samples, not a real range. Nothing here is saved, ordered or published.</p>`}</div></footer>${x.style === "boutique" || CONVERSION_TABBAR.includes(x.style) ? `<nav class="sc-tabbar" aria-label="Quick"><a href="/">Home</a><a href="/collections/all">Shop</a>${bagControl({ cls: "sc-bag-tab" })}</nav>` : ""}`;
 }
 const cta = (label, href = "/collections/all", cls = "", attr = "") => `<a class="sc-btn ${cls}"${attr} href="${href}">${esc(label)}</a>`;
@@ -541,9 +543,10 @@ const liveMedia = o => o && typeof o === "object" && okUrl(o.url) ? { url: o.url
 export function renderDesignLive(data, settings, options, design) {
   EDIT_SAMPLE=false;
   const style = design.style, page = options.page || "home";
+  const blog=["blog","blog-article"].includes(page);
   const commerce = options.commerce && ["cart","checkout","track","confirmation"].includes(page);
   const cm = commerce || page === "product";
-  if (!DEF[style] || !HOME[style] || !(commerce || page === "home" || ["collection", "product", "about", "contact"].includes(page))) return null;
+  if (!DEF[style] || !HOME[style] || !(blog || commerce || page === "home" || ["collection", "product", "about", "contact"].includes(page))) return null;
   const pack = SHOWCASE_MEDIA?.[design.media_pack || style] || {}, m = design.media || {};
   const brand = settings.brand_name || data.store?.name || "Your brand";
   const dm = design.copy && typeof design.copy === "object" ? design.copy : {};
@@ -568,12 +571,12 @@ export function renderDesignLive(data, settings, options, design) {
       const chromeCss = `${CSS}${RICH_CSS}${overrides}body.cm .sc-ft{margin-top:clamp(40px,7vw,96px)}body.cm .sc-tabbar{display:none}`;
       return { body: `${scope(header(x))}${main}${scope(footer(x))}`, css: chromeCss, bodyClass: "cm", style, font, preset, cm: true };
     }
-    let main = commerce ? renderCommerceBody({...data,settings},options) : page === "home" ? HOME[style](x) : BODY[page](x);
-    if(!commerce)main += extras(x, data);
+    let main = blog ? options.publicBlogHtml || "" : commerce ? renderCommerceBody({...data,settings},options) : page === "home" ? HOME[style](x) : BODY[page](x);
+    if(!commerce&&!blog)main += extras(x, data);
     if (page === "home" && !products.length) main += '<section class="sc-sec"><p class="sc-empty">Products are being added. Check back soon.</p></section>';
     main = main.replace(/class="([^"]*\brv\b[^"]*)"/g, `class="$1" data-showcase-reveal data-reveal-kind="${kindOf(style)}"`)
       .replace(/data-showcase-reveal(?!=| data-reveal-kind)/g, `data-showcase-reveal data-reveal-kind="${kindOf(style)}"`);
-    return { body: `${header(x)}${commerce?main:`<main class="sc-main sc-p-${page}">${main}</main>`}${footer(x)}`,
+    return { body: `${header(x)}${commerce||blog?main:`<main class="sc-main sc-p-${page}">${main}</main>`}${footer(x)}`,
       css: `${CSS}${RICH_CSS}${overrides}${LIVE_CSS}`, bodyClass: `sc sc-${style}`, style, font, preset };
   } finally { LIVE = null; }
 }
