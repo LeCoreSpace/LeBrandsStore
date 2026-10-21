@@ -1440,3 +1440,14 @@ of this register.
 | Before/after settings comparison | All 27 non-asset bindings, 17 encrypted secrets and runtime settings preserved. Snapshots record binding digests, not credential values. |
 | Live verification | `https://lebrands.store/` returned HTTP 200 with the requested supporting copy, seven decorative benefit icons, seven native FAQ disclosures and light-only mode. Live canonical `marketing.css` and `marketing.js` byte-match approved local sources; both return `Cache-Control: no-cache`. |
 | Scope | Published only the approved homepage refinements. No migrations, credential changes, merchant-domain activations, payment operations, emails or customer-data writes. |
+
+## 2026-10-21: Production account outage diagnosed as connector usage limit
+
+| Operation | Actual result and effect |
+| --- | --- |
+| Read-only diagnosis | Fresh login returned HTTP 200; a deliberately nonexistent synthetic session triggered HTTP 503 with database error 58000. Direct origin read-only checks succeeded, application-role login was enabled, session-function execution was allowed and connection counts were low. No real user cookie or password was used. |
+| Approved connector repair attempt | Revalidated/refreshed the existing restricted application connection through the provider API. Host, user, database, port, disabled caching and connection limit stayed unchanged. Validation passed, but runtime access remained blocked. |
+| Safe diagnostic change and publication | Added fixed-category and allowlisted-vocabulary diagnostics for connector error 58000. No raw provider message, SQL, credential or session value is logged. Published with `--keep-vars`; current Worker version is `7e8fbf56-a8d4-4eee-985a-5ebac20c343c`. |
+| Confirmed cause | Production diagnostics reported `CONNECTOR_QUERY_LIMIT` and fixed signals for account usage limit exceeded. Provider documentation lists 100,000 daily database queries on Free, reset at 00:00 UTC; Workers Paid includes unlimited Hyperdrive queries. Account billing-plan lookup was forbidden by the current token, so the actual subscription must be checked by the owner. |
+| Verification and safety | Final auth/diagnostic run: 17 passed. Earlier unchanged connection tests: 20 passed. Preserved 27 Worker bindings, 17 encrypted secrets and runtime settings. Restarted the managed preview API once after the code batch; native homepage preview and assets loaded normally. Stopped diagnostic log tails. No database schema, real account passwords, account records or store data were changed. |
+| Outstanding blocker | Production database-backed sign-in remains unavailable until the provider allowance resets or the account owner enables an appropriate plan. No billing subscription or purchase was made. Preview uses the direct restricted connection and is unaffected by this connector quota. |

@@ -170,14 +170,14 @@ test("subdomains match the schema and reject reserved addresses; emails are cano
   assert.equal(normalizeEmail("not-an-email"), null);
 });
 
-test("homepage shows the requested pricing teaser, preserves signup and SEO, and keeps legal drafts", () => {
+test("homepage preserves approved brand messaging, signup and SEO, and keeps legal drafts", () => {
   const original = PRICING.plans[0].foundingPrice;
   try {
     PRICING.plans[0].foundingPrice = 12345;
     const rendered = renderHome();
     assert.doesNotMatch(rendered, /12,345/);
-    assert.match(rendered.replace(/<[^>]+>/g, ""), /A flagship store for your brand\./);
-    assert.match(rendered,/Simple monthly pricing\. No commission, ever\./);
+    assert.match(rendered.replace(/<[^>]+>/g, ""), /A store that tells your brand story and sells\./);
+    assert.match(rendered,/Not charging on every sale\./);
     assert.match(rendered,/href="\/pricing"/);
     assert.match(rendered, /https:\/\/app\.lebrands\.store\/signup/);
     assert.match(rendered, /og:title/);

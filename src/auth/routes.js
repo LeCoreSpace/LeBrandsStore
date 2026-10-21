@@ -1,4 +1,5 @@
 import { createDb } from "../db.js";
+import { databaseConnectionReason, databaseConnectionSignals } from "../db-diagnostics.js";
 import {isRazorpayOAuthRoute,handleRazorpayOAuth} from "../connections/razorpay-oauth.js";
 import {handlePlatformAdmin,isPlatformAdminRoute} from "../admin/platform-routes.js";
 import {handleSupport,isSupportRoute} from "../support/routes.js";
@@ -262,7 +263,11 @@ export async function handleAccounts(request, env, ctx, dependencies = {}) {
     }
     return html("error", { error: "Method not allowed." }, 405);
   } catch (error) {
-    console.error("Account request failed", { code: error?.code ?? "UNKNOWN" });
+    console.error("Account request failed", {
+      code: error?.code ?? "UNKNOWN",
+      connectionReason: databaseConnectionReason(error),
+      connectionSignals: databaseConnectionSignals(error),
+    });
     const message = error?.code === "INVALID_FORM" ? error.message
       : error?.code === "PASSWORD_RUNTIME_UNSUPPORTED"
         ? "Password hashing is unavailable in this runtime. Contact support@lebrands.store."
