@@ -1,3 +1,7 @@
+### FAQ shortcut and singular LLM removal: approved production release
+
+Published Worker `66193ed3-9741-4704-89fd-e92cd176240d` at 100% traffic. Nine live probes passed, including removed singular-file 404 and delivery of the FAQ shortcut controller/CSS. Existing settings, resource bindings and encrypted secrets are preserved. No schema or merchant content changes.
+
 ### FAQ shortcut and singular LLM removal: local only
 
 Three-file discovery inspector, explicit 404 for the removed singular alias and prominent FAQ shortcut with format guidance. Existing FAQ draft/publication storage is retained; no migration. Eighteen focused checks, dry-run build and discovery preview passed. Awaiting publication approval.

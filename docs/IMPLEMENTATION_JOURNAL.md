@@ -1,5 +1,11 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Approved FAQ and singular-file update published
+
+- Published the approved follow-up using Wrangler with `--keep-vars`; active version `66193ed3-9741-4704-89fd-e92cd176240d` serves 100% traffic.
+- Nine live read-only checks passed: singular file 404, plural LLM guide, robots, sitemap, public blog, fingerprinted FAQ controller and stylesheet, database-backed login and anonymous discovery API denial.
+- All 27 non-asset bindings, 17 encrypted secrets, runtime settings and semantic routes match the fresh pre-release baseline. No migration, merchant content writes or authenticated production mutations were performed.
+
 ## 2026-10-21: Singular LLM file removal and visible FAQ authoring, local only
 
 - Removed the redundant `llm.txt` discovery card; the removed route now returns a real 404 instead of redirecting or falling through to storefront HTML. `llms.txt`, robots and sitemap remain unchanged.

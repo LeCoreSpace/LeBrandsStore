@@ -1,3 +1,8 @@
+## 2026-10-21: Approved FAQ and file-cleanup publication
+
+- `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` published version `66193ed3-9741-4704-89fd-e92cd176240d` at 100% traffic after explicit approval. Binding/secret/runtime and route configuration fingerprints match the immediate baseline.
+- Nine live read-only probes passed for singular-file 404, retained guide/robots/sitemap/blog, fingerprinted FAQ JS/CSS, database-backed login and anonymous inspector API denial. No migration or merchant content mutation.
+
 ## 2026-10-21: FAQ authoring and redundant file removal, local checks
 
 - `node --test --test-concurrency=1 tests/store-blog-drafts.test.js tests/store-blog-publication.test.js tests/store-discovery.test.js tests/browser-module-delivery.test.js`: 18 passed with isolated fixtures.
