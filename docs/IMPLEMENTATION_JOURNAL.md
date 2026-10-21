@@ -1,5 +1,26 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Cloudflare custom-domain platform configured
+
+- With explicit owner approval, added the `*/*` route to `lebrands-store`,
+  preserving the existing root/subdomain routes and retaining all three in
+  `wrangler.jsonc` for future releases. Existing origin/target DNS records matched
+  the expected proxied AAAA/CNAME configuration and were not replaced.
+- Copied the existing configured token directly to an encrypted Worker Secret
+  and configured the zone ID as another Secret; no values were displayed or
+  written to files. Deployed code-module hashes, all 25 previous bindings and
+  runtime compatibility were verified unchanged. No workspace app-code deploy.
+- Refreshed the existing fallback origin with the same hostname. Cloudflare
+  progressed from a stale DNS error through initializing to active, and
+  automatically annotated the origin DNS record as a fallback. All other DNS
+  record fingerprints remain unchanged.
+- All four application platform-readiness indicators pass. Configuration version
+  `e02d943b-bd47-4dcc-a980-1721fea4dc67` serves 100% traffic. Main site,
+  account sign-in and admin sign-in return 200; private admin support redirects
+  to admin sign-in. Focused Cloudflare operator test and route-config assertions
+  passed. No merchant custom hostnames, domain activations, database changes,
+  payment changes or plan purchases were performed.
+
 ## 2026-10-20: Approved-document re-review activated in production
 
 - With explicit owner approval, published compatible Worker version

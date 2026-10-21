@@ -69,6 +69,10 @@
 		{
 			"pattern": "*.lebrands.store/*",
 			"zone_name": "lebrands.store"
+},
+{
+"pattern": "*/*",
+"zone_name": "lebrands.store"
 		}
 	]
 }

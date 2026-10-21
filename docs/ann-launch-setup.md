@@ -150,16 +150,20 @@ Production Worker bindings:
 - `CLOUDFLARE_WORKER_NAME=lebrands-store`
 
 The operator creates fallback `store-origin.lebrands.store` (proxied AAAA `100::`)
-and customer CNAME target `brands.lebrands.store`. The default root Wrangler
-configuration deliberately contains only the platform's existing domain routes.
-Cloudflare rejects `*/*` with error 10022 until Cloudflare for SaaS is enabled,
-which would otherwise partially fail an ordinary deployment.
+and customer CNAME target `brands.lebrands.store`. After account-owner enablement,
+zone permission checks and route conflict review, the root Wrangler configuration
+now retains `{"pattern":"*/*","zone_name":"lebrands.store"}` alongside the two
+existing platform routes. Preserve all three on future deployments. The catch-all
+is a platform routing prerequisite, not permission to activate a merchant domain.
 
-Only after the account owner has enabled Cloudflare for SaaS and reviewed route
-conflicts, add `{"pattern":"*/*","zone_name":"lebrands.store"}` to the root
-configuration's `routes` array and run the checked platform setup. Once customer
-domains are activated, retain that route on future deployments. Do not add it
-merely because payment or shipping integrations are being deployed.
+When configuring a different zone, first enable Cloudflare for SaaS and review
+route conflicts before adding a catch-all. Cloudflare rejects `*/*` with error
+10022 before SaaS enablement, which can partially fail a deployment.
+
+Production `CLOUDFLARE_ZONE_ID` may be an encrypted Worker Secret as well as a
+plain-text variable; do not add a duplicate Wrangler variable with that name.
+Configure the token with a targeted Worker Secret update and preserve existing
+resource bindings, code modules and unrelated secrets.
 The old `CUSTOM_DOMAINS_ROUTING_READY` flag is no longer proof of readiness:
 activation freshly reads actual fallback, DNS and Worker route configuration.
 

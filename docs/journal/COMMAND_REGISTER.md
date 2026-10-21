@@ -1,5 +1,27 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Custom-domain infrastructure setup
+
+```sh
+node scripts/configure-custom-domains.mjs
+node scripts/configure-custom-domains.mjs --apply
+node --test --test-name-pattern='Cloudflare operator' tests/commerce-runtime.test.js
+```
+
+Owner-approved infrastructure changes only. The operator helper reused matching
+DNS records and added the missing SaaS Worker route. A guarded in-memory Node
+wrapper used targeted Cloudflare Worker Secret PUTs for the token and zone ID,
+and resubmitted the same fallback origin to refresh its validation. No secret
+arguments, plaintext credential files, DNS deletion or app-code deploy.
+
+Read-only verification: code-module hashes and previous binding fingerprints
+unchanged; original routes preserved; non-fallback DNS hashes unchanged;
+fallback active and all four readiness indicators complete. Cloudflare marked
+the fallback DNS record in metadata on activation. Public sign-in/root responses
+and private admin redirect passed. Focused operator test and the three-route
+config assertion passed. Configuration version:
+`e02d943b-bd47-4dcc-a980-1721fea4dc67`, 100%. No merchant activation.
+
 ## 20 October 2026: Approved re-review activation
 
 ```sh

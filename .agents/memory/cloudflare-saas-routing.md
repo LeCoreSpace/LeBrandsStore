@@ -23,3 +23,16 @@ the hostname. The CNAME can be checked through read-only public DNS before
 provisioning, but that proves only the CNAME, not ownership or SSL. Activation
 must still fail closed until Cloudflare SaaS
 routing, DNS, ownership and SSL are verified.
+
+Cloudflare may automatically change fallback DNS metadata and its modified
+timestamp when activating the fallback, without changing its address or proxy
+configuration.
+
+**Why:** A successful fallback activation added `fallback_origin: true` to the
+origin record, so a full-record fingerprint comparison reported an unexpected
+DNS change despite no DNS record write being issued.
+
+**How to apply:** Verify the fallback record's actual name, type, address and
+proxy status separately from Cloudflare-managed metadata. Preserve strict
+fingerprint comparisons for unrelated records, comparing multisets rather than
+matching only names/types because multiple TXT records can share both.

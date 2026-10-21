@@ -1,5 +1,13 @@
 # Complete implementation checkpoint register
 
+### Custom-domain platform setup activated
+
+Owner-approved SaaS route and encrypted Worker bindings are active; fallback and
+all platform-readiness checks pass. Code and unrelated bindings are unchanged.
+Root Wrangler config retains the new route for later deployments. Configuration
+version `e02d943b-bd47-4dcc-a980-1721fea4dc67`; no merchant domains activated and
+no manual commit performed.
+
 ### Approved-document re-review published
 
 Owner-approved Cloudflare version `96c64df1-6959-4712-af4d-5fdacac62edf`
