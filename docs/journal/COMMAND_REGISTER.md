@@ -1430,3 +1430,13 @@ of this register.
 | Build and regression checks | Browser assets built successfully. All 41 focused homepage tests passed; final 14-case regression/closing rerun also passed after adding the section anchor. `git diff --check` clean. |
 | Managed API restart and native preview captures | Verified the section at 1440px and 320px: prominent brand-story headline, smaller supporting copy and no clipped text. Public page/assets returned HTTP 200 after restart; no new browser-console errors reported. |
 | Publication boundary | Preview only. Pending lower sections, FAQ and this transition have not been published. No database, credentials, payment, email or merchant-data operations. |
+
+## 2026-10-21: Approved lower-homepage, FAQ and brand-story updates published
+
+| Command / operation | Actual result and effect |
+| --- | --- |
+| User approval | “Publish to Cloudflare” for the pending homepage updates. |
+| `pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars` from repository root | Published Worker `lebrands-store`, version `af25963b-eebf-45bb-a2fa-14ce5f2a17be`. Uploaded the updated stylesheet and Worker-rendered homepage. |
+| Before/after settings comparison | All 27 non-asset bindings, 17 encrypted secrets and runtime settings preserved. Snapshots record binding digests, not credential values. |
+| Live verification | `https://lebrands.store/` returned HTTP 200 with the requested supporting copy, seven decorative benefit icons, seven native FAQ disclosures and light-only mode. Live canonical `marketing.css` and `marketing.js` byte-match approved local sources; both return `Cache-Control: no-cache`. |
+| Scope | Published only the approved homepage refinements. No migrations, credential changes, merchant-domain activations, payment operations, emails or customer-data writes. |
