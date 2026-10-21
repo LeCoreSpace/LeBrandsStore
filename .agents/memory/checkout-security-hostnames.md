@@ -19,3 +19,13 @@ Domain activation automation needs separate Turnstile write permission and must
 preserve existing allowed hostnames and widget keys. Cloudflare documents a
 10-hostname limit per standard widget, so account for capacity rather than
 assuming a single widget supports unlimited merchant domains.
+
+Per-domain manual security registration is an emergency workaround, not an
+acceptable finished self-service domain flow.
+
+**Why:** The user objected to having to type each new custom domain into
+Cloudflare and questioned the value of integration if this remains manual.
+
+**How to apply:** Design automatic security provisioning and readiness checks
+into domain activation, with capacity management and a one-time platform
+permission setup. Do not pass this operational task to each merchant.
