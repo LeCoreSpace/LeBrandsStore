@@ -1,5 +1,9 @@
 # Complete implementation checkpoint register
 
+### Store discovery foundations: phase one, local only
+
+Tenant-specific sitemap, robots and LLM discovery files now derive from published content with primary-domain-aware canonical URLs, bounded sitemap shards and privacy/publication safeguards. Existing stores require no initialization or catalogue republish. Verified with 66 focused checks, Worker build dry-run and native homepage smoke. Not deployed. Blog editor and public article publishing are later phases.
+
 ### Icon-led bag controls: approved production release
 
 Worker `101c164a-f497-4e75-8650-66114f033ef9` serves 100% of production traffic. Live custom-domain bag icon/count markup and database-backed login passed verification. All resource bindings, encrypted secrets and runtime settings were preserved. No migration or merchant catalogue republish.

@@ -109,8 +109,10 @@ export function renderAura(data = {}, options = {}) {
   const title=seo?.seo_title||defaultTitle;
   const descriptionText = String(seo?.seo_description || (page==="product"?prodForPage?.description:activeCol?.description) || description).replace(/<[^>]*>/g," ").replace(/\s+/g, " ").trim().slice(0, 160);
   const canonicalPath = page === "collection" ? (activeCol && /^[a-z0-9-]+$/.test(String(activeCol.slug || "")) ? `/collections/${activeCol.slug}` : "/collections/all") : page === "product" ? productHref(prodForPage)
-    : page === "about" ? "/pages/about" : page === "contact" ? "/pages/contact" : page === "policy" ? `/policies/${slug(options.policyKind)}` : "/";
-  const canonicalUrl = subdomain && !commercePage ? `https://${subdomain}.lebrands.store${canonicalPath}` : "";
+    : page === "about" ? "/pages/about" : page === "contact" ? "/pages/contact" : page === "faq" ? "/pages/faq" : page === "policy" ? `/policies/${slug(options.policyKind)}` : "/";
+  const canonicalOrigin = /^https:\/\/[a-z0-9.-]+$/i.test(String(options.canonicalOrigin || ""))
+    ? options.canonicalOrigin : subdomain ? `https://${subdomain}.lebrands.store` : "";
+  const canonicalUrl = canonicalOrigin && !commercePage && page !== "404" ? `${canonicalOrigin}${canonicalPath}` : "";
   const logoUrl = safeImage(settings.logo_url);
   const pageKey = getPageKey({ ...options, page });
   const layouts = data.layouts && typeof data.layouts === "object" ? data.layouts : defaultPageLayouts(data);
@@ -139,7 +141,7 @@ export function renderAura(data = {}, options = {}) {
     const list=gridCollection?products.filter(p=>Array.isArray(gridCollection.product_ids)?gridCollection.product_ids.includes(p.id):p.collection_ids?.includes(gridCollection.id)):products;
     body=addCollectionFilters(body,list);
   }
-  const noindex = page === "404" || options.preview || commercePage;
+  const noindex = page === "404" || options.preview || options.readOnly || options.embeddedPreview || commercePage;
   return `<!doctype html>
   <html lang="en">
     <head>

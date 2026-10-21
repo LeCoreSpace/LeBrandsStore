@@ -7,6 +7,7 @@ import { SECURITY_HEADERS } from "../auth/security.js";
 import { handleCheckout, isCheckoutPath } from "../checkout/routes.js";
 import { pagesEnabled, pageLayouts, skeletonEnabled } from "./pages.js";
 import {withNavigation} from "../ui/navigation-loader.js";
+import {isStoreDiscoveryPath, serveStoreDiscovery, storeCanonicalOrigin} from "./discovery.js";
 
 export function storefrontPage(path, data) {
   if (path === "/") return { page: "home", status: 200 };
@@ -30,13 +31,19 @@ export function storefrontPage(path, data) {
 }
 export async function serveStorefront(request, db, store, env = {},trackingContext={}) {
   const url = new URL(request.url);
+  if (isStoreDiscoveryPath(url.pathname) && !["GET", "HEAD"].includes(request.method)) {
+    return serveStoreDiscovery(request, null, "");
+  }
   if (url.hostname.endsWith(".lebrands.store") && url.hostname !== `${store.subdomain}.lebrands.store`) {
     url.hostname = `${store.subdomain}.lebrands.store`;
     return new Response(null, { status: 307, headers: { ...SECURITY_HEADERS, location: url.href } });
   }
   const [publication] = await db.withStore(store.store_id, async tx => {
     const [row] = await tx`
-    SELECT p.snapshot FROM public.store_publications p JOIN public.stores s ON s.store_id = p.store_id
+    SELECT p.snapshot, (SELECT d.hostname FROM public.domains d
+      WHERE d.store_id=p.store_id AND d.status='active' AND d.is_primary=true
+      ORDER BY d.hostname LIMIT 1) AS canonical_hostname
+    FROM public.store_publications p JOIN public.stores s ON s.store_id = p.store_id
     WHERE p.store_id = ${store.store_id} AND s.status = 'live'
     `;
     if (row?.snapshot && await pagesEnabled(tx)) {
@@ -45,10 +52,12 @@ export async function serveStorefront(request, db, store, env = {},trackingConte
     }
     return row ? [row] : [];
   });
-  if (!publication?.snapshot) return null;
+  if (!publication?.snapshot) return isStoreDiscoveryPath(url.pathname) ? serveStoreDiscovery(request, null, "") : null;
   const data = { ...publication.snapshot,
     store: { ...publication.snapshot.store, ...store },
     settings: { ...publication.snapshot.settings, subdomain: store.subdomain } };
+  const canonicalOrigin = storeCanonicalOrigin(data, publication.canonical_hostname);
+  if (isStoreDiscoveryPath(url.pathname)) return serveStoreDiscovery(request, data, canonicalOrigin);
   if (["GET","HEAD"].includes(request.method) && ["/favicon.svg","/favicon.ico","/favicon.png","/apple-touch-icon.png"].includes(url.pathname)) {
     return serveStoreIcon(request,env,data.settings,store.store_id);
   }
@@ -67,7 +76,7 @@ export async function serveStorefront(request, db, store, env = {},trackingConte
   if(["home","product","collection"].includes(options.page)){
     data.products=await db.withStore(store.store_id,tx=>liveAvailability(tx,store.store_id,data.products));
   }
-  return new Response(request.method === "HEAD" ? null : withNavigation(renderAura(data, {...options,commerce:true,siteKey:env.TURNSTILE_SITE_KEY ?? ""})), {
+  return new Response(request.method === "HEAD" ? null : withNavigation(renderAura(data, {...options,canonicalOrigin,commerce:true,siteKey:env.TURNSTILE_SITE_KEY ?? ""})), {
     status: options.status,
     headers: { ...SECURITY_HEADERS, "content-type": "text/html; charset=utf-8" },
   });

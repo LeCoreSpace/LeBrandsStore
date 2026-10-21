@@ -39,3 +39,9 @@ Merchant blogs should be separate from the platform blog, with fillable content 
 **Why:** The user described a store-specific blog where merchants fill sections and add their own hero creative.
 
 **How to apply:** Preserve this structured merchant-authoring direction when scoping store blogs.
+
+Store-level blogs and discovery files should be delivered in phases and apply to existing stores as well as newly created ones.
+
+**Why:** The user explicitly requested phased implementation “even for existing 4 stores”.
+
+**How to apply:** Avoid new-store-only initialization or requiring merchants to republish unrelated catalogue drafts to receive discovery features.

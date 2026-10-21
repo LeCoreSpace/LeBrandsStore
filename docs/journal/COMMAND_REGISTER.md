@@ -1,5 +1,12 @@
 # Integration, migration and deployment command register
 
+## 21 October 2026: Store discovery foundations
+
+- `node --test --test-concurrency=1 tests/store-discovery.test.js tests/storefront-commerce-shell.test.js tests/storefront-product-details.test.js tests/platform-seo.test.js tests/collection-filters.test.js tests/aura-layout.test.js tests/browser-module-delivery.test.js tests/storefront-bag-button.test.js`: 66 checks passed.
+- `pnpm exec wrangler deploy --dry-run --config wrangler.jsonc`: Worker bundle and browser assets built successfully without publication.
+- Restarted managed web/API previews once. Platform homepage screenshot and logs showed normal rendering. Do not confuse development wrapper platform crawler responses with tenant discovery integration.
+- `git diff --check`: clean. No migration, catalogue republish or live Worker change.
+
 ## 21 October 2026: Approved bag-button release
 
 - Captured fresh binding fingerprints and checked configured Hyperdrive/R2 resources against production.

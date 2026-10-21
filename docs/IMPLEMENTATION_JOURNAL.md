@@ -1,5 +1,13 @@
 # LeBrands.Store implementation journal
 
+## 2026-10-21: Store discovery foundations, phase one, local only
+
+- Added tenant-specific `sitemap.xml`, `robots.txt` and `llms.txt`, plus a canonical redirect for the singular `llm.txt` spelling. Files derive from published snapshots and published page layouts without backfills or catalogue republishing, covering existing and future live stores.
+- Read active primary-domain evidence in the tenant-scoped publication query. Discovery URLs, storefront canonical links and Open Graph URLs now agree on that domain, falling back to the included store address. Preview, read-only, checkout and not-found pages remain excluded from indexing.
+- Sitemaps omit private routes, drafts, archived records, unfinished policies and invented modification timestamps. Large catalogues split into bounded 20,000-URL shards. The LLM guide bounds product/collection summaries and does not expose owner/account data.
+- Verification: 66 focused checks passed, including four distinct legacy tenant fixtures, primary-domain validation, publication boundaries, large catalogue shards, HEAD/405/404 behavior and platform crawler isolation. Wrangler production build dry-run succeeded; native Preview homepage rendered normally with no browser errors. Preview crawler HTTP requests returned the deliberately separate platform files, not tenant-file integration evidence.
+- No database migration, production publication or merchant content write performed. Structured blog authoring and public article publishing remain the next phases, not delivered by this phase.
+
 ## 2026-10-21: Approved bag-button production release
 
 - Published the user-approved shared icon/count bag controls as Worker `101c164a-f497-4e75-8650-66114f033ef9` at 100% traffic.
